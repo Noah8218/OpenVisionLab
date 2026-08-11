@@ -1,117 +1,131 @@
-# OpenVisionLab Recipe Switch Loading And Responsiveness
+# OpenVisionLab Recipe Switch Loading Lifetime
 
 Date: 2026-08-11 KST
 
-Repository: `C:\Git\OpenVisionLab_Dev`
+Repositories: `C:\Git\OpenVisionLab_Dev` and `C:\Git\OpenVisionLab`
 
-Source baseline: `ccc6b275`
+Lifecycle-correction baseline: `42d840a9`
 
-## Goal And Scope
+## Correction
 
-Make selection of an existing Recipe in Recipe Manager visibly acknowledge the
-operation before restoration starts, avoid redundant post-switch work, and
-keep the selected Recipe/Pipeline context correct. This change does not move
-Recipe persistence to a worker thread, change Preview/Run, alter layer routing,
-or add concurrency.
+The first implementation proved that the Recipe loading overlay appeared, but
+it closed before deferred Pipeline Review preparation finished. The user's
+actual-EXE report invalidated that closure. This report supersedes the loading
+lifetime claim in pushed Dev `42d840a9` and original `0582d226`.
+
+## Goal And Boundary
+
+Keep the Recipe Manager loading overlay open until Recipe restoration and the
+required deferred Recipe preparation both finish. The completed Recipe Manager
+must be interactive when the overlay closes.
+
+This change does not move Recipe persistence to a worker thread, change
+Preview/Run, alter layers or routing, add concurrency, or restart native Tool
+prewarming on Recipe changes.
 
 ## Reproduced Cause
 
-1. `SelectRecipe` set `IsSwitchingRecipe` and immediately continued into the
-   synchronous Recipe load. A render-priority dispatcher invocation did not
-   guarantee that DWM composited the small status indicator first. The actual
-   EXE could therefore look frozen or show mixed old/new Recipe content.
-2. `RecipeState.EventChangedRecipe` already refreshes Recipe context, Pipeline
-   options, validation/history presentation, layers, and routing. `SelectRecipe`
-   repeated the command-surface refresh after the same event returned.
-3. Every Recipe change also restarted native Tool document prewarming. A
-   diagnostic run with native prewarm disabled removed the post-switch
-   responsiveness stall, identifying that queue as competing UI-thread work.
+1. `SelectRecipe` correctly yielded a render turn and showed the overlay.
+2. `RecipeState.EventChangedRecipe` synchronously restored Recipe context and
+   scheduled Pipeline Review preparation with `Dispatcher.BeginInvoke`.
+3. The queued work had no completion handle. `SelectRecipe` therefore cleared
+   `IsSwitchingRecipe` in `finally` before that work ran.
+4. The current actual EXE reproduced the defect: after the overlay disappeared,
+   the process again failed a responsiveness probe at 1,069.9 ms.
 
 ## Implemented Behavior
 
-- Existing-Recipe selection is an asynchronous UI command only at its render
-  boundary. It sets the switching state, yields one WPF dispatcher turn, then
-  performs the existing synchronous Recipe restoration on the UI thread.
-- Recipe Manager is covered by a localized Korean/English loading overlay with
-  themed background, text, icon, border, and progress presentation. The cover
-  also prevents conflicting Recipe actions during the switch.
-- The normal shell event path is now the single refresh owner. A small fallback
-  remains for isolated command-surface test hosts that do not subscribe to the
-  Recipe event.
-- Recipe changes no longer restart every native Tool prewarm immediately.
-  Explicit Tool selection remains the owner of opening/rebuilding the selected
-  Tool document; Pipeline Review prewarm remains unchanged.
-- A second selection received while switching restores the displayed selected
-  value instead of changing the underlying Recipe.
-
-## Structure Change Proof
-
-- Previous refresh owners: `RecipeState.EventChangedRecipe` and the tail of
-  `SelectRecipe` both refreshed Recipe Manager state.
-- Current refresh owner: the Recipe event is authoritative in the normal shell;
-  the command surface refreshes only when an isolated host did not receive it.
-- Previous native-prewarm trigger: every Recipe change.
-- Current native-prewarm trigger: explicit Tool selection/resume behavior in the
-  existing Tool orchestration path. Recipe change retains only Pipeline Review
-  preparation.
-- Search and focused smoke evidence confirm no new persistence service, task
-  worker, parallel executor, or Preview/Run route was introduced.
+- Pipeline Review preparation now returns its dispatcher `Task`.
+- The Recipe controller owns the current preparation task.
+- Existing-Recipe selection and create/switch await that task before clearing
+  `IsSwitchingRecipe`.
+- The `Selected`/`Created` status is assigned only after preparation finishes.
+- The normal Recipe event remains the single refresh owner. No second
+  preparation or persistence path was added.
+- A controlled smoke gate verifies both sides of the contract: loading remains
+  visible while preparation is incomplete and closes after completion.
 
 ## Verification
 
-- `dotnet build OpenVisionLab.sln -c Debug -p:Platform="Any CPU"`
-  - passed with 0 warnings and 0 errors after the final source change.
-- Current-source focused WPF checks passed with layout/text/internal errors all
-  equal to zero:
+- `dotnet build OpenVisionLab.sln -c Debug -p:Platform="Any CPU" --no-restore`
+  - passed with 0 warnings and 0 errors.
+- `dotnet build tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug --no-restore`
+  - passed with 0 warnings and 0 errors.
+- Rebuilt current-source WPF targets passed with zero layout, text, and internal
+  errors:
   - `wpf_shell_host_recipe_change_safety`
-  - `wpf_shell_host_recipe_manager_summary`
   - `wpf_shell_host_recipe_context_switch`
+  - `wpf_shell_host_recipe_manager_summary`
   - `wpf_shell_host_native_tool`
-- `OpenVisionReadinessCheck`
-  - passed all 13 readiness contracts.
-- `git diff --check`
-  - passed before this completion record; rerun at handoff.
+- The safety result records
+  `RecipeLoadingOverlay=HeldUntilPreparationComplete`.
+- `OpenVisionReadinessCheck` passed all 13 contracts.
+- `git diff --check` passed before this record and is rerun at handoff.
+- The same nine modified files were applied to the original repository through
+  one reviewed Git patch. Dev/original `git hash-object` values match for all
+  nine paths, and the original repository has no staged changes.
+- The original solution and ScreenshotSmoke project built with 0 warnings and
+  0 errors. The same four rebuilt WPF targets, readiness 13/13, and the
+  documentation index passed in the original repository.
 
 ## Actual EXE Evidence
 
-The current Debug EXE was launched on the dynamically selected smaller left
-monitor, `DISPLAY2`, bounds `-1920,365,1920x1080`, working area
-`-1920,365,1920x1032`. Its window rectangle was
-`-1920,365,0,1397`, which intersects that monitor exactly as required.
+The latest Debug EXE was launched on the dynamically selected smaller left
+monitor, `DISPLAY2`, with reported working area `-1920,365,1920x1032`.
 
-- Before: the old small status line appeared over mixed Recipe state, without
-  an interaction-blocking loading surface.
-- After: the current EXE shows `레시피 불러오는 중` and the target Recipe on a
-  dimmed, fully themed Recipe Manager before exposing the completed summary.
-- Final captured sequence selection request return: 39.2 ms; its first stable
-  completed frame was captured at 433.8 ms.
-- Separate responsiveness probe selection request return: 29.2 ms. Its samples
-  were busy at 72.5 ms, responsive at 115.2 ms,
-  synchronous restoration at 209.2-303.1 ms, then responsive from 414.3 ms
-  through the last 1,205.6 ms sample.
-- This is evidence for the tested `Default`/`FieldPilot_BentPin` transitions,
-  not a guarantee for every Recipe size or storage device.
+Test transition: `FieldPilot_BentPin -> Default`.
+
+- Before correction: the overlay had closed when the process again failed the
+  responsiveness probe at 1,069.9 ms.
+- After correction: the overlay remained visible through the preparation
+  interval. The process was responsive from the 866.0 ms sample through the
+  final 3,269.4 ms sample with no second stall.
+- After the overlay closed, the Recipe filter accepted and rendered `Default`
+  in 40.6 ms.
+- No Preview/Run, layer, active-layer, or route side effect was recorded by the
+  focused contract.
 
 Evidence root:
-`D:\OpenVisionLab-TestData\OpenVisionLab_Dev\artifacts\recipe_switch_loading_20260811`
+`D:\OpenVisionLab-TestData\OpenVisionLab_Dev\artifacts\recipe_switch_lifetime_20260811`
 
-Key files:
+Key evidence:
 
-- `before\before_during_confirmed_120ms.png`
-- `after\final_actual_exe\frame_01.png`
-- `after\final_actual_exe\complete.png`
-- `after\final_actual_exe\capture_timeline.json`
-- `after\final_actual_exe\responsiveness.json`
-- `focused_final\wpf_shell_host_native_tool.png`
-- `focused_final\wpf_shell_host_recipe_context_switch.png`
+- Before: `before_actual_exe\frame_00.png`, `frame_04.png`, `timeline.json`
+- After latest build: `after_actual_exe_final\frame_00.png`, `frame_01.png`,
+  `frame_05.png`, `timeline.json`
+- Focused: `focused_current_rebuilt` and `focused_final`
+
+### Original Repository Exact-Port Evidence
+
+The rebuilt original Debug EXE was launched on the dynamically selected smaller
+left monitor, `DISPLAY2`, with reported working area
+`-1920,365,1920x1032`.
+
+Test transition: `Edge_Base -> Default`, followed by restoration to
+`Edge_Base`.
+
+- `frame_00.png` shows the loading overlay during the Recipe transition.
+- The process was responsive at every recorded post-overlay frame from
+  1,503.4 ms through 12,634.3 ms, with no second stall during that approximately
+  11-second post-overlay observation interval.
+- After the overlay closed, the Recipe filter accepted and rendered `Default`
+  in 71.1 ms.
+- The test restored the initially selected `Edge_Base` Recipe before closing
+  the EXE.
+
+Original evidence root:
+`D:\OpenVisionLab-TestData\OpenVisionLab\artifacts\recipe_switch_lifetime_20260811`
+
+Exact-port mapping and hash evidence:
+`D:\OpenVisionLab-TestData\OpenVisionLab_Dev\artifacts\recipe_switch_lifetime_20260811\exact_port_original`
 
 ## Completion Record
 
 ```text
 Status: Complete
-Scope: Existing-Recipe selection loading visibility, duplicate refresh removal, and post-switch native prewarm contention removal in Dev
-Acceptance criteria: Actual EXE shows a themed loading surface before completed Recipe state -> pass; tested switch completes without the previously reproduced post-switch prewarm stall -> pass; Recipe context and explicit native Tool open remain correct -> pass
-Verification: Debug solution build 0 warnings/errors; readiness 13/13; four focused WPF checks passed; current actual-EXE screen sequence and responsiveness timeline inspected
-Evidence: D:\OpenVisionLab-TestData\OpenVisionLab_Dev\artifacts\recipe_switch_loading_20260811 and this report
-Boundary / next dependency: This proves the tested existing-Recipe transitions in Dev; changes are not staged, committed, pushed, or promoted to the original repository
+Scope: Existing-Recipe selection and create/switch retain the loading overlay until required Recipe preparation completes in the Dev and original working trees
+Acceptance criteria: Loading remains while preparation Task is incomplete -> pass; closes after Task completion -> pass; no post-overlay responsiveness stall in the tested Dev and original actual-EXE transitions -> pass; post-load Recipe Manager input works -> pass; Dev/original modified paths match -> pass
+Verification: Dev and original Debug solution and ScreenshotSmoke builds 0 warnings/errors; readiness 13/13; rebuilt Recipe safety/context plus Recipe summary/native Tool targets passed; original documentation index passed; actual-EXE timelines inspected; 9/9 path hashes matched
+Evidence: D:\OpenVisionLab-TestData\OpenVisionLab_Dev\artifacts\recipe_switch_lifetime_20260811, D:\OpenVisionLab-TestData\OpenVisionLab\artifacts\recipe_switch_lifetime_20260811, and this report
+Boundary / next dependency: This proves the tested FieldPilot_BentPin -> Default lifecycle in Dev and Edge_Base -> Default lifecycle in the original working tree; the correction is not staged, committed, or pushed
 ```

@@ -34,6 +34,10 @@ namespace OpenVisionLab
         private VisionToolSingleInputPropertyToolShell nImageVerificationShell;
         private VisionToolLanguageChangeController nImageVerificationLanguageController;
         private OpenVisionRecipeContext recipeContext;
+        private Func<string, VisionToolPreviewImageRole, string, bool> openPreviewViewer;
+        private Func<string, VisionToolPreviewImageRole, string, bool> refreshPreviewViewer;
+        private Action closePreviewViewer;
+        private VisionToolPreviewImageRole? openPreviewViewerRole;
         private bool disposed;
 
         internal OpenVisionNativeToolDocument(
@@ -63,6 +67,9 @@ namespace OpenVisionLab
             previewLayerPublisher = new OpenVisionNativePreviewLayerPublisher(this.displayManager);
             this.view = view ?? throw new ArgumentNullException(nameof(view));
             this.element = element ?? throw new ArgumentNullException(nameof(element));
+            this.element.AddHandler(
+                VisionToolPreviewSlotBehavior.OpenPreviewImageRequestedEvent,
+                new EventHandler<VisionToolPreviewImageOpenRequestedEventArgs>(OnPreviewImageOpenRequested));
             statusPresenter = new OpenVisionNativeToolStatusPresenter(this.view, null);
             this.toolName = string.IsNullOrWhiteSpace(toolName) ? element.GetType().Name : toolName;
             this.defaultOutputLayer = string.IsNullOrWhiteSpace(defaultOutputLayer)
@@ -116,6 +123,7 @@ namespace OpenVisionLab
                 OnLineEditSelectedRoiRequested);
             ConfigureNImageVerification();
             RefreshLayerState();
+            OpenVisionLanguageService.LanguageChanged += OnPreviewViewerLanguageChanged;
         }
 
         internal OpenVisionNativeToolDocument(
@@ -129,6 +137,9 @@ namespace OpenVisionLab
             previewLayerPublisher = new OpenVisionNativePreviewLayerPublisher(this.displayManager);
             this.arithmeticView = arithmeticView ?? throw new ArgumentNullException(nameof(arithmeticView));
             this.element = element ?? throw new ArgumentNullException(nameof(element));
+            this.element.AddHandler(
+                VisionToolPreviewSlotBehavior.OpenPreviewImageRequestedEvent,
+                new EventHandler<VisionToolPreviewImageOpenRequestedEventArgs>(OnPreviewImageOpenRequested));
             statusPresenter = new OpenVisionNativeToolStatusPresenter(null, this.arithmeticView);
             this.toolName = string.IsNullOrWhiteSpace(toolName) ? element.GetType().Name : toolName;
             this.defaultOutputLayer = string.IsNullOrWhiteSpace(defaultOutputLayer)
@@ -240,6 +251,8 @@ namespace OpenVisionLab
             view is LineToolWpfView lineView && lineView.SignalInspectorHasEvidenceForTest;
         public bool LineSignalInspectorOverlayVisible =>
             view is LineToolWpfView lineView && lineView.IsSignalInspectorOverlayVisibleForTest;
+        public bool LineSignalEvidenceCueVisible =>
+            view is LineToolWpfView lineView && lineView.IsSignalEvidenceCueOpenForTest;
         public string LineSignalInspectorEvidenceId =>
             view is LineToolWpfView lineView ? lineView.SignalInspectorEvidenceIdForTest : string.Empty;
         public string LineSignalInspectorSourceSha256 =>
@@ -269,6 +282,22 @@ namespace OpenVisionLab
         public void ApplyRecipeContext(OpenVisionRecipeContext context)
         {
             recipeContext = context ?? CreateDefaultRecipeContext();
+        }
+
+        public void ConfigurePreviewViewer(
+            Func<string, VisionToolPreviewImageRole, string, bool> open,
+            Func<string, VisionToolPreviewImageRole, string, bool> refresh,
+            Action close)
+        {
+            openPreviewViewer = open;
+            refreshPreviewViewer = refresh;
+            closePreviewViewer = close;
+        }
+
+        public void ClosePreviewViewer()
+        {
+            closePreviewViewer?.Invoke();
+            openPreviewViewerRole = null;
         }
 
         public void RefreshLayerState()
@@ -535,6 +564,11 @@ namespace OpenVisionLab
             }
 
             disposed = true;
+            ClosePreviewViewer();
+            element.RemoveHandler(
+                VisionToolPreviewSlotBehavior.OpenPreviewImageRequestedEvent,
+                new EventHandler<VisionToolPreviewImageOpenRequestedEventArgs>(OnPreviewImageOpenRequested));
+            OpenVisionLanguageService.LanguageChanged -= OnPreviewViewerLanguageChanged;
             if (nImageVerificationShell != null)
             {
                 nImageVerificationShell.NImageVerificationButton.Click -= OnNImageVerificationRequested;
@@ -633,6 +667,28 @@ namespace OpenVisionLab
         private void OnSavePreviewImageRequested(object sender, VisionToolPreviewImageCommandEventArgs e)
         {
             previewImageCommandController.SaveWithDialog(e.Role);
+        }
+
+        private void OnPreviewImageOpenRequested(
+            object sender,
+            VisionToolPreviewImageOpenRequestedEventArgs e)
+        {
+            if (e == null || openPreviewViewer == null)
+            {
+                return;
+            }
+
+            string layerTitle = ResolveLayerForPreviewRole(e.Role);
+            if (openPreviewViewer(toolName, e.Role, layerTitle))
+            {
+                openPreviewViewerRole = e.Role;
+                e.Handled = true;
+            }
+        }
+
+        private void OnPreviewViewerLanguageChanged(object sender, EventArgs e)
+        {
+            RefreshOpenPreviewViewer();
         }
 
         private void OnSourceLayerChanged(object sender, EventArgs e)
@@ -820,6 +876,7 @@ namespace OpenVisionLab
             SetStatus(result.Status);
             showOutputWorkspacePreviewOnNextLayerStateChanged = true;
             RefreshLayerState();
+            OpenVisionLanguageService.LanguageChanged += OnPreviewViewerLanguageChanged;
         }
 
         private VisionPipelineStep CreateArithmeticStep()
@@ -872,9 +929,24 @@ namespace OpenVisionLab
 
         private void NotifyLayerStateChanged()
         {
+            RefreshOpenPreviewViewer();
             bool showOutputWorkspacePreview = showOutputWorkspacePreviewOnNextLayerStateChanged;
             showOutputWorkspacePreviewOnNextLayerStateChanged = false;
             LayerStateChanged(this, new OpenVisionNativeToolLayerStateChangedEventArgs(showOutputWorkspacePreview));
+        }
+
+        private void RefreshOpenPreviewViewer()
+        {
+            if (!openPreviewViewerRole.HasValue || refreshPreviewViewer == null)
+            {
+                return;
+            }
+
+            VisionToolPreviewImageRole role = openPreviewViewerRole.Value;
+            if (!refreshPreviewViewer(toolName, role, ResolveLayerForPreviewRole(role)))
+            {
+                openPreviewViewerRole = null;
+            }
         }
 
     }

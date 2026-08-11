@@ -22,6 +22,10 @@ namespace OpenVisionLab
     {
         private const double HandleSize = 9;
         private const double MinimumRoiSize = 1;
+        private const double ViewportPadding = 14;
+        private const double MinimumZoom = 0.25;
+        private const double MaximumZoom = 16;
+        private const double ZoomStep = 1.25;
         private readonly Bitmap sourceBitmap;
         private readonly int sourceWidth;
         private readonly int sourceHeight;
@@ -33,6 +37,11 @@ namespace OpenVisionLab
         private int activeRegionIndex = -1;
         private WpfPoint dragStartImagePoint;
         private WpfRect dragStartRect = WpfRect.Empty;
+        private WpfPoint panStartDisplayPoint;
+        private Vector panStartOffset;
+        private Vector panOffset;
+        private double zoomLevel = 1;
+        private bool isPanning;
         private bool hasSelectionSnapshot;
         private bool disposed;
 
@@ -83,6 +92,53 @@ namespace OpenVisionLab
                 EnsureSelectionSnapshot();
                 return selectedRegionsSnapshot.ToList();
             }
+        }
+
+        internal CvRect CurrentSelectedRegionForTest => ToOpenCvRect(viewModel.SelectedRegion?.ImageRect ?? WpfRect.Empty);
+
+        internal double ZoomLevelForTest => zoomLevel;
+
+        internal bool IsLeftHandleInsideViewportForTest
+        {
+            get
+            {
+                WpfRect rect = viewModel.SelectedRegion == null
+                    ? WpfRect.Empty
+                    : ImageToDisplayRect(viewModel.SelectedRegion.ImageRect);
+                return !rect.IsEmpty && rect.Left >= HandleSize / 2.0 && rect.Right <= viewportCanvas.ActualWidth - HandleSize / 2.0;
+            }
+        }
+
+        internal bool ResizeSelectedLeftEdgeByDisplayPixelsForTest(double displayPixels)
+        {
+            if (viewModel.SelectedRegion == null || displayPixels <= 0)
+            {
+                return false;
+            }
+
+            WpfRect startRect = viewModel.SelectedRegion.ImageRect;
+            WpfRect displayRect = ImageToDisplayRect(startRect);
+            WpfPoint handlePoint = new WpfPoint(displayRect.Left, displayRect.Top + displayRect.Height / 2.0);
+            if (HitTestHandle(displayRect, handlePoint) != RoiHitHandle.Left)
+            {
+                return false;
+            }
+
+            WpfPoint imagePoint = DisplayToClampedImagePoint(new WpfPoint(handlePoint.X + displayPixels, handlePoint.Y));
+            int index = viewModel.IndexOf(viewModel.SelectedRegion);
+            viewModel.ReplaceRegion(index, ResizeRect(startRect, RoiHitHandle.Left, imagePoint));
+            RenderRegions();
+            UpdatePatternPreview();
+            return viewModel.SelectedRegion.ImageRect.X > startRect.X
+                && viewModel.SelectedRegion.ImageRect.Width < startRect.Width;
+        }
+
+        internal void ZoomAndPanForTest(double zoom, double deltaX, double deltaY)
+        {
+            SetZoomAt(new WpfPoint(viewportCanvas.ActualWidth / 2.0, viewportCanvas.ActualHeight / 2.0), zoom);
+            panOffset += new Vector(deltaX, deltaY);
+            ClampPanOffset();
+            RenderRegions();
         }
 
         bool IPropertyGridImageEditView.ShowDialog()
@@ -146,19 +202,40 @@ namespace OpenVisionLab
 
         private void ViewportCanvas_SizeChanged(object sender, SizeChangedEventArgs e)
         {
+            ClampPanOffset();
             UpdateViewportLayout();
             RenderRegions();
         }
 
         private void ViewportCanvas_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (e.ChangedButton != MouseButton.Left) { return; }
             viewportCanvas.Focus();
 
-            WpfPoint displayPoint = e.GetPosition(viewportCanvas);
-            if (!TryDisplayToImagePoint(displayPoint, out WpfPoint imagePoint)) { return; }
+            if (e.ChangedButton == MouseButton.Middle)
+            {
+                isPanning = true;
+                panStartDisplayPoint = e.GetPosition(viewportCanvas);
+                panStartOffset = panOffset;
+                viewportCanvas.CaptureMouse();
+                Cursor = Cursors.Hand;
+                e.Handled = true;
+                return;
+            }
 
+            if (e.ChangedButton != MouseButton.Left) { return; }
+
+            WpfPoint displayPoint = e.GetPosition(viewportCanvas);
             RoiHit hit = HitTest(displayPoint);
+            WpfPoint imagePoint;
+            if (hit.Index >= 0)
+            {
+                imagePoint = DisplayToClampedImagePoint(displayPoint);
+            }
+            else if (!TryDisplayToImagePoint(displayPoint, out imagePoint))
+            {
+                return;
+            }
+
             if (hit.Index >= 0)
             {
                 SelectRegion(hit.Index);
@@ -193,13 +270,23 @@ namespace OpenVisionLab
             WpfPoint displayPoint = e.GetPosition(viewportCanvas);
             UpdatePixelStatus(displayPoint);
 
+            if (isPanning && e.MiddleButton == MouseButtonState.Pressed)
+            {
+                Vector delta = displayPoint - panStartDisplayPoint;
+                panOffset = panStartOffset + delta;
+                ClampPanOffset();
+                RenderRegions();
+                e.Handled = true;
+                return;
+            }
+
             if (dragOperation == DragOperation.None || activeRegionIndex < 0)
             {
                 UpdateCursor(displayPoint);
                 return;
             }
 
-            if (!TryDisplayToImagePoint(displayPoint, out WpfPoint imagePoint)) { return; }
+            WpfPoint imagePoint = DisplayToClampedImagePoint(displayPoint);
 
             WpfRect updatedRect = dragOperation switch
             {
@@ -218,6 +305,15 @@ namespace OpenVisionLab
 
         private void ViewportCanvas_MouseUp(object sender, MouseButtonEventArgs e)
         {
+            if (e.ChangedButton == MouseButton.Middle && isPanning)
+            {
+                isPanning = false;
+                viewportCanvas.ReleaseMouseCapture();
+                Cursor = Cursors.Arrow;
+                e.Handled = true;
+                return;
+            }
+
             if (e.ChangedButton != MouseButton.Left) { return; }
 
             if (dragOperation != DragOperation.None && activeRegionIndex >= 0 && activeRegionIndex < viewModel.Regions.Count)
@@ -242,11 +338,36 @@ namespace OpenVisionLab
 
         private void ViewportCanvas_MouseLeave(object sender, MouseEventArgs e)
         {
-            if (dragOperation == DragOperation.None)
+            if (dragOperation == DragOperation.None && !isPanning)
             {
                 viewModel.StatusText = "Ready";
                 Cursor = Cursors.Arrow;
             }
+        }
+
+        private void ViewportCanvas_MouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            SetZoomAt(e.GetPosition(viewportCanvas), zoomLevel * (e.Delta > 0 ? ZoomStep : 1.0 / ZoomStep));
+            e.Handled = true;
+        }
+
+        private void ZoomOut_Click(object sender, RoutedEventArgs e)
+        {
+            SetZoomAt(GetViewportCenter(), zoomLevel / ZoomStep);
+        }
+
+        private void ZoomIn_Click(object sender, RoutedEventArgs e)
+        {
+            SetZoomAt(GetViewportCenter(), zoomLevel * ZoomStep);
+        }
+
+        private void FitView_Click(object sender, RoutedEventArgs e)
+        {
+            zoomLevel = 1;
+            panOffset = new Vector();
+            UpdateZoomText();
+            RenderRegions();
+            viewportCanvas.Focus();
         }
 
         private void RoiList_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -466,6 +587,7 @@ namespace OpenVisionLab
             Canvas.SetTop(sourceImage, displayRect.Top);
             sourceImage.Width = displayRect.Width;
             sourceImage.Height = displayRect.Height;
+            UpdateZoomText();
         }
 
         private void RenderRegions()
@@ -645,10 +767,16 @@ namespace OpenVisionLab
             double canvasHeight = Math.Max(1, viewportCanvas.ActualHeight);
             double imageWidth = Math.Max(1, sourceBitmap.Width);
             double imageHeight = Math.Max(1, sourceBitmap.Height);
-            double scale = Math.Min(canvasWidth / imageWidth, canvasHeight / imageHeight);
+            double availableWidth = Math.Max(1, canvasWidth - ViewportPadding * 2.0);
+            double availableHeight = Math.Max(1, canvasHeight - ViewportPadding * 2.0);
+            double scale = Math.Min(availableWidth / imageWidth, availableHeight / imageHeight) * zoomLevel;
             double width = imageWidth * scale;
             double height = imageHeight * scale;
-            return new WpfRect((canvasWidth - width) / 2.0, (canvasHeight - height) / 2.0, width, height);
+            return new WpfRect(
+                (canvasWidth - width) / 2.0 + panOffset.X,
+                (canvasHeight - height) / 2.0 + panOffset.Y,
+                width,
+                height);
         }
 
         private WpfRect ImageToDisplayRect(WpfRect imageRect)
@@ -678,6 +806,71 @@ namespace OpenVisionLab
                 Clamp((displayPoint.X - display.Left) / scale, 0, Math.Max(0, sourceBitmap.Width)),
                 Clamp((displayPoint.Y - display.Top) / scale, 0, Math.Max(0, sourceBitmap.Height)));
             return true;
+        }
+
+        private WpfPoint DisplayToClampedImagePoint(WpfPoint displayPoint)
+        {
+            WpfRect display = GetImageDisplayRect();
+            double scale = Math.Max(0.0001, display.Width / Math.Max(1, sourceBitmap.Width));
+            return new WpfPoint(
+                Clamp((displayPoint.X - display.Left) / scale, 0, Math.Max(0, sourceBitmap.Width)),
+                Clamp((displayPoint.Y - display.Top) / scale, 0, Math.Max(0, sourceBitmap.Height)));
+        }
+
+        private void SetZoomAt(WpfPoint anchor, double requestedZoom)
+        {
+            WpfRect before = GetImageDisplayRect();
+            double beforeScale = Math.Max(0.0001, before.Width / Math.Max(1, sourceBitmap.Width));
+            WpfPoint imagePoint = before.Contains(anchor)
+                ? new WpfPoint((anchor.X - before.Left) / beforeScale, (anchor.Y - before.Top) / beforeScale)
+                : new WpfPoint(sourceBitmap.Width / 2.0, sourceBitmap.Height / 2.0);
+
+            double nextZoom = Clamp(requestedZoom, MinimumZoom, MaximumZoom);
+            if (Math.Abs(nextZoom - zoomLevel) < 0.0001)
+            {
+                return;
+            }
+
+            zoomLevel = nextZoom;
+            WpfRect after = GetImageDisplayRect();
+            double afterScale = Math.Max(0.0001, after.Width / Math.Max(1, sourceBitmap.Width));
+            panOffset += new Vector(
+                anchor.X - (after.Left + imagePoint.X * afterScale),
+                anchor.Y - (after.Top + imagePoint.Y * afterScale));
+            ClampPanOffset();
+            UpdateZoomText();
+            RenderRegions();
+        }
+
+        private void ClampPanOffset()
+        {
+            double canvasWidth = Math.Max(1, viewportCanvas.ActualWidth);
+            double canvasHeight = Math.Max(1, viewportCanvas.ActualHeight);
+            double imageWidth = Math.Max(1, sourceBitmap.Width);
+            double imageHeight = Math.Max(1, sourceBitmap.Height);
+            double fitScale = Math.Min(
+                Math.Max(1, canvasWidth - ViewportPadding * 2.0) / imageWidth,
+                Math.Max(1, canvasHeight - ViewportPadding * 2.0) / imageHeight);
+            double width = imageWidth * fitScale * zoomLevel;
+            double height = imageHeight * fitScale * zoomLevel;
+            double maxX = Math.Max(0, (width - (canvasWidth - ViewportPadding * 2.0)) / 2.0);
+            double maxY = Math.Max(0, (height - (canvasHeight - ViewportPadding * 2.0)) / 2.0);
+            panOffset = new Vector(
+                Clamp(panOffset.X, -maxX, maxX),
+                Clamp(panOffset.Y, -maxY, maxY));
+        }
+
+        private WpfPoint GetViewportCenter()
+        {
+            return new WpfPoint(viewportCanvas.ActualWidth / 2.0, viewportCanvas.ActualHeight / 2.0);
+        }
+
+        private void UpdateZoomText()
+        {
+            if (zoomValueText != null)
+            {
+                zoomValueText.Text = $"{Math.Round(zoomLevel * 100):0}%";
+            }
         }
 
         private WpfRect CreateRect(WpfPoint start, WpfPoint end)

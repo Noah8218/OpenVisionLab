@@ -141,6 +141,12 @@ namespace OpenVisionLab
                     return true;
                 }
 
+                if (string.Equals(scenario, "tool-preview-popout", StringComparison.OrdinalIgnoreCase))
+                {
+                    RunToolPreviewPopout(outputDirectory);
+                    return true;
+                }
+
                 if (string.Equals(scenario, "workspace-startup-empty", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(scenario, "startup-empty-workspace", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(scenario, "shell-startup-empty-workspace", StringComparison.OrdinalIgnoreCase))
@@ -363,6 +369,36 @@ namespace OpenVisionLab
                 if (string.Equals(scenario, "portfolio-pin-array-probe", StringComparison.OrdinalIgnoreCase))
                 {
                     RunPortfolioPinArrayProbe(args, outputDirectory);
+                    return true;
+                }
+
+                if (string.Equals(scenario, "portfolio-gap-recipe-probe", StringComparison.OrdinalIgnoreCase))
+                {
+                    RunPortfolioGapRecipeProbe(args, outputDirectory);
+                    return true;
+                }
+
+                if (string.Equals(scenario, "portfolio-gap-matching-correction-captures", StringComparison.OrdinalIgnoreCase))
+                {
+                    RunPortfolioGapMatchingCorrectionCaptures(args, outputDirectory);
+                    return true;
+                }
+
+                if (string.Equals(scenario, "portfolio-line-intersection-probe", StringComparison.OrdinalIgnoreCase))
+                {
+                    RunPortfolioLineIntersectionProbe(args, outputDirectory);
+                    return true;
+                }
+
+                if (string.Equals(scenario, "portfolio-contour-probe", StringComparison.OrdinalIgnoreCase))
+                {
+                    RunPortfolioContourProbe(args, outputDirectory);
+                    return true;
+                }
+
+                if (string.Equals(scenario, "portfolio-extended-captures", StringComparison.OrdinalIgnoreCase))
+                {
+                    RunPortfolioExtendedCaptures(args, outputDirectory);
                     return true;
                 }
 
@@ -991,10 +1027,15 @@ namespace OpenVisionLab
         {
             Directory.CreateDirectory(outputDirectory);
             string repoRoot = FindRepositoryRoot();
-            string pinsPath = Path.Combine(repoRoot, "Sample", "EasyGauge", "Pins.bmp");
+            string pinsPath = Path.Combine(
+                repoRoot,
+                "docs",
+                "samples",
+                "public",
+                "Line_Pins_Synthetic_OK.png");
             if (!File.Exists(pinsPath))
             {
-                throw new FileNotFoundException("Pin measurement sample image was not found.", pinsPath);
+                throw new FileNotFoundException("Public pin measurement sample image was not found.", pinsPath);
             }
 
             Application app = Application.Current ?? new Application();
@@ -1015,6 +1056,7 @@ namespace OpenVisionLab
                 app.MainWindow = window;
                 window.Show();
                 Pump(24);
+                string monitorEvidence = PlaceWindowOnLeftmostMonitor(window);
 
                 OpenVisionShellHostView shellHost = window.ShellHostForSmoke
                     ?? throw new InvalidOperationException("OpenVision shell host was not created.");
@@ -1027,11 +1069,17 @@ namespace OpenVisionLab
                 Pump(24);
                 shellHost.SelectToolForTest(VISION_MENU.Line);
                 Pump(60);
+                OpenVisionFloatingToolWindow toolWindow = Application.Current.Windows
+                    .OfType<OpenVisionFloatingToolWindow>()
+                    .FirstOrDefault(item => item.IsVisible
+                        && FindVisualChildren<LineToolWpfView>(item).Any())
+                    ?? throw new InvalidOperationException("Line pins measure did not open the Line tool window.");
+                string toolMonitorEvidence = PlaceWindowOnLeftmostMonitor(toolWindow);
 
                 ConfigurePinsVerticalDistanceLine(shellHost, "Line A", "X_LTOR");
                 ConfigurePinsVerticalDistanceLine(shellHost, "Line B", "X_RTOL");
                 shellHost.SetActiveLineSettingForTest("Line A");
-                shellHost.SetActiveLinePurposeForTest("Measure");
+                shellHost.SetActiveLinePurposeForTest("Edge");
                 Pump(16);
 
                 if (shellHost.ActiveLineInputRoiOverlayCount < 2)
@@ -1044,12 +1092,89 @@ namespace OpenVisionLab
                 shellHost.RunActiveNativePreviewForTest();
                 Pump(48);
 
+                if (!shellHost.ActiveLineSignalInspectorHasEvidenceForTest
+                    || shellHost.ActiveLineSignalInspectorOverlayVisibleForTest
+                    || !shellHost.ActiveLineSignalEvidenceCueVisibleForTest)
+                {
+                    throw new InvalidOperationException(
+                        "Line preview did not retain the parameter editor and show only the transient signal cue.");
+                }
+
+                int previewRunsBeforeSignalReview = shellHost.NativePreviewRunCount;
+                int layerCountBeforeSignalReview = shellHost.LayerDocumentCount;
+                string activeLayerBeforeSignalReview = shellHost.ActiveHostLayerTitle;
+                string inputRouteBeforeSignalReview = shellHost.ActiveNativeRouteInputLayerNameForTest;
+                string outputRouteBeforeSignalReview = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+                SaveWindowScreenshot(
+                    toolWindow,
+                    Path.Combine(outputDirectory, "OpenVisionLab_LineSignal_TransientCue.png"));
+
+                Stopwatch cueWait = Stopwatch.StartNew();
+                while (cueWait.Elapsed < TimeSpan.FromMilliseconds(3400))
+                {
+                    Pump(1);
+                    Thread.Sleep(20);
+                }
+
+                if (shellHost.ActiveLineSignalEvidenceCueVisibleForTest
+                    || shellHost.ActiveLineSignalInspectorOverlayVisibleForTest)
+                {
+                    throw new InvalidOperationException(
+                        "Line signal cue did not dismiss while the parameter editor remained visible.");
+                }
+
+                AssertLineSignalReviewSideEffectsUnchanged(
+                    shellHost,
+                    previewRunsBeforeSignalReview,
+                    layerCountBeforeSignalReview,
+                    activeLayerBeforeSignalReview,
+                    inputRouteBeforeSignalReview,
+                    outputRouteBeforeSignalReview,
+                    "transient signal cue");
+                SaveWindowScreenshot(
+                    toolWindow,
+                    Path.Combine(outputDirectory, "OpenVisionLab_LineSignal_ParametersRetained.png"));
+
+                shellHost.OpenActiveLineSignalInspectorForTest();
+                Pump(12);
+                if (!shellHost.ActiveLineSignalInspectorOverlayVisibleForTest
+                    || shellHost.ActiveLineSignalEvidenceCueVisibleForTest)
+                {
+                    throw new InvalidOperationException(
+                        "Manual Line signal review did not open the retained detailed inspector.");
+                }
+
+                AssertLineSignalReviewSideEffectsUnchanged(
+                    shellHost,
+                    previewRunsBeforeSignalReview,
+                    layerCountBeforeSignalReview,
+                    activeLayerBeforeSignalReview,
+                    inputRouteBeforeSignalReview,
+                    outputRouteBeforeSignalReview,
+                    "manual signal review");
+                SaveWindowScreenshot(
+                    toolWindow,
+                    Path.Combine(outputDirectory, "OpenVisionLab_LineSignal_ManualInspector.png"));
+                shellHost.CloseActiveLineSignalInspectorForTest();
+                Pump(8);
+
+                shellHost.SetActiveLinePurposeForTest("Measure");
+                Pump(16);
+                shellHost.RunActiveNativePreviewForTest();
+                Pump(48);
+
                 string review = shellHost.ActiveNativeResultReviewText;
                 string status = shellHost.ActiveNativeStatusText;
+                bool hasMeasurementReview = review.IndexOf("Measure /", StringComparison.OrdinalIgnoreCase) >= 0
+                    || review.IndexOf("\uCE21\uC815 /", StringComparison.Ordinal) >= 0;
+                bool hasNoDistance = review.IndexOf("Distance none", StringComparison.OrdinalIgnoreCase) >= 0
+                    || review.IndexOf("\uAC70\uB9AC \uC5C6\uC74C", StringComparison.Ordinal) >= 0;
+                bool hasNoDetection = review.IndexOf("Count 0", StringComparison.OrdinalIgnoreCase) >= 0
+                    || review.IndexOf("\uAC80\uCD9C 0\uAC1C", StringComparison.Ordinal) >= 0;
                 if (!shellHost.HasNativePreviewResult
-                    || review.IndexOf("Measure /", StringComparison.OrdinalIgnoreCase) < 0
-                    || review.IndexOf("Distance none", StringComparison.OrdinalIgnoreCase) >= 0
-                    || review.IndexOf("Count 0", StringComparison.OrdinalIgnoreCase) >= 0)
+                    || !hasMeasurementReview
+                    || hasNoDistance
+                    || hasNoDetection)
                 {
                     throw new InvalidOperationException(
                         "Line pins measure preview did not complete successfully."
@@ -1060,7 +1185,7 @@ namespace OpenVisionLab
                 }
 
                 double measuredMm = ExtractMm(review);
-                if (measuredMm < 0.30D || measuredMm > 0.45D)
+                if (measuredMm < 0.18D || measuredMm > 0.25D)
                 {
                     throw new InvalidOperationException(
                         "Line pins measure was outside expected range. mm="
@@ -1082,7 +1207,21 @@ namespace OpenVisionLab
                 ValidatePinsMeasurePipelineStep(step);
                 SaveWindowScreenshot(window, Path.Combine(outputDirectory, "OpenVisionLab_LinePinsMeasure.png"));
 
-                string report = BuildPassReport(review, status, measuredMm, step);
+                string report = BuildPassReport(review, status, measuredMm, step)
+                    + Environment.NewLine
+                    + monitorEvidence
+                    + Environment.NewLine
+                    + "Tool" + toolMonitorEvidence
+                    + Environment.NewLine
+                    + "SignalCuePurpose: Edge"
+                    + Environment.NewLine
+                    + "SignalInspectorAutoOpen: false"
+                    + Environment.NewLine
+                    + "SignalCueAutoDismiss: true"
+                    + Environment.NewLine
+                    + "ManualSignalInspector: retained"
+                    + Environment.NewLine
+                    + "SignalReviewSideEffects: unchanged";
                 File.WriteAllText(Path.Combine(outputDirectory, "report.txt"), report, Encoding.UTF8);
             }
             finally
@@ -1093,6 +1232,319 @@ namespace OpenVisionLab
                 }
 
                 app.Shutdown();
+            }
+        }
+
+        private static void RunToolPreviewPopout(string outputDirectory)
+        {
+            Directory.CreateDirectory(outputDirectory);
+            string pinsPath = Path.Combine(
+                FindRepositoryRoot(),
+                "docs",
+                "samples",
+                "public",
+                "Line_Pins_Synthetic_OK.png");
+            if (!File.Exists(pinsPath))
+            {
+                throw new FileNotFoundException("Public pin measurement sample image was not found.", pinsPath);
+            }
+
+            Application app = Application.Current ?? new Application();
+            app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+
+            OpenVisionShellHostWindow window = null;
+            try
+            {
+                window = new OpenVisionShellHostWindow(ApplicationRuntimeContext.CreateDefault())
+                {
+                    Width = 1600,
+                    Height = 900,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen
+                };
+                app.MainWindow = window;
+                window.Show();
+                Pump(24);
+                string monitorEvidence = PlaceWindowOnLeftmostMonitor(window);
+
+                OpenVisionShellHostView shellHost = window.ShellHostForSmoke
+                    ?? throw new InvalidOperationException("OpenVision shell host was not created.");
+                using (Bitmap pinsBitmap = new Bitmap(pinsPath))
+                {
+                    shellHost.SetMainLayerImageForTest(pinsBitmap);
+                }
+
+                shellHost.SelectToolForTest(VISION_MENU.Line);
+                Pump(60);
+                OpenVisionFloatingToolWindow toolWindow = Application.Current.Windows
+                    .OfType<OpenVisionFloatingToolWindow>()
+                    .FirstOrDefault(item => item.IsVisible
+                        && FindVisualChildren<LineToolWpfView>(item).Any())
+                    ?? throw new InvalidOperationException("Line Tool window was not found.");
+                string toolMonitorEvidence = PlaceWindowOnLeftmostMonitor(toolWindow);
+
+                ConfigurePinsVerticalDistanceLine(shellHost, "Line A", "X_LTOR");
+                ConfigurePinsVerticalDistanceLine(shellHost, "Line B", "X_RTOL");
+                shellHost.SetActiveLineSettingForTest("Line A");
+                shellHost.SetActiveLinePurposeForTest("Edge");
+                shellHost.RunActiveNativePreviewForTest();
+                Pump(48);
+
+                VisionToolInlinePreviewSlot inputSlot = FindNamedPreviewSlot(toolWindow, "imgInputPreview");
+                VisionToolInlinePreviewSlot outputSlot = FindNamedPreviewSlot(toolWindow, "imgOutputPreview");
+                int previewRunsBeforeOpen = shellHost.NativePreviewRunCount;
+                int layerCountBeforeOpen = shellHost.LayerDocumentCount;
+                string inputRouteBeforeOpen = shellHost.ActiveNativeRouteInputLayerNameForTest;
+                string outputRouteBeforeOpen = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+
+                RaisePreviewDoubleClick(outputSlot);
+                Pump(20);
+                OpenVisionFloatingToolWindow previewWindow = FindToolPreviewWindow();
+                string previewMonitorEvidence = PlaceWindowOnLeftmostMonitor(previewWindow);
+                OpenVisionLayerViewerView previewViewer = FindVisualChildren<OpenVisionLayerViewerView>(previewWindow).Single();
+                if (shellHost.OpenLayerViewerWindowCount != 1
+                    || !previewViewer.HasImage
+                    || previewWindow.Title.IndexOf("출력", StringComparison.Ordinal) < 0
+                    || previewWindow.Title.IndexOf("Line_Preview", StringComparison.Ordinal) < 0)
+                {
+                    throw new InvalidOperationException("Output thumbnail did not open the localized large viewer.");
+                }
+
+                AssertToolPreviewOpenSideEffects(
+                    shellHost,
+                    previewRunsBeforeOpen,
+                    layerCountBeforeOpen,
+                    inputRouteBeforeOpen,
+                    outputRouteBeforeOpen,
+                    "floating output open");
+                string edgeImagePath = Path.Combine(outputDirectory, "ToolPreview_Output_Edge.png");
+                if (!previewViewer.SaveImageToFileForTest(edgeImagePath))
+                {
+                    throw new InvalidOperationException("Large output viewer did not save the Edge image.");
+                }
+
+                shellHost.SetActiveLinePurposeForTest("Measure");
+                shellHost.RunActiveNativePreviewForTest();
+                Pump(48);
+                string measureImagePath = Path.Combine(outputDirectory, "ToolPreview_Output_Measure.png");
+                if (!previewViewer.SaveImageToFileForTest(measureImagePath)
+                    || string.Equals(
+                        ComputeC9FileSha256(edgeImagePath),
+                        ComputeC9FileSha256(measureImagePath),
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException("Open output viewer did not refresh after explicit Preview.");
+                }
+
+                int viewerCountBeforeInput = shellHost.OpenLayerViewerWindowCount;
+                RaisePreviewDoubleClick(inputSlot);
+                Pump(16);
+                OpenVisionFloatingToolWindow reusedWindow = FindToolPreviewWindow();
+                if (!ReferenceEquals(previewWindow, reusedWindow)
+                    || shellHost.OpenLayerViewerWindowCount != viewerCountBeforeInput
+                    || reusedWindow.Title.IndexOf("입력", StringComparison.Ordinal) < 0
+                    || reusedWindow.Title.IndexOf("Main", StringComparison.Ordinal) < 0)
+                {
+                    throw new InvalidOperationException("Input thumbnail did not reuse the same large viewer.");
+                }
+
+                SaveWindowScreenshot(
+                    reusedWindow,
+                    Path.Combine(outputDirectory, "OpenVisionLab_ToolPreview_Input_Large.png"));
+                RaisePreviewDoubleClick(outputSlot);
+                Pump(16);
+                SaveWindowScreenshot(
+                    reusedWindow,
+                    Path.Combine(outputDirectory, "OpenVisionLab_ToolPreview_Output_Large.png"));
+
+                reusedWindow.Close();
+                Pump(12);
+                if (shellHost.OpenLayerViewerWindowCount != 0
+                    || !shellHost.DockActiveWpfToolWindowForTest())
+                {
+                    throw new InvalidOperationException("Tool preview viewer did not close before the docked check.");
+                }
+
+                Pump(24);
+                VisionToolInlinePreviewSlot dockedOutputSlot = FindNamedPreviewSlot(window, "imgOutputPreview");
+                RaisePreviewDoubleClick(dockedOutputSlot);
+                Pump(16);
+                OpenVisionFloatingToolWindow dockedPreviewWindow = FindToolPreviewWindow();
+                string dockedPreviewMonitorEvidence = PlaceWindowOnLeftmostMonitor(dockedPreviewWindow);
+                if (shellHost.OpenLayerViewerWindowCount != 1
+                    || dockedPreviewWindow.Title.IndexOf("출력", StringComparison.Ordinal) < 0)
+                {
+                    throw new InvalidOperationException("Docked Tool output thumbnail did not open the large viewer.");
+                }
+
+                SaveWindowScreenshot(
+                    dockedPreviewWindow,
+                    Path.Combine(outputDirectory, "OpenVisionLab_ToolPreview_Docked_Output_Large.png"));
+
+                using (Bitmap secondInput = new Bitmap(pinsPath))
+                {
+                    if (!shellHost.AddLayerImageForTest("Arithmetic_B", secondInput))
+                    {
+                        throw new InvalidOperationException("Arithmetic second input layer could not be created.");
+                    }
+                }
+
+                shellHost.SelectToolForTest(VISION_MENU.Arithmetic);
+                Pump(60);
+                if (shellHost.OpenLayerViewerWindowCount != 0)
+                {
+                    throw new InvalidOperationException("Changing tools did not close the previous large preview viewer.");
+                }
+
+                ArithmeticToolWpfView arithmeticView = FindVisualChildren<ArithmeticToolWpfView>(window).Single();
+                arithmeticView.ApplyPersistedSettings(new ArithmeticToolSettings
+                {
+                    SelectedOperation = "ABSDIFF",
+                    UseConstantInput = false,
+                    UseColorConstant = false,
+                    UseOffsetMode = false
+                });
+                shellHost.RunActiveNativePreviewForTest();
+                Pump(48);
+
+                VisionToolInlinePreviewSlot inputASlot = FindNamedPreviewSlot(window, "imgInputA");
+                VisionToolInlinePreviewSlot inputBSlot = FindNamedPreviewSlot(window, "imgInputB");
+                VisionToolInlinePreviewSlot arithmeticOutputSlot = FindNamedPreviewSlot(window, "imgOutputPreview");
+                RaisePreviewDoubleClick(inputASlot);
+                Pump(12);
+                OpenVisionFloatingToolWindow arithmeticPreviewWindow = FindToolPreviewWindow();
+                if (arithmeticPreviewWindow.Title.IndexOf("입력 A", StringComparison.Ordinal) < 0)
+                {
+                    throw new InvalidOperationException("Arithmetic Input A did not open the large viewer.");
+                }
+
+                RaisePreviewDoubleClick(inputBSlot);
+                Pump(12);
+                if (!ReferenceEquals(arithmeticPreviewWindow, FindToolPreviewWindow())
+                    || arithmeticPreviewWindow.Title.IndexOf("입력 B", StringComparison.Ordinal) < 0)
+                {
+                    throw new InvalidOperationException("Arithmetic Input B did not reuse the large viewer.");
+                }
+
+                SaveWindowScreenshot(
+                    arithmeticPreviewWindow,
+                    Path.Combine(outputDirectory, "OpenVisionLab_ToolPreview_Arithmetic_InputB_Large.png"));
+                int previewRunsBeforeLanguageSwitch = shellHost.NativePreviewRunCount;
+                int layerCountBeforeLanguageSwitch = shellHost.LayerDocumentCount;
+                string inputRouteBeforeLanguageSwitch = shellHost.ActiveNativeRouteInputLayerNameForTest;
+                string outputRouteBeforeLanguageSwitch = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+                OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+                Pump(12);
+                if (arithmeticPreviewWindow.Title.IndexOf("Arithmetic", StringComparison.Ordinal) < 0
+                    || arithmeticPreviewWindow.Title.IndexOf("Input B", StringComparison.Ordinal) < 0)
+                {
+                    throw new InvalidOperationException("Open Tool preview viewer did not follow the English UI language.");
+                }
+
+                AssertToolPreviewOpenSideEffects(
+                    shellHost,
+                    previewRunsBeforeLanguageSwitch,
+                    layerCountBeforeLanguageSwitch,
+                    inputRouteBeforeLanguageSwitch,
+                    outputRouteBeforeLanguageSwitch,
+                    "language switch");
+                OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+                Pump(12);
+                RaisePreviewDoubleClick(arithmeticOutputSlot);
+                Pump(12);
+                if (!ReferenceEquals(arithmeticPreviewWindow, FindToolPreviewWindow())
+                    || arithmeticPreviewWindow.Title.IndexOf("출력", StringComparison.Ordinal) < 0
+                    || shellHost.OpenLayerViewerWindowCount != 1)
+                {
+                    throw new InvalidOperationException("Arithmetic Output did not reuse the large viewer.");
+                }
+
+                File.WriteAllText(
+                    Path.Combine(outputDirectory, "report.txt"),
+                    "Result: PASS" + Environment.NewLine
+                    + "Scenario: tool-preview-popout" + Environment.NewLine
+                    + "InputOutputWindowReuse: true" + Environment.NewLine
+                    + "ExplicitPreviewRefresh: true" + Environment.NewLine
+                    + "FloatingAndDocked: true" + Environment.NewLine
+                    + "ArithmeticInputAInputBOutput: true" + Environment.NewLine
+                    + "KoreanEnglishLiveLocalization: true" + Environment.NewLine
+                    + "PreviewRunSideEffects: none" + Environment.NewLine
+                    + "LayerRouteSideEffects: none" + Environment.NewLine
+                    + monitorEvidence + Environment.NewLine
+                    + "Tool" + toolMonitorEvidence + Environment.NewLine
+                    + "Preview" + previewMonitorEvidence + Environment.NewLine
+                    + "DockedPreview" + dockedPreviewMonitorEvidence,
+                    Encoding.UTF8);
+            }
+            finally
+            {
+                if (window != null)
+                {
+                    window.Close();
+                }
+
+                app.Shutdown();
+            }
+        }
+
+        private static VisionToolInlinePreviewSlot FindNamedPreviewSlot(DependencyObject root, string name)
+        {
+            return FindVisualChildren<VisionToolInlinePreviewSlot>(root)
+                .FirstOrDefault(slot => string.Equals(slot.Name, name, StringComparison.Ordinal))
+                ?? throw new InvalidOperationException("Tool preview slot was not found: " + name);
+        }
+
+        private static OpenVisionFloatingToolWindow FindToolPreviewWindow()
+        {
+            return Application.Current.Windows
+                .OfType<OpenVisionFloatingToolWindow>()
+                .SingleOrDefault(item => item.IsVisible
+                    && FindVisualChildren<OpenVisionLayerViewerView>(item).Any())
+                ?? throw new InvalidOperationException("Large Tool preview window was not found.");
+        }
+
+        private static void RaisePreviewDoubleClick(VisionToolInlinePreviewSlot slot)
+        {
+            slot.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice, Environment.TickCount, MouseButton.Left)
+            {
+                RoutedEvent = Control.MouseDoubleClickEvent
+            });
+        }
+
+        private static void AssertToolPreviewOpenSideEffects(
+            OpenVisionShellHostView shellHost,
+            int previewRunCount,
+            int layerCount,
+            string inputRoute,
+            string outputRoute,
+            string action)
+        {
+            if (shellHost.NativePreviewRunCount != previewRunCount
+                || shellHost.LayerDocumentCount != layerCount
+                || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, inputRoute, StringComparison.Ordinal)
+                || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, outputRoute, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Tool preview " + action + " changed Preview/Run, layers, or routing.");
+            }
+        }
+
+        private static void AssertLineSignalReviewSideEffectsUnchanged(
+            OpenVisionShellHostView shellHost,
+            int previewRunCount,
+            int layerCount,
+            string activeLayer,
+            string inputRoute,
+            string outputRoute,
+            string action)
+        {
+            if (shellHost.NativePreviewRunCount != previewRunCount
+                || shellHost.LayerDocumentCount != layerCount
+                || !string.Equals(shellHost.ActiveHostLayerTitle, activeLayer, StringComparison.Ordinal)
+                || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, inputRoute, StringComparison.Ordinal)
+                || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, outputRoute, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Line " + action + " changed Preview/Run, layer, active-layer, or routing state.");
             }
         }
 
@@ -6862,11 +7314,23 @@ namespace OpenVisionLab
                         + $"Layers={layerCountBefore}->{shellHost.LayerDocumentCount}, Workspace='{workspaceLayerBefore}'->'{shellHost.WorkspaceLayerTitle}'.");
                 }
 
+                Window contourToolWindow = Application.Current.Windows
+                    .OfType<Window>()
+                    .FirstOrDefault(item => item.IsVisible && FindVisualChildren<ContourToolWpfView>(item).Any())
+                    ?? throw new InvalidOperationException("Contour Tool window was not found after opening it from Learn.");
+                string contourToolMonitorEvidence = PlaceWindowOnLeftmostMonitor(contourToolWindow);
+                Pump(24);
+                SaveWindowScreenScreenshot(
+                    contourToolWindow,
+                    Path.Combine(outputDirectory, "OpenVisionLab_Contour_Tool.png"));
+
                 File.WriteAllText(
                     Path.Combine(outputDirectory, "report.txt"),
                     "Result: PASS" + Environment.NewLine
                     + "Scenario: learn-contour-practice" + Environment.NewLine
                     + "Screenshot: OpenVisionLab_Learn_Contour_Practice.png" + Environment.NewLine
+                    + "ToolScreenshot: OpenVisionLab_Contour_Tool.png" + Environment.NewLine
+                    + "ToolMonitor: " + contourToolMonitorEvidence + Environment.NewLine
                     + "PracticePath: " + learnWindow.SelectedTopicLearnPathIdForTest + Environment.NewLine
                     + "PreviewRunCount: " + shellHost.NativePreviewRunCount.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
                     + "LayerCount: " + shellHost.LayerDocumentCount.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
@@ -7530,47 +7994,18 @@ namespace OpenVisionLab
                 "Result: PASS" + Environment.NewLine
                 + "Mode: " + (edgeBased ? "EdgeBasedMatching" : "Matching") + Environment.NewLine
                 + "Image: " + imagePath + Environment.NewLine
+                + "ImageSha256: " + ComputeC9FileSha256(imagePath) + Environment.NewLine
                 + "Template: " + templatePath + Environment.NewLine
-                + "ScoreMax: " + score.ToString("0.###", CultureInfo.InvariantCulture),
+                + "TemplateSha256: " + ComputeC9FileSha256(templatePath) + Environment.NewLine
+                + "ScoreMax: " + score.ToString("0.###", CultureInfo.InvariantCulture) + Environment.NewLine
+                + "Acceptance: ScoreMax >= " + (edgeBased ? "75" : "80"),
                 Encoding.UTF8);
         }
 
         private static VisionPipeline CreatePortfolioEdgeBasedMatchingPipeline(string templatePath)
         {
-            EdgeBasedMatchingProperty property = new EdgeBasedMatchingProperty("Portfolio_Card_EdgeBasedMatching")
-            {
-                PATTERN_PATH = templatePath,
-                SCORE_MIN = 0D,
-                NUM_MATCH = 1,
-                USE_FIND_ANGLE = true,
-                FIND_ANGLE_MIN = -100,
-                FIND_ANGLE_MAX = 100,
-                FIND_ANGLE = 1D,
-                USE_COARSE_TO_FINE_ANGLE_SEARCH = true,
-                COARSE_ANGLE_STEP = 5D,
-                COARSE_ANGLE_TOP_K = 5,
-                USE_FIND_SCALE = true,
-                FIND_SCALE_MIN = 0.8D,
-                FIND_SCALE_MAX = 1.25D,
-                FIND_SCALE_STEP = 0.05D,
-                CANNY_LOW = 30,
-                CANNY_HIGH = 90,
-                CANNY_APERTURE_SIZE = 3,
-                USE_L2_GRADIENT = true,
-                SEARCH_STEP = 2,
-                USE_POSITION_REFINE = true,
-                USE_SUBPIXEL_REFINE = true,
-                GREEDINESS = 0.9D,
-                USE_HYBRID_VERIFY = true,
-                HYBRID_VERIFY_TOP_N = 8,
-                HYBRID_VERIFY_IMAGE_WEIGHT = 0.45D,
-                MAX_TEMPLATE_POINTS = 500,
-                MIN_GRADIENT_MAGNITUDE = 1D,
-                USE_DRAW_IMAGE = true,
-                USE_THRESHOLD = false,
-                USE_ADAPTIVE_THRESHOLD = false,
-                USE_ROI = false
-            };
+            EdgeBasedMatchingProperty property = new EdgeBasedMatchingProperty("Portfolio_Card_EdgeBasedMatching");
+            ConfigurePortfolioEdgeBasedMatchingProperty(property, templatePath);
             VisionPipelineStep step = VisionPipelineStepBuilder.FromProperty(
                 property,
                 "Main",
@@ -7582,6 +8017,44 @@ namespace OpenVisionLab
             return pipeline;
         }
 
+        private static void ConfigurePortfolioEdgeBasedMatchingProperty(
+            EdgeBasedMatchingProperty property,
+            string templatePath)
+        {
+            property.PATTERN_PATH = templatePath;
+            property.SCORE_MIN = 0.75D;
+            property.NUM_MATCH = 1;
+            property.USE_UNIQUE_MATCH_VALIDATION = false;
+            property.ALLOW_GLOBAL_POLARITY_REVERSAL = false;
+            property.USE_FIND_ANGLE = true;
+            property.FIND_ANGLE_MIN = -10;
+            property.FIND_ANGLE_MAX = 10;
+            property.FIND_ANGLE = 1D;
+            property.USE_COARSE_TO_FINE_ANGLE_SEARCH = true;
+            property.COARSE_ANGLE_STEP = 5D;
+            property.COARSE_ANGLE_TOP_K = 3;
+            property.USE_FIND_SCALE = true;
+            property.FIND_SCALE_MIN = 0.9D;
+            property.FIND_SCALE_MAX = 1.1D;
+            property.FIND_SCALE_STEP = 0.05D;
+            property.CANNY_LOW = 30;
+            property.CANNY_HIGH = 90;
+            property.CANNY_APERTURE_SIZE = 3;
+            property.USE_L2_GRADIENT = true;
+            property.SEARCH_STEP = 2;
+            property.USE_POSITION_REFINE = false;
+            property.USE_SUBPIXEL_REFINE = false;
+            property.GREEDINESS = 0.9D;
+            property.USE_PYRAMID_POSITION_PROPOSAL = false;
+            property.USE_HYBRID_VERIFY = false;
+            property.MAX_TEMPLATE_POINTS = 300;
+            property.MIN_GRADIENT_MAGNITUDE = 1D;
+            property.USE_DRAW_IMAGE = true;
+            property.USE_THRESHOLD = false;
+            property.USE_ADAPTIVE_THRESHOLD = false;
+            property.USE_ROI = false;
+        }
+
         private static VisionPipeline CreatePortfolioImageMatchingPipeline(string templatePath)
         {
             MatchingProperty property = new MatchingProperty("Portfolio_Card_ImageMatching")
@@ -7589,7 +8062,7 @@ namespace OpenVisionLab
                 PATTERN_PATH = templatePath,
                 AUTO_PREVIEW = false,
                 MATCH_MODE = OpenCvSharp.TemplateMatchModes.CCoeffNormed,
-                SCORE_MIN = 0D,
+                SCORE_MIN = 0.8D,
                 NUM_MATCH = 1,
                 USE_FIND_ANGLE = true,
                 FIND_ANGLE_MIN = -100,
@@ -7599,8 +8072,8 @@ namespace OpenVisionLab
                 COARSE_ANGLE_STEP = 5D,
                 COARSE_ANGLE_TOP_K = 5,
                 USE_FIND_SCALE = true,
-                FIND_SCALE_MIN = 0.8D,
-                FIND_SCALE_MAX = 1.25D,
+                FIND_SCALE_MIN = 0.9D,
+                FIND_SCALE_MAX = 1.1D,
                 FIND_SCALE_STEP = 0.05D,
                 USE_CANNY = false,
                 USE_PADDING_COLOR_WHITE = false,
@@ -7614,6 +8087,11 @@ namespace OpenVisionLab
                 "Matching_Preview");
             step.Name = "01 Card Image Match";
             step.MaxElapsedMilliseconds = 15000;
+            step.UseAcceptance = true;
+            step.ExpectedSuccess = true;
+            step.AcceptanceMetricName = VisionPipelineKnownMetrics.ScoreMax;
+            step.UseAcceptanceMetricMinimum = true;
+            step.AcceptanceMetricMinimum = 80D;
             VisionPipeline pipeline = new VisionPipeline { Name = "Portfolio_Card_ImageMatching" };
             pipeline.Steps.Add(step);
             return pipeline;
@@ -7717,6 +8195,482 @@ namespace OpenVisionLab
             return pipeline;
         }
 
+        private static void RunPortfolioExtendedCaptures(string[] args, string outputDirectory)
+        {
+            Directory.CreateDirectory(outputDirectory);
+            string edgeImagePath = ResolveRequiredOption(args, "--edge-image");
+            string edgeTemplatePath = ResolveRequiredOption(args, "--edge-template");
+            string intersectionImagePath = ResolveRequiredOption(args, "--intersection-image");
+            string contourImagePath = ResolveRequiredOption(args, "--contour-image");
+            EnsureFileExists(edgeImagePath, "Portfolio EdgeBasedMatching image");
+            EnsureFileExists(edgeTemplatePath, "Portfolio EdgeBasedMatching template");
+            EnsureFileExists(intersectionImagePath, "Portfolio line-intersection image");
+            EnsureFileExists(contourImagePath, "Portfolio Contour image");
+
+            VisionPipeline edgePipeline = CreatePortfolioEdgeBasedMatchingPipeline(edgeTemplatePath);
+            VisionPipeline intersectionPipeline = CreatePortfolioLineIntersectionPipeline();
+            VisionPipeline contourPipeline = CreatePortfolioContourPipeline();
+            SerializeHelper.SaveXmlFile(Path.Combine(outputDirectory, "Portfolio_Card_EdgeBasedMatching.xml"), edgePipeline);
+            SerializeHelper.SaveXmlFile(Path.Combine(outputDirectory, "Portfolio_Card_LineIntersection.xml"), intersectionPipeline);
+            SerializeHelper.SaveXmlFile(Path.Combine(outputDirectory, "Portfolio_Target_Threshold_Morphology_Contour.xml"), contourPipeline);
+
+            double edgeScore = SavePortfolioPipelineStage(
+                edgePipeline,
+                1,
+                edgeImagePath,
+                Path.Combine(outputDirectory, "edge_based_result_overlay.png"),
+                VisionPipelineKnownMetrics.ScoreMax,
+                renderRuntimeOverlays: true);
+            double intersectionCount = SavePortfolioPipelineStage(
+                intersectionPipeline,
+                1,
+                intersectionImagePath,
+                Path.Combine(outputDirectory, "line_intersection_result.png"),
+                VisionPipelineKnownMetrics.ResultCount);
+            double intersectionX = SavePortfolioPipelineStage(
+                intersectionPipeline,
+                1,
+                intersectionImagePath,
+                Path.Combine(outputDirectory, "line_intersection_overlay.png"),
+                VisionPipelineKnownMetrics.IntersectionX,
+                renderRuntimeOverlays: true);
+            SavePortfolioPipelineStage(contourPipeline, 1, contourImagePath, Path.Combine(outputDirectory, "Target_Contour_Binary.png"));
+            SavePortfolioPipelineStage(contourPipeline, 2, contourImagePath, Path.Combine(outputDirectory, "Target_Contour_Clean.png"));
+            double contourCount = SavePortfolioPipelineStage(
+                contourPipeline,
+                3,
+                contourImagePath,
+                Path.Combine(outputDirectory, "contour_result_overlay.png"),
+                VisionPipelineKnownMetrics.ResultCount,
+                renderRuntimeOverlays: true);
+            if (edgeScore < 90D || intersectionCount != 1D || intersectionX < 420D || intersectionX > 480D || contourCount != 16D)
+            {
+                throw new InvalidOperationException(
+                    $"Portfolio extended runtime qualification failed. Edge={edgeScore:0.###}, Intersection={intersectionCount:0.###}@{intersectionX:0.###}, Contour={contourCount:0.###}.");
+            }
+
+            string recipeName = "Smoke_PortfolioExtended_" + Guid.NewGuid().ToString("N").Substring(0, 12);
+            VisionPipelineStorage.Save(recipeName, contourPipeline);
+            VisionPipelineStorage.SaveActivePipelineName(recipeName, contourPipeline.Name);
+
+            Application app = Application.Current ?? new Application();
+            app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+            OpenVisionShellHostWindow window = null;
+            string reportPath = Path.Combine(outputDirectory, "report.txt");
+            try
+            {
+                ApplicationRuntimeContext runtimeContext = ApplicationRuntimeContext.CreateDefault();
+                runtimeContext.Global.Recipe.Name = recipeName;
+                window = new OpenVisionShellHostWindow(runtimeContext)
+                {
+                    Width = 1600,
+                    Height = 900,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                    Topmost = true
+                };
+                app.MainWindow = window;
+                window.Show();
+                string monitorEvidence = PlaceWindowOnLeftmostMonitor(window);
+                window.Activate();
+                Pump(40);
+
+                OpenVisionShellHostView shellHost = window.ShellHostForSmoke
+                    ?? throw new InvalidOperationException("OpenVision shell host was not created.");
+                shellHost.SwitchRecipeContextForTest(recipeName);
+                Pump(36);
+
+                if (!shellHost.LoadMainImageFromFileForTest(edgeImagePath))
+                {
+                    throw new InvalidOperationException("Portfolio EdgeBasedMatching image could not be loaded.");
+                }
+                shellHost.SelectToolForTest(VISION_MENU.EdgeBasedMatching);
+                Pump(70);
+                shellHost.SetActiveEdgeBasedMatchingTemplatePathForTest(edgeTemplatePath);
+                shellHost.ConfigureActiveEdgeBasedMatchingForTest(
+                    property => ConfigurePortfolioEdgeBasedMatchingProperty(property, edgeTemplatePath));
+                Pump(30);
+                shellHost.RunActiveNativePreviewForTest();
+                Pump(160);
+                string edgeReview = shellHost.ActiveNativeResultReviewText;
+                if (!shellHost.HasNativePreviewResult
+                    || edgeReview.IndexOf("Edge Match", StringComparison.OrdinalIgnoreCase) < 0)
+                {
+                    throw new InvalidOperationException(
+                        "Portfolio EdgeBasedMatching Tool View did not produce the qualified result. Review=" + edgeReview);
+                }
+                SaveWindowScreenScreenshot(window, Path.Combine(outputDirectory, "07_edge_based_matching_tool.png"));
+                using (Bitmap edgePreview = shellHost.GetLayerImageCloneForTest("EdgeBasedMatching_Preview"))
+                {
+                    edgePreview?.Save(Path.Combine(outputDirectory, "edge_based_live_result.png"));
+                }
+                using (Bitmap templateBitmap = new Bitmap(edgeTemplatePath))
+                {
+                    if (!shellHost.AddLayerImageForTest("Edge_Registered_Template", templateBitmap))
+                    {
+                        throw new InvalidOperationException("Portfolio EdgeBasedMatching template layer could not be published.");
+                    }
+                }
+                shellHost.CloseActiveWpfToolWindowForTest();
+                shellHost.ClearDockedLayersForTest();
+                foreach (string layer in new[] { "Main", "Edge_Registered_Template", "EdgeBasedMatching_Preview" })
+                {
+                    if (!shellHost.DockLayerForTest(layer))
+                    {
+                        throw new InvalidOperationException("Portfolio EdgeBasedMatching comparison could not dock " + layer + ".");
+                    }
+                }
+                if (!shellHost.ArrangeDockedLayerGridForTest("Main", "Edge_Registered_Template", "EdgeBasedMatching_Preview"))
+                {
+                    throw new InvalidOperationException("Portfolio EdgeBasedMatching comparison grid could not be arranged.");
+                }
+                Pump(90);
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "08_edge_based_three_panel_comparison.png"));
+
+                shellHost.ClearDockedLayersForTest();
+                if (!shellHost.LoadMainImageFromFileForTest(intersectionImagePath))
+                {
+                    throw new InvalidOperationException("Portfolio line-intersection image could not be loaded.");
+                }
+                shellHost.SelectToolForTest(VISION_MENU.Line);
+                Pump(70);
+                shellHost.SetActiveLineSettingForTest("Line A");
+                shellHost.SetActiveSelectedLineRoiForTest(180, 5, 220, 70);
+                shellHost.ConfigureActiveSelectedLineForTest("Y_TTOB", "BTOW", "Y_BTOT");
+                shellHost.ConfigureActiveSelectedLineThresholdForTest(150D, false);
+                shellHost.ConfigureActiveSelectedLineMeasureTuningForTest(true, false, 20D, 5D, 10D, 10, false, 0D);
+                shellHost.ConfigureActiveSelectedLineDrawForTest(false, true, false, true);
+                shellHost.SetActiveLineSettingForTest("Line B");
+                shellHost.SetActiveSelectedLineRoiForTest(410, 80, 90, 230);
+                shellHost.ConfigureActiveSelectedLineForTest("X_LTOR", "WTOB", "X_LTOR");
+                shellHost.ConfigureActiveSelectedLineThresholdForTest(150D, false);
+                shellHost.ConfigureActiveSelectedLineMeasureTuningForTest(true, false, 20D, 5D, 10D, 10, false, 0D);
+                shellHost.ConfigureActiveSelectedLineDrawForTest(false, true, false, true);
+                shellHost.SetActiveLineSettingForTest("Line A");
+                shellHost.SetActiveLinePurposeForTest("Intersection");
+                Pump(30);
+                shellHost.RunActiveNativePreviewForTest();
+                Pump(120);
+                string intersectionReview = shellHost.ActiveNativeResultReviewText;
+                if (!shellHost.HasNativePreviewResult
+                    || intersectionReview.IndexOf("Intersection", StringComparison.OrdinalIgnoreCase) < 0)
+                {
+                    throw new InvalidOperationException(
+                        "Portfolio Line intersection Tool View did not produce the qualified result. Review=" + intersectionReview);
+                }
+                SaveWindowScreenScreenshot(window, Path.Combine(outputDirectory, "09_line_intersection_tool.png"));
+                using (Bitmap intersectionPreview = shellHost.GetLayerImageCloneForTest("Line_Preview"))
+                {
+                    intersectionPreview?.Save(Path.Combine(outputDirectory, "line_intersection_live_result.png"));
+                }
+                shellHost.CloseActiveWpfToolWindowForTest();
+                shellHost.ClearDockedLayersForTest();
+                foreach (string layer in new[] { "Main", "Line_Preview" })
+                {
+                    if (!shellHost.DockLayerForTest(layer))
+                    {
+                        throw new InvalidOperationException("Portfolio Line intersection comparison could not dock " + layer + ".");
+                    }
+                }
+                if (!shellHost.ArrangeDockedLayerPanesForTest("Horizontal", "Main", "Line_Preview"))
+                {
+                    throw new InvalidOperationException("Portfolio Line intersection comparison panes could not be arranged.");
+                }
+                Pump(80);
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "10_line_intersection_before_after.png"));
+
+                shellHost.ClearDockedLayersForTest();
+                if (!shellHost.LoadMainImageFromFileForTest(contourImagePath))
+                {
+                    throw new InvalidOperationException("Portfolio Contour image could not be loaded.");
+                }
+                shellHost.OpenSamplePipelineForTest();
+                Pump(70);
+                WaitForTaskWithPump(shellHost.RunPipelineReviewForTestAsync(), "portfolio Contour pipeline review");
+                shellHost.SelectPipelineReviewStepForTest(2, OpenVisionLab.Pipeline.Controls.PipelineFlowPreviewMode.Output);
+                Pump(90);
+                if (shellHost.PipelineReviewStepCount != 3
+                    || shellHost.PipelineReviewObjectResultCountForTest != 16
+                    || !shellHost.PipelineReviewExecutionState.StartsWith("Completed", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        "Portfolio Contour pipeline did not retain 16 reviewed contours. "
+                        + $"Steps={shellHost.PipelineReviewStepCount}, Count={shellHost.PipelineReviewObjectResultCountForTest}, State={shellHost.PipelineReviewExecutionState}.");
+                }
+                SaveWindowScreenScreenshot(window, Path.Combine(outputDirectory, "11_contour_pipeline_review.png"));
+                shellHost.SelectToolForTest(VISION_MENU.Contour);
+                Pump(50);
+                shellHost.CloseActiveWpfToolWindowForTest();
+                foreach (KeyValuePair<string, string> layer in new Dictionary<string, string>
+                {
+                    ["Target_Contour_Binary"] = Path.Combine(outputDirectory, "Target_Contour_Binary.png"),
+                    ["Target_Contour_Clean"] = Path.Combine(outputDirectory, "Target_Contour_Clean.png"),
+                    ["Target_Contour_Result"] = Path.Combine(outputDirectory, "contour_result_overlay.png")
+                })
+                {
+                    using Bitmap layerImage = new Bitmap(layer.Value);
+                    if (!shellHost.AddLayerImageForTest(layer.Key, layerImage)
+                        && !shellHost.SetLayerImageForTest(layer.Key, layerImage))
+                    {
+                        throw new InvalidOperationException("Portfolio Contour comparison layer could not be published: " + layer.Key);
+                    }
+                }
+                shellHost.ClearDockedLayersForTest();
+                foreach (string layer in new[] { "Main", "Target_Contour_Binary", "Target_Contour_Clean", "Target_Contour_Result" })
+                {
+                    if (!shellHost.DockLayerForTest(layer))
+                    {
+                        throw new InvalidOperationException("Portfolio Contour comparison could not dock " + layer + ".");
+                    }
+                }
+                if (!shellHost.ArrangeDockedLayerGridForTest("Main", "Target_Contour_Binary", "Target_Contour_Clean", "Target_Contour_Result"))
+                {
+                    throw new InvalidOperationException("Portfolio Contour comparison grid could not be arranged.");
+                }
+                Pump(90);
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "12_contour_four_panel_comparison.png"));
+
+                File.WriteAllText(
+                    reportPath,
+                    "Result: PASS" + Environment.NewLine
+                    + "Scenario: portfolio-extended-captures" + Environment.NewLine
+                    + "Executable: " + (Environment.ProcessPath ?? string.Empty) + Environment.NewLine
+                    + "ExecutableSha256: " + ComputeC9FileSha256(Environment.ProcessPath ?? Assembly.GetExecutingAssembly().Location) + Environment.NewLine
+                    + monitorEvidence + Environment.NewLine
+                    + "EdgeImage: " + edgeImagePath + Environment.NewLine
+                    + "EdgeTemplate: " + edgeTemplatePath + Environment.NewLine
+                    + "EdgeScore: " + edgeScore.ToString("0.###", CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "IntersectionImage: " + intersectionImagePath + Environment.NewLine
+                    + "IntersectionCount: " + intersectionCount.ToString("0.###", CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "IntersectionX: " + intersectionX.ToString("0.###", CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "ContourImage: " + contourImagePath + Environment.NewLine
+                    + "ContourCount: " + contourCount.ToString("0.###", CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "Boundary: current selected-image actual-EXE evidence; not calibrated metrology or field robustness.",
+                    Encoding.UTF8);
+            }
+            finally
+            {
+                if (window != null)
+                {
+                    window.Close();
+                }
+                app.Shutdown();
+                RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+            }
+        }
+
+        private static void RunPortfolioLineIntersectionProbe(string[] args, string outputDirectory)
+        {
+            Directory.CreateDirectory(outputDirectory);
+            string imagePath = ResolveRequiredOption(args, "--intersection-image");
+            EnsureFileExists(imagePath, "Portfolio line-intersection image");
+
+            VisionPipeline pipeline = CreatePortfolioLineIntersectionPipeline();
+            string pipelinePath = Path.Combine(outputDirectory, "Portfolio_Card_LineIntersection.xml");
+            if (!SerializeHelper.SaveXmlFile(pipelinePath, pipeline))
+            {
+                throw new InvalidOperationException("Portfolio line-intersection pipeline XML could not be saved.");
+            }
+
+            double resultCount = SavePortfolioPipelineStage(
+                pipeline,
+                1,
+                imagePath,
+                Path.Combine(outputDirectory, "line_intersection_result.png"),
+                VisionPipelineKnownMetrics.ResultCount);
+            double intersectionX = SavePortfolioPipelineStage(
+                pipeline,
+                1,
+                imagePath,
+                Path.Combine(outputDirectory, "line_intersection_overlay.png"),
+                VisionPipelineKnownMetrics.IntersectionX,
+                renderRuntimeOverlays: true);
+
+            using OpenCvSharp.Mat source = OpenCvSharp.Cv2.ImRead(imagePath, OpenCvSharp.ImreadModes.Unchanged);
+            using VisionRecipeRunResult result = new VisionRecipeRunner()
+                .RunAsync(pipeline, source, VisionRecipeRunner.DefaultInputLayer, 5000, CancellationToken.None)
+                .GetAwaiter()
+                .GetResult();
+            double intersectionY = ReadRecipeMetric(result, VisionPipelineKnownMetrics.IntersectionY);
+            if (resultCount != 1D
+                || intersectionX < 420D
+                || intersectionX > 480D
+                || intersectionY < 0D
+                || intersectionY > 60D)
+            {
+                throw new InvalidOperationException(
+                    "Portfolio line intersection did not land on the card top-right corner. "
+                    + $"Count={resultCount:0.###}, Point={intersectionX:0.###},{intersectionY:0.###}.");
+            }
+
+            File.WriteAllText(
+                Path.Combine(outputDirectory, "report.txt"),
+                "Result: PASS" + Environment.NewLine
+                + "Scenario: portfolio-line-intersection-probe" + Environment.NewLine
+                + "Image: " + imagePath + Environment.NewLine
+                + "ImageSha256: " + ComputeC9FileSha256(imagePath) + Environment.NewLine
+                + "Pipeline: " + pipelinePath + Environment.NewLine
+                + "IntersectionX: " + intersectionX.ToString("0.###", CultureInfo.InvariantCulture) + Environment.NewLine
+                + "IntersectionY: " + intersectionY.ToString("0.###", CultureInfo.InvariantCulture),
+                Encoding.UTF8);
+        }
+
+        private static VisionPipeline CreatePortfolioLineIntersectionPipeline()
+        {
+            LineGaugeProperty horizontal = CreatePortfolioIntersectionLineProperty(
+                "Portfolio_Card_Top_Edge",
+                new OpenCvSharp.Rect(180, 5, 220, 70),
+                PROJECTION_DIR.Y_TTOB,
+                PROJECTION_POLARITY.BTOW);
+            LineGaugeProperty vertical = CreatePortfolioIntersectionLineProperty(
+                "Portfolio_Card_Right_Edge",
+                new OpenCvSharp.Rect(410, 80, 90, 230),
+                PROJECTION_DIR.X_LTOR,
+                PROJECTION_POLARITY.WTOB);
+            VisionPipelineStep step = VisionPipelineStepBuilder.FromLineGaugePair(
+                "01 Card Top-Right Intersection",
+                "LineIntersection",
+                horizontal,
+                vertical,
+                "Main",
+                "Card_Intersection_Result",
+                "Intersection");
+            VisionPipeline pipeline = new VisionPipeline { Name = "Portfolio_Card_LineIntersection" };
+            pipeline.Steps.Add(step);
+            return pipeline;
+        }
+
+        private static LineGaugeProperty CreatePortfolioIntersectionLineProperty(
+            string name,
+            OpenCvSharp.Rect roi,
+            PROJECTION_DIR direction,
+            PROJECTION_POLARITY polarity)
+        {
+            return new LineGaugeProperty(name)
+            {
+                PIXELPERMM = 0D,
+                USE_THRESHOLD = true,
+                USE_ADAPTIVE_THRESHOLD = false,
+                USE_BITWISENOT = false,
+                THRESHOLD = 150D,
+                USE_ROI = true,
+                USE_MULTI_ROI = false,
+                CvROI = roi,
+                PRJ_PORALITY = polarity,
+                PRJ_DIR = direction,
+                CONTRAST = 20D,
+                THICKNESS = 5D,
+                SAMPLING_STEP = 10D,
+                VER_PRJ_DIR = direction == PROJECTION_DIR.Y_TTOB
+                    ? PROJECTION_DIR.Y_BTOT
+                    : direction,
+                POINT_RANGE = 10,
+                USE_MANUAL_ANGLE = false,
+                USE_EXTEND_FIT_LINE = true,
+                EXTEND_FIT_LINE_VALUE = 600,
+                SHOW_VERTICAL_LINE = false,
+                SHOW_EDGE = true,
+                SHOW_CONTOUR = false,
+                SHOW_FITLINE = true
+            };
+        }
+
+        private static void RunPortfolioContourProbe(string[] args, string outputDirectory)
+        {
+            Directory.CreateDirectory(outputDirectory);
+            string imagePath = ResolveRequiredOption(args, "--contour-image");
+            EnsureFileExists(imagePath, "Portfolio Contour image");
+            VisionPipeline pipeline = CreatePortfolioContourPipeline();
+            string pipelinePath = Path.Combine(outputDirectory, "Portfolio_Target_Threshold_Morphology_Contour.xml");
+            if (!SerializeHelper.SaveXmlFile(pipelinePath, pipeline))
+            {
+                throw new InvalidOperationException("Portfolio Contour pipeline XML could not be saved.");
+            }
+
+            SavePortfolioPipelineStage(pipeline, 1, imagePath, Path.Combine(outputDirectory, "Target_Contour_Binary.png"));
+            SavePortfolioPipelineStage(pipeline, 2, imagePath, Path.Combine(outputDirectory, "Target_Contour_Clean.png"));
+            double contourCount = SavePortfolioPipelineStage(
+                pipeline,
+                3,
+                imagePath,
+                Path.Combine(outputDirectory, "contour_result_overlay.png"),
+                VisionPipelineKnownMetrics.ResultCount,
+                renderRuntimeOverlays: true);
+            if (contourCount != 16D)
+            {
+                throw new InvalidOperationException(
+                    "Portfolio Contour runtime did not outline 16 target objects. Count="
+                    + contourCount.ToString("0.###", CultureInfo.InvariantCulture));
+            }
+
+            File.WriteAllText(
+                Path.Combine(outputDirectory, "report.txt"),
+                "Result: PASS" + Environment.NewLine
+                + "Scenario: portfolio-contour-probe" + Environment.NewLine
+                + "Image: " + imagePath + Environment.NewLine
+                + "ImageSha256: " + ComputeC9FileSha256(imagePath) + Environment.NewLine
+                + "Pipeline: " + pipelinePath + Environment.NewLine
+                + "ContourCount: " + contourCount.ToString("0.###", CultureInfo.InvariantCulture),
+                Encoding.UTF8);
+        }
+
+        private static VisionPipeline CreatePortfolioContourPipeline()
+        {
+            VisionPipeline pipeline = new VisionPipeline { Name = "Portfolio_Target_Threshold_Morphology_Contour" };
+            VisionPipelineStep threshold = new VisionPipelineStep
+            {
+                Name = "01 Target Binary",
+                ToolType = "Threshold",
+                InputLayer = "Main",
+                OutputLayer = "Target_Contour_Binary"
+            };
+            threshold.Parameters["Mode"] = "Threshold";
+            threshold.Parameters["Threshold"] = "150";
+            threshold.Parameters["MaxValue"] = "255";
+            threshold.Parameters["ThresholdType"] = "Binary";
+            pipeline.Steps.Add(threshold);
+
+            VisionPipelineStep morphology = new VisionPipelineStep
+            {
+                Name = "02 Target Cleanup",
+                ToolType = "Morphology",
+                InputLayer = "Target_Contour_Binary",
+                OutputLayer = "Target_Contour_Clean"
+            };
+            morphology.Parameters["Shape"] = "Ellipse";
+            morphology.Parameters["Operator"] = "Open";
+            morphology.Parameters["KernelWidth"] = "3";
+            morphology.Parameters["KernelHeight"] = "3";
+            morphology.Parameters["Iterations"] = "1";
+            pipeline.Steps.Add(morphology);
+
+            VisionPipelineStep contour = new VisionPipelineStep
+            {
+                Name = "03 Target Contours",
+                ToolType = "Contour",
+                InputLayer = "Target_Contour_Clean",
+                OutputLayer = "Target_Contour_Result"
+            };
+            contour.Parameters["Name"] = "Portfolio_Target_Contours";
+            contour.Parameters["PIXELPERMM"] = "0";
+            contour.Parameters["USE_THRESHOLD"] = "false";
+            contour.Parameters["USE_ADAPTIVE_THRESHOLD"] = "false";
+            contour.Parameters["USE_BITWISENOT"] = "false";
+            contour.Parameters["USE_ROI"] = "true";
+            contour.Parameters["USE_MULTI_ROI"] = "false";
+            contour.Parameters["USE_DRAW_IMAGE"] = "false";
+            contour.Parameters["CvROI"] = "20,20,540,530";
+            contour.Parameters["DrawMode"] = "Outline";
+            contour.Parameters["ApproximationModes"] = "ApproxSimple";
+            contour.Parameters["DetectMode"] = "External";
+            contour.Parameters["MIN_AREA"] = "700";
+            contour.Parameters["MAX_AREA"] = "2500";
+            contour.Parameters["ClrGridHtml"] = "#00ff88";
+            contour.Parameters["DrawThickness"] = "3";
+            pipeline.Steps.Add(contour);
+            return pipeline;
+        }
+
         private static void RunPortfolioPinArrayProbe(string[] args, string outputDirectory)
         {
             Directory.CreateDirectory(outputDirectory);
@@ -7790,6 +8744,378 @@ namespace OpenVisionLab
                 + "RangePx: " + (distances.Max() - distances.Min()).ToString("0.###", CultureInfo.InvariantCulture) + Environment.NewLine
                 + "Calibration: Not calibrated; pixel-only evidence",
                 Encoding.UTF8);
+        }
+
+        private static void RunPortfolioGapRecipeProbe(string[] args, string outputDirectory)
+        {
+            Directory.CreateDirectory(outputDirectory);
+            string imagePath = ResolveRequiredOption(args, "--gap-image");
+            string recipeRoot = ResolveRequiredOption(args, "--gap-recipe-root");
+            EnsureFileExists(imagePath, "Gap recipe image");
+            VisionPipeline pipeline = CreatePortfolioGapRecipePipeline(
+                recipeRoot,
+                out string leftPath,
+                out string rightPath,
+                out LineGaugeProperty left,
+                out LineGaugeProperty right);
+            string pipelinePath = Path.Combine(outputDirectory, "Portfolio_Gap_ExactRecipe.xml");
+            if (!SerializeHelper.SaveXmlFile(pipelinePath, pipeline))
+            {
+                throw new InvalidOperationException("Exact Gap recipe pipeline XML could not be saved.");
+            }
+
+            using OpenCvSharp.Mat source = OpenCvSharp.Cv2.ImRead(imagePath, OpenCvSharp.ImreadModes.Unchanged);
+            using VisionRecipeRunResult result = new VisionRecipeRunner()
+                .RunAsync(pipeline, source, VisionRecipeRunner.DefaultInputLayer, 10000, CancellationToken.None)
+                .GetAwaiter()
+                .GetResult();
+            VisionRecipeStepRunSummary summary = result.Steps?.SingleOrDefault();
+            if (!result.Success || summary == null)
+            {
+                throw new InvalidOperationException(
+                    "Exact Gap recipe runtime failed. "
+                    + string.Join(" | ", result.Steps?.Select(step => step.Name + ":" + step.Message)
+                        ?? Enumerable.Empty<string>()));
+            }
+
+            List<VisionRecipeOverlaySummary> distanceLines = summary.Overlays?
+                .Where(overlay => string.Equals(overlay.Kind, "Line", StringComparison.OrdinalIgnoreCase)
+                    && Regex.IsMatch(overlay.Label ?? string.Empty, @"^D[0-9]+$", RegexOptions.IgnoreCase))
+                .ToList() ?? new List<VisionRecipeOverlaySummary>();
+            if (!summary.Metrics.TryGetValue(VisionPipelineKnownMetrics.DistancePxAvg, out double distancePx)
+                || !summary.Metrics.TryGetValue(VisionPipelineKnownMetrics.DistanceMmAvg, out double distanceMm)
+                || !summary.Metrics.TryGetValue(VisionPipelineKnownMetrics.DistancePxRange, out double distanceRangePx)
+                || distanceLines.Count < 3)
+            {
+                throw new InvalidOperationException("Exact Gap recipe did not return calibrated multi-scan distance evidence.");
+            }
+
+            using OpenCvSharp.Mat snapshot = new OpenCvSharp.Mat();
+            if (source.Channels() == 1)
+            {
+                OpenCvSharp.Cv2.CvtColor(source, snapshot, OpenCvSharp.ColorConversionCodes.GRAY2BGR);
+            }
+            else
+            {
+                source.CopyTo(snapshot);
+            }
+
+            OpenCvSharp.Cv2.ImWrite(Path.Combine(outputDirectory, "gap_source_snapshot.png"), snapshot);
+            using Bitmap overlay = BitmapImageConverter.ToBitmap(snapshot);
+            VisionPipelineRunReportImageRenderer.RenderInPlace(overlay, summary, pipeline.Steps[0]);
+            overlay.Save(Path.Combine(outputDirectory, "gap_exact_runtime_overlay.png"), System.Drawing.Imaging.ImageFormat.Png);
+            File.WriteAllText(
+                Path.Combine(outputDirectory, "report.txt"),
+                "Result: PASS" + Environment.NewLine
+                + "Scenario: portfolio-gap-recipe-probe" + Environment.NewLine
+                + "RecipeRoot: " + recipeRoot + Environment.NewLine
+                + "Image: " + imagePath + Environment.NewLine
+                + "ImageSha256: " + ComputeC9FileSha256(imagePath) + Environment.NewLine
+                + "LeftState: " + leftPath + Environment.NewLine
+                + "LeftStateSha256: " + ComputeC9FileSha256(leftPath) + Environment.NewLine
+                + "RightState: " + rightPath + Environment.NewLine
+                + "RightStateSha256: " + ComputeC9FileSha256(rightPath) + Environment.NewLine
+                + "LeftRoi: " + left.CvROI + Environment.NewLine
+                + "RightRoi: " + right.CvROI + Environment.NewLine
+                + "DistanceScans: " + distanceLines.Count.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                + "DistancePxAvg: " + distancePx.ToString("0.###", CultureInfo.InvariantCulture) + Environment.NewLine
+                + "DistancePxRange: " + distanceRangePx.ToString("0.###", CultureInfo.InvariantCulture) + Environment.NewLine
+                + "DistanceMmAvg: " + distanceMm.ToString("0.###", CultureInfo.InvariantCulture) + Environment.NewLine
+                + "CalibrationMmPerPixel: " + left.PIXELPERMM.ToString("0.######", CultureInfo.InvariantCulture),
+                Encoding.UTF8);
+        }
+
+        private static VisionPipeline CreatePortfolioGapRecipePipeline(
+            string recipeRoot,
+            out string leftPath,
+            out string rightPath,
+            out LineGaugeProperty left,
+            out LineGaugeProperty right)
+        {
+            leftPath = Path.Combine(recipeRoot, "VISION", "Line(L)_1.xml");
+            rightPath = Path.Combine(recipeRoot, "VISION", "Line(R)_1.xml");
+            EnsureFileExists(leftPath, "Gap recipe left line state");
+            EnsureFileExists(rightPath, "Gap recipe right line state");
+            if (!SerializeHelper.TryLoadFromXmlFile(leftPath, out left) || left == null)
+            {
+                throw new InvalidOperationException("Gap recipe left line state could not be loaded: " + leftPath);
+            }
+
+            if (!SerializeHelper.TryLoadFromXmlFile(rightPath, out right) || right == null)
+            {
+                throw new InvalidOperationException("Gap recipe right line state could not be loaded: " + rightPath);
+            }
+
+            VisionPipeline pipeline = new VisionPipeline { Name = "Portfolio_Gap_ExactRecipe" };
+            pipeline.Steps.Add(VisionPipelineStepBuilder.FromLineGaugePair(
+                "01 Gap between adjacent pins",
+                "LineDistance",
+                left,
+                right,
+                "Main",
+                "Gap_Result",
+                "Measure"));
+            return pipeline;
+        }
+
+        private static void RunPortfolioGapMatchingCorrectionCaptures(string[] args, string outputDirectory)
+        {
+            Directory.CreateDirectory(outputDirectory);
+            string gapImagePath = ResolveRequiredOption(args, "--gap-image");
+            string gapRecipeRoot = ResolveRequiredOption(args, "--gap-recipe-root");
+            string matchingImagePath = ResolveRequiredOption(args, "--matching-image");
+            string matchingTemplatePath = ResolveRequiredOption(args, "--matching-template");
+            EnsureFileExists(gapImagePath, "Gap recipe image");
+            EnsureFileExists(matchingImagePath, "Corner Matching image");
+            EnsureFileExists(matchingTemplatePath, "Corner Matching template");
+
+            VisionPipeline gapPipeline = CreatePortfolioGapRecipePipeline(
+                gapRecipeRoot,
+                out string leftPath,
+                out string rightPath,
+                out LineGaugeProperty left,
+                out LineGaugeProperty right);
+            VisionPipeline matchingPipeline = CreatePortfolioImageMatchingPipeline(matchingTemplatePath);
+            double gapPx = SavePortfolioPipelineStage(
+                gapPipeline,
+                1,
+                gapImagePath,
+                Path.Combine(outputDirectory, "gap_runtime_overlay.png"),
+                VisionPipelineKnownMetrics.DistancePxAvg,
+                renderRuntimeOverlays: true);
+            double gapMm = SavePortfolioPipelineStage(
+                gapPipeline,
+                1,
+                gapImagePath,
+                Path.Combine(outputDirectory, "gap_runtime_result.png"),
+                VisionPipelineKnownMetrics.DistanceMmAvg);
+            double matchingPipelineScore = SavePortfolioPipelineStage(
+                matchingPipeline,
+                1,
+                matchingImagePath,
+                Path.Combine(outputDirectory, "matching_runtime_overlay.png"),
+                VisionPipelineKnownMetrics.ScoreMax,
+                renderRuntimeOverlays: true);
+            if (matchingPipelineScore < 80D)
+            {
+                throw new InvalidOperationException(
+                    "Corner Matching runtime score was below the accepted minimum. Score="
+                    + matchingPipelineScore.ToString("0.###", CultureInfo.InvariantCulture));
+            }
+
+            const string recipeName = "Gap";
+            VisionPipelineStorage.Save(recipeName, gapPipeline);
+            VisionPipelineStorage.SaveActivePipelineName(recipeName, gapPipeline.Name);
+            Application app = Application.Current ?? new Application();
+            app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+            OpenVisionShellHostWindow window = null;
+            string reportPath = Path.Combine(outputDirectory, "report.txt");
+            try
+            {
+                ApplicationRuntimeContext runtimeContext = ApplicationRuntimeContext.CreateDefault();
+                runtimeContext.Global.Recipe.Name = recipeName;
+                window = new OpenVisionShellHostWindow(runtimeContext)
+                {
+                    Width = 1600,
+                    Height = 900,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                    Topmost = true
+                };
+                app.MainWindow = window;
+                window.Show();
+                string monitorEvidence = PlaceWindowOnLeftmostMonitor(window);
+                window.Activate();
+                Pump(40);
+
+                OpenVisionShellHostView shellHost = window.ShellHostForSmoke
+                    ?? throw new InvalidOperationException("OpenVision shell host was not created.");
+                shellHost.SwitchRecipeContextForTest(recipeName);
+                Pump(36);
+                if (!shellHost.LoadMainImageFromFileForTest(gapImagePath))
+                {
+                    throw new InvalidOperationException("Exact Gap image could not be loaded: " + gapImagePath);
+                }
+
+                shellHost.OpenSamplePipelineForTest();
+                Pump(70);
+                WaitForTaskWithPump(shellHost.RunPipelineReviewForTestAsync(), "exact Gap pipeline review");
+                shellHost.SelectPipelineReviewStepForTest(0, OpenVisionLab.Pipeline.Controls.PipelineFlowPreviewMode.Output);
+                Pump(90);
+                string gapState = shellHost.PipelineReviewExecutionState;
+                string gapSummary = shellHost.PipelineReviewResultSummaryText;
+                string gapDetail = shellHost.PipelineReviewResultDetailText;
+                if (shellHost.PipelineReviewStepCount != 1
+                    || !shellHost.HasPipelineReviewInputPreview
+                    || !shellHost.HasPipelineReviewOutputPreview
+                    || (!gapState.StartsWith("Completed", StringComparison.OrdinalIgnoreCase)
+                        && !gapState.StartsWith("완료", StringComparison.OrdinalIgnoreCase))
+                    || !gapSummary.StartsWith("OK", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        "Exact Gap Pipeline Review did not show the completed result. "
+                        + $"Steps={shellHost.PipelineReviewStepCount}, State='{gapState}', Summary='{gapSummary}', Detail='{gapDetail}'");
+                }
+
+                SaveWindowScreenScreenshot(window, Path.Combine(outputDirectory, "01_gap_exact_pipeline_review.png"));
+
+                shellHost.SelectToolForTest(VISION_MENU.Line);
+                Pump(50);
+                shellHost.CloseActiveWpfToolWindowForTest();
+                using (Bitmap gapOverlay = new Bitmap(Path.Combine(outputDirectory, "gap_runtime_overlay.png")))
+                {
+                    if (!shellHost.AddLayerImageForTest("Gap_Runtime_Overlay", gapOverlay)
+                        && !shellHost.SetLayerImageForTest("Gap_Runtime_Overlay", gapOverlay))
+                    {
+                        throw new InvalidOperationException("Exact Gap runtime overlay layer could not be published.");
+                    }
+                }
+
+                shellHost.ClearDockedLayersForTest();
+                foreach (string layer in new[] { "Main", "Gap_Runtime_Overlay" })
+                {
+                    if (!shellHost.DockLayerForTest(layer))
+                    {
+                        throw new InvalidOperationException("Exact Gap comparison could not dock " + layer + ".");
+                    }
+                }
+
+                if (!shellHost.ArrangeDockedLayerPanesForTest("Horizontal", "Main", "Gap_Runtime_Overlay"))
+                {
+                    throw new InvalidOperationException("Exact Gap comparison panes could not be arranged.");
+                }
+
+                Pump(80);
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "01b_gap_exact_two_panel.png"));
+
+                if (!shellHost.LoadMainImageFromFileForTest(matchingImagePath))
+                {
+                    throw new InvalidOperationException("Corner Matching image could not be loaded: " + matchingImagePath);
+                }
+
+                shellHost.SelectToolForTest(VISION_MENU.Matching);
+                Pump(70);
+                int matchingRunsBefore = shellHost.NativePreviewRunCount;
+                shellHost.SetActiveMatchingTemplatePathForTest(matchingTemplatePath);
+                shellHost.ConfigureActiveMatchingForTest(property =>
+                {
+                    property.AUTO_PREVIEW = false;
+                    property.MATCH_MODE = OpenCvSharp.TemplateMatchModes.CCoeffNormed;
+                    property.SCORE_MIN = 0.8D;
+                    property.NUM_MATCH = 1;
+                    property.MAGNIFIATION = 1D;
+                    property.USE_FIND_ANGLE = true;
+                    property.FIND_ANGLE_MIN = -100;
+                    property.FIND_ANGLE_MAX = 100;
+                    property.FIND_ANGLE = 1D;
+                    property.USE_COARSE_TO_FINE_ANGLE_SEARCH = true;
+                    property.COARSE_ANGLE_STEP = 5D;
+                    property.COARSE_ANGLE_TOP_K = 5;
+                    property.USE_FIND_SCALE = true;
+                    property.FIND_SCALE_MIN = 0.9D;
+                    property.FIND_SCALE_MAX = 1.1D;
+                    property.FIND_SCALE_STEP = 0.05D;
+                    property.USE_CANNY = false;
+                    property.USE_PADDING_COLOR_WHITE = false;
+                    property.USE_THRESHOLD = false;
+                    property.USE_ADAPTIVE_THRESHOLD = false;
+                    property.USE_ROI = false;
+                    property.ReloadTemplateImage();
+                });
+                Pump(36);
+                if (shellHost.NativePreviewRunCount != matchingRunsBefore)
+                {
+                    throw new InvalidOperationException("Corner Matching setup ran Preview before the explicit action.");
+                }
+
+                shellHost.RunActiveNativePreviewForTest();
+                Pump(150);
+                string matchingStatus = shellHost.ActiveNativeStatusText;
+                string matchingReview = shellHost.ActiveNativeResultReviewText;
+                if (!TryParseMatchingC9Review(
+                        matchingReview,
+                        out int matchingCount,
+                        out double matchingScore,
+                        out _, out _, out _, out _, out _, out _, out _)
+                    || matchingCount != 1
+                    || matchingScore < 80D
+                    || !shellHost.HasNativePreviewResult
+                    || shellHost.NativePreviewRunCount != matchingRunsBefore + 1
+                    || Math.Abs(matchingPipelineScore - matchingScore) > 0.5D)
+                {
+                    throw new InvalidOperationException(
+                        "Corner Matching Tool View did not agree with the qualified runtime. "
+                        + $"Count={matchingCount}, ToolScore={matchingScore:0.###}, PipelineScore={matchingPipelineScore:0.###}, Status='{matchingStatus}', Review='{matchingReview}'");
+                }
+
+                SaveWindowScreenScreenshot(window, Path.Combine(outputDirectory, "02_corner_image_matching_tool.png"));
+                using (Bitmap templateBitmap = new Bitmap(matchingTemplatePath))
+                {
+                    if (!shellHost.AddLayerImageForTest("Corner_Template", templateBitmap))
+                    {
+                        throw new InvalidOperationException("Corner Matching template layer could not be created.");
+                    }
+                }
+
+                shellHost.CloseActiveWpfToolWindowForTest();
+                shellHost.ClearDockedLayersForTest();
+                foreach (string layer in new[] { "Main", "Corner_Template", "Matching_Preview" })
+                {
+                    if (!shellHost.DockLayerForTest(layer))
+                    {
+                        throw new InvalidOperationException("Corner Matching comparison could not dock " + layer + ".");
+                    }
+                }
+
+                if (!shellHost.ArrangeDockedLayerGridForTest("Main", "Corner_Template", "Matching_Preview"))
+                {
+                    throw new InvalidOperationException("Corner Matching comparison grid could not be arranged.");
+                }
+
+                Pump(80);
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "03_corner_matching_three_panel.png"));
+                File.WriteAllText(
+                    reportPath,
+                    "Result: PASS" + Environment.NewLine
+                    + "Scenario: portfolio-gap-matching-correction-captures" + Environment.NewLine
+                    + "Executable: " + (Environment.ProcessPath ?? string.Empty) + Environment.NewLine
+                    + "ExecutableSha256: " + ComputeC9FileSha256(Environment.ProcessPath ?? Assembly.GetExecutingAssembly().Location) + Environment.NewLine
+                    + "ManagedAssembly: " + typeof(OpenVisionLabDirectSmokeRunner).Assembly.Location + Environment.NewLine
+                    + "ManagedAssemblySha256: " + ComputeC9FileSha256(typeof(OpenVisionLabDirectSmokeRunner).Assembly.Location) + Environment.NewLine
+                    + monitorEvidence + Environment.NewLine
+                    + "GapImage: " + gapImagePath + Environment.NewLine
+                    + "GapImageSha256: " + ComputeC9FileSha256(gapImagePath) + Environment.NewLine
+                    + "GapLeftState: " + leftPath + Environment.NewLine
+                    + "GapLeftStateSha256: " + ComputeC9FileSha256(leftPath) + Environment.NewLine
+                    + "GapRightState: " + rightPath + Environment.NewLine
+                    + "GapRightStateSha256: " + ComputeC9FileSha256(rightPath) + Environment.NewLine
+                    + "GapLeftRoi: " + left.CvROI + Environment.NewLine
+                    + "GapRightRoi: " + right.CvROI + Environment.NewLine
+                    + "GapDistancePxAvg: " + gapPx.ToString("0.###", CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "GapDistanceMmAvg: " + gapMm.ToString("0.###", CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "GapPipelineReviewState: " + gapState + Environment.NewLine
+                    + "GapPipelineReviewSummary: " + gapSummary + Environment.NewLine
+                    + "GapPipelineReviewDetail: " + gapDetail + Environment.NewLine
+                    + "MatchingImage: " + matchingImagePath + Environment.NewLine
+                    + "MatchingImageSha256: " + ComputeC9FileSha256(matchingImagePath) + Environment.NewLine
+                    + "MatchingTemplate: " + matchingTemplatePath + Environment.NewLine
+                    + "MatchingTemplateSha256: " + ComputeC9FileSha256(matchingTemplatePath) + Environment.NewLine
+                    + "MatchingScoreMax: " + matchingScore.ToString("0.###", CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "MatchingAcceptance: ScoreMax >= 80" + Environment.NewLine
+                    + "MatchingStatus: " + matchingStatus + Environment.NewLine
+                    + "MatchingReview: " + matchingReview,
+                    Encoding.UTF8);
+            }
+            finally
+            {
+                if (window != null)
+                {
+                    window.Close();
+                }
+
+                app.Shutdown();
+                RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+            }
         }
 
         private static void SavePortfolioPinArrayOverlay(

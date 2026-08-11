@@ -11,6 +11,7 @@ namespace OpenVisionLab
     {
         private readonly IDisplayManager displayManager;
         private readonly OpenVisionShellHostDocumentController documentController;
+        private readonly OpenVisionShellHostLayerViewerController layerViewerController;
         private readonly OpenVisionFloatingToolWindowHost floatingToolWindowHost;
         private readonly OpenVisionShellHostToolWindowLifecycleController toolWindowLifecycleController;
         private readonly Func<Window> ownerProvider;
@@ -27,6 +28,7 @@ namespace OpenVisionLab
         public OpenVisionShellHostToolWindowController(
             IDisplayManager displayManager,
             OpenVisionShellHostDocumentController documentController,
+            OpenVisionShellHostLayerViewerController layerViewerController,
             OpenVisionFloatingToolWindowHost floatingToolWindowHost,
             OpenVisionShellHostToolWindowLifecycleController toolWindowLifecycleController,
             Func<Window> ownerProvider,
@@ -42,6 +44,7 @@ namespace OpenVisionLab
         {
             this.displayManager = displayManager ?? throw new ArgumentNullException(nameof(displayManager));
             this.documentController = documentController ?? throw new ArgumentNullException(nameof(documentController));
+            this.layerViewerController = layerViewerController ?? throw new ArgumentNullException(nameof(layerViewerController));
             this.floatingToolWindowHost = floatingToolWindowHost ?? throw new ArgumentNullException(nameof(floatingToolWindowHost));
             this.toolWindowLifecycleController = toolWindowLifecycleController ?? throw new ArgumentNullException(nameof(toolWindowLifecycleController));
             this.ownerProvider = ownerProvider ?? throw new ArgumentNullException(nameof(ownerProvider));
@@ -113,13 +116,22 @@ namespace OpenVisionLab
             }
 
             phaseStopwatch.Restart();
+            bool nativeDocumentWasCached = documentController.NativeToolDocuments.Contains(item.Menu);
             if (documentController.TryActivateNativeTool(item.Menu, displayManager, ResolveRecipeContext(), out OpenVisionNativeToolDocument nativeDocument))
             {
                 timing.Path = "Native";
                 timing.ActivateDocumentMs = phaseStopwatch.ElapsedMilliseconds;
                 timing.Document = nativeDocument.View?.GetType().Name ?? nativeDocument.GetType().Name;
+                nativeDocument.ConfigurePreviewViewer(
+                    layerViewerController.OpenToolPreview,
+                    layerViewerController.RefreshToolPreview,
+                    layerViewerController.CloseToolPreview);
                 phaseStopwatch.Restart();
                 nativeDocument.RefreshLayerState();
+                if (!nativeDocumentWasCached)
+                {
+                    WarmPrewarmedNativeToolDocument(nativeDocument);
+                }
                 timing.RefreshLayerStateMs = phaseStopwatch.ElapsedMilliseconds;
                 phaseStopwatch.Restart();
                 Size nativeToolSize = OpenVisionNativeToolPrewarmPolicy.GetPreferredWindowSize(item.Menu);

@@ -53,24 +53,111 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
 
 ## Latest Completed Work
 
-### 2026-08-11 Recipe Switch Loading And Responsiveness - Complete In Dev
+### 2026-08-11 Tool Preview Large Viewer - Complete In Dev And Original
 
-- The earlier Recipe busy-state claim did not prove that the state reached the
-  actual EXE screen. Existing-Recipe selection now yields one WPF render turn
-  before synchronous Recipe state restoration and covers Recipe Manager with a
-  localized, themed, interaction-blocking loading overlay.
+- Double-clicking any non-empty Tool View Input/Output preview now opens the
+  exact routed layer in one reusable 960x720 large viewer with the existing
+  zoom, pan, fit, and resize behavior. Arithmetic reuses the same window while
+  switching Input A, Input B, and Output.
+- The viewer follows explicit Preview result refreshes, closes when its owning
+  Tool changes or closes, and updates its Tool/role title live for Korean and
+  English. Plain-click layer activation and inline double-click fit reset are
+  preserved.
+- The Dev and original actual EXEs independently passed floating and docked
+  Line, arithmetic A/B,
+  explicit-result refresh, Korean/English switching, monitor placement, and
+  zero Preview/Run, layer, active-layer, or route side effects. Focused Line,
+  arithmetic, dock/float, and localization smokes also passed without layout,
+  text, or internal failures.
+- Evidence:
+  `docs/reports/OPENVISIONLAB_TOOL_PREVIEW_LARGE_VIEWER_20260811.md`.
+- Dev and original full Debug builds passed with zero warnings/errors, both
+  readiness runs passed 13/13, and all 29 promoted file contents matched.
+
+### 2026-08-11 Contour First-Open Crash Correction - Complete In Dev And Original
+
+- Contour could throw a WPF `Grid.SetFinalSizeMaxDiscrepancy`
+  `NullReferenceException` when the operator selected it before native Tool
+  prewarm reached Contour. Tool selection cancelled the remaining prewarm
+  queue, while the on-demand creation path showed the new PropertyGrid view
+  without the hosted-layout preparation used by the background path.
+- Newly created native Tool documents now receive the existing layout
+  preparation before first presentation. Cached/prewarmed and reopened
+  documents do not repeat that work.
+- The exact former failure conditions passed with native prewarm disabled and
+  with both native prewarm and floating-window preparation disabled. Contour
+  opened without Preview/Run or layer changes. Normal Contour, the Blob
+  comparison, all 17 native Tool layer routes, Contour floating/docked views,
+  Tool dock/float cycling, Debug build, and readiness 13/13 also passed.
+- Evidence:
+  `docs/reports/OPENVISIONLAB_CONTOUR_FIRST_OPEN_CRASH_FIX_20260811.md`.
+- The original actual EXE independently passed the former failure condition
+  with both native Tool prewarm and floating-window preparation disabled;
+  Preview count and layer count remained zero.
+
+### 2026-08-11 Line Signal Non-Blocking Cue - Complete In Dev And Original Working Trees
+
+- A successful Line Edge/Measure Preview still retains the exact signal
+  evidence, but no longer forces the detailed Signal Inspector over the
+  parameter editor.
+- The localized `신호 검토` / `Review signal` command becomes available and a
+  non-interactive `신호 갱신됨` / `Signal updated` cue appears beside it for
+  three seconds. Repeated evidence replaces the same cue instead of queuing
+  notifications.
+- The detailed plot opens only when the operator selects the review command.
+  A manually opened inspector remains open while new evidence updates it.
+- Dev and original actual EXEs independently passed the same public 572x420
+  pin sample: Edge mode retained the parameter editor, the cue auto-dismissed,
+  manual review retained the detailed plot, and the following Measure run
+  returned 37 px / 0.222 mm / 24 detections. Preview count, layers, active
+  layer, and routes remained unchanged during cue/review interaction.
+- The test fixture now uses the tracked public pin sample instead of the
+  Dev-only legacy `Sample\EasyGauge\Pins.bmp`. No detection, XML,
+  calibration, acceptance, or routing behavior changed. Evidence:
+  `docs/reports/OPENVISIONLAB_LINE_SIGNAL_TRANSIENT_CUE_20260811.md`.
+
+### 2026-08-11 ROI Edge Resize And Zoom Editing - Complete In Dev And Original Working Trees
+
+- Full-image ROI handles now stay inside a 14-pixel fit-view margin, so the
+  left edge can shrink inward instead of remaining stuck at X=0.
+- Mouse wheel and localized side-panel controls zoom from 25% to 1600%;
+  middle-button drag pans, and the same image-coordinate transform keeps ROI
+  creation, movement, and resize active after zoom/pan.
+- The original actual EXE loaded `Pins_OK_0001.jpg` at 768x576, changed the
+  full ROI from `X=0/W=768` to `X=92/W=676`, then at 125% zoom plus 25px
+  pan made a finer `X=101/W=667` adjustment and returned to 100%.
+- Dev/original focused builds and ROI gates passed; full Debug builds,
+  readiness 13/13, five-file canonical Git equivalence, monitor placement, and
+  themed hover/actual pointer-down evidence passed. No Preview/Run, layer, or
+  routing behavior changed.
+  Evidence:
+  `docs/reports/OPENVISIONLAB_ROI_ZOOM_RESIZE_20260811.md`.
+
+
+### 2026-08-11 Recipe Switch Loading Lifetime Correction - Complete In Dev And Original Working Trees
+
+- The pushed `42d840a9`/`0582d226` implementation displayed the loading overlay
+  but closed it before deferred Pipeline Review preparation finished. The user
+  report invalidated that completion claim; the current Dev and original
+  working-tree correction keeps the overlay open until the preparation task
+  completes.
 - Recipe selection no longer repeats the Pipeline/validation/history/summary
   refresh already performed by `RecipeState.EventChangedRecipe`. Recipe changes
   also no longer restart the whole native Tool prewarm queue immediately after
   the switch; the explicitly selected Tool still opens through the normal Tool
   selection path.
-- In the final actual-EXE capture, the selection request returned in 39.2 ms,
-  the loading overlay was visible in captured frames, and the selected Recipe
-  and summary were complete by the first stable frame at 433.8 ms. A separate
-  responsiveness probe returned in 29.2 ms and was responsive from 414.3 ms
-  through its last 1,205.6 ms sample.
-- Debug build, readiness 13/13, Recipe switch safety/summary/context focused
-  checks, native Tool open, and actual-EXE monitor-placement evidence passed.
+- The actual EXE reproduced a post-overlay unresponsive sample at 1,069.9 ms
+  before the correction. After the correction, the overlay covered the
+  preparation interval and the process stayed responsive from 866.0 ms through
+  3,269.4 ms. Post-load Recipe filter input rendered in 40.6 ms.
+- The same nine-file patch was applied to the original working tree with all
+  Dev/original file hashes matching. The rebuilt original EXE showed the
+  loading overlay during `Edge_Base -> Default`, remained responsive from the
+  first post-overlay frame at 1,503.4 ms through 12,634.3 ms, accepted Recipe
+  filter input in 71.1 ms, and restored the initial `Edge_Base` Recipe.
+- Debug solution and ScreenshotSmoke builds, readiness 13/13, rebuilt Recipe
+  lifetime/safety/context, Recipe summary, native Tool open, and actual-EXE
+  monitor-placement evidence passed.
   Evidence:
   `docs/reports/OPENVISIONLAB_RECIPE_SWITCH_LOADING_RESPONSIVENESS_20260811.md`.
 
@@ -330,6 +417,14 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
 
 ## Current Priority And Activation Conditions
 
+- The Contour first-open crash correction is complete and verified in Dev.
+  It is not staged, committed, pushed, or promoted to the original repository.
+- The Line signal non-blocking cue correction is complete and independently
+  verified in the Dev and original working trees. It is not staged, committed,
+  or pushed.
+- The Recipe switch loading-lifetime correction is complete and independently
+  verified in the Dev and original working trees. It is not staged, committed,
+  or pushed.
 - The 2026-08-11 Recipe/layer/N-image/Edge regression batch is complete,
   independently verified, and pushed in Dev and original. No PR or Release
   publication is active.

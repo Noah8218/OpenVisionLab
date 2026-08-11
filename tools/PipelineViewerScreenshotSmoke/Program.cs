@@ -22063,6 +22063,31 @@ internal static class Program
         VisionPipelineStorage.Save(recipeB, CreateBlobPipeline(pipelineB, 1));
         VisionPipelineStorage.SaveActivePipelineName(recipeB, pipelineB);
 
+        string lifetimeRecipe = recipeA;
+        TaskCompletionSource<bool> recipePreparationGate = new(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        OpenVisionShellHostRecipeCommandSurface lifetimeSurface = new(
+            () => lifetimeRecipe,
+            name => lifetimeRecipe = name,
+            () => { },
+            waitForRecipeSwitchCompletion: () => recipePreparationGate.Task);
+        lifetimeSurface.SelectedRecipeName = recipeB;
+        Pump(120);
+        if (!lifetimeSurface.IsSwitchingRecipe
+            || !string.Equals(lifetimeRecipe, recipeB, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "Recipe loading state ended before deferred Recipe preparation completed.");
+        }
+
+        recipePreparationGate.SetResult(true);
+        Pump(80);
+        if (lifetimeSurface.IsSwitchingRecipe)
+        {
+            throw new InvalidOperationException(
+                "Recipe loading state remained visible after Recipe preparation completed.");
+        }
+
         OpenVisionShellHostView shellHost = CreateShellHost(recipeA, seedMainLayer: true);
         try
         {
@@ -22556,6 +22581,7 @@ internal static class Program
                         "FailedApply=TransitionBlockedAndDirtyPreserved",
                         "FailedSave=TransitionBlockedAndStoredXmlPreserved",
                         "FailedRoundTrip=TransitionBlockedAndStoredXmlRestored",
+                        "RecipeLoadingOverlay=HeldUntilPreparationComplete",
                         "PreviewRunSideEffects=None",
                         "LayerSideEffects=None",
                         "RouteSideEffects=None"
@@ -32512,11 +32538,15 @@ internal static class Program
                 outputPath,
                 "good",
                 expectedSourceHash: null);
+            shellHost.OpenActiveLineSignalInspectorForTest();
+            Pump(4);
             string goodSourceHash = shellHost.ActiveLineSignalInspectorSourceSha256ForTest;
             string goodSelectedPoint = shellHost.GetActiveLineSignalInspectorAttributeForTest("SelectedImagePoint");
             DependencyObject goodSignalRoot = (DependencyObject?)Application.Current.Windows
                 .OfType<Window>()
-                .LastOrDefault(item => item.IsVisible && item.GetType().Name == "OpenVisionFloatingToolWindow")
+                .FirstOrDefault(item => item.IsVisible
+                    && item.GetType().Name == "OpenVisionFloatingToolWindow"
+                    && FindVisualChildren<LineToolWpfView>(item).Any())
                 ?? shellHost;
             SaveVisibleAutomationElementPng(
                 goodSignalRoot,
@@ -32586,6 +32616,8 @@ internal static class Program
                 outputPath,
                 "bad",
                 expectedSourceHash: null);
+            shellHost.OpenActiveLineSignalInspectorForTest();
+            Pump(4);
             string badSourceHash = shellHost.ActiveLineSignalInspectorSourceSha256ForTest;
             string badSelectedPoint = shellHost.GetActiveLineSignalInspectorAttributeForTest("SelectedImagePoint");
             if (string.Equals(goodEvidenceId, badEvidenceId, StringComparison.Ordinal)
@@ -32596,7 +32628,9 @@ internal static class Program
 
             DependencyObject badSignalRoot = (DependencyObject?)Application.Current.Windows
                 .OfType<Window>()
-                .LastOrDefault(item => item.IsVisible && item.GetType().Name == "OpenVisionFloatingToolWindow")
+                .FirstOrDefault(item => item.IsVisible
+                    && item.GetType().Name == "OpenVisionFloatingToolWindow"
+                    && FindVisualChildren<LineToolWpfView>(item).Any())
                 ?? shellHost;
             SaveVisibleAutomationElementPng(
                 badSignalRoot,
@@ -32714,12 +32748,13 @@ internal static class Program
         string? expectedSourceHash)
     {
         if (!shellHost.ActiveLineSignalInspectorHasEvidenceForTest
-            || !shellHost.ActiveLineSignalInspectorOverlayVisibleForTest
+            || shellHost.ActiveLineSignalInspectorOverlayVisibleForTest
+            || !shellHost.ActiveLineSignalEvidenceCueVisibleForTest
             || shellHost.ActiveLineSignalInspectorSeriesCountForTest != 2
             || shellHost.ActiveLineSignalInspectorMarkerCountForTest < 2)
         {
             throw new InvalidOperationException(
-                "Line signal " + role + " did not publish the required two series, selected edge, and alternative marker.");
+                "Line signal " + role + " did not retain its parameter view, show the transient cue, and publish the required signal evidence.");
         }
 
         string evidenceId = shellHost.ActiveLineSignalInspectorEvidenceIdForTest;
@@ -33943,7 +33978,7 @@ internal static class Program
     private static CaptureResult CaptureRoiEditor(string outputPath)
     {
         using Bitmap bitmap = CreateLargeSmokeBitmap(640, 480);
-        RoiEditorWindow window = new(bitmap, DrawingRectangle.Empty, "ROI")
+        RoiEditorWindow window = new(bitmap, new DrawingRectangle(0, 0, 640, 480), "ROI")
         {
             Width = 1040,
             Height = 700,
@@ -33955,9 +33990,62 @@ internal static class Program
 
         return CaptureStandaloneWindow(window, outputPath, 1040, 700, () =>
         {
-            if (window.SelectedRegion.Width != 0 || window.SelectedRegion.Height != 0)
+            AssertVisibleAutomationIds(
+                window,
+                "ROI editor zoom toolbar",
+                "RoiViewportCanvas",
+                "RoiFullButton",
+                "RoiZoomOutButton",
+                "RoiZoomValueText",
+                "RoiFitViewButton",
+                "RoiZoomInButton");
+
+            OpenCvSharp.Rect initial = window.CurrentSelectedRegionForTest;
+            if (initial.X != 0 || initial.Y != 0 || initial.Width != 640 || initial.Height != 480)
             {
-                throw new InvalidOperationException("ROI editor should open with no selected region when the current ROI is empty.");
+                throw new InvalidOperationException($"ROI editor did not retain the full-image ROI. Actual={initial}.");
+            }
+
+            if (!window.IsLeftHandleInsideViewportForTest)
+            {
+                throw new InvalidOperationException("ROI editor clipped a full-image edge handle at fit view.");
+            }
+
+            if (!window.ResizeSelectedLeftEdgeByDisplayPixelsForTest(64))
+            {
+                throw new InvalidOperationException("ROI editor could not resize the full-image ROI from its left edge.");
+            }
+
+            OpenCvSharp.Rect fitResize = window.CurrentSelectedRegionForTest;
+            int fitDelta = fitResize.X - initial.X;
+            if (fitDelta <= 0 || fitResize.Right != initial.Right)
+            {
+                throw new InvalidOperationException($"ROI editor left-edge resize changed the wrong boundary. Actual={fitResize}.");
+            }
+
+            window.ZoomAndPanForTest(4, 24, -16);
+            if (Math.Abs(window.ZoomLevelForTest - 4) > 0.001)
+            {
+                throw new InvalidOperationException($"ROI editor did not retain the requested zoom. Actual={window.ZoomLevelForTest:0.###}.");
+            }
+
+            if (!window.ResizeSelectedLeftEdgeByDisplayPixelsForTest(8))
+            {
+                throw new InvalidOperationException("ROI editor could not resize an ROI after zoom and pan.");
+            }
+
+            OpenCvSharp.Rect zoomResize = window.CurrentSelectedRegionForTest;
+            int fineDelta = zoomResize.X - fitResize.X;
+            if (fineDelta <= 0 || fineDelta >= fitDelta || zoomResize.Right != initial.Right)
+            {
+                throw new InvalidOperationException(
+                    $"ROI editor zoomed resize was not finer than fit-view resize. FitDelta={fitDelta}, FineDelta={fineDelta}, Actual={zoomResize}.");
+            }
+
+            window.ZoomAndPanForTest(1, 0, 0);
+            if (Math.Abs(window.ZoomLevelForTest - 1) > 0.001 || !window.IsLeftHandleInsideViewportForTest)
+            {
+                throw new InvalidOperationException("ROI editor did not restore a fully editable fit view after zoomed editing.");
             }
         });
     }

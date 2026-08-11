@@ -13,6 +13,8 @@ namespace OpenVisionLab
         private readonly OpenVisionShellHostLayerDetailPresenter layerDetailPresenter;
         private readonly OpenVisionLayerViewerWindowRegistry windowRegistry;
         private readonly Func<Window> ownerProvider;
+        private OpenVisionFloatingToolWindow toolPreviewWindow;
+        private OpenVisionLayerViewerView toolPreviewViewer;
 
         public OpenVisionShellHostLayerViewerController(
             IDisplayManager displayManager,
@@ -73,9 +75,123 @@ namespace OpenVisionLab
             return true;
         }
 
+        public bool OpenToolPreview(
+            string toolName,
+            VisionToolPreviewImageRole role,
+            string layerTitle)
+        {
+            if (!CanOpen(layerTitle))
+            {
+                return false;
+            }
+
+            string title = BuildToolPreviewTitle(toolName, role, layerTitle);
+            if (toolPreviewWindow == null || toolPreviewViewer == null)
+            {
+                toolPreviewViewer = new OpenVisionLayerViewerView();
+                toolPreviewWindow = new OpenVisionFloatingToolWindow(title, toolPreviewViewer)
+                {
+                    Width = 960,
+                    Height = 720,
+                    MinWidth = 520,
+                    MinHeight = 380,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    ResizeMode = ResizeMode.CanResize,
+                    IsDockButtonVisible = false
+                };
+                toolPreviewWindow.SetTitleIcon(MahApps.Metro.IconPacks.PackIconMaterialKind.ImageMultipleOutline);
+                toolPreviewWindow.Closed += ToolPreviewWindow_Closed;
+
+                Window owner = ownerProvider();
+                if (owner != null)
+                {
+                    toolPreviewWindow.Owner = owner;
+                }
+                else
+                {
+                    toolPreviewWindow.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+                }
+
+                windowRegistry.Add(toolPreviewWindow);
+                UpdateToolPreview(title, layerTitle);
+                toolPreviewWindow.Show();
+            }
+            else
+            {
+                UpdateToolPreview(title, layerTitle);
+                if (toolPreviewWindow.WindowState == WindowState.Minimized)
+                {
+                    toolPreviewWindow.WindowState = WindowState.Normal;
+                }
+
+                toolPreviewWindow.Activate();
+            }
+
+            toolPreviewWindow.BringAboveOwnerAirspace();
+            return true;
+        }
+
+        public bool RefreshToolPreview(
+            string toolName,
+            VisionToolPreviewImageRole role,
+            string layerTitle)
+        {
+            if (toolPreviewWindow == null || toolPreviewViewer == null)
+            {
+                return false;
+            }
+
+            UpdateToolPreview(BuildToolPreviewTitle(toolName, role, layerTitle), layerTitle);
+            return true;
+        }
+
+        public void CloseToolPreview()
+        {
+            toolPreviewWindow?.Close();
+        }
+
         public void CloseAll()
         {
             windowRegistry.CloseAll();
+        }
+
+        private void UpdateToolPreview(string title, string layerTitle)
+        {
+            Bitmap image = displayManager.GetLayerImage(layerTitle);
+            toolPreviewWindow.SetTitle(title);
+            toolPreviewViewer.SetLayer(title, image, BuildStatus(layerTitle, image));
+        }
+
+        private void ToolPreviewWindow_Closed(object sender, EventArgs e)
+        {
+            if (sender is OpenVisionFloatingToolWindow window)
+            {
+                window.Closed -= ToolPreviewWindow_Closed;
+            }
+
+            toolPreviewWindow = null;
+            toolPreviewViewer = null;
+        }
+
+        private static string BuildToolPreviewTitle(
+            string toolName,
+            VisionToolPreviewImageRole role,
+            string layerTitle)
+        {
+            string localizedToolName = OpenVisionLanguageService.T("VisionMenu." + toolName);
+            string roleText = role switch
+            {
+                VisionToolPreviewImageRole.InputA => OpenVisionLanguageService.T("ToolView.PreviewRole.InputA"),
+                VisionToolPreviewImageRole.InputB => OpenVisionLanguageService.T("ToolView.PreviewRole.InputB"),
+                VisionToolPreviewImageRole.Output => OpenVisionLanguageService.T("ToolView.PreviewRole.Output"),
+                _ => OpenVisionLanguageService.T("ToolView.PreviewRole.Input")
+            };
+            return string.Format(
+                CultureInfo.CurrentCulture,
+                OpenVisionLanguageService.T("ToolView.PreviewViewerTitleFormat"),
+                localizedToolName,
+                roleText,
+                layerTitle);
         }
 
         public string BuildStatus(string layerTitle, Bitmap image)

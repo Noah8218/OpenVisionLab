@@ -59,6 +59,8 @@ namespace OpenVisionLab
             documentController.ActiveNativeDocument?.LineSignalInspectorHasEvidence == true;
         public bool ActiveLineSignalInspectorOverlayVisible =>
             documentController.ActiveNativeDocument?.LineSignalInspectorOverlayVisible == true;
+        public bool ActiveLineSignalEvidenceCueVisible =>
+            documentController.ActiveNativeDocument?.LineSignalEvidenceCueVisible == true;
         public string ActiveLineSignalInspectorEvidenceId =>
             documentController.ActiveNativeDocument?.LineSignalInspectorEvidenceId ?? string.Empty;
         public string ActiveLineSignalInspectorSourceSha256 =>

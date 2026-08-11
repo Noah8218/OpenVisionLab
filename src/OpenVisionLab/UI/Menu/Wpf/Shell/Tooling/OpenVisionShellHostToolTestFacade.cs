@@ -116,6 +116,7 @@ namespace OpenVisionLab
         public int ActiveLineInputRoiOverlayCount => statePresenter.ActiveLineInputRoiOverlayCount;
         public bool ActiveLineSignalInspectorHasEvidence => statePresenter.ActiveLineSignalInspectorHasEvidence;
         public bool ActiveLineSignalInspectorOverlayVisible => statePresenter.ActiveLineSignalInspectorOverlayVisible;
+        public bool ActiveLineSignalEvidenceCueVisible => statePresenter.ActiveLineSignalEvidenceCueVisible;
         public string ActiveLineSignalInspectorEvidenceId => statePresenter.ActiveLineSignalInspectorEvidenceId;
         public string ActiveLineSignalInspectorSourceSha256 => statePresenter.ActiveLineSignalInspectorSourceSha256;
         public int ActiveLineSignalInspectorSeriesCount => statePresenter.ActiveLineSignalInspectorSeriesCount;

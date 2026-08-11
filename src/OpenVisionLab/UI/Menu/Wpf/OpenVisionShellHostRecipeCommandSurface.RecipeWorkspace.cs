@@ -168,7 +168,7 @@ namespace OpenVisionLab
                 && RecipeOptions.Any(name => string.Equals(name, selected, StringComparison.OrdinalIgnoreCase));
         }
 
-        private void CreateAndSwitchRecipe(OpenVisionRecipeWorkspaceResult result)
+        private async void CreateAndSwitchRecipe(OpenVisionRecipeWorkspaceResult result)
         {
             if (!result.Succeeded)
             {
@@ -178,12 +178,15 @@ namespace OpenVisionLab
             try
             {
                 BeginRecipeSwitchingState(result.RecipeName);
+                await System.Windows.Threading.Dispatcher.Yield(
+                    System.Windows.Threading.DispatcherPriority.Background);
                 switchRecipe(result.RecipeName);
+                RefreshAfterRecipeSwitchIfNeeded(result.RecipeName);
+                await waitForRecipeSwitchCompletion();
                 StatusText = string.Format(
                     CultureInfo.CurrentCulture,
                     LocalText("생성됨: {0}", "Created: {0}"),
                     result.RecipeName);
-                RefreshAfterRecipeSwitchIfNeeded(result.RecipeName);
             }
             finally
             {

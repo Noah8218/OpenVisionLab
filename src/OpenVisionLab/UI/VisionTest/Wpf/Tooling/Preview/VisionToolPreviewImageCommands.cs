@@ -27,6 +27,20 @@ namespace OpenVisionLab
         public VisionToolPreviewImageRole Role { get; }
     }
 
+    public sealed class VisionToolPreviewImageOpenRequestedEventArgs : RoutedEventArgs
+    {
+        public VisionToolPreviewImageOpenRequestedEventArgs(
+            RoutedEvent routedEvent,
+            object source,
+            VisionToolPreviewImageRole role)
+            : base(routedEvent, source)
+        {
+            Role = role;
+        }
+
+        public VisionToolPreviewImageRole Role { get; }
+    }
+
     public interface IVisionToolPreviewImageCommands
     {
         event EventHandler<VisionToolPreviewImageCommandEventArgs> LoadPreviewImageRequested;
@@ -35,6 +49,13 @@ namespace OpenVisionLab
 
     internal static class VisionToolPreviewSlotBehavior
     {
+        public static readonly RoutedEvent OpenPreviewImageRequestedEvent =
+            EventManager.RegisterRoutedEvent(
+                "OpenPreviewImageRequested",
+                RoutingStrategy.Bubble,
+                typeof(EventHandler<VisionToolPreviewImageOpenRequestedEventArgs>),
+                typeof(VisionToolPreviewSlotBehavior));
+
         private static readonly DependencyProperty SlotStateProperty =
             DependencyProperty.RegisterAttached(
                 "SlotState",
@@ -71,8 +92,8 @@ namespace OpenVisionLab
             EventHandler<VisionToolPreviewImageCommandEventArgs> saveRequested)
         {
             // Keep preview image command routing role-based so tool Views do not duplicate load/save lambdas.
-            Attach(inputFrame, inputImage, true, CreateRoleHandler(sender, loadRequested, VisionToolPreviewImageRole.Input), CreateRoleHandler(sender, saveRequested, VisionToolPreviewImageRole.Input));
-            Attach(outputFrame, outputImage, false, null, CreateRoleHandler(sender, saveRequested, VisionToolPreviewImageRole.Output));
+            Attach(inputFrame, inputImage, VisionToolPreviewImageRole.Input, true, CreateRoleHandler(sender, loadRequested, VisionToolPreviewImageRole.Input), CreateRoleHandler(sender, saveRequested, VisionToolPreviewImageRole.Input));
+            Attach(outputFrame, outputImage, VisionToolPreviewImageRole.Output, false, null, CreateRoleHandler(sender, saveRequested, VisionToolPreviewImageRole.Output));
         }
 
         public static void AttachArithmetic(
@@ -86,9 +107,9 @@ namespace OpenVisionLab
             EventHandler<VisionToolPreviewImageCommandEventArgs> loadRequested,
             EventHandler<VisionToolPreviewImageCommandEventArgs> saveRequested)
         {
-            Attach(inputAFrame, inputAImage, true, CreateRoleHandler(sender, loadRequested, VisionToolPreviewImageRole.InputA), CreateRoleHandler(sender, saveRequested, VisionToolPreviewImageRole.InputA));
-            Attach(inputBFrame, inputBImage, true, CreateRoleHandler(sender, loadRequested, VisionToolPreviewImageRole.InputB), CreateRoleHandler(sender, saveRequested, VisionToolPreviewImageRole.InputB));
-            Attach(outputFrame, outputImage, false, null, CreateRoleHandler(sender, saveRequested, VisionToolPreviewImageRole.Output));
+            Attach(inputAFrame, inputAImage, VisionToolPreviewImageRole.InputA, true, CreateRoleHandler(sender, loadRequested, VisionToolPreviewImageRole.InputA), CreateRoleHandler(sender, saveRequested, VisionToolPreviewImageRole.InputA));
+            Attach(inputBFrame, inputBImage, VisionToolPreviewImageRole.InputB, true, CreateRoleHandler(sender, loadRequested, VisionToolPreviewImageRole.InputB), CreateRoleHandler(sender, saveRequested, VisionToolPreviewImageRole.InputB));
+            Attach(outputFrame, outputImage, VisionToolPreviewImageRole.Output, false, null, CreateRoleHandler(sender, saveRequested, VisionToolPreviewImageRole.Output));
         }
 
         public static void AttachSingle(
@@ -100,8 +121,8 @@ namespace OpenVisionLab
             EventHandler<VisionToolPreviewImageCommandEventArgs> loadRequested,
             EventHandler<VisionToolPreviewImageCommandEventArgs> saveRequested)
         {
-            Attach(inputFrame, inputPreview, true, CreateRoleHandler(sender, loadRequested, VisionToolPreviewImageRole.Input), CreateRoleHandler(sender, saveRequested, VisionToolPreviewImageRole.Input));
-            Attach(outputFrame, outputPreview, false, null, CreateRoleHandler(sender, saveRequested, VisionToolPreviewImageRole.Output));
+            Attach(inputFrame, inputPreview, VisionToolPreviewImageRole.Input, true, CreateRoleHandler(sender, loadRequested, VisionToolPreviewImageRole.Input), CreateRoleHandler(sender, saveRequested, VisionToolPreviewImageRole.Input));
+            Attach(outputFrame, outputPreview, VisionToolPreviewImageRole.Output, false, null, CreateRoleHandler(sender, saveRequested, VisionToolPreviewImageRole.Output));
         }
 
         public static void AttachArithmetic(
@@ -115,14 +136,15 @@ namespace OpenVisionLab
             EventHandler<VisionToolPreviewImageCommandEventArgs> loadRequested,
             EventHandler<VisionToolPreviewImageCommandEventArgs> saveRequested)
         {
-            Attach(inputAFrame, inputAPreview, true, CreateRoleHandler(sender, loadRequested, VisionToolPreviewImageRole.InputA), CreateRoleHandler(sender, saveRequested, VisionToolPreviewImageRole.InputA));
-            Attach(inputBFrame, inputBPreview, true, CreateRoleHandler(sender, loadRequested, VisionToolPreviewImageRole.InputB), CreateRoleHandler(sender, saveRequested, VisionToolPreviewImageRole.InputB));
-            Attach(outputFrame, outputPreview, false, null, CreateRoleHandler(sender, saveRequested, VisionToolPreviewImageRole.Output));
+            Attach(inputAFrame, inputAPreview, VisionToolPreviewImageRole.InputA, true, CreateRoleHandler(sender, loadRequested, VisionToolPreviewImageRole.InputA), CreateRoleHandler(sender, saveRequested, VisionToolPreviewImageRole.InputA));
+            Attach(inputBFrame, inputBPreview, VisionToolPreviewImageRole.InputB, true, CreateRoleHandler(sender, loadRequested, VisionToolPreviewImageRole.InputB), CreateRoleHandler(sender, saveRequested, VisionToolPreviewImageRole.InputB));
+            Attach(outputFrame, outputPreview, VisionToolPreviewImageRole.Output, false, null, CreateRoleHandler(sender, saveRequested, VisionToolPreviewImageRole.Output));
         }
 
         public static void Attach(
             Border frame,
             Image image,
+            VisionToolPreviewImageRole role,
             bool allowLoad,
             RoutedEventHandler loadRequested,
             RoutedEventHandler saveRequested)
@@ -132,7 +154,7 @@ namespace OpenVisionLab
                 return;
             }
 
-            PreviewSlotState state = AttachCore(frame, image, allowLoad, loadRequested, saveRequested, () => image.Source != null);
+            PreviewSlotState state = AttachCore(frame, image, role, allowLoad, loadRequested, saveRequested, () => image.Source != null);
             if (state == null)
             {
                 return;
@@ -147,6 +169,7 @@ namespace OpenVisionLab
         public static void Attach(
             Border frame,
             VisionToolInlinePreviewSlot preview,
+            VisionToolPreviewImageRole role,
             bool allowLoad,
             RoutedEventHandler loadRequested,
             RoutedEventHandler saveRequested)
@@ -156,7 +179,7 @@ namespace OpenVisionLab
                 return;
             }
 
-            PreviewSlotState state = AttachCore(frame, preview, allowLoad, loadRequested, saveRequested, () => preview.HasImage);
+            PreviewSlotState state = AttachCore(frame, preview, role, allowLoad, loadRequested, saveRequested, () => preview.HasImage);
             if (state == null)
             {
                 return;
@@ -180,6 +203,7 @@ namespace OpenVisionLab
         private static PreviewSlotState AttachCore(
             Border frame,
             UIElement previewElement,
+            VisionToolPreviewImageRole role,
             bool allowLoad,
             RoutedEventHandler loadRequested,
             RoutedEventHandler saveRequested,
@@ -222,6 +246,21 @@ namespace OpenVisionLab
 
             PreviewSlotState state = new PreviewSlotState(frame, previewElement, hasImage, emptyOverlay, routeOverlay, allowLoad, loadItem, saveItem);
             frame.SetValue(SlotStateProperty, state);
+
+            MouseButtonEventHandler openPreviewHandler = (_, e) =>
+            {
+                if (e.ChangedButton != MouseButton.Left || !hasImage())
+                {
+                    return;
+                }
+
+                frame.RaiseEvent(new VisionToolPreviewImageOpenRequestedEventArgs(
+                    OpenPreviewImageRequestedEvent,
+                    frame,
+                    role));
+            };
+            previewElement.AddHandler(Control.MouseDoubleClickEvent, openPreviewHandler, true);
+            state.Track(() => previewElement.RemoveHandler(Control.MouseDoubleClickEvent, openPreviewHandler));
 
             void Refresh()
             {

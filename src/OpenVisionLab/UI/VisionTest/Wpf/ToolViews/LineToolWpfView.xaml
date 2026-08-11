@@ -64,6 +64,24 @@
                                 Visibility="Collapsed"
                                 ToolTip="Review the representative scan intensity and edge response"
                                 AutomationProperties.AutomationId="LineSignalInspectorOpenButton" />
+                        <Border x:Name="signalEvidenceCue"
+                                MaxWidth="140"
+                                MinHeight="28"
+                                Margin="6,0,0,0"
+                                Padding="9,5"
+                                VerticalAlignment="Center"
+                                IsHitTestVisible="False"
+                                Visibility="Collapsed"
+                                Background="{StaticResource VisionTool.HeaderBrush}"
+                                BorderBrush="{StaticResource VisionTool.AccentBrush}"
+                                BorderThickness="1"
+                                CornerRadius="4"
+                                AutomationProperties.AutomationId="LineSignalEvidenceCue">
+                            <TextBlock x:Name="txtSignalEvidenceCue"
+                                       Foreground="{StaticResource VisionTool.PrimaryTextBrush}"
+                                       Text="Signal updated"
+                                       TextTrimming="None" />
+                        </Border>
                     </StackPanel>
                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,4,0,0">
                         <TextBlock x:Name="txtLineSelectorLabel"

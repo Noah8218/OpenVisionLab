@@ -34,8 +34,8 @@ namespace OpenVisionLab
                     : "ROI";
             PrimaryActionText = IsTrainingMode ? "Use Pattern" : "OK";
             HelpText = IsMultiRoiMode
-                ? "Drag empty space to add ROI. Drag an ROI to move it, or drag a handle to resize it."
-                : "Drag to create ROI. Drag inside to move it, or drag a handle to resize it.";
+                ? OpenVisionLanguageService.T("RoiEditor.Help.Multi")
+                : OpenVisionLanguageService.T("RoiEditor.Help.Single");
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -47,6 +47,12 @@ namespace OpenVisionLab
         public string PrimaryActionText { get; }
 
         public string HelpText { get; }
+
+        public string ZoomOutText => OpenVisionLanguageService.T("RoiEditor.ZoomOut");
+
+        public string ZoomInText => OpenVisionLanguageService.T("RoiEditor.ZoomIn");
+
+        public string FitViewText => OpenVisionLanguageService.T("RoiEditor.FitView");
 
         public bool IsMultiRoiMode { get; }
 

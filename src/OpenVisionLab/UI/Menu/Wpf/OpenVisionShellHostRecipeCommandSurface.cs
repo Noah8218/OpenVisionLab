@@ -24,6 +24,7 @@ namespace OpenVisionLab
         private readonly Func<string> currentRecipeProvider;
         private readonly Action<string> switchRecipe;
         private readonly Action refreshAfterSwitch;
+        private readonly Func<Task> waitForRecipeSwitchCompletion;
         private readonly Func<string, bool> confirmDeleteRecipe;
         private readonly Func<string, string, bool> confirmDeletePipeline;
         private readonly Func<string> selectImportPipelineXmlPath;
@@ -241,11 +242,13 @@ namespace OpenVisionLab
             Func<string, string, string, bool> confirmQualifiedSnapshotLifecycle = null,
             Func<string, bool> openQualifiedSnapshotEvidence = null,
             Action openPipelineXmlSteps = null,
-            Func<bool> saveRecipe = null)
+            Func<bool> saveRecipe = null,
+            Func<Task> waitForRecipeSwitchCompletion = null)
         {
             this.currentRecipeProvider = currentRecipeProvider ?? throw new ArgumentNullException(nameof(currentRecipeProvider));
             this.switchRecipe = switchRecipe ?? throw new ArgumentNullException(nameof(switchRecipe));
             this.refreshAfterSwitch = refreshAfterSwitch ?? throw new ArgumentNullException(nameof(refreshAfterSwitch));
+            this.waitForRecipeSwitchCompletion = waitForRecipeSwitchCompletion ?? (() => Task.CompletedTask);
             this.confirmDeleteRecipe = confirmDeleteRecipe ?? (_ => true);
             this.confirmDeletePipeline = confirmDeletePipeline ?? ((_, _) => true);
             this.selectImportPipelineXmlPath = selectImportPipelineXmlPath ?? (() => string.Empty);

@@ -50,6 +50,7 @@ namespace OpenVisionLab
         public int ActiveLineInputRoiOverlayCount => toolTestFacade.ActiveLineInputRoiOverlayCount;
         public bool ActiveLineSignalInspectorHasEvidenceForTest => toolTestFacade.ActiveLineSignalInspectorHasEvidence;
         public bool ActiveLineSignalInspectorOverlayVisibleForTest => toolTestFacade.ActiveLineSignalInspectorOverlayVisible;
+        public bool ActiveLineSignalEvidenceCueVisibleForTest => toolTestFacade.ActiveLineSignalEvidenceCueVisible;
         public string ActiveLineSignalInspectorEvidenceIdForTest => toolTestFacade.ActiveLineSignalInspectorEvidenceId;
         public string ActiveLineSignalInspectorSourceSha256ForTest => toolTestFacade.ActiveLineSignalInspectorSourceSha256;
         public int ActiveLineSignalInspectorSeriesCountForTest => toolTestFacade.ActiveLineSignalInspectorSeriesCount;

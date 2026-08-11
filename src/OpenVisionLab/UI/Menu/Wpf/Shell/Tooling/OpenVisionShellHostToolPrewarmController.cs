@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
 using static OpenVisionLab.DEFINE;
@@ -48,12 +49,16 @@ namespace OpenVisionLab
             ScheduleNativePrewarmIfEnabled();
         }
 
-        public void SchedulePipelineReviewPrewarmIfEnabled()
+        public Task SchedulePipelineReviewPrewarmIfEnabled()
         {
-            if (canRun())
+            if (!canRun())
             {
-                dispatcher.BeginInvoke(new Action(PrewarmPipelineReview), DispatcherPriority.Background);
+                return Task.CompletedTask;
             }
+
+            return dispatcher
+                .InvokeAsync(PrewarmPipelineReview, DispatcherPriority.Background)
+                .Task;
         }
 
         public void ScheduleNativePrewarmIfEnabled()

@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows;
+using System.Windows.Threading;
 using OpenVisionLab.Contracts;
 
 namespace OpenVisionLab
@@ -20,6 +21,7 @@ namespace OpenVisionLab
         private readonly LineToolPreviewController previewController;
         private readonly VisionToolPresetButtonPresenter<LineGaugeProperty> presetPresenter;
         private readonly LineToolTextPresenter textPresenter;
+        private readonly DispatcherTimer signalEvidenceCueTimer;
 
         internal LineToolWpfView(LineToolPresenter presenter)
         {
@@ -93,6 +95,11 @@ namespace OpenVisionLab
                 resultReviewPresenter,
                 lineVerificationGuidePresenter,
                 textPresenter);
+            signalEvidenceCueTimer = new DispatcherTimer(DispatcherPriority.Background, Dispatcher)
+            {
+                Interval = TimeSpan.FromSeconds(3)
+            };
+            signalEvidenceCueTimer.Tick += SignalEvidenceCueTimer_Tick;
             ApplyLocalization();
             UpdateSummary();
             ClearResultReview();
@@ -114,6 +121,8 @@ namespace OpenVisionLab
         internal int SignalInspectorMarkerCountForTest => signalInspector.MarkerCount;
         internal bool IsSignalInspectorOverlayVisibleForTest =>
             lineSignalInspectorOverlay.Visibility == Visibility.Visible;
+        internal bool IsSignalEvidenceCueOpenForTest =>
+            signalEvidenceCue.Visibility == Visibility.Visible;
 
         public LineGaugeProperty CreateProperty()
         {
@@ -270,7 +279,10 @@ namespace OpenVisionLab
         {
             signalInspector.ShowEvidence(evidence);
             btnOpenSignalInspector.Visibility = Visibility.Visible;
-            lineSignalInspectorOverlay.Visibility = Visibility.Visible;
+            if (lineSignalInspectorOverlay.Visibility != Visibility.Visible)
+            {
+                ShowSignalEvidenceCue();
+            }
         }
 
         internal void ClearSignalEvidence()
@@ -278,6 +290,7 @@ namespace OpenVisionLab
             signalInspector.ClearEvidence();
             btnOpenSignalInspector.Visibility = Visibility.Collapsed;
             lineSignalInspectorOverlay.Visibility = Visibility.Collapsed;
+            HideSignalEvidenceCue();
         }
 
         internal void CloseSignalInspectorForTest()
@@ -289,6 +302,7 @@ namespace OpenVisionLab
         {
             if (signalInspector.HasEvidence)
             {
+                HideSignalEvidenceCue();
                 lineSignalInspectorOverlay.Visibility = Visibility.Visible;
             }
         }
@@ -302,6 +316,8 @@ namespace OpenVisionLab
 
         protected override void DisposeToolResources()
         {
+            signalEvidenceCueTimer.Stop();
+            signalEvidenceCueTimer.Tick -= SignalEvidenceCueTimer_Tick;
             presetPresenter.Dispose();
             previewController.Dispose();
             interactionController.Detach();
@@ -319,6 +335,9 @@ namespace OpenVisionLab
             btnOpenSignalInspector.ToolTip = korean
                 ? "\uB300\uD45C \uC2A4\uCE94\uC758 \uBC1D\uAE30\uC640 \uC5E3\uC9C0 \uC751\uB2F5\uC744 \uAC80\uD1A0\uD569\uB2C8\uB2E4."
                 : "Review the representative scan intensity and edge response";
+            txtSignalEvidenceCue.Text = korean
+                ? "\uC2E0\uD638 \uAC31\uC2E0\uB428"
+                : "Signal updated";
             btnCloseSignalInspector.Content = korean
                 ? "\uB9E4\uAC1C\uBCC0\uC218\uB85C \uB3CC\uC544\uAC00\uAE30"
                 : "Back to parameters";
@@ -418,6 +437,24 @@ namespace OpenVisionLab
         private void OpenSignalInspector_Click(object sender, RoutedEventArgs e)
         {
             OpenSignalInspectorForTest();
+        }
+
+        private void ShowSignalEvidenceCue()
+        {
+            signalEvidenceCueTimer.Stop();
+            signalEvidenceCue.Visibility = Visibility.Visible;
+            signalEvidenceCueTimer.Start();
+        }
+
+        private void HideSignalEvidenceCue()
+        {
+            signalEvidenceCueTimer.Stop();
+            signalEvidenceCue.Visibility = Visibility.Collapsed;
+        }
+
+        private void SignalEvidenceCueTimer_Tick(object sender, EventArgs e)
+        {
+            HideSignalEvidenceCue();
         }
 
         private void CloseSignalInspector_Click(object sender, RoutedEventArgs e)

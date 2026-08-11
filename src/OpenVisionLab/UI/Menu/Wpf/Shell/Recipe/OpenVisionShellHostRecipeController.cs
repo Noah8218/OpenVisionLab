@@ -1,5 +1,6 @@
 using OpenVisionLab.Core;
 using System;
+using System.Threading.Tasks;
 
 namespace OpenVisionLab
 {
@@ -14,6 +15,8 @@ namespace OpenVisionLab
         private readonly Action refreshHostLayerRows;
         private readonly Action<string> refreshHostSelectedLayerDetail;
         private readonly Action refreshDirectRouteText;
+
+        public Task RecipePreparationTask { get; private set; } = Task.CompletedTask;
 
         public OpenVisionShellHostRecipeController(
             ApplicationRuntimeContext runtimeContext,
@@ -50,7 +53,7 @@ namespace OpenVisionLab
             refreshHostLayerRows();
             refreshHostSelectedLayerDetail(displayManager.SelectedItem);
             refreshDirectRouteText();
-            toolPrewarmController.SchedulePipelineReviewPrewarmIfEnabled();
+            RecipePreparationTask = toolPrewarmController.SchedulePipelineReviewPrewarmIfEnabled();
             // Native documents are rebuilt on the next explicit Tool selection.
             // Restarting the whole prewarm queue here competes with Recipe Manager input.
         }

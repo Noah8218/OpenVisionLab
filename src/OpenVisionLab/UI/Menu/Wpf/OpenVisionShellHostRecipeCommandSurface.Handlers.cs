@@ -552,11 +552,12 @@ namespace OpenVisionLab
                     System.Windows.Threading.DispatcherPriority.Background);
                 RecipeWorkspaceService.EnsureVisionWorkspace(normalized);
                 switchRecipe(normalized);
+                RefreshAfterRecipeSwitchIfNeeded(normalized);
+                await waitForRecipeSwitchCompletion();
                 StatusText = string.Format(
                     CultureInfo.CurrentCulture,
                     LocalText("선택됨: {0}", "Selected: {0}"),
                     normalized);
-                RefreshAfterRecipeSwitchIfNeeded(normalized);
             }
             finally
             {

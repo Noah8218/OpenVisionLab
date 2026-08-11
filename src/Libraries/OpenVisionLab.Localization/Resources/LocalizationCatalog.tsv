@@ -1031,8 +1031,13 @@ ToolView.NoOutputImageDetail	미리보기를 실행하면 결과 이미지가 �
 ToolView.LoadImage	이미지 로드...	Load Image...
 ToolView.LoadImageButton	이미지 로드	Load Image
 ToolView.SaveImage	이미지 저장...	Save Image...
-ToolView.RoutePreviewInputToolTip	작은 입력 썸네일입니다. 클릭하면 중앙 작업영역에서 해당 레이어를 표시합니다.	Input thumbnail. Click to show this layer in the central workspace.
-ToolView.RoutePreviewOutputToolTip	작은 출력 썸네일입니다. 클릭하면 중앙 작업영역에서 해당 결과 레이어를 표시합니다.	Output thumbnail. Click to show this result layer in the central workspace.
+ToolView.RoutePreviewInputToolTip	작은 입력 썸네일입니다. 클릭하면 중앙 작업영역에 표시하고, 더블클릭하면 크게 봅니다.	Input thumbnail. Click to show it in the central workspace; double-click to enlarge it.
+ToolView.RoutePreviewOutputToolTip	작은 출력 썸네일입니다. 클릭하면 중앙 작업영역에 표시하고, 더블클릭하면 크게 봅니다.	Output thumbnail. Click to show it in the central workspace; double-click to enlarge it.
+ToolView.PreviewRole.Input	입력	Input
+ToolView.PreviewRole.InputA	입력 A	Input A
+ToolView.PreviewRole.InputB	입력 B	Input B
+ToolView.PreviewRole.Output	출력	Output
+ToolView.PreviewViewerTitleFormat	{0} · {1} · {2}	{0} · {1} · {2}
 PipelineReview.Title	파이프라인 리뷰	Pipeline Review
 PipelineReview.RecipeContextFormat	레시피: {0}	Recipe: {0}
 PipelineReview.ReturnToRecipe	레시피로 돌아가기	Return to Recipe
@@ -1805,6 +1810,11 @@ ImageCompare.DeltaVs	Delta vs {0:00}	Delta vs {0:00}
 ImageCompare.LoadFailed	이미지 비교 로드 실패.\n{0}	Image compare load failed.\n{0}
 ImageCompare.ImageSlot	이미지 {0:00}	Image {0:00}
 ImageCompare.ImagesCount	이미지: {0}/{1}	Images: {0}/{1}
+RoiEditor.ZoomOut	축소	Zoom out
+RoiEditor.ZoomIn	확대	Zoom in
+RoiEditor.FitView	이미지 맞춤	Fit image to view
+RoiEditor.Help.Single	드래그하여 ROI를 만듭니다. ROI 안쪽을 드래그하면 이동하고 핸들을 드래그하면 크기를 바꿉니다. 마우스 휠로 확대·축소하고 가운데 버튼 드래그로 이동합니다.	Drag to create ROI. Drag inside to move it, or drag a handle to resize it. Mouse wheel zooms; middle-drag pans.
+RoiEditor.Help.Multi	빈 영역을 드래그하여 ROI를 추가합니다. ROI를 드래그하면 이동하고 핸들을 드래그하면 크기를 바꿉니다. 마우스 휠로 확대·축소하고 가운데 버튼 드래그로 이동합니다.	Drag empty space to add ROI. Drag an ROI to move it, or drag a handle to resize it. Mouse wheel zooms; middle-drag pans.
 ImageCanvas.LoadImage	이미지 불러오기	Load Image
 ImageCanvas.SaveImage	이미지 저장	Save Image
 LayerDisplay.EmptyTitle	이미지 없음	No image

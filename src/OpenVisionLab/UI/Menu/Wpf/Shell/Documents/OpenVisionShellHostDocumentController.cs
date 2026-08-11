@@ -214,6 +214,7 @@ namespace OpenVisionLab
 
             OpenVisionNativeToolDocument document = ActiveNativeDocument;
             ActiveNativeDocument = null;
+            document.ClosePreviewViewer();
             document.LayerStateChanged -= layerStateChanged;
         }
 

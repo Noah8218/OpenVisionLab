@@ -275,6 +275,7 @@ namespace OpenVisionLab
             toolWindowController = new OpenVisionShellHostToolWindowController(
                 displayManager,
                 documentController,
+                layerViewerController,
                 floatingToolWindowHost,
                 toolWindowLifecycleController,
                 () => Window.GetWindow(this),
@@ -458,7 +459,9 @@ namespace OpenVisionLab
                 openPipelineXmlSteps:
                     () => tabRecipePipelineXmlSteps.IsSelected = true,
                 saveRecipe:
-                    () => this.runtimeContext.Global.Recipe.SaveTools());
+                    () => this.runtimeContext.Global.Recipe.SaveTools(),
+                waitForRecipeSwitchCompletion:
+                    () => recipeController.RecipePreparationTask);
             InputBindings.Add(new KeyBinding(
                 RecipeCommands.SaveRecipeCommand,
                 new KeyGesture(Key.S, ModifierKeys.Control)));
