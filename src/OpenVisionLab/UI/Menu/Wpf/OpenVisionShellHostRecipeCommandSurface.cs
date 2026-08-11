@@ -2124,6 +2124,10 @@ namespace OpenVisionLab
             "현재 레시피 설정을 저장합니다. 단축키: Ctrl+S",
             "Save the current recipe settings. Shortcut: Ctrl+S");
 
+        public string RecipeSwitchingTitleText => LocalText(
+            "레시피 불러오는 중",
+            "Loading recipe");
+
         public bool IsSwitchingRecipe
         {
             get => isSwitchingRecipe;

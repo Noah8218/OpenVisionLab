@@ -51,7 +51,8 @@ namespace OpenVisionLab
             refreshHostSelectedLayerDetail(displayManager.SelectedItem);
             refreshDirectRouteText();
             toolPrewarmController.SchedulePipelineReviewPrewarmIfEnabled();
-            toolPrewarmController.ScheduleNativePrewarmIfEnabled();
+            // Native documents are rebuilt on the next explicit Tool selection.
+            // Restarting the whole prewarm queue here competes with Recipe Manager input.
         }
     }
 }

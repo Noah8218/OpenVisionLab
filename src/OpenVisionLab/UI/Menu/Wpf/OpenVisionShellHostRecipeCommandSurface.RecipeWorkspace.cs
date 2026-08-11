@@ -183,8 +183,7 @@ namespace OpenVisionLab
                     CultureInfo.CurrentCulture,
                     LocalText("생성됨: {0}", "Created: {0}"),
                     result.RecipeName);
-                RefreshOptions();
-                refreshAfterSwitch();
+                RefreshAfterRecipeSwitchIfNeeded(result.RecipeName);
             }
             finally
             {

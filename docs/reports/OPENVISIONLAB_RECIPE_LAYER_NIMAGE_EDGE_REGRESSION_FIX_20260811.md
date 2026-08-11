@@ -6,6 +6,12 @@ Repository: `C:\Git\OpenVisionLab_Dev`
 
 Source baseline: `e396df85`
 
+> Correction (2026-08-11): item 2 below established a bound busy state in the
+> current-source WPF host, but did not prove that it was visibly composited by
+> the actual EXE before synchronous Recipe restoration began. The actual-EXE
+> correction and performance evidence are authoritative in
+> `OPENVISIONLAB_RECIPE_SWITCH_LOADING_RESPONSIVENESS_20260811.md`.
+
 ## Scope
 
 This batch closes the reported Recipe, layer image-load, N-image verification,

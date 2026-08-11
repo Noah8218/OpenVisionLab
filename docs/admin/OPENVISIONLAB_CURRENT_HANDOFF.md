@@ -53,13 +53,37 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
 
 ## Latest Completed Work
 
+### 2026-08-11 Recipe Switch Loading And Responsiveness - Complete In Dev
+
+- The earlier Recipe busy-state claim did not prove that the state reached the
+  actual EXE screen. Existing-Recipe selection now yields one WPF render turn
+  before synchronous Recipe state restoration and covers Recipe Manager with a
+  localized, themed, interaction-blocking loading overlay.
+- Recipe selection no longer repeats the Pipeline/validation/history/summary
+  refresh already performed by `RecipeState.EventChangedRecipe`. Recipe changes
+  also no longer restart the whole native Tool prewarm queue immediately after
+  the switch; the explicitly selected Tool still opens through the normal Tool
+  selection path.
+- In the final actual-EXE capture, the selection request returned in 39.2 ms,
+  the loading overlay was visible in captured frames, and the selected Recipe
+  and summary were complete by the first stable frame at 433.8 ms. A separate
+  responsiveness probe returned in 29.2 ms and was responsive from 414.3 ms
+  through its last 1,205.6 ms sample.
+- Debug build, readiness 13/13, Recipe switch safety/summary/context focused
+  checks, native Tool open, and actual-EXE monitor-placement evidence passed.
+  Evidence:
+  `docs/reports/OPENVISIONLAB_RECIPE_SWITCH_LOADING_RESPONSIVENESS_20260811.md`.
+
 ### 2026-08-11 Recipe, Layer, N-image, And Edge Regression Batch - Complete In Dev
 
 - Right-click image load now targets the exact clicked layer, Recipe save is
   available from the toolbar and `Ctrl+S`, and valid last image directories are
   reused across the affected workspace, Tool View, layer, and N-image dialogs.
-- Recipe create/switch exposes a busy state. Failed Step XML save/round-trip no
-  longer opens a second pending-edit dialog while retaining a dirty editor.
+- Recipe create/switch owns a busy-state contract. The original current-source
+  evidence did not prove actual-EXE visibility; the actual-EXE correction and
+  performance evidence are recorded in the newer Recipe switch report above.
+  Failed Step XML save/round-trip no longer opens a second pending-edit dialog
+  while retaining a dirty editor.
 - N-image verification now lists selected files before Run, distinguishes
   `ERROR`, `NG`, `OK`, and ungated `RUN OK`, selects failed evidence, and uses
   localized controls/tooltips/report structure. EdgeBasedMatching separates

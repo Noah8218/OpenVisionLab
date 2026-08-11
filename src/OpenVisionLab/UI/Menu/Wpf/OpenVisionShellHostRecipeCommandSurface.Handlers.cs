@@ -217,6 +217,7 @@ namespace OpenVisionLab
             OnPropertyChanged(nameof(ManagerButtonText));
             OnPropertyChanged(nameof(SaveRecipeText));
             OnPropertyChanged(nameof(SaveRecipeToolTipText));
+            OnPropertyChanged(nameof(RecipeSwitchingTitleText));
             OnPropertyChanged(nameof(ManagerButtonShortText));
             OnPropertyChanged(nameof(ManagerTitleText));
             OnPropertyChanged(nameof(RecipeOverviewTabText));
@@ -510,7 +511,7 @@ namespace OpenVisionLab
                 "No automatic sign-in, send, XML import, Preview, or Run is performed.");
         }
 
-        private void SelectRecipe(string recipeName)
+        private async void SelectRecipe(string recipeName)
         {
             if (string.IsNullOrWhiteSpace(recipeName))
             {
@@ -539,7 +540,7 @@ namespace OpenVisionLab
 
             if (isSelectingRecipe)
             {
-                SetSelectedRecipeName(normalized);
+                OnPropertyChanged(nameof(SelectedRecipeName));
                 return;
             }
 
@@ -547,14 +548,15 @@ namespace OpenVisionLab
             {
                 isSelectingRecipe = true;
                 BeginRecipeSwitchingState(normalized);
+                await System.Windows.Threading.Dispatcher.Yield(
+                    System.Windows.Threading.DispatcherPriority.Background);
                 RecipeWorkspaceService.EnsureVisionWorkspace(normalized);
                 switchRecipe(normalized);
                 StatusText = string.Format(
                     CultureInfo.CurrentCulture,
                     LocalText("선택됨: {0}", "Selected: {0}"),
                     normalized);
-                RefreshOptions();
-                refreshAfterSwitch();
+                RefreshAfterRecipeSwitchIfNeeded(normalized);
             }
             finally
             {
@@ -579,6 +581,22 @@ namespace OpenVisionLab
                     System.Windows.Threading.DispatcherPriority.Render,
                     new Action(() => { }));
             }
+        }
+
+        private void RefreshAfterRecipeSwitchIfNeeded(string recipeName)
+        {
+            if (string.Equals(
+                    selectedRecipeName,
+                    NormalizeRecipeName(recipeName),
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            // The normal shell path refreshes from RecipeState.EventChangedRecipe.
+            // Keep this fallback for isolated command-surface hosts without that event.
+            RefreshOptions();
+            refreshAfterSwitch();
         }
 
         private void SelectPipelineOption(OpenVisionRecipePipelineOption option)
