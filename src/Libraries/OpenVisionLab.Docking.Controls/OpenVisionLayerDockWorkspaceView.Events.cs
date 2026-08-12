@@ -8,6 +8,7 @@ namespace OpenVisionLab.Docking.Controls
             layerDockingManager.LayoutChanged += OnDockingLayoutChanged;
             layerDockingManager.ContentDocked += OnDockingContentDocked;
             layerDockingManager.ContentFloated += OnDockingContentFloated;
+            layerDockingManager.ActiveContentChanged += OnActiveContentChanged;
         }
 
         private void OnDockingLayoutChanged(object sender, EventArgs e)
@@ -23,6 +24,11 @@ namespace OpenVisionLab.Docking.Controls
         private void OnDockingContentFloated(object sender, EventArgs e)
         {
             DockingContentFloated?.Invoke(this, e);
+        }
+
+        private void OnActiveContentChanged(object sender, EventArgs e)
+        {
+            ActiveDocumentChanged?.Invoke(this, e);
         }
     }
 }

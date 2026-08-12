@@ -3,6 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Threading;
 
 namespace OpenVisionLab
 {
@@ -10,16 +13,21 @@ namespace OpenVisionLab
     {
         private readonly OpenVisionLayerDockWorkspaceView workspaceView;
         private readonly OpenVisionShellHostDockedLayerOrchestrator orchestrator;
+        private readonly Action<string> activateLayer;
 
         internal OpenVisionDockedLayerWorkspaceRuntime(
             OpenVisionLayerDockWorkspaceView workspaceView,
             OpenVisionDockedLayerWorkspaceViewModel viewModel,
-            OpenVisionShellHostDockedLayerOrchestrator orchestrator)
+            OpenVisionShellHostDockedLayerOrchestrator orchestrator,
+            Action<string> activateLayer)
         {
             this.workspaceView = workspaceView ?? throw new ArgumentNullException(nameof(workspaceView));
             ViewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
             this.orchestrator = orchestrator ?? throw new ArgumentNullException(nameof(orchestrator));
+            this.activateLayer = activateLayer ?? throw new ArgumentNullException(nameof(activateLayer));
             this.orchestrator.WorkspaceStateChanged += OnOrchestratorWorkspaceStateChanged;
+            this.workspaceView.ActiveDocumentChanged += OnActiveDocumentChanged;
+            this.workspaceView.PreviewMouseDown += OnWorkspacePreviewMouseDown;
         }
 
         public event EventHandler WorkspaceStateChanged;
@@ -188,6 +196,48 @@ namespace OpenVisionLab
         {
             ViewModel.RefreshDocumentState();
             WorkspaceStateChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void OnActiveDocumentChanged(object sender, EventArgs e)
+        {
+            string layerTitle = workspaceView.ActiveDocumentId;
+            if (!string.IsNullOrWhiteSpace(layerTitle))
+            {
+                QueueLayerActivation(layerTitle);
+            }
+        }
+
+        private void OnWorkspacePreviewMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            OpenVisionLayerViewerView viewer = FindVisualAncestor<OpenVisionLayerViewerView>(
+                e?.OriginalSource as DependencyObject);
+            if (!string.IsNullOrWhiteSpace(viewer?.LayerTitle))
+            {
+                QueueLayerActivation(viewer.LayerTitle);
+            }
+        }
+
+        private void QueueLayerActivation(string layerTitle)
+        {
+            workspaceView.Dispatcher.BeginInvoke(
+                DispatcherPriority.Background,
+                (Action)(() => activateLayer(layerTitle)));
+        }
+
+        private static T FindVisualAncestor<T>(DependencyObject element)
+            where T : DependencyObject
+        {
+            while (element != null)
+            {
+                if (element is T match)
+                {
+                    return match;
+                }
+
+                element = VisualTreeHelper.GetParent(element);
+            }
+
+            return null;
         }
     }
 }

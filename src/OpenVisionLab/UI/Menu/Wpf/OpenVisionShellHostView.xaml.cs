@@ -224,7 +224,8 @@ namespace OpenVisionLab
                     layerViewerController.CanOpen,
                     () => sessionState.Loaded,
                     refreshCoordinator.ApplyDockedLayerRefreshResult,
-                    refreshCoordinator.RefreshLayerActionButtons));
+                    refreshCoordinator.RefreshLayerActionButtons,
+                    ActivateDockedLayer));
             dockedLayerWorkspaceComposition.Attach(refreshCoordinator, lifecycle);
             nativePreviewRouteCoordinator = new OpenVisionNativePreviewRouteCoordinator(
                 displayManager,
@@ -676,6 +677,16 @@ namespace OpenVisionLab
         {
             get => (OpenVisionShellHostRecipeCommandSurface)GetValue(RecipeCommandsProperty);
             private set => SetValue(RecipeCommandsProperty, value);
+        }
+
+        private void ActivateDockedLayer(string layerTitle)
+        {
+            if (string.Equals(layerListPresenter.ActiveLayerTitle, layerTitle, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            layerActivationController?.Activate(layerTitle);
         }
 
         public OpenVisionShellHostCommandSurfaces CommandSurfaces

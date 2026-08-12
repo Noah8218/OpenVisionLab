@@ -1,4 +1,6 @@
+using AvalonDock.Layout;
 using System;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -52,6 +54,8 @@ namespace OpenVisionLab.Docking.Controls
 
         public event EventHandler DockingContentFloated;
 
+        public event EventHandler ActiveDocumentChanged;
+
         public bool IsWorkspaceDropEnabled
         {
             get => (bool)GetValue(IsWorkspaceDropEnabledProperty);
@@ -78,6 +82,25 @@ namespace OpenVisionLab.Docking.Controls
 
         public OpenVisionDockWorkspaceHandle WorkspaceHandle =>
             OpenVisionDockWorkspaceHandle.FromNative(layerDockingManager, layerAnchorablePane);
+
+        public string ActiveDocumentId
+        {
+            get
+            {
+                object activeContent = layerDockingManager?.ActiveContent;
+                if (activeContent == null || layerDockingManager?.Layout == null)
+                {
+                    return string.Empty;
+                }
+
+                return layerDockingManager.Layout
+                    .Descendents()
+                    .OfType<LayoutAnchorable>()
+                    .FirstOrDefault(document => ReferenceEquals(document.Content, activeContent))
+                    ?.ContentId
+                    ?? string.Empty;
+            }
+        }
 
         public FrameworkElement PaneGuideOverlay => null;
 

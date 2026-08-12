@@ -17,7 +17,8 @@ namespace OpenVisionLab
             Func<string, bool> canOpenLayer,
             Func<bool> isLoadedProvider,
             Action<OpenVisionDockDocumentRefreshResult> applyRefreshResult,
-            Action refreshLayerActions)
+            Action refreshLayerActions,
+            Action<string> activateLayer)
         {
             WorkspaceView = workspaceView ?? throw new ArgumentNullException(nameof(workspaceView));
             DisplayManager = displayManager ?? throw new ArgumentNullException(nameof(displayManager));
@@ -28,6 +29,7 @@ namespace OpenVisionLab
             IsLoadedProvider = isLoadedProvider ?? throw new ArgumentNullException(nameof(isLoadedProvider));
             ApplyRefreshResult = applyRefreshResult ?? throw new ArgumentNullException(nameof(applyRefreshResult));
             RefreshLayerActions = refreshLayerActions ?? throw new ArgumentNullException(nameof(refreshLayerActions));
+            ActivateLayer = activateLayer ?? throw new ArgumentNullException(nameof(activateLayer));
         }
 
         public OpenVisionLayerDockWorkspaceView WorkspaceView { get; }
@@ -47,5 +49,7 @@ namespace OpenVisionLab
         public Action<OpenVisionDockDocumentRefreshResult> ApplyRefreshResult { get; }
 
         public Action RefreshLayerActions { get; }
+
+        public Action<string> ActivateLayer { get; }
     }
 }

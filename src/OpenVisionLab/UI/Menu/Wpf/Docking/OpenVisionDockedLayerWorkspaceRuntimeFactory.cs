@@ -23,7 +23,11 @@ namespace OpenVisionLab
                 OpenVisionDockedLayerWorkspaceCompositionFactory.Create(options, content);
             OpenVisionShellHostDockedLayerOrchestrator orchestrator = new OpenVisionShellHostDockedLayerOrchestrator(workspaceComposition);
 
-            return new OpenVisionDockedLayerWorkspaceRuntime(options.WorkspaceView, content.ViewModel, orchestrator);
+            return new OpenVisionDockedLayerWorkspaceRuntime(
+                options.WorkspaceView,
+                content.ViewModel,
+                orchestrator,
+                options.ActivateLayer);
         }
     }
 }

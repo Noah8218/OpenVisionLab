@@ -12323,6 +12323,104 @@ internal static class Program
                     }
                 }
 
+                const string contourPreviewLayer = "Contour_Preview";
+                using (Bitmap contourPreviewSeed = CreateDockingPanelSmokeBitmap(31))
+                {
+                    if (!shellHost.AddLayerImageForTest(contourPreviewLayer, contourPreviewSeed))
+                    {
+                        throw new InvalidOperationException("Could not create the Contour_Preview regression layer.");
+                    }
+                }
+
+                Pump(40);
+                if (!shellHost.DockLayerForTest("Main")
+                    || !shellHost.DockLayerForTest(contourPreviewLayer))
+                {
+                    throw new InvalidOperationException("Could not dock Main and Contour_Preview for the command-target regression check.");
+                }
+
+                Pump(50);
+                if (!shellHost.ActivateDockedLayerForTest(contourPreviewLayer))
+                {
+                    throw new InvalidOperationException("Could not select Contour_Preview from the docked document.");
+                }
+
+                Pump(50);
+                if (!string.Equals(shellHost.SelectedHostLayerTitle, contourPreviewLayer, StringComparison.OrdinalIgnoreCase)
+                    || !string.Equals(shellHost.ActiveHostLayerTitle, contourPreviewLayer, StringComparison.OrdinalIgnoreCase)
+                    || !string.Equals(shellHost.WorkspaceLayerTitle, contourPreviewLayer, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        "Selecting the docked Contour_Preview document did not establish the previous global layer selection. "
+                        + $"Selected={shellHost.SelectedHostLayerTitle}, Active={shellHost.ActiveHostLayerTitle}, Workspace={shellHost.WorkspaceLayerTitle}");
+                }
+
+                int dockedSelectionRunsBefore = shellHost.NativePreviewRunCount;
+                int dockedSelectionLayerCountBefore = shellHost.LayerDocumentCount;
+                string dockedSelectionInputRouteBefore = shellHost.ActiveNativeRouteInputLayerNameForTest;
+                string dockedSelectionOutputRouteBefore = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+                using Bitmap contourPreviewBeforeMainLoad = shellHost.GetLayerImageCloneForTest(contourPreviewLayer);
+                string contourPreviewHashBeforeMainLoad = VisionPipelineScaleCalibrationStorage
+                    .ComputeBitmapSha256(contourPreviewBeforeMainLoad);
+
+                if (!shellHost.ActivateDockedLayerForTest("Main"))
+                {
+                    throw new InvalidOperationException("Selecting the docked Main document failed.");
+                }
+
+                Pump(50);
+                if (!string.Equals(shellHost.SelectedHostLayerTitle, "Main", StringComparison.OrdinalIgnoreCase)
+                    || !string.Equals(shellHost.ActiveHostLayerTitle, "Main", StringComparison.OrdinalIgnoreCase)
+                    || !string.Equals(shellHost.WorkspaceLayerTitle, "Main", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        "Selecting the docked Main document did not make Main the exact layer-command target. "
+                        + $"Selected={shellHost.SelectedHostLayerTitle}, Active={shellHost.ActiveHostLayerTitle}, Workspace={shellHost.WorkspaceLayerTitle}");
+                }
+
+                if (!shellHost.LoadImageIntoLayerForTest(shellHost.WorkspaceLayerTitle, loadImagePath))
+                {
+                    throw new InvalidOperationException("Loading the second image into the dock-selected Main layer failed.");
+                }
+
+                Pump(50);
+                using (Bitmap mainAfterDockedLoad = shellHost.GetLayerImageCloneForTest("Main"))
+                using (Bitmap contourPreviewAfterMainLoad = shellHost.GetLayerImageCloneForTest(contourPreviewLayer))
+                {
+                    string contourPreviewHashAfterMainLoad = VisionPipelineScaleCalibrationStorage
+                        .ComputeBitmapSha256(contourPreviewAfterMainLoad);
+                    if (mainAfterDockedLoad.Width != 512
+                        || mainAfterDockedLoad.Height != 384
+                        || !string.Equals(
+                            contourPreviewHashBeforeMainLoad,
+                            contourPreviewHashAfterMainLoad,
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new InvalidOperationException(
+                            "Loading Main from the docked document changed Contour_Preview or missed Main. "
+                            + $"Main={mainAfterDockedLoad.Width}x{mainAfterDockedLoad.Height}, "
+                            + $"ContourBefore={contourPreviewHashBeforeMainLoad}, ContourAfter={contourPreviewHashAfterMainLoad}");
+                    }
+
+                    string artifactDirectory = Path.GetDirectoryName(outputPath)
+                        ?? throw new InvalidOperationException("The layer-management output directory could not be resolved.");
+                    mainAfterDockedLoad.Save(Path.Combine(artifactDirectory, "main_after_docked_load.png"), ImageFormat.Png);
+                    contourPreviewAfterMainLoad.Save(Path.Combine(artifactDirectory, "contour_preview_after_main_load.png"), ImageFormat.Png);
+                }
+
+                if (shellHost.NativePreviewRunCount != dockedSelectionRunsBefore
+                    || shellHost.LayerDocumentCount != dockedSelectionLayerCountBefore
+                    || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, dockedSelectionInputRouteBefore, StringComparison.Ordinal)
+                    || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, dockedSelectionOutputRouteBefore, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "Docked Main selection/load caused an unintended execution, layer, or route mutation. "
+                        + $"Runs={dockedSelectionRunsBefore}->{shellHost.NativePreviewRunCount}, "
+                        + $"Layers={dockedSelectionLayerCountBefore}->{shellHost.LayerDocumentCount}, "
+                        + $"Input={dockedSelectionInputRouteBefore}->{shellHost.ActiveNativeRouteInputLayerNameForTest}, "
+                        + $"Output={dockedSelectionOutputRouteBefore}->{shellHost.ActiveNativeRouteOutputLayerNameForTest}");
+                }
+
                 string deleteLayer = shellHost.CreateLayerForTest();
                 Pump(30);
                 if (!shellHost.DockLayerForTest(deleteLayer))

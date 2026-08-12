@@ -71,8 +71,10 @@ namespace OpenVisionLab.Docking.Controls
         {
             LayoutAnchorablePane targetPane = GetPrimaryPane();
             return EnumerateHostedDocuments(documentIds)
-                .FirstOrDefault(document => document.IsSelected || document.IsActive)?.ContentId
+                .FirstOrDefault(document => document.IsActive)?.ContentId
                 ?? targetPane?.SelectedContent?.ContentId
+                ?? EnumerateHostedDocuments(documentIds)
+                    .FirstOrDefault(document => document.IsSelected)?.ContentId
                 ?? fallbackContentId
                 ?? string.Empty;
         }

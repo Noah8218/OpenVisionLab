@@ -201,6 +201,11 @@ namespace OpenVisionLab
 
         public bool DockLayerForTest(string layerTitle) => dockingTestFacade.DockLayerDocument(layerTitle);
 
+        public bool ActivateDockedLayerForTest(string layerTitle)
+        {
+            return dockedLayerWorkspaceComposition.Commands.ActivateLayerDocument(layerTitle);
+        }
+
         public bool AddLayerImageForTest(string layerTitle, Bitmap image) => layerTestFacade.AddLayerImage(layerTitle, image);
 
         public string CreateLayerForTest() => layerManagementController.CreateLayer();
