@@ -14,6 +14,7 @@ namespace OpenVisionLab
         private readonly OpenVisionLayerDockWorkspaceView workspaceView;
         private readonly OpenVisionShellHostDockedLayerOrchestrator orchestrator;
         private readonly Action<string> activateLayer;
+        private bool pointerLayerSelectionPending;
 
         internal OpenVisionDockedLayerWorkspaceRuntime(
             OpenVisionLayerDockWorkspaceView workspaceView,
@@ -200,6 +201,12 @@ namespace OpenVisionLab
 
         private void OnActiveDocumentChanged(object sender, EventArgs e)
         {
+            if (!pointerLayerSelectionPending)
+            {
+                return;
+            }
+
+            pointerLayerSelectionPending = false;
             string layerTitle = workspaceView.ActiveDocumentId;
             if (!string.IsNullOrWhiteSpace(layerTitle))
             {
@@ -209,6 +216,10 @@ namespace OpenVisionLab
 
         private void OnWorkspacePreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
+            pointerLayerSelectionPending = true;
+            workspaceView.Dispatcher.BeginInvoke(
+                DispatcherPriority.Background,
+                (Action)(() => pointerLayerSelectionPending = false));
             OpenVisionLayerViewerView viewer = FindVisualAncestor<OpenVisionLayerViewerView>(
                 e?.OriginalSource as DependencyObject);
             if (!string.IsNullOrWhiteSpace(viewer?.LayerTitle))

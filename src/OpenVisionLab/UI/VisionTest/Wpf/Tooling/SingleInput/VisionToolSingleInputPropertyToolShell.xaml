@@ -339,6 +339,7 @@
                     <Border x:Name="propertyGridHost"
                             Grid.Row="2"
                             MinHeight="370"
+                            Padding="0,0,0,4"
                             Background="{StaticResource VisionTool.PanelBrush}"
                             BorderBrush="{StaticResource VisionTool.HeaderBorderBrush}"
                             BorderThickness="1"

@@ -308,6 +308,7 @@ internal static class Program
         ["wpf_layer_selection_all_native_tools"] = CaptureLayerSelectionAllNativeTools,
         ["wpf_algorithm_output_preview_flow"] = CaptureAlgorithmOutputPreviewFlow,
         ["wpf_shell_host_edge_based_matching_tool"] = CaptureShellHostEdgeBasedMatchingTool,
+        ["wpf_edge_based_property_grid_bottom_layout"] = CaptureEdgeBasedPropertyGridBottomLayout,
         ["wpf_shell_host_edge_based_matching_auto_mpoint"] = CaptureShellHostEdgeBasedMatchingAutoMPoint,
         ["wpf_tool_n_image_verification_window"] = CaptureToolNImageVerificationWindow,
         ["wpf_tool_n_image_locator_promotion_window"] = CaptureToolNImageLocatorPromotionWindow,
@@ -21779,6 +21780,24 @@ internal static class Program
                 + $"SourceHashLength={thresholdView.SignalInspectorSourceSha256ForTest.Length}");
         }
 
+        if (thresholdView.IsSignalInspectorOverlayVisibleForTest
+            || !thresholdView.IsSignalEvidenceCueVisibleForTest)
+        {
+            throw new InvalidOperationException(
+                "Basic Threshold Preview must keep the signal inspector closed and show only the transient evidence cue.");
+        }
+
+        thresholdView.OpenSignalInspectorForTest();
+        Pump(4);
+        if (!thresholdView.IsSignalInspectorOverlayVisibleForTest
+            || thresholdView.IsSignalEvidenceCueVisibleForTest)
+        {
+            throw new InvalidOperationException(
+                "Basic Threshold explicit signal-review action did not open the inspector or dismiss the cue. "
+                + $"Evidence={thresholdView.SignalInspectorHasEvidenceForTest}, "
+                + $"Overlay={thresholdView.IsSignalInspectorOverlayVisibleForTest}, "
+                + $"Cue={thresholdView.IsSignalEvidenceCueVisibleForTest}");
+        }
         AssertVisibleTextContains(
             thresholdView,
             "Basic Threshold signal inspector",
@@ -21803,6 +21822,7 @@ internal static class Program
         }
 
         thresholdView.OpenSignalInspectorForTest();
+        Pump(4);
         if (!thresholdView.IsSignalInspectorOverlayVisibleForTest
             || shellHost.NativePreviewRunCount != runsBeforeOverlayNavigation
             || shellHost.LayerDocumentCount != layersBeforeOverlayNavigation
@@ -21919,6 +21939,20 @@ internal static class Program
                 "Range Threshold signal inspector did not retain matching Lower/Upper markers.");
         }
 
+        if (thresholdView.IsSignalInspectorOverlayVisibleForTest
+            || !thresholdView.IsSignalEvidenceCueVisibleForTest)
+        {
+            throw new InvalidOperationException(
+                "Range Threshold Preview must keep the signal inspector closed and show only the transient evidence cue.");
+        }
+
+        thresholdView.OpenSignalInspectorForTest();
+        if (!thresholdView.IsSignalInspectorOverlayVisibleForTest
+            || thresholdView.IsSignalEvidenceCueVisibleForTest)
+        {
+            throw new InvalidOperationException(
+                "Range Threshold explicit signal-review action did not open the inspector or dismiss the cue.");
+        }
         AssertVisibleTextContains(
             thresholdView,
             "Range Threshold signal inspector",
@@ -28792,6 +28826,73 @@ internal static class Program
     private static CaptureResult CaptureShellHostEdgeBasedMatchingAutoMPoint(string outputPath)
     {
         return CaptureShellHostEdgeBasedMatchingToolCore(outputPath, dockAfterVerification: false);
+    }
+
+    private static CaptureResult CaptureEdgeBasedPropertyGridBottomLayout(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        OpenVisionShellHostView shellHost = CreateShellHost(
+            "Smoke_EdgeBasedPropertyGridBottom_" + Guid.NewGuid().ToString("N").Substring(0, 12));
+        return CaptureWindowWithContent(shellHost, outputPath, 1180, 720, () =>
+        {
+            shellHost.SelectToolForTest(VISION_MENU.EdgeBasedMatching);
+            Pump(16);
+            AssertDockActiveNativeTool(
+                shellHost,
+                "EdgeBasedMatchingToolWpfView",
+                "EdgeBasedMatching PropertyGrid bottom layout");
+            shellHost.SetDockedToolInspectorWidthForTest(620D);
+            Pump(12);
+
+            DependencyObject root = GetActiveToolVisualRoot(
+                "EdgeBasedMatching PropertyGrid bottom layout");
+            VisionToolSingleInputPropertyToolShell shell =
+                FindVisualChildren<VisionToolSingleInputPropertyToolShell>(root)
+                    .FirstOrDefault(item => item.IsVisible)
+                ?? throw new InvalidOperationException(
+                    "EdgeBasedMatching PropertyGrid bottom layout did not contain the shared inspector shell.");
+            System.Windows.Controls.WpfPropertyGrid.PropertyGrid propertyGrid =
+                FindVisualChildren<System.Windows.Controls.WpfPropertyGrid.PropertyGrid>(shell.PropertyGridHost)
+                    .FirstOrDefault(item => item.IsVisible)
+                ?? throw new InvalidOperationException(
+                    "EdgeBasedMatching PropertyGrid bottom layout did not contain the generated PropertyGrid.");
+
+            TextBox searchTextBox = GetActivePropertyGridSearchTextBox(
+                propertyGrid,
+                "EdgeBasedMatching bottom-layout search");
+            searchTextBox.Text = "Canny";
+            searchTextBox.CaretIndex = searchTextBox.Text.Length;
+            Pump(8);
+            if (!string.Equals(searchTextBox.Text, "Canny", StringComparison.Ordinal)
+                || !searchTextBox.IsVisible
+                || searchTextBox.ActualWidth < 120D)
+            {
+                throw new InvalidOperationException(
+                    "EdgeBasedMatching PropertyGrid search text was not visibly retained in the docked inspector.");
+            }
+
+            string evidenceDirectory = Path.GetDirectoryName(outputPath) ?? Directory.GetCurrentDirectory();
+            WriteElementPng(
+                root as FrameworkElement
+                    ?? throw new InvalidOperationException("EdgeBasedMatching docked root is not renderable."),
+                Path.Combine(evidenceDirectory, "edge_property_grid_search_text.png"),
+                620,
+                650);
+
+            searchTextBox.Clear();
+            Pump(8);
+            ScrollViewer scrollViewer = FindPrimaryPropertyGridScrollViewer(propertyGrid)
+                ?? throw new InvalidOperationException(
+                    "EdgeBasedMatching PropertyGrid did not expose its parameter ScrollViewer.");
+            scrollViewer.ScrollToEnd();
+            propertyGrid.UpdateLayout();
+            Pump(8);
+            AssertPropertyGridBottomRowFullyVisible(
+                "EdgeBasedMatching docked PropertyGrid",
+                shell,
+                propertyGrid,
+                scrollViewer);
+        });
     }
 
     private static CaptureResult CaptureToolNImageVerificationWindow(string outputPath)
@@ -36578,6 +36679,75 @@ internal static class Program
                 name + " PropertyGrid host overlaps the result/summary area after docking. "
                 + $"PropertyGridBottom={propertyGridBottom:0.0}, BottomLimit={bottomLimit:0.0}, "
                 + $"PropertyGridHeight={shell.PropertyGridHost.ActualHeight:0.0}, ShellHeight={shell.ActualHeight:0.0}");
+        }
+    }
+
+    private static void AssertPropertyGridBottomRowFullyVisible(
+        string name,
+        VisionToolSingleInputPropertyToolShell shell,
+        System.Windows.Controls.WpfPropertyGrid.PropertyGrid propertyGrid,
+        ScrollViewer scrollViewer)
+    {
+        if (shell.PropertyGridHost.Padding.Bottom < 3.5D)
+        {
+            throw new InvalidOperationException(
+                name + " does not reserve bottom breathing room inside the PropertyGrid host. "
+                + $"Padding={shell.PropertyGridHost.Padding}");
+        }
+
+        System.Windows.Point hostOrigin = shell.PropertyGridHost.TranslatePoint(
+            new System.Windows.Point(0D, 0D),
+            shell);
+        System.Windows.Point summaryOrigin = shell.SummaryHost.TranslatePoint(
+            new System.Windows.Point(0D, 0D),
+            shell);
+        double hostBottom = hostOrigin.Y + shell.PropertyGridHost.ActualHeight;
+        if (summaryOrigin.Y - hostBottom < 3.5D)
+        {
+            throw new InvalidOperationException(
+                name + " does not keep the compact verification summary separate from the PropertyGrid. "
+                + $"PropertyGridBottom={hostBottom:0.0}, SummaryTop={summaryOrigin.Y:0.0}");
+        }
+
+        List<(FrameworkElement Element, double Top, double Bottom)> visibleRows =
+            FindVisualChildren<FrameworkElement>(propertyGrid)
+                .Where(item => item.IsVisible && item.ActualHeight > 0D)
+                .Where(item =>
+                {
+                    string propertyName = ResolvePropertyGridPropertyName(item.DataContext);
+                    if (string.IsNullOrWhiteSpace(propertyName))
+                    {
+                        return false;
+                    }
+
+                    DependencyObject? parent = VisualTreeHelper.GetParent(item);
+                    string parentPropertyName = parent is FrameworkElement parentElement
+                        ? ResolvePropertyGridPropertyName(parentElement.DataContext)
+                        : string.Empty;
+                    return !string.Equals(propertyName, parentPropertyName, StringComparison.Ordinal);
+                })
+                .Select(item =>
+                {
+                    System.Windows.Point origin = item.TranslatePoint(
+                        new System.Windows.Point(0D, 0D),
+                        scrollViewer);
+                    return (Element: item, Top: origin.Y, Bottom: origin.Y + item.ActualHeight);
+                })
+                .Where(item => item.Bottom > 0D && item.Top < scrollViewer.ActualHeight)
+                .ToList();
+        if (visibleRows.Count == 0)
+        {
+            throw new InvalidOperationException(name + " did not render any PropertyGrid rows.");
+        }
+
+        (FrameworkElement Element, double Top, double Bottom) lastRow =
+            visibleRows.OrderByDescending(item => item.Bottom).First();
+        if (lastRow.Bottom > scrollViewer.ActualHeight + 0.5D)
+        {
+            throw new InvalidOperationException(
+                name + " clips its bottom PropertyGrid row. "
+                + $"RowTop={lastRow.Top:0.0}, RowBottom={lastRow.Bottom:0.0}, "
+                + $"ViewportBottom={scrollViewer.ActualHeight:0.0}, RowHeight={lastRow.Element.ActualHeight:0.0}");
         }
     }
 

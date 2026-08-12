@@ -13,7 +13,7 @@ namespace OpenVisionLab
         private readonly VisionToolSingleInputMatchingToolController<EdgeBasedMatchingProperty> toolController;
         private readonly AutoMPointTeachingPanel autoMPointPanel;
         private readonly AutoMPointTeachingController autoMPointController;
-        private readonly UIElement verificationGuide;
+        private readonly VisionToolVerificationGuideView verificationGuide;
 
         internal EdgeBasedMatchingToolWpfView(VisionToolPropertyGridPresenter<EdgeBasedMatchingProperty> presenter)
         {
@@ -29,8 +29,9 @@ namespace OpenVisionLab
                     "Edge Match"));
             AttachPropertyToolController(toolController);
 
-            verificationGuide = toolShell.ToolContent as UIElement
+            verificationGuide = toolShell.ToolContent as VisionToolVerificationGuideView
                 ?? throw new InvalidOperationException("Edge Based Matching runtime must provide its verification guide.");
+            verificationGuide.IsCompactMode = true;
             Grid toolContent = new Grid();
             toolContent.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             toolContent.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -44,7 +45,9 @@ namespace OpenVisionLab
 
             autoMPointPanel.DetailsExpander.Expanded += AutoMPointDetails_Expanded;
             autoMPointPanel.DetailsExpander.Collapsed += AutoMPointDetails_Collapsed;
+            toolShell.DockedInspectorModeChanged += ToolShell_DockedInspectorModeChanged;
             autoMPointController = new AutoMPointTeachingController(autoMPointPanel, toolController);
+            ApplyVerificationGuideVisibility();
         }
 
         public string ResultReviewTextForTest => toolController.ResultReviewText;
@@ -122,17 +125,34 @@ namespace OpenVisionLab
             autoMPointController.Dispose();
             autoMPointPanel.DetailsExpander.Expanded -= AutoMPointDetails_Expanded;
             autoMPointPanel.DetailsExpander.Collapsed -= AutoMPointDetails_Collapsed;
+            toolShell.DockedInspectorModeChanged -= ToolShell_DockedInspectorModeChanged;
             autoMPointPanel.Dispose();
         }
 
         private void AutoMPointDetails_Expanded(object sender, RoutedEventArgs e)
         {
-            verificationGuide.Visibility = Visibility.Collapsed;
+            ApplyVerificationGuideVisibility();
         }
 
         private void AutoMPointDetails_Collapsed(object sender, RoutedEventArgs e)
         {
-            verificationGuide.Visibility = Visibility.Visible;
+            ApplyVerificationGuideVisibility();
+        }
+
+        private void ToolShell_DockedInspectorModeChanged(object sender, EventArgs e)
+        {
+            ApplyVerificationGuideVisibility();
+        }
+
+        private void ApplyVerificationGuideVisibility()
+        {
+            bool compactCollapsedPanel = toolShell.IsDockedInspectorMode
+                && !autoMPointPanel.DetailsExpander.IsExpanded;
+            autoMPointPanel.MaxHeight = compactCollapsedPanel ? 40D : double.PositiveInfinity;
+            verificationGuide.Visibility = toolShell.IsDockedInspectorMode
+                || autoMPointPanel.DetailsExpander.IsExpanded
+                    ? Visibility.Collapsed
+                    : Visibility.Visible;
         }
     }
 }

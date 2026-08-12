@@ -203,7 +203,13 @@ namespace OpenVisionLab
 
         public bool ActivateDockedLayerForTest(string layerTitle)
         {
-            return dockedLayerWorkspaceComposition.Commands.ActivateLayerDocument(layerTitle);
+            if (!dockedLayerWorkspaceComposition.Commands.ActivateLayerDocument(layerTitle))
+            {
+                return false;
+            }
+
+            ActivateDockedLayer(layerTitle);
+            return true;
         }
 
         public bool AddLayerImageForTest(string layerTitle, Bitmap image) => layerTestFacade.AddLayerImage(layerTitle, image);

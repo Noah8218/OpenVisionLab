@@ -57,7 +57,13 @@
             </Grid.RowDefinitions>
             <Grid Grid.Row="0"
                   AutomationProperties.AutomationId="ThresholdToolLearnEntry">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
                 <Button x:Name="btnOpenSignalInspector"
+                        Grid.Column="0"
                         HorizontalAlignment="Left"
                         MinWidth="132"
                         Height="26"
@@ -66,6 +72,25 @@
                         Content="Review distribution"
                         Visibility="Collapsed"
                         AutomationProperties.AutomationId="ThresholdSignalInspectorOpenButton" />
+                <Border x:Name="signalEvidenceCue"
+                        Grid.Column="1"
+                        MaxWidth="160"
+                        MinHeight="26"
+                        Margin="6,0,0,0"
+                        Padding="9,4"
+                        VerticalAlignment="Center"
+                        IsHitTestVisible="False"
+                        Visibility="Collapsed"
+                        Background="{StaticResource VisionTool.HeaderBrush}"
+                        BorderBrush="{StaticResource VisionTool.AccentBrush}"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        AutomationProperties.AutomationId="ThresholdSignalEvidenceCue">
+                    <TextBlock x:Name="txtSignalEvidenceCue"
+                               Foreground="{StaticResource VisionTool.PrimaryTextBrush}"
+                               Text="Distribution updated"
+                               TextTrimming="CharacterEllipsis" />
+                </Border>
             </Grid>
 
                 <GroupBox x:Name="gbMode" Grid.Row="2" Header="Mode" Padding="8">

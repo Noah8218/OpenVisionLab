@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Data;
+using System.Windows.Threading;
 using OpenVisionLab.Contracts;
 using OpenVisionLab.Services;
 
@@ -19,6 +20,7 @@ namespace OpenVisionLab
         private readonly ThresholdToolLearnWindowController learnWindowController;
         private readonly ThresholdToolTextPresenter textPresenter;
         private readonly VisionToolCustomParameterGuideBinder parameterGuideBinder;
+        private readonly DispatcherTimer signalEvidenceCueTimer;
         private VisionToolThresholdSuggestion thresholdSuggestion;
         private ThresholdSuggestionUndoState thresholdSuggestionUndo;
         private bool suppressEvents = true;
@@ -62,6 +64,11 @@ namespace OpenVisionLab
                 panelRange,
                 panelAdaptive);
             signalInspector.MarkerValueChangeRequested += SignalInspector_MarkerValueChangeRequested;
+            signalEvidenceCueTimer = new DispatcherTimer(DispatcherPriority.Background, Dispatcher)
+            {
+                Interval = TimeSpan.FromSeconds(3)
+            };
+            signalEvidenceCueTimer.Tick += SignalEvidenceCueTimer_Tick;
             learnWindowController = new ThresholdToolLearnWindowController(
                 presenter,
                 thresholdInteractionController,
@@ -136,6 +143,8 @@ namespace OpenVisionLab
 
         protected override void DisposeToolResources()
         {
+            signalEvidenceCueTimer.Stop();
+            signalEvidenceCueTimer.Tick -= SignalEvidenceCueTimer_Tick;
             parameterGuideBinder.Dispose();
             toolShell.LearnTopicRequested -= ToolShell_LearnTopicRequested;
             learnWindowController.Dispose();
@@ -158,6 +167,12 @@ namespace OpenVisionLab
                     ? "분포 다시 보기"
                     : "Review distribution";
             bool korean = OpenVisionLanguageService.CurrentLanguage == OpenVisionLanguage.Korean;
+            btnOpenSignalInspector.ToolTip = korean
+                ? "\uD604\uC7AC Preview\uC758 \uBC1D\uAE30 \uBD84\uD3EC\uC640 \uAE30\uC900\uAC12\uC744 \uAC80\uD1A0\uD569\uB2C8\uB2E4."
+                : "Review the current Preview brightness distribution and cutoff.";
+            txtSignalEvidenceCue.Text = korean
+                ? "\uBD84\uD3EC \uAC31\uC2E0\uB428"
+                : "Distribution updated";
             thresholdSuggestionTitle.Text = korean
                 ? "Threshold 티칭 제안"
                 : "Threshold teaching suggestion";
@@ -212,6 +227,9 @@ namespace OpenVisionLab
         internal bool IsSignalInspectorOverlayVisibleForTest =>
             signalInspectorOverlay.Visibility == Visibility.Visible;
 
+        internal bool IsSignalEvidenceCueVisibleForTest =>
+            signalEvidenceCue.Visibility == Visibility.Visible;
+
         internal double GetSignalInspectorMarkerValueForTest(string markerId)
         {
             return signalInspector.GetMarkerValue(markerId);
@@ -246,7 +264,10 @@ namespace OpenVisionLab
         {
             signalInspector.ShowEvidence(evidence);
             btnOpenSignalInspector.Visibility = Visibility.Visible;
-            signalInspectorOverlay.Visibility = Visibility.Visible;
+            if (signalInspectorOverlay.Visibility != Visibility.Visible)
+            {
+                ShowSignalEvidenceCue();
+            }
             UpdateThresholdSuggestionAvailability(evidence);
         }
 
@@ -258,6 +279,7 @@ namespace OpenVisionLab
             btnUseThresholdSuggestion.IsEnabled = false;
             btnOpenSignalInspector.Visibility = Visibility.Collapsed;
             signalInspectorOverlay.Visibility = Visibility.Collapsed;
+            HideSignalEvidenceCue();
         }
 
         internal void CloseSignalInspectorForTest()
@@ -269,6 +291,7 @@ namespace OpenVisionLab
         {
             if (signalInspector.HasEvidence)
             {
+                HideSignalEvidenceCue();
                 signalInspectorOverlay.Visibility = Visibility.Visible;
             }
         }
@@ -286,6 +309,24 @@ namespace OpenVisionLab
         private void OpenSignalInspector_Click(object sender, RoutedEventArgs e)
         {
             OpenSignalInspectorForTest();
+        }
+
+        private void ShowSignalEvidenceCue()
+        {
+            signalEvidenceCueTimer.Stop();
+            signalEvidenceCue.Visibility = Visibility.Visible;
+            signalEvidenceCueTimer.Start();
+        }
+
+        private void HideSignalEvidenceCue()
+        {
+            signalEvidenceCueTimer.Stop();
+            signalEvidenceCue.Visibility = Visibility.Collapsed;
+        }
+
+        private void SignalEvidenceCueTimer_Tick(object sender, EventArgs e)
+        {
+            HideSignalEvidenceCue();
         }
 
         private void AnalyzeThresholdSuggestion_Click(object sender, RoutedEventArgs e)
