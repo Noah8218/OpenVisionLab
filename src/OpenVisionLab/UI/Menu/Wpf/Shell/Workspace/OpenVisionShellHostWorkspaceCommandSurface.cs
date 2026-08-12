@@ -1,5 +1,7 @@
 using OpenVisionLab.Mvvm;
+using OpenVisionLab.Logging;
 using System;
+using System.Diagnostics;
 using System.Windows.Input;
 using static OpenVisionLab.DEFINE;
 
@@ -98,7 +100,19 @@ namespace OpenVisionLab
 
         private void OpenPipelineReview()
         {
-            selectTool?.Invoke(VISION_MENU.Pipeline);
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            OVLog.Write(LogCategory.System, LogLevel.Info, "[PipelineOpenTrace] CommandBegin");
+            try
+            {
+                selectTool?.Invoke(VISION_MENU.Pipeline);
+            }
+            finally
+            {
+                OVLog.Write(
+                    LogCategory.System,
+                    LogLevel.Info,
+                    $"[PipelineOpenTrace] CommandReturnMs={stopwatch.ElapsedMilliseconds}");
+            }
         }
 
         private void OpenSampleFirstStepTool()

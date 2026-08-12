@@ -69,7 +69,7 @@ namespace OpenVisionLab
                 return;
             }
 
-            dockedDocumentWorkspaceController.CloseSilently();
+            dockedDocumentWorkspaceController.SuspendForReuse();
         }
 
         public void CloseActiveDocument()

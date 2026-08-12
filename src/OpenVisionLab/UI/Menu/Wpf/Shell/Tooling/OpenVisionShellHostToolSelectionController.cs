@@ -1,7 +1,10 @@
 using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Windows.Automation;
 using System.Windows.Controls;
+using System.Windows.Threading;
+using OpenVisionLab.Logging;
 
 namespace OpenVisionLab
 {
@@ -46,9 +49,19 @@ namespace OpenVisionLab
                 return;
             }
 
+            bool tracePipelineOpen = selectedItem.Menu == DEFINE.VISION_MENU.Pipeline;
+            Stopwatch pipelineOpenStopwatch = tracePipelineOpen ? Stopwatch.StartNew() : null;
             bool shouldResumePrewarm = toolPrewarmController.PauseForOperatorSelection();
             bool showPipelineLoading = selectedItem.Menu == DEFINE.VISION_MENU.Pipeline
                 && !toolWindowController.HasPreparedPipelineReview;
+            if (tracePipelineOpen)
+            {
+                OVLog.Write(
+                    LogCategory.System,
+                    LogLevel.Info,
+                    $"[PipelineOpenTrace] SelectionBegin|CachedBefore={!showPipelineLoading}");
+            }
+
             if (showPipelineLoading)
             {
                 busyPresenter.ShowPipelineLoading();
@@ -71,6 +84,26 @@ namespace OpenVisionLab
                 }
 
                 toolPrewarmController.ResumeAfterOperatorSelection(shouldResumePrewarm);
+                if (tracePipelineOpen)
+                {
+                    string timingText = toolWindowController.LastTiming?.ToPerfText() ?? string.Empty;
+                    OVLog.Write(
+                        LogCategory.System,
+                        LogLevel.Info,
+                        $"[PipelineOpenTrace] SelectionReturnMs={pipelineOpenStopwatch.ElapsedMilliseconds}|{timingText}");
+                    Dispatcher.CurrentDispatcher.BeginInvoke(
+                        DispatcherPriority.Render,
+                        new Action(() => OVLog.Write(
+                            LogCategory.System,
+                            LogLevel.Info,
+                            $"[PipelineOpenTrace] RenderPriorityReachedMs={pipelineOpenStopwatch.ElapsedMilliseconds}")));
+                    Dispatcher.CurrentDispatcher.BeginInvoke(
+                        DispatcherPriority.ApplicationIdle,
+                        new Action(() => OVLog.Write(
+                            LogCategory.System,
+                            LogLevel.Info,
+                            $"[PipelineOpenTrace] ApplicationIdleReachedMs={pipelineOpenStopwatch.ElapsedMilliseconds}")));
+                }
             }
         }
 

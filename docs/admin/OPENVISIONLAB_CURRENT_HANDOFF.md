@@ -1,6 +1,6 @@
 # OpenVisionLab Current Project Handoff
 
-Updated: 2026-08-12 KST
+Updated: 2026-08-13 KST
 
 This is the compact live-status source for a new OpenVisionLab task. Read
 `AGENTS.md`, `docs/README.md`, and `docs/LLM_DOCUMENT_INDEX.json` first. Stable
@@ -52,6 +52,28 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
   hardware qualification, calibrated metrology, or field robustness.
 
 ## Latest Completed Work
+
+### 2026-08-13 Main Pipeline Button Actual-EXE Regression - Complete In Dev And Original
+
+- Pipeline Review remains cached across native Tool selection, its hidden
+  central document is suspended instead of detached, and Add Pipeline refreshes
+  the same cached Recipe/Pipeline document before the operator opens it.
+- The exact main no-image `Pipeline 열기` command now records command,
+  selection, render, application-idle, cache, and internal timing phases.
+- Before promotion, the original EXE returned in `108 ms` directly and
+  `396 ms` after the Tool path. After explicit approval and promotion, the
+  rebuilt original returned in `102/98 ms`; its trace reached UI idle in
+  `40/29 ms` and recorded `CachedBefore=True` for both paths.
+- The Dev focused regression passed at `36/13/46 ms`; the promoted original
+  independently passed at `33/14/39 ms`. Both retained Preview `0 -> 0`, Layer
+  count `1 -> 1`, active Layer `Main`, and unchanged immediate routing. The
+  original build passed with zero warnings/errors and readiness passed 13/13.
+- Evidence:
+  `docs/reports/OPENVISIONLAB_PIPELINE_REVIEW_ENTRY_AND_COMPACT_LAYOUT_20260812.md`.
+- Runtime evidence:
+  `D:\OpenVisionLab-TestData\OpenVisionLab\pipeline-main-button-original-promotion-20260813`.
+- Boundary: the originally reported ten-second observation was not reproduced;
+  reopen only with a new current-original trace. Commit and push remain.
 
 ### 2026-08-12 Startup Feedback, Pipeline Review Entry, And Compact Layout - Complete In Dev And Original
 
@@ -280,7 +302,7 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
   original `a6bbf277dea4`. The original independently passed the same build,
   readiness, N-image, and focused WPF gates before push.
 
-### P294 Main No-Image Pipeline Open Performance - Complete In Dev
+### P294 Main No-Image Pipeline Open Performance - Complete In Dev And Original
 
 - The corrected scope is the main no-image workspace's `Pipeline 열기` button,
   not Recipe Manager's Open Pipeline command.
@@ -295,6 +317,8 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
   deterministic public-sample review, Debug build, readiness 13/13, and Vision
   UI contract checks passed without automatic Preview/Run. Evidence:
   `docs/reports/OPENVISIONLAB_WORKSPACE_EMPTY_PIPELINE_OPEN_PERFORMANCE_20260809.md`.
+- The 2026-08-13 exact-button correction and trace were promoted to original;
+  current original direct/after-Tool application idle is `40/29 ms`.
 
 ### P293 Recipe Manager And Pipeline Entry UX - Complete In Dev
 
@@ -521,8 +545,13 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
 - The 2026-08-11 Recipe/layer/N-image/Edge regression batch is complete,
   independently verified, and pushed in Dev and original. No PR or Release
   publication is active.
-- P294 is complete and verified in Dev. Promotion to the original repository,
-  commit, and push remain separate explicitly authorized tasks.
+- The main `Pipeline 열기` cache/logging correction is complete and verified in
+  Dev and original actual EXEs. The current original reaches UI idle in
+  `40 ms` directly and `29 ms` after a Tool. Commit and push are the remaining
+  publication actions; reopen performance work only if a new current-original
+  trace reproduces the reported delay.
+- P294's earlier bounded evidence remains historical support for this current
+  actual-EXE closure.
 - P293 is complete and verified in Dev. Promotion to the original repository,
   commit, and push remain separate explicitly authorized tasks.
 - P292 is complete and verified in Dev. Promotion to the original repository

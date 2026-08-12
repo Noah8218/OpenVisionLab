@@ -369,6 +369,7 @@ internal static class Program
         ["perf"] = new[]
         {
             "wpf_tool_open_perf",
+            "wpf_pipeline_review_entry_perf",
             "wpf_tool_open_fast_click_perf",
             "wpf_tool_open_first_heavy_perf"
         }
@@ -34534,6 +34535,23 @@ internal static class Program
         string initialRecipeName = "Smoke_PipelineReviewEntryInitial_" + Guid.NewGuid().ToString("N");
         string switchedRecipeName = "Smoke_PipelineReviewEntrySwitched_" + Guid.NewGuid().ToString("N");
         VisionPipeline pipeline = CreatePipelineReviewReadabilityPipeline();
+        for (int index = pipeline.Steps.Count; index < 40; index++)
+        {
+            FilterToolProperty filter = new()
+            {
+                KernelWidth = 3,
+                KernelHeight = 3,
+                MedianKernelSize = 3,
+                Diameter = 3,
+                SigmaColor = 3,
+                SigmaSpace = 3
+            };
+            pipeline.Steps.Add(VisionPipelineStepBuilder.FromFilterProperty(
+                filter,
+                "Perf_Filter_" + index.ToString("00", CultureInfo.InvariantCulture),
+                "Main",
+                "Perf_Filter_" + index.ToString("00", CultureInfo.InvariantCulture) + "_Preview"));
+        }
         VisionPipelineStorage.Save(initialRecipeName, pipeline);
         VisionPipelineStorage.SaveActivePipelineName(initialRecipeName, pipeline.Name);
         VisionPipelineStorage.Save(switchedRecipeName, pipeline);
@@ -34541,7 +34559,7 @@ internal static class Program
         OpenVisionShellHostView shellHost = CreateShellHost(initialRecipeName);
         List<string> lines = new()
         {
-            "Path|CachedBefore|SelectMs|ReadyMs|InternalTiming|RunsBefore|RunsAfter|LayerCountBefore|LayerCountAfter"
+            "Path|CachedBefore|SelectMs|ReadyMs|InternalTiming|RunsBefore|RunsAfter|LayerCountBefore|LayerCountAfter|ActiveLayerBefore|ActiveLayerAfter|InputRouteBefore|InputRouteAfter|OutputRouteBefore|OutputRouteAfter"
         };
 
         try
@@ -34556,8 +34574,12 @@ internal static class Program
                 MeasurePipelineReviewEntry(shellHost, "RecipeSwitch", lines);
 
                 shellHost.SelectToolForTest(VISION_MENU.Threshold);
-                WaitForPipelineReviewPrewarm(shellHost, "AfterTool");
-                MeasurePipelineReviewEntry(shellHost, "AfterTool", lines);
+                if (shellHost.AddActiveNativePipelineStepForTest() == null)
+                {
+                    throw new InvalidOperationException("Threshold Step could not be added before immediate Pipeline entry.");
+                }
+
+                MeasurePipelineReviewEntry(shellHost, "ImmediateAfterToolAndStepAdd", lines);
 
                 File.WriteAllLines(Path.ChangeExtension(outputPath, ".perf.txt"), lines, System.Text.Encoding.UTF8);
             });
@@ -34593,23 +34615,45 @@ internal static class Program
         bool cachedBefore = shellHost.HasPipelineReviewDocumentForTest;
         int runsBefore = shellHost.NativePreviewRunCount;
         int layersBefore = shellHost.HostLayerRowCount;
+        string activeLayerBefore = shellHost.ActiveHostLayerTitle;
+        string inputRouteBefore = shellHost.ActiveNativeRouteInputLayerNameForTest;
+        string outputRouteBefore = shellHost.ActiveNativeRouteOutputLayerNameForTest;
         Stopwatch stopwatch = Stopwatch.StartNew();
-        shellHost.SelectToolForTest(VISION_MENU.Pipeline);
+        shellHost.OpenSamplePipelineForTest();
         long selectMs = stopwatch.ElapsedMilliseconds;
         Pump(12);
         long readyMs = stopwatch.ElapsedMilliseconds;
         int runsAfter = shellHost.NativePreviewRunCount;
         int layersAfter = shellHost.HostLayerRowCount;
+        string inputRouteAfter = inputRouteBefore;
+        string outputRouteAfter = outputRouteBefore;
+        if (string.Equals(path, "ImmediateAfterToolAndStepAdd", StringComparison.Ordinal))
+        {
+            shellHost.SelectToolForTest(VISION_MENU.Threshold);
+            Pump(4);
+            inputRouteAfter = shellHost.ActiveNativeRouteInputLayerNameForTest;
+            outputRouteAfter = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+            shellHost.OpenSamplePipelineForTest();
+            Pump(4);
+            runsAfter = shellHost.NativePreviewRunCount;
+            layersAfter = shellHost.HostLayerRowCount;
+        }
         if (!cachedBefore
             || !shellHost.HasPipelineReviewDocumentForTest
             || !shellHost.IsNativeDocumentActive
             || runsAfter != runsBefore
-            || layersAfter != layersBefore)
+            || layersAfter != layersBefore
+            || !string.Equals(shellHost.ActiveHostLayerTitle, activeLayerBefore, StringComparison.Ordinal)
+            || !string.Equals(inputRouteAfter, inputRouteBefore, StringComparison.Ordinal)
+            || !string.Equals(outputRouteAfter, outputRouteBefore, StringComparison.Ordinal))
         {
             throw new InvalidOperationException(
                 $"Pipeline Review entry contract failed for {path}. CachedBefore={cachedBefore}, "
                 + $"CachedAfter={shellHost.HasPipelineReviewDocumentForTest}, Active={shellHost.IsNativeDocumentActive}, "
                 + $"Runs={runsBefore}/{runsAfter}, Layers={layersBefore}/{layersAfter}, "
+                + $"ActiveLayer='{activeLayerBefore}'/'{shellHost.ActiveHostLayerTitle}', "
+                + $"InputRoute='{inputRouteBefore}'/'{inputRouteAfter}', "
+                + $"OutputRoute='{outputRouteBefore}'/'{outputRouteAfter}', "
                 + $"Timing='{shellHost.LastToolOpenTimingTextForTest}'.");
         }
 
@@ -34623,7 +34667,13 @@ internal static class Program
             "RunsBefore=" + runsBefore.ToString(CultureInfo.InvariantCulture),
             "RunsAfter=" + runsAfter.ToString(CultureInfo.InvariantCulture),
             "LayerCountBefore=" + layersBefore.ToString(CultureInfo.InvariantCulture),
-            "LayerCountAfter=" + layersAfter.ToString(CultureInfo.InvariantCulture)));
+            "LayerCountAfter=" + layersAfter.ToString(CultureInfo.InvariantCulture),
+            "ActiveLayerBefore=" + activeLayerBefore,
+            "ActiveLayerAfter=" + shellHost.ActiveHostLayerTitle,
+            "InputRouteBefore=" + inputRouteBefore,
+            "InputRouteAfter=" + inputRouteAfter,
+            "OutputRouteBefore=" + outputRouteBefore,
+            "OutputRouteAfter=" + outputRouteAfter));
     }
 
     private static CaptureResult CaptureMatchingPropertyGridCombo(string outputPath)

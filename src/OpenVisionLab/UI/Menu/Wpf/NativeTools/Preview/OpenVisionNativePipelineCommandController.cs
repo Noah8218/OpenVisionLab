@@ -12,6 +12,7 @@ namespace OpenVisionLab
         private readonly Func<string, string, VisionPipelineStep> createSingleInputStep;
         private readonly Func<VisionPipelineStep> createArithmeticStep;
         private readonly Action<string> setStatus;
+        private readonly Action pipelineChanged;
         private readonly Func<OpenVisionRecipeContext> recipeContextProvider;
 
         public OpenVisionNativePipelineCommandController(
@@ -21,6 +22,7 @@ namespace OpenVisionLab
             Func<string, string, VisionPipelineStep> createSingleInputStep,
             Func<VisionPipelineStep> createArithmeticStep,
             Action<string> setStatus,
+            Action pipelineChanged = null,
             Func<OpenVisionRecipeContext> recipeContextProvider = null)
         {
             this.toolName = string.IsNullOrWhiteSpace(toolName) ? "Tool" : toolName;
@@ -29,6 +31,7 @@ namespace OpenVisionLab
             this.createSingleInputStep = createSingleInputStep;
             this.createArithmeticStep = createArithmeticStep;
             this.setStatus = setStatus ?? throw new ArgumentNullException(nameof(setStatus));
+            this.pipelineChanged = pipelineChanged;
             this.recipeContextProvider = recipeContextProvider ?? (() => null);
         }
 
@@ -80,6 +83,7 @@ namespace OpenVisionLab
                     CultureInfo.CurrentCulture,
                     "Pipeline added / {0}",
                     savedContext));
+                pipelineChanged?.Invoke();
                 return addedStep;
             }
             catch (Exception ex)

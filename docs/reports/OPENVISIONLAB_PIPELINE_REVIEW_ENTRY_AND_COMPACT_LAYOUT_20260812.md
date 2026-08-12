@@ -2,9 +2,86 @@
 
 Date: 2026-08-12 KST
 
+## 2026-08-13 Actual Desktop EXE Recheck After Operator Report
+
+The earlier `46 ms` result came from a direct WPF regression runner. It did
+not prove the operator's reported ten-second delay in the installed desktop
+workflow, so the earlier completion claim was too broad.
+
+The current Dev Debug EXE was rebuilt and driven as a desktop process through
+the main no-image `Pipeline 열기` command. The application now writes
+`[PipelineOpenTrace]` records for command entry/return, Tool selection return,
+WPF render priority, application idle, cache state, and the existing internal
+selection phases.
+
+| Actual EXE path | Workflow | Click return | Command return | Render | UI idle |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Dev | Main no-image `Pipeline 열기` | 101 ms | 19 ms | 26 ms | 47 ms |
+| Dev | Threshold Tool -> close/open main `Pipeline 열기` | 110 ms | 25 ms | 29 ms | 57 ms |
+| Original before promotion | Main no-image `Pipeline 열기` | 108 ms | not instrumented | not instrumented | not instrumented |
+| Original before promotion | Threshold Tool -> main `Pipeline 열기` | 396 ms | not instrumented | not instrumented | not instrumented |
+| Original after promotion | Main no-image `Pipeline 열기` | 102 ms | 18 ms | 23 ms | 40 ms |
+| Original after promotion | Threshold Tool -> main `Pipeline 열기` | 98 ms | 5 ms | 12 ms | 29 ms |
+
+The Computer Use state-capture operation took about `3.1 s`; it is excluded
+from application latency because it occurred after the click returned and the
+in-process trace had already reached WPF application idle. The ten-second delay
+was not reproduced on this workstation. This does not disprove the operator's
+observation.
+
+Before promotion, the original source and EXE did not contain the Dev-only
+change that keeps the prepared Pipeline Review document cached across native
+Tool selection. After explicit approval, the reviewed patch was applied and
+the original EXE was rebuilt. Both original runs recorded
+`CachedBefore=True`; the after-Tool application-idle time was `29 ms`.
+
+Current actual-EXE evidence:
+`D:\OpenVisionLab-TestData\OpenVisionLab\pipeline-main-button-actual-exe-20260813`.
+It contains the Dev trace, EXE SHA-256 values and timestamps, measured paths,
+the actual Pipeline Review screen, and the selected-monitor intersection
+record.
+
+Original promotion and actual-EXE evidence:
+`D:\OpenVisionLab-TestData\OpenVisionLab\pipeline-main-button-original-promotion-20260813`.
+It contains the original build/focused-smoke outputs, exact EXE identity,
+direct and after-Tool screenshots, and the complete original trace.
+
+The current focused regression also passed after trace insertion. Startup,
+Recipe switch, and immediate Tool-plus-Step-add selection completed in
+`36/13/46 ms`; Preview remained `0 -> 0`, Layer count remained `1 -> 1`, the
+active Layer remained `Main`, and the immediate route remained
+`Main -> Threshold_Preview`. Readiness passed all 13 contracts.
+
+The promoted original independently passed the same focused regression at
+`33/14/39 ms` selection and retained the same Preview, Layer, active-Layer,
+and routing invariants. Its Debug build passed with zero warnings and errors,
+and readiness passed all 13 contracts.
+
+## 2026-08-13 Corrected Main-Button Scope
+
+The earlier after-Tool number waited for the 800 ms idle prewarm and therefore
+did not represent an operator who opens a Tool, adds a Step, and immediately
+clicks the main no-image `Pipeline 열기` button. The corrected regression now
+executes `OpenSamplePipelineCommand`, adds a Threshold Step, performs no idle
+wait, and also checks Preview count, Layer count, active Layer, and Tool route.
+
+With a 40-Step Pipeline, the previous commit discarded the prepared review
+when the native Tool opened: `CachedBefore=False`, document activation
+`199 ms`, and internal open `293 ms`. The corrected implementation keeps the
+same Recipe/Pipeline document alive, refreshes it immediately when Add Pipeline
+saves a Step, and then opens through the exact main button at `46 ms`
+(`CachedBefore=True`). The full smoke ready value was `542 ms`; this includes
+the runner's fixed dispatcher pumping after the 46 ms command and is not the
+button's synchronous work.
+
+Current evidence:
+`D:\OpenVisionLab-TestData\OpenVisionLab\pipeline-main-button-speed-20260813\large-pipeline-final\wpf_pipeline_review_entry_perf.perf.txt`.
+Baseline evidence:
+`D:\OpenVisionLab-TestData\OpenVisionLab\pipeline-main-button-speed-20260813\large-pipeline-baseline`.
+
 ## Outcome
 
-The Dev workspace now gives immediate themed feedback while the last Recipe and
+The Dev and original workspaces now give immediate themed feedback while the last Recipe and
 Pipeline Review are prepared, keeps Pipeline Review outside the operator's
 click path, and uses a denser review layout that gives the input and output
 images the largest practical share of the window. The normal workflow remains
@@ -127,9 +204,9 @@ Computer Use overlay or cursor visualization.
 
 ```text
 Status: Complete
-Scope: Dev and original startup feedback, Pipeline Review entry prewarm/cache reuse, compact responsive layout, localized guide toggle, and stale-result invalidation
-Acceptance criteria: Startup feedback before main window -> pass at 1666 ms versus 4937 ms prior no-window interval; startup popup closes only after completion -> pass; Startup/Recipe-switch/after-Tool cached Pipeline entry -> pass at 5/6/47 ms; explicit-action contract -> pass with 0 Preview runs and unchanged layer counts; 1280x800 image usability -> pass at 208x156 collapsed and 185x138 guide-expanded; current EXE visual review -> pass
-Verification: Dev and original Debug builds 0 warnings/errors; both repositories passed loading feedback smokes 2/2, readiness 13/13, external references, and public assets; Dev focused Pipeline Review UI/performance smokes 2/2; 26/26 promoted Git object hashes match
-Evidence: D:\OpenVisionLab-TestData\OpenVisionLab\pipeline-startup-feedback-20260812 plus D:\OpenVisionLab-TestData\OpenVisionLab\pipeline-review-compact-performance-20260812\final_actual_exe_v2
-Boundary / next dependency: commit and push remain; this does not publish a tagged Release or prove hardware/field performance
+Scope: Dev and original Pipeline Review cache reuse, exact main-button tracing, original promotion, startup feedback, compact responsive layout, localized guide toggle, and stale-result invalidation
+Acceptance criteria: Dev actual EXE direct/after-Tool idle -> pass at 47/57 ms; original actual EXE direct/after-Tool idle -> pass at 40/29 ms with click return 102/98 ms and CachedBefore=True; explicit-action contract -> pass in both focused smokes with 0 Preview runs, unchanged layer counts, Main active, and unchanged routes; original build/readiness -> pass at 0 warnings/0 errors and 13/13
+Verification: Dev and original Debug builds passed; both focused Pipeline-entry regressions passed; both actual desktop EXEs were clicked on the exact main no-image command and retained in-process PipelineOpenTrace evidence; original window was fully inside the selected left DISPLAY2
+Evidence: D:\OpenVisionLab-TestData\OpenVisionLab\pipeline-main-button-actual-exe-20260813 and D:\OpenVisionLab-TestData\OpenVisionLab\pipeline-main-button-original-promotion-20260813
+Boundary / next dependency: The originally reported ten-second observation was not reproduced on this workstation; reopen only if the current original EXE produces a new trace showing the delay. Commit, push, and tagged Release publication remain separate actions.
 ```

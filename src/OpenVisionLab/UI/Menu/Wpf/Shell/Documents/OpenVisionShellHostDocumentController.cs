@@ -42,8 +42,8 @@ namespace OpenVisionLab
 
         public void RefreshPipelineReviewInputLayerState()
         {
-            ActivePipelineReviewDocument?.RefreshInputLayerState();
-            cachedPipelineReviewDocument?.RefreshInputLayerState();
+            RefreshPipelineReviewState(ActivePipelineReviewDocument);
+            RefreshPipelineReviewState(cachedPipelineReviewDocument);
         }
 
         public bool TryCachePipelineReview(OpenVisionPipelineReviewDocument document)
@@ -71,7 +71,7 @@ namespace OpenVisionLab
                 throw new ArgumentNullException(nameof(document));
             }
 
-            DeactivateForToolSwitch();
+            DeactivateForPipelineActivation();
             ActivePipelineReviewDocument = document;
             ActivePipelineReviewDocument.LayerStateChanged += layerStateChanged;
         }
@@ -170,8 +170,9 @@ namespace OpenVisionLab
 
         public void DeactivateForToolSwitch()
         {
-            CloseVisibleDocuments();
-            CloseCachedPipelineReviewDocument();
+            CacheActivePipelineReviewDocument();
+            DetachActiveNativeDocument();
+            CloseActivePendingTool();
         }
 
         public void Dispose()
@@ -196,6 +197,33 @@ namespace OpenVisionLab
             ActivePipelineReviewDocument = null;
             document.LayerStateChanged -= layerStateChanged;
             document.Dispose();
+        }
+
+        private static void RefreshPipelineReviewState(OpenVisionPipelineReviewDocument document)
+        {
+            if (document != null && !document.RefreshIfPipelineChanged())
+            {
+                document.RefreshInputLayerState();
+            }
+        }
+
+        private void CacheActivePipelineReviewDocument()
+        {
+            if (ActivePipelineReviewDocument == null)
+            {
+                return;
+            }
+
+            CloseCachedPipelineReviewDocument();
+            cachedPipelineReviewDocument = ActivePipelineReviewDocument;
+            ActivePipelineReviewDocument = null;
+            cachedPipelineReviewDocument.LayerStateChanged -= layerStateChanged;
+        }
+
+        private void DeactivateForPipelineActivation()
+        {
+            CloseVisibleDocuments();
+            CloseCachedPipelineReviewDocument();
         }
 
         private void CloseCachedPipelineReviewDocument()

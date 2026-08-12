@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0",
-  "updated": "2026-08-12",
+  "updated": "2026-08-13",
   "purpose": "Curated, machine-readable routing index for OpenVisionLab documentation. It is intentionally smaller than the full documentation registry.",
   "entrypoint": "docs/README.md",
   "detailedRegistry": "docs/admin/OPENVISIONLAB_DOCUMENTATION_MAP.md",

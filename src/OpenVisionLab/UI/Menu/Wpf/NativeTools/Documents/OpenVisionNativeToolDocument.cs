@@ -101,6 +101,7 @@ namespace OpenVisionLab
                 createStep,
                 null,
                 SetStatus,
+                NotifyLayerStateChanged,
                 ResolveRecipeContext);
             roiCommandController = new OpenVisionNativeRoiCommandController(
                 this.displayManager,
@@ -173,6 +174,7 @@ namespace OpenVisionLab
                 null,
                 CreateArithmeticStep,
                 SetStatus,
+                NotifyLayerStateChanged,
                 ResolveRecipeContext);
             eventBinder = OpenVisionNativeToolEventBinder.BindArithmetic(
                 arithmeticView,

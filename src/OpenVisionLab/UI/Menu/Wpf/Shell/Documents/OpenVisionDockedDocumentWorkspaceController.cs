@@ -47,7 +47,7 @@ namespace OpenVisionLab
 
         public bool SuspendForReuse()
         {
-            if (!IsVisible)
+            if (content == null)
             {
                 return false;
             }

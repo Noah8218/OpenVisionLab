@@ -215,14 +215,17 @@ namespace OpenVisionLab
                 selectedMode);
         }
 
-        public void RefreshIfPipelineChanged()
+        public bool RefreshIfPipelineChanged()
         {
             string resolvedPipelineName = ResolveActivePipelineName();
             if (!string.Equals(activePipelineName, resolvedPipelineName, StringComparison.Ordinal)
                 || activePipelineLastWriteUtc != GetPipelineLastWriteUtc(resolvedPipelineName))
             {
                 RefreshLayerState();
+                return true;
             }
+
+            return false;
         }
 
         private DateTime GetPipelineLastWriteUtc(string pipelineName)
