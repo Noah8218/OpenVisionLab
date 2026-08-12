@@ -93,6 +93,12 @@ namespace OpenVisionLab
 
             try
             {
+                if (string.Equals(scenario, "startup-loading-feedback", StringComparison.OrdinalIgnoreCase))
+                {
+                    RunStartupLoadingFeedback(outputDirectory);
+                    return true;
+                }
+
                 if (string.Equals(scenario, "line-pins-measure", StringComparison.OrdinalIgnoreCase))
                 {
                     RunLinePinsMeasure(outputDirectory);
@@ -1243,6 +1249,77 @@ namespace OpenVisionLab
                     window.Close();
                 }
 
+                app.Shutdown();
+            }
+        }
+
+        private static void RunStartupLoadingFeedback(string outputDirectory)
+        {
+            Directory.CreateDirectory(outputDirectory);
+            Application app = Application.Current ?? new Application();
+            app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            OpenVisionStartupLoadingWindow window = null;
+
+            try
+            {
+                OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+                window = new OpenVisionStartupLoadingWindow();
+                window.ShowReady();
+                string monitor = PlaceWindowOnLeftmostMonitor(window);
+                Pump(12);
+
+                if (!string.Equals(window.LoadingTitleForTest, "프로그램 준비 중", StringComparison.Ordinal)
+                    || !window.LoadingDetailForTest.Contains("마지막 레시피", StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        $"Korean startup loading copy mismatch. Title='{window.LoadingTitleForTest}', Detail='{window.LoadingDetailForTest}'");
+                }
+
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "01_startup_loading_ko.png"));
+                window.Close();
+                Pump(4);
+                if (!window.IsVisible)
+                {
+                    throw new InvalidOperationException("Startup loading window closed before startup completion.");
+                }
+
+                window.Complete();
+                Pump(4);
+                if (window.IsVisible)
+                {
+                    throw new InvalidOperationException("Startup loading window remained visible after completion.");
+                }
+
+                OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, false);
+                window = new OpenVisionStartupLoadingWindow();
+                window.ShowReady();
+                PlaceWindowOnLeftmostMonitor(window);
+                Pump(8);
+                if (!string.Equals(window.LoadingTitleForTest, "Preparing OpenVisionLab", StringComparison.Ordinal)
+                    || !window.LoadingDetailForTest.Contains("last recipe", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        $"English startup loading copy mismatch. Title='{window.LoadingTitleForTest}', Detail='{window.LoadingDetailForTest}'");
+                }
+
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "02_startup_loading_en.png"));
+                window.Complete();
+                window = null;
+
+                File.WriteAllText(
+                    Path.Combine(outputDirectory, "report.txt"),
+                    "Result: PASS" + Environment.NewLine
+                    + "Scenario: startup-loading-feedback" + Environment.NewLine
+                    + "Monitor: " + monitor + Environment.NewLine
+                    + "KoreanLocalized: True" + Environment.NewLine
+                    + "EnglishLocalized: True" + Environment.NewLine
+                    + "CloseBlockedUntilComplete: True" + Environment.NewLine
+                    + "Screenshots: 01_startup_loading_ko.png; 02_startup_loading_en.png" + Environment.NewLine,
+                    Encoding.UTF8);
+            }
+            finally
+            {
+                window?.Complete();
                 app.Shutdown();
             }
         }
@@ -6659,6 +6736,27 @@ namespace OpenVisionLab
 
                     OpenVisionShellHostView shellHost = window.ShellHostForSmoke
                         ?? throw new InvalidOperationException("OpenVision shell host was not created.");
+                    WaitForTaskWithPump(window.StartupPreparationTask, "shell startup Pipeline Review preparation");
+
+                    shellHost.ShowPipelineLoadingForTest();
+                    Pump(8);
+                    if (!shellHost.IsShellBusyOverlayVisibleForTest
+                        || !string.Equals(
+                            shellHost.ShellBusyTitleForTest,
+                            OpenVisionLanguageService.T("Shell.PipelineLoading.Title"),
+                            StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            $"Pipeline loading overlay mismatch. Visible={shellHost.IsShellBusyOverlayVisibleForTest}, Title='{shellHost.ShellBusyTitleForTest}'");
+                    }
+
+                    SaveWindowScreenshot(window, Path.Combine(outputDirectory, "OpenVisionLab_PipelineLoadingFeedback.png"));
+                    shellHost.HideShellBusyForTest();
+                    Pump(4);
+                    if (shellHost.IsShellBusyOverlayVisibleForTest)
+                    {
+                        throw new InvalidOperationException("Pipeline loading overlay remained visible after completion.");
+                    }
 
                     if (shellHost.HasMainLayer || shellHost.HasWorkspaceLayerPreview)
                     {
@@ -6702,7 +6800,8 @@ namespace OpenVisionLab
                         Path.Combine(outputDirectory, "report.txt"),
                         "Result: PASS" + Environment.NewLine
                         + "Scenario: workspace-startup-empty" + Environment.NewLine
-                        + "Screenshots: OpenVisionLab_StartupEmptyWorkspace.png" + Environment.NewLine
+                        + "Screenshots: OpenVisionLab_PipelineLoadingFeedback.png; OpenVisionLab_StartupEmptyWorkspace.png" + Environment.NewLine
+                        + "PipelineLoadingOverlayVerified: True" + Environment.NewLine
                         + "SingleWorkspaceVisible: " + shellHost.IsSingleWorkspaceVisibleForTest + Environment.NewLine
                         + "DockedWorkspaceVisible: " + shellHost.IsDockedWorkspaceVisibleForTest + Environment.NewLine
                         + "WorkspaceEmptyPromptVisible: " + shellHost.IsWorkspaceEmptyPromptVisible + Environment.NewLine
@@ -8290,8 +8389,13 @@ namespace OpenVisionLab
                 {
                     throw new InvalidOperationException("Portfolio source image could not be loaded: " + sourceImagePath);
                 }
+                bool pipelineReviewCachedBeforeOpen = shellHost.HasPipelineReviewDocumentForTest;
+                Stopwatch pipelineReviewOpenStopwatch = Stopwatch.StartNew();
                 shellHost.OpenSamplePipelineForTest();
+                long pipelineReviewSelectMilliseconds = pipelineReviewOpenStopwatch.ElapsedMilliseconds;
                 Pump(50);
+                long pipelineReviewReadyMilliseconds = pipelineReviewOpenStopwatch.ElapsedMilliseconds;
+                string pipelineReviewOpenTiming = shellHost.LastToolOpenTimingTextForTest;
                 WaitForTaskWithPump(shellHost.RunPipelineReviewForTestAsync(), "portfolio stage Pipeline Review");
                 shellHost.SelectPipelineReviewStepForTest(
                     pipeline.Steps.Count - 1,
@@ -8310,6 +8414,56 @@ namespace OpenVisionLab
                 window.UpdateLayout();
                 Pump(30);
                 SaveWindowScreenshot(window, Path.Combine(outputDirectory, "02_pipeline_review_actual_exe.png"));
+
+                System.Windows.Controls.Image inputPreview = FindNamedVisualChild<System.Windows.Controls.Image>(window, "imgInputPreview", "Portfolio Pipeline Review");
+                System.Windows.Controls.Image outputPreview = FindNamedVisualChild<System.Windows.Controls.Image>(window, "imgOutputPreview", "Portfolio Pipeline Review");
+                string fullPreviewSize = FormatPreviewSize(inputPreview, outputPreview);
+
+                window.Width = 1600;
+                window.Height = 900;
+                window.UpdateLayout();
+                Pump(30);
+                string widePreviewSize = FormatPreviewSize(inputPreview, outputPreview);
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "03_pipeline_review_wide_actual_exe.png"));
+
+                window.Width = 1280;
+                window.Height = 800;
+                window.UpdateLayout();
+                Pump(30);
+                string compactPreviewSize = FormatPreviewSize(inputPreview, outputPreview);
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "04_pipeline_review_compact_actual_exe.png"));
+                if (inputPreview.ActualWidth < 200D
+                    || outputPreview.ActualWidth < 200D
+                    || inputPreview.ActualHeight < 150D
+                    || outputPreview.ActualHeight < 150D)
+                {
+                    throw new InvalidOperationException(
+                        "Portfolio Pipeline Review compact image area is too small. " + compactPreviewSize);
+                }
+
+                System.Windows.Controls.Primitives.ToggleButton guideToggle =
+                    FindNamedVisualChild<System.Windows.Controls.Primitives.ToggleButton>(
+                        window,
+                        "btnReviewGuideToggle",
+                        "Portfolio Pipeline Review guide toggle");
+                if (guideToggle.IsChecked == true)
+                {
+                    throw new InvalidOperationException("Pipeline Review guidance must be collapsed by default.");
+                }
+                guideToggle.IsChecked = true;
+                Pump(20);
+                string compactGuidePreviewSize = FormatPreviewSize(inputPreview, outputPreview);
+                if (inputPreview.ActualWidth < 150D
+                    || outputPreview.ActualWidth < 150D
+                    || inputPreview.ActualHeight < 110D
+                    || outputPreview.ActualHeight < 110D)
+                {
+                    throw new InvalidOperationException(
+                        "Portfolio Pipeline Review compact guide image area is too small. " + compactGuidePreviewSize);
+                }
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "05_pipeline_review_compact_guide_expanded_actual_exe.png"));
+                guideToggle.IsChecked = false;
+                Pump(8);
 
                 string executablePath = Environment.ProcessPath ?? Assembly.GetExecutingAssembly().Location;
                 string managedAssemblyPath = typeof(OpenVisionLabDirectSmokeRunner).Assembly.Location;
@@ -8332,6 +8486,14 @@ namespace OpenVisionLab
                     + "PipelineSha256: " + ComputeC9FileSha256(pipelinePath) + Environment.NewLine
                     + "Pipeline: " + pipeline.Name + Environment.NewLine
                     + "PipelineReviewState: " + shellHost.PipelineReviewExecutionState + Environment.NewLine
+                    + "PipelineReviewCachedBeforeOpen: " + pipelineReviewCachedBeforeOpen.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "PipelineReviewSelectMs: " + pipelineReviewSelectMilliseconds.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "PipelineReviewReadyMs: " + pipelineReviewReadyMilliseconds.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "PipelineReviewInternalTiming: " + pipelineReviewOpenTiming + Environment.NewLine
+                    + "PipelineReviewFullPreviewSize: " + fullPreviewSize + Environment.NewLine
+                    + "PipelineReviewWidePreviewSize: " + widePreviewSize + Environment.NewLine
+                    + "PipelineReviewCompactPreviewSize: " + compactPreviewSize + Environment.NewLine
+                    + "PipelineReviewCompactGuidePreviewSize: " + compactGuidePreviewSize + Environment.NewLine
                     + "Boundary: actual OpenVisionLab desktop EXE rendering; no Computer Use overlay or cursor visualization.",
                     Encoding.UTF8);
             }
@@ -8341,6 +8503,19 @@ namespace OpenVisionLab
                 app.Shutdown();
                 RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
             }
+        }
+
+        private static string FormatPreviewSize(
+            System.Windows.Controls.Image inputPreview,
+            System.Windows.Controls.Image outputPreview)
+        {
+            return string.Format(
+                CultureInfo.InvariantCulture,
+                "Input={0:0}x{1:0}|Output={2:0}x{3:0}",
+                inputPreview.ActualWidth,
+                inputPreview.ActualHeight,
+                outputPreview.ActualWidth,
+                outputPreview.ActualHeight);
         }
 
         private static string FormatPortfolioStageTitle(int index, string toolType, bool korean)

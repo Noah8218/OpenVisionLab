@@ -45,8 +45,8 @@
             </Style>
 
             <Style x:Key="SummaryCardStyle" TargetType="Border" BasedOn="{StaticResource ReviewPanelStyle}">
-                <Setter Property="MinHeight" Value="76" />
-                <Setter Property="Padding" Value="10,8" />
+                <Setter Property="MinHeight" Value="54" />
+                <Setter Property="Padding" Value="8,5" />
             </Style>
 
             <Style x:Key="SummaryLabelStyle" TargetType="TextBlock" BasedOn="{StaticResource SectionTitleStyle}">
@@ -54,15 +54,15 @@
             </Style>
 
             <Style x:Key="SummaryValueStyle" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
-                <Setter Property="FontSize" Value="14" />
+                <Setter Property="FontSize" Value="12" />
                 <Setter Property="FontWeight" Value="SemiBold" />
-                <Setter Property="Margin" Value="0,6,0,0" />
+                <Setter Property="Margin" Value="0,2,0,0" />
             </Style>
 
             <Style x:Key="SummaryMetaStyle" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
                 <Setter Property="Foreground" Value="{StaticResource PipelineReview.MutedTextBrush}" />
-                <Setter Property="FontSize" Value="11" />
-                <Setter Property="Margin" Value="0,3,0,0" />
+                <Setter Property="FontSize" Value="10" />
+                <Setter Property="Margin" Value="0,1,0,0" />
             </Style>
 
             <Style x:Key="PreviewWellStyle" TargetType="Border">
@@ -82,8 +82,8 @@
                 <Setter Property="Background" Value="#F2F4F6" />
                 <Setter Property="BorderBrush" Value="#C9D1D6" />
                 <Setter Property="BorderThickness" Value="1" />
-                <Setter Property="Padding" Value="8,6" />
-                <Setter Property="Margin" Value="3,0" />
+                <Setter Property="Padding" Value="6,4" />
+                <Setter Property="Margin" Value="2,0" />
                 <Style.Triggers>
                     <DataTrigger Binding="{Binding IsReady}" Value="True">
                         <Setter Property="Background" Value="#E4F3EB" />
@@ -99,19 +99,62 @@
                     </DataTrigger>
                 </Style.Triggers>
             </Style>
+
+            <Style x:Key="ReviewGuideToggleStyle" TargetType="ToggleButton">
+                <Setter Property="Background" Value="{StaticResource PipelineReview.AccentSoftBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource PipelineReview.LineBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="Foreground" Value="{StaticResource PipelineReview.TextBrush}" />
+                <Setter Property="Height" Value="32" />
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ToggleButton">
+                            <Border x:Name="Chrome"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}">
+                                <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalAlignment="Center" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Chrome" Property="Background" Value="#CBE5E8" />
+                                    <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource PipelineReview.AccentBrush}" />
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="Chrome" Property="Background" Value="#B6DADF" />
+                                </Trigger>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter TargetName="Chrome" Property="Background" Value="#CBE5E8" />
+                                    <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource PipelineReview.AccentBrush}" />
+                                </Trigger>
+                                <Trigger Property="IsKeyboardFocused" Value="True">
+                                    <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource PipelineReview.AccentBrush}" />
+                                    <Setter TargetName="Chrome" Property="BorderThickness" Value="2" />
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter TargetName="Chrome" Property="Opacity" Value="0.55" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <Grid Background="{StaticResource PipelineReview.SurfaceBrush}" Margin="14">
+    <Grid Background="{StaticResource PipelineReview.SurfaceBrush}" Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="6" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="6" />
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="8" />
+            <RowDefinition Height="6" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="10" />
+            <RowDefinition Height="6" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
@@ -119,7 +162,7 @@
                 Background="{StaticResource PipelineReview.HeaderBrush}"
                 BorderBrush="{StaticResource PipelineReview.LineBrush}"
                 BorderThickness="1"
-                Padding="14,10">
+                Padding="10,6">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
@@ -155,27 +198,28 @@
                                             Width="20"
                                             Height="20"
                                             Foreground="{StaticResource PipelineReview.AccentBrush}" />
-                <StackPanel Grid.Column="4">
+                <StackPanel Grid.Column="4" VerticalAlignment="Center">
                     <TextBlock x:Name="txtPipelineTitle"
                                Text="{Binding PipelineTitle}"
                                FontSize="15"
                                FontWeight="SemiBold" />
-                    <TextBlock x:Name="txtPipelineMeta"
-                               Text="{Binding PipelineMeta}"
-                               Foreground="{StaticResource PipelineReview.MutedTextBrush}"
-                               Margin="0,4,0,0" />
-                    <TextBlock x:Name="txtRecipeContext"
-                               AutomationProperties.AutomationId="PipelineReviewRecipeContext"
-                               Text="{Binding RecipeContextText}"
-                               Foreground="{StaticResource PipelineReview.MutedTextBrush}"
-                               Margin="0,4,0,0"
-                               TextTrimming="CharacterEllipsis"
-                               ToolTip="{Binding RecipeContextText}" />
-                    <TextBlock x:Name="txtReviewProgress"
-                               Text="{Binding ReviewProgressText}"
-                               Foreground="{StaticResource PipelineReview.AccentBrush}"
-                               FontWeight="SemiBold"
-                               Margin="0,4,0,0" />
+                    <WrapPanel Margin="0,2,0,0">
+                        <TextBlock x:Name="txtPipelineMeta"
+                                   Text="{Binding PipelineMeta}"
+                                   Foreground="{StaticResource PipelineReview.MutedTextBrush}"
+                                   Margin="0,0,10,0" />
+                        <TextBlock x:Name="txtRecipeContext"
+                                   AutomationProperties.AutomationId="PipelineReviewRecipeContext"
+                                   Text="{Binding RecipeContextText}"
+                                   Foreground="{StaticResource PipelineReview.MutedTextBrush}"
+                                   Margin="0,0,10,0"
+                                   TextTrimming="CharacterEllipsis"
+                                   ToolTip="{Binding RecipeContextText}" />
+                        <TextBlock x:Name="txtReviewProgress"
+                                   Text="{Binding ReviewProgressText}"
+                                   Foreground="{StaticResource PipelineReview.AccentBrush}"
+                                   FontWeight="SemiBold" />
+                    </WrapPanel>
                 </StackPanel>
                 <StackPanel Grid.Column="5"
                             Orientation="Horizontal"
@@ -290,10 +334,10 @@
                 Background="#F8FBFD"
                 BorderBrush="{StaticResource PipelineReview.LineBrush}"
                 BorderThickness="1"
-                Padding="8,6">
+                Padding="6,4">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="150" />
+                    <ColumnDefinition Width="124" />
                     <ColumnDefinition Width="6" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
@@ -304,8 +348,8 @@
                     <TextBlock AutomationProperties.AutomationId="PipelineReviewReadinessSummary"
                                Text="{Binding ReadinessSummaryText}"
                                Foreground="{StaticResource PipelineReview.MutedTextBrush}"
-                               FontSize="11"
-                               Margin="0,2,0,0"
+                               FontSize="10"
+                               Margin="0,1,0,0"
                                ToolTip="{Binding ReadinessSummaryText}" />
                 </StackPanel>
                 <ItemsControl Grid.Column="2"
@@ -348,12 +392,12 @@
                                     <StackPanel Grid.Column="2" VerticalAlignment="Center">
                                         <TextBlock Text="{Binding Title}"
                                                    FontWeight="SemiBold"
-                                                   FontSize="11" />
+                                                   FontSize="10" />
                                         <TextBlock AutomationProperties.AutomationId="{Binding StatusAutomationId}"
                                                    Text="{Binding StatusText}"
                                                    Foreground="{StaticResource PipelineReview.MutedTextBrush}"
-                                                   FontSize="11"
-                                                   Margin="0,2,0,0" />
+                                                   FontSize="10"
+                                                   Margin="0,1,0,0" />
                                     </StackPanel>
                                 </Grid>
                             </Border>
@@ -363,12 +407,77 @@
             </Grid>
         </Border>
 
-        <Border Grid.Row="4"
-                AutomationProperties.AutomationId="PipelineReviewGuideStrip"
-                Background="{StaticResource PipelineReview.AccentSoftBrush}"
-                BorderBrush="{StaticResource PipelineReview.LineBrush}"
-                BorderThickness="1"
-                Padding="8">
+        <Grid Grid.Row="4"
+              AutomationProperties.AutomationId="PipelineReviewGuideStrip">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="4" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <ToggleButton x:Name="btnReviewGuideToggle"
+                          Grid.Row="0"
+                          AutomationProperties.AutomationId="PipelineReviewGuideToggle"
+                          AutomationProperties.Name="{Binding Text, ElementName=txtReviewGuideToggle}"
+                          Style="{StaticResource ReviewGuideToggleStyle}"
+                          IsChecked="False"
+                          ToolTip="{Binding ReviewGuideNextActionText}">
+                <Grid Margin="10,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="18" />
+                        <ColumnDefinition Width="8" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="20" />
+                    </Grid.ColumnDefinitions>
+                    <iconPacks:PackIconMaterial Grid.Column="0"
+                                                Kind="InformationOutline"
+                                                Width="15"
+                                                Height="15"
+                                                Foreground="{StaticResource PipelineReview.AccentBrush}" />
+                    <TextBlock x:Name="txtReviewGuideToggle"
+                               Grid.Column="2"
+                               Text="Review guidance"
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="4"
+                               Text="{Binding ReviewGuideNextActionText}"
+                               Foreground="{StaticResource PipelineReview.MutedTextBrush}"
+                               VerticalAlignment="Center"
+                               ToolTip="{Binding ReviewGuideNextActionText}" />
+                    <iconPacks:PackIconMaterial Grid.Column="5"
+                                                Kind="ChevronDown"
+                                                Width="16"
+                                                Height="16"
+                                                VerticalAlignment="Center">
+                        <iconPacks:PackIconMaterial.Style>
+                            <Style TargetType="iconPacks:PackIconMaterial">
+                                <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
+                                <Setter Property="RenderTransform">
+                                    <Setter.Value>
+                                        <RotateTransform Angle="0" />
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsChecked, ElementName=btnReviewGuideToggle}" Value="True">
+                                        <Setter Property="RenderTransform">
+                                            <Setter.Value>
+                                                <RotateTransform Angle="180" />
+                                            </Setter.Value>
+                                        </Setter>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </iconPacks:PackIconMaterial.Style>
+                    </iconPacks:PackIconMaterial>
+                </Grid>
+            </ToggleButton>
+            <Border Grid.Row="2"
+                    Background="{StaticResource PipelineReview.AccentSoftBrush}"
+                    BorderBrush="{StaticResource PipelineReview.LineBrush}"
+                    BorderThickness="1"
+                    Padding="8"
+                    Visibility="{Binding IsChecked, ElementName=btnReviewGuideToggle, Converter={StaticResource PipelineReview.BooleanToVisibilityConverter}}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -636,12 +745,13 @@
                     </Grid>
                 </Border>
             </Grid>
-        </Border>
+            </Border>
+        </Grid>
 
         <Grid Grid.Row="6" ClipToBounds="True">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="340" />
-                <ColumnDefinition Width="14" />
+                <ColumnDefinition Width="300" />
+                <ColumnDefinition Width="10" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
@@ -675,14 +785,14 @@
 
             <Grid Grid.Column="2">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="12" />
+                    <RowDefinition x:Name="reviewSummaryRow" Height="Auto" />
+                    <RowDefinition x:Name="reviewSummaryGapRow" Height="8" />
                     <RowDefinition Height="*" />
-                    <RowDefinition Height="12" />
-                    <RowDefinition x:Name="reviewDetailRow" Height="160" />
+                    <RowDefinition x:Name="reviewDetailGapRow" Height="8" />
+                    <RowDefinition x:Name="reviewDetailRow" Height="130" MinHeight="96" />
                 </Grid.RowDefinitions>
 
-                <Grid Grid.Row="0">
+                <Grid x:Name="reviewSummaryGrid" Grid.Row="0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="1.25*" />
                         <ColumnDefinition Width="10" />
@@ -856,6 +966,15 @@
                         </Grid>
                     </Border>
                 </Grid>
+
+                <GridSplitter Grid.Row="3"
+                              Height="5"
+                              HorizontalAlignment="Stretch"
+                              VerticalAlignment="Center"
+                              Background="{StaticResource PipelineReview.LineBrush}"
+                              ResizeDirection="Rows"
+                              ResizeBehavior="PreviousAndNext"
+                              ShowsPreview="True" />
 
                 <TabControl x:Name="reviewDetailTabs" Grid.Row="4">
                     <TabItem x:Name="stepDetailsTab" Header="Step Details">

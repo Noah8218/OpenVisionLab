@@ -54,9 +54,10 @@ namespace OpenVisionLab
             refreshHostSelectedLayerDetail(displayManager.SelectedItem);
             refreshDirectRouteText();
             // The recipe is ready when its repository state, layers, routes, and command surface are rebound.
-            // Building the full Pipeline Review WPF document here made every recipe switch pay for a screen
-            // the operator may not open. Pipeline Review remains an explicit, lazy-open responsibility.
+            // Do not include Pipeline Review construction in the Recipe loading task. Prepare it at background
+            // priority after the switch so Recipe selection stays responsive and the later explicit open is fast.
             RecipePreparationTask = Task.CompletedTask;
+            toolPrewarmController.SchedulePipelineReviewPrewarmAfterIdle();
             // Native documents are rebuilt on the next explicit Tool selection.
             // Restarting the whole prewarm queue here competes with Recipe Manager input.
         }

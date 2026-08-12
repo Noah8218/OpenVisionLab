@@ -103,6 +103,8 @@ namespace OpenVisionLab
 
         public string LastToolOpenTimingText => toolWindowController.LastTiming?.ToPerfText() ?? string.Empty;
 
+        public bool HasPipelineReviewDocument => documentController.HasPipelineReviewDocument;
+
         public bool IsShellLoaded => bindings.IsShellLoaded();
 
         public int HostedDocumentCount => statePresenter.HostedDocumentCount;

@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using System.Windows.Threading;
 
 namespace OpenVisionLab
@@ -43,6 +44,8 @@ namespace OpenVisionLab
             this.closeLayerViewerWindows = closeLayerViewerWindows ?? throw new ArgumentNullException(nameof(closeLayerViewerWindows));
         }
 
+        public Task StartupPreparationTask { get; private set; } = Task.CompletedTask;
+
         public void OnLoaded()
         {
             if (state.Loaded)
@@ -53,7 +56,7 @@ namespace OpenVisionLab
             state.Loaded = true;
             refreshHostLayerRows();
             dockedLayerWorkspace.EnsureWorkspaceStateLoaded();
-            toolPrewarmController.ScheduleStartupWork();
+            StartupPreparationTask = toolPrewarmController.ScheduleStartupWork();
         }
 
         public void OnWorkspaceCanvasLoaded(Dispatcher dispatcher)

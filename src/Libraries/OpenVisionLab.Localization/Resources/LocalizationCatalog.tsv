@@ -302,6 +302,7 @@ VisionTool.Preset.Line.Basic.Description	Line 기본 검사: 선택된 Line A/B�
 VisionTool.Preset.Line.Fast.Description	Line 빠른 검사: 빠른 엣지 확인을 위해 대비를 높이고 스캔 간격을 넓힘	Higher contrast and wider scan interval for quick edge checks.
 VisionTool.Preset.Line.Precise.Description	Line 정밀 검사: 낮은 대비, 촘촘한 스캔, 핏라인 확장 적용	Lower contrast, denser scan lines, and fit-line extension for final tuning.
 PipelineReview.Guide.Stage	리뷰	Review
+PipelineReview.Guide.Toggle	리뷰 안내	Review guidance
 PipelineReview.Guide.Current	현재 Step	Current Step
 PipelineReview.Guide.Next	다음 확인	Next Check
 PipelineReview.Guide.Decision	판정	Decision
@@ -1039,6 +1040,10 @@ ToolView.PreviewRole.InputB	입력 B	Input B
 ToolView.PreviewRole.Output	출력	Output
 ToolView.PreviewViewerTitleFormat	{0} · {1} · {2}	{0} · {1} · {2}
 PipelineReview.Title	파이프라인 리뷰	Pipeline Review
+Shell.StartupLoading.Title	프로그램 준비 중	Preparing OpenVisionLab
+Shell.StartupLoading.Detail	마지막 레시피와 작업 화면을 불러오고 있습니다.	Loading the last recipe and workspace.
+Shell.PipelineLoading.Title	파이프라인 준비 중	Preparing Pipeline Review
+Shell.PipelineLoading.Detail	레시피와 레이어 정보를 불러오고 있습니다.	Loading recipe and layer information.
 PipelineReview.RecipeContextFormat	레시피: {0}	Recipe: {0}
 PipelineReview.ReturnToRecipe	레시피로 돌아가기	Return to Recipe
 PipelineReview.ReturnToRecipeToolTip	Pipeline Review를 닫고 선택한 레시피 요약으로 돌아갑니다.	Close Pipeline Review and return to the selected recipe summary.

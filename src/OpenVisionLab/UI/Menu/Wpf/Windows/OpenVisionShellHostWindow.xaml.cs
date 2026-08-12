@@ -2,6 +2,7 @@ using MahApps.Metro.IconPacks;
 using OpenVisionLab.Core;
 using System;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -39,6 +40,9 @@ namespace OpenVisionLab
         }
 
         public OpenVisionShellHostView ShellHostForSmoke => contentHost.Content as OpenVisionShellHostView;
+
+        public Task StartupPreparationTask =>
+            ShellHostForSmoke?.StartupPreparationTask ?? Task.CompletedTask;
 
         public double ResponsiveScaleForSmoke => responsiveScale;
 

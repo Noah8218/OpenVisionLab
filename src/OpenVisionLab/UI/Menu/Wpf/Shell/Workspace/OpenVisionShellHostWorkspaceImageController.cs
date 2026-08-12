@@ -59,6 +59,7 @@ namespace OpenVisionLab
                 OpenVisionNativeToolDocument activeDocument = documentController.ActiveNativeDocument;
                 activeDocument?.InvalidatePreviewResultForInputChange();
                 activeDocument?.RefreshLayerState();
+                documentController.RefreshPipelineReviewInputLayerState();
                 setDirectRunPending();
                 refreshSelectedLayerDetail("Main");
                 refreshRows();

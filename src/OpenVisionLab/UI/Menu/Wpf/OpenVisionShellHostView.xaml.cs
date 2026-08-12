@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -95,6 +96,7 @@ namespace OpenVisionLab
         private readonly OpenVisionShellHostCommandController commandController;
         private readonly OpenVisionShellHostRecipeController recipeController;
         private readonly OpenVisionShellHostToolSelectionController toolSelectionController;
+        private readonly OpenVisionShellHostBusyPresenter busyPresenter;
         private readonly OpenVisionShellHostToolRailPresenter toolRailPresenter = new OpenVisionShellHostToolRailPresenter();
         private readonly OpenVisionShellHostStatePresenter statePresenter;
         private readonly OpenVisionShellHostTestAdapter testAdapter;
@@ -297,10 +299,15 @@ namespace OpenVisionLab
                 () => sessionState.Loaded && !sessionState.Disposed,
                 () => viewModel.SelectedItem?.Menu,
                 () => Window.GetWindow(this));
+            busyPresenter = new OpenVisionShellHostBusyPresenter(
+                shellBusyOverlay,
+                txtShellBusyTitle,
+                txtShellBusyDetail);
             toolSelectionController = new OpenVisionShellHostToolSelectionController(
                 viewModel,
                 toolWindowController,
                 toolPrewarmController,
+                busyPresenter,
                 txtToolOpenTimingDiagnostics,
                 () => sessionState.Loaded);
             recipeController = new OpenVisionShellHostRecipeController(
@@ -678,6 +685,8 @@ namespace OpenVisionLab
             get => (OpenVisionShellHostRecipeCommandSurface)GetValue(RecipeCommandsProperty);
             private set => SetValue(RecipeCommandsProperty, value);
         }
+
+        public Task StartupPreparationTask => sessionController.StartupPreparationTask;
 
         private void ActivateDockedLayer(string layerTitle)
         {

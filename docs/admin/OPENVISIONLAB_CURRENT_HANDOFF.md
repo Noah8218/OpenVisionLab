@@ -53,6 +53,40 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
 
 ## Latest Completed Work
 
+### 2026-08-12 Startup Feedback, Pipeline Review Entry, And Compact Layout - Complete In Dev And Original
+
+- A localized, themed startup window now appears before the last Recipe is
+  restored and cannot close until the shell and Pipeline Review cache are
+  ready. The actual no-window interval changed from `4937 ms` to visible
+  feedback at `1666 ms`; this is responsiveness evidence, not a total startup
+  duration claim.
+- A Recipe/Pipeline without a matching review cache receives a themed,
+  shell-blocking loading overlay. Initial all-Tool warmup no longer competes
+  with first paint; existing post-selection idle warmup remains.
+- Pipeline Review now prewarms after idle, after Recipe selection, and after
+  native Tool use without extending the operator's click or Recipe-loading
+  critical path. Cached restore refreshes only when the Pipeline file changed;
+  Main/native output changes invalidate stale review results without running.
+- Focused current-source timings were Startup `5 ms`, Recipe switch `6 ms`,
+  and after Tool `47 ms`. All paths retained Preview runs `0 -> 0` and Layer
+  count `1 -> 1`. The actual main `Pipeline 열기` EXE scenario measured
+  `12 ms` after the redundant shell Layer-row refresh was removed.
+- The header, readiness, guide, Step summary, and detail allocation are more
+  compact. At 1280 x 800, input/output image content remains `208 x 156` with
+  the guide collapsed and `185 x 138` with it expanded; the lower detail tabs
+  yield space only while the compact guide is open.
+- Current actual-EXE Korean/English startup captures, Pipeline loading overlay,
+  and Korean review captures at 1920 x 1500, 1600 x 900, and 1280 x 800 were
+  inspected with no clipped text/icon, overlap, hidden button label, or white
+  theme leak. Build 0/0 and focused loading/UI/performance smokes pass.
+- Evidence:
+  `docs/reports/OPENVISIONLAB_PIPELINE_REVIEW_ENTRY_AND_COMPACT_LAYOUT_20260812.md`.
+- Dev and original independently pass zero-warning Debug builds, readiness
+  13/13, vendored references, public assets, and both loading smokes. All 26
+  promoted Git object hashes match; original-only `Temp.txt` remains untracked.
+- Boundary: commit and push are the remaining publication actions. This work
+  does not publish a new tagged Release.
+
 ### 2026-08-12 Portfolio Multi-Stage Processing Showcase - Complete In Dev Working Tree
 
 - A reproducible public perforated-plate Pipeline now exposes one source image

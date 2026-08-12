@@ -17,6 +17,8 @@ namespace OpenVisionLab
         private readonly Func<VISION_MENU?> selectedMenuProvider;
         private readonly Func<Window> ownerProvider;
         private readonly DispatcherTimer resumeTimer;
+        private bool pipelineReviewPrewarmPending;
+        private bool nativePrewarmResumePending;
         private bool disposed;
 
         public OpenVisionShellHostToolPrewarmController(
@@ -42,11 +44,10 @@ namespace OpenVisionLab
             resumeTimer.Tick += ResumeTimer_Tick;
         }
 
-        public void ScheduleStartupWork()
+        public Task ScheduleStartupWork()
         {
             ScheduleFloatingToolWindowPrepareIfEnabled();
-            SchedulePipelineReviewPrewarmIfEnabled();
-            ScheduleNativePrewarmIfEnabled();
+            return SchedulePipelineReviewPrewarmIfEnabled();
         }
 
         public Task SchedulePipelineReviewPrewarmIfEnabled()
@@ -74,6 +75,9 @@ namespace OpenVisionLab
 
         public bool PauseForOperatorSelection()
         {
+            resumeTimer.Stop();
+            pipelineReviewPrewarmPending = false;
+            nativePrewarmResumePending = false;
             bool shouldResumePrewarm =
                 !nativeToolPrewarmService.IsCompleted
                 && !IsNativeToolPrewarmDisabledForDiagnostics();
@@ -83,7 +87,6 @@ namespace OpenVisionLab
             }
 
             // Operator selection has priority over background warming; resume after the tool window gets first paint.
-            resumeTimer.Stop();
             nativeToolPrewarmService.Cancel();
             return true;
         }
@@ -95,7 +98,14 @@ namespace OpenVisionLab
 
         public void ResumeAfterOperatorSelection(bool shouldResume)
         {
-            if (!shouldResume || !canRun())
+            if (!canRun())
+            {
+                return;
+            }
+
+            pipelineReviewPrewarmPending = selectedMenuProvider() != VISION_MENU.Pipeline;
+            nativePrewarmResumePending = shouldResume;
+            if (!pipelineReviewPrewarmPending && !nativePrewarmResumePending)
             {
                 return;
             }
@@ -104,9 +114,23 @@ namespace OpenVisionLab
             resumeTimer.Start();
         }
 
+        public void SchedulePipelineReviewPrewarmAfterIdle()
+        {
+            if (!canRun())
+            {
+                return;
+            }
+
+            pipelineReviewPrewarmPending = true;
+            resumeTimer.Stop();
+            resumeTimer.Start();
+        }
+
         public void Cancel()
         {
             resumeTimer.Stop();
+            pipelineReviewPrewarmPending = false;
+            nativePrewarmResumePending = false;
             nativeToolPrewarmService.Cancel();
         }
 
@@ -174,7 +198,19 @@ namespace OpenVisionLab
         private void ResumeTimer_Tick(object sender, EventArgs e)
         {
             resumeTimer.Stop();
-            ScheduleNativePrewarmIfEnabled();
+            bool prewarmPipelineReview = pipelineReviewPrewarmPending;
+            bool resumeNativePrewarm = nativePrewarmResumePending;
+            pipelineReviewPrewarmPending = false;
+            nativePrewarmResumePending = false;
+            if (prewarmPipelineReview)
+            {
+                _ = SchedulePipelineReviewPrewarmIfEnabled();
+            }
+
+            if (resumeNativePrewarm)
+            {
+                ScheduleNativePrewarmIfEnabled();
+            }
         }
 
         private static bool IsNativeToolPrewarmDisabledForDiagnostics()

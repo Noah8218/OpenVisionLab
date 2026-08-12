@@ -34,11 +34,15 @@ namespace OpenVisionLab
 
             var application = Application.Current ?? new Application();
             ShutdownMode previousShutdownMode = application.ShutdownMode;
+            OpenVisionStartupLoadingWindow startupLoadingWindow = null;
 
             try
             {
-                application.ShutdownMode = ShutdownMode.OnMainWindowClose;
+                application.ShutdownMode = ShutdownMode.OnExplicitShutdown;
                 using var exceptionPolicy = OpenVisionLabUnhandledExceptionPolicy.Attach(application);
+
+                startupLoadingWindow = new OpenVisionStartupLoadingWindow();
+                startupLoadingWindow.ShowReady();
 
                 var runtimeContext = ApplicationRuntimeContext.CreateDefault();
                 runtimeContext.Global.RestoreLastRecipe();
@@ -56,13 +60,41 @@ namespace OpenVisionLab
                 }
                 OVLog.Write(LogCategory.System, LogLevel.Info, $"Application ready. Version {AppVersion.VERSION}");
 
-                application.Run(new OpenVisionShellHostWindow(runtimeContext));
+                var shellWindow = new OpenVisionShellHostWindow(runtimeContext);
+                application.MainWindow = shellWindow;
+                application.ShutdownMode = ShutdownMode.OnMainWindowClose;
+                EventHandler startupContentRendered = null;
+                startupContentRendered = async (_, _) =>
+                {
+                    shellWindow.ContentRendered -= startupContentRendered;
+                    try
+                    {
+                        await shellWindow.StartupPreparationTask;
+                    }
+                    catch (Exception ex)
+                    {
+                        OVLog.Write(
+                            LogCategory.System,
+                            LogLevel.Warning,
+                            "Pipeline Review startup preparation was skipped: " + ex.Message);
+                    }
+                    finally
+                    {
+                        startupLoadingWindow?.Complete();
+                        startupLoadingWindow = null;
+                        shellWindow.Activate();
+                    }
+                };
+                shellWindow.ContentRendered += startupContentRendered;
+
+                application.Run(shellWindow);
 
                 OVLog.Write(LogCategory.System, LogLevel.Info, "Application shutdown.");
                 return 0;
             }
             finally
             {
+                startupLoadingWindow?.Complete();
                 if (!application.Dispatcher.HasShutdownStarted
                     && !application.Dispatcher.HasShutdownFinished)
                 {

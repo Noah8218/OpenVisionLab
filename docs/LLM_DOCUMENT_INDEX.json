@@ -35,7 +35,7 @@
       "id": "ui_and_operator_workflow",
       "intent": "Change visible UI, navigation, workflow, settings persistence, or operator behavior.",
       "keywords": ["UI", "UX", "workflow", "PropertyGrid", "Preview", "Run", "screen"],
-      "read": ["docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md", "docs/reports/OPENVISIONLAB_USER_CENTERED_WORKFLOW_DIRECTION_20260729.md", "docs/runbooks/UI_SCREENSHOT_SMOKE.md"]
+      "read": ["docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md", "docs/reports/OPENVISIONLAB_USER_CENTERED_WORKFLOW_DIRECTION_20260729.md", "docs/reports/OPENVISIONLAB_PIPELINE_REVIEW_ENTRY_AND_COMPACT_LAYOUT_20260812.md", "docs/runbooks/UI_SCREENSHOT_SMOKE.md"]
     },
     {
       "id": "beginner_tutorial_and_learn",

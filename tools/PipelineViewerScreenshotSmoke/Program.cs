@@ -322,6 +322,7 @@ internal static class Program
         ["persisted_workspace_preferences_contract"] = CapturePersistedWorkspacePreferencesContract,
         ["wpf_tool_window_dock_float_cycle"] = CaptureToolWindowDockFloatCycle,
         ["wpf_tool_open_perf"] = CaptureToolOpenPerf,
+        ["wpf_pipeline_review_entry_perf"] = CapturePipelineReviewEntryPerf,
         ["wpf_tool_open_fast_click_perf"] = CaptureToolOpenFastClickPerf,
         ["wpf_tool_open_first_heavy_perf"] = CaptureToolOpenFirstHeavyPerf,
         ["wpf_property_grid_matching_combo"] = CaptureMatchingPropertyGridCombo,
@@ -25564,7 +25565,7 @@ internal static class Program
             Pump(24);
             OpenVisionLanguageService.SetLanguage(language, false);
             Pump(24);
-            Window reviewWindow = GetActiveFloatingToolWindow("Pipeline review readiness");
+            DependencyObject reviewWindow = GetActiveToolVisualRoot("Pipeline review readiness");
             AssertVisibleAutomationIds(
                 reviewWindow,
                 "Pipeline review readiness",
@@ -34525,6 +34526,104 @@ internal static class Program
                 throw new InvalidOperationException("ROI editor did not restore a fully editable fit view after zoomed editing.");
             }
         });
+    }
+
+    private static CaptureResult CapturePipelineReviewEntryPerf(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        string initialRecipeName = "Smoke_PipelineReviewEntryInitial_" + Guid.NewGuid().ToString("N");
+        string switchedRecipeName = "Smoke_PipelineReviewEntrySwitched_" + Guid.NewGuid().ToString("N");
+        VisionPipeline pipeline = CreatePipelineReviewReadabilityPipeline();
+        VisionPipelineStorage.Save(initialRecipeName, pipeline);
+        VisionPipelineStorage.SaveActivePipelineName(initialRecipeName, pipeline.Name);
+        VisionPipelineStorage.Save(switchedRecipeName, pipeline);
+        VisionPipelineStorage.SaveActivePipelineName(switchedRecipeName, pipeline.Name);
+        OpenVisionShellHostView shellHost = CreateShellHost(initialRecipeName);
+        List<string> lines = new()
+        {
+            "Path|CachedBefore|SelectMs|ReadyMs|InternalTiming|RunsBefore|RunsAfter|LayerCountBefore|LayerCountAfter"
+        };
+
+        try
+        {
+            return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+            {
+                WaitForPipelineReviewPrewarm(shellHost, "Startup");
+                MeasurePipelineReviewEntry(shellHost, "Startup", lines);
+
+                shellHost.SwitchRecipeContextForTest(switchedRecipeName);
+                WaitForPipelineReviewPrewarm(shellHost, "RecipeSwitch");
+                MeasurePipelineReviewEntry(shellHost, "RecipeSwitch", lines);
+
+                shellHost.SelectToolForTest(VISION_MENU.Threshold);
+                WaitForPipelineReviewPrewarm(shellHost, "AfterTool");
+                MeasurePipelineReviewEntry(shellHost, "AfterTool", lines);
+
+                File.WriteAllLines(Path.ChangeExtension(outputPath, ".perf.txt"), lines, System.Text.Encoding.UTF8);
+            });
+        }
+        finally
+        {
+            RecipeWorkspaceService.DeleteVisionWorkspace(initialRecipeName);
+            RecipeWorkspaceService.DeleteVisionWorkspace(switchedRecipeName);
+        }
+    }
+
+    private static void WaitForPipelineReviewPrewarm(OpenVisionShellHostView shellHost, string path)
+    {
+        Stopwatch stopwatch = Stopwatch.StartNew();
+        while (!shellHost.HasPipelineReviewDocumentForTest && stopwatch.ElapsedMilliseconds < 3000)
+        {
+            Thread.Sleep(20);
+            Pump(1);
+        }
+
+        if (!shellHost.HasPipelineReviewDocumentForTest)
+        {
+            throw new InvalidOperationException(
+                $"Pipeline Review was not prepared after the {path} idle interval. ElapsedMs={stopwatch.ElapsedMilliseconds}.");
+        }
+    }
+
+    private static void MeasurePipelineReviewEntry(
+        OpenVisionShellHostView shellHost,
+        string path,
+        List<string> lines)
+    {
+        bool cachedBefore = shellHost.HasPipelineReviewDocumentForTest;
+        int runsBefore = shellHost.NativePreviewRunCount;
+        int layersBefore = shellHost.HostLayerRowCount;
+        Stopwatch stopwatch = Stopwatch.StartNew();
+        shellHost.SelectToolForTest(VISION_MENU.Pipeline);
+        long selectMs = stopwatch.ElapsedMilliseconds;
+        Pump(12);
+        long readyMs = stopwatch.ElapsedMilliseconds;
+        int runsAfter = shellHost.NativePreviewRunCount;
+        int layersAfter = shellHost.HostLayerRowCount;
+        if (!cachedBefore
+            || !shellHost.HasPipelineReviewDocumentForTest
+            || !shellHost.IsNativeDocumentActive
+            || runsAfter != runsBefore
+            || layersAfter != layersBefore)
+        {
+            throw new InvalidOperationException(
+                $"Pipeline Review entry contract failed for {path}. CachedBefore={cachedBefore}, "
+                + $"CachedAfter={shellHost.HasPipelineReviewDocumentForTest}, Active={shellHost.IsNativeDocumentActive}, "
+                + $"Runs={runsBefore}/{runsAfter}, Layers={layersBefore}/{layersAfter}, "
+                + $"Timing='{shellHost.LastToolOpenTimingTextForTest}'.");
+        }
+
+        lines.Add(string.Join(
+            "|",
+            path,
+            "CachedBefore=" + cachedBefore.ToString(CultureInfo.InvariantCulture),
+            "SelectMs=" + selectMs.ToString(CultureInfo.InvariantCulture),
+            "ReadyMs=" + readyMs.ToString(CultureInfo.InvariantCulture),
+            shellHost.LastToolOpenTimingTextForTest,
+            "RunsBefore=" + runsBefore.ToString(CultureInfo.InvariantCulture),
+            "RunsAfter=" + runsAfter.ToString(CultureInfo.InvariantCulture),
+            "LayerCountBefore=" + layersBefore.ToString(CultureInfo.InvariantCulture),
+            "LayerCountAfter=" + layersAfter.ToString(CultureInfo.InvariantCulture)));
     }
 
     private static CaptureResult CaptureMatchingPropertyGridCombo(string outputPath)

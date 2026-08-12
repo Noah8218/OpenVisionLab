@@ -61,6 +61,9 @@ namespace OpenVisionLab
 
         public OpenVisionToolOpenTiming LastTiming { get; private set; }
 
+        public bool HasPreparedPipelineReview =>
+            documentController.HasPipelineReviewFor(ResolveRecipeContext());
+
         public bool ShowSelectedTool(OpenVisionShellNavItem item)
         {
             if (item == null)
@@ -94,7 +97,7 @@ namespace OpenVisionLab
                 }
                 else
                 {
-                    pipelineReviewDocument.RefreshLayerState();
+                    pipelineReviewDocument.RefreshIfPipelineChanged();
                 }
                 timing.ActivateDocumentMs = phaseStopwatch.ElapsedMilliseconds;
                 timing.Document = pipelineReviewDocument.View?.GetType().Name ?? pipelineReviewDocument.GetType().Name;
@@ -107,7 +110,7 @@ namespace OpenVisionLab
                     ShowWpfToolWindow(pipelineReviewDocument.View, title, 1180, 760, timing);
                 }
                 phaseStopwatch.Restart();
-                CompleteToolSelection(title, hasDisplayablePreviewResult: false);
+                CompleteToolSelection(title, hasDisplayablePreviewResult: false, refreshLayerRows: false);
                 timing.CompleteSelectionMs = phaseStopwatch.ElapsedMilliseconds;
                 timing.TotalMs = totalStopwatch.ElapsedMilliseconds;
                 timing.DetailText = OpenVisionToolOpenProfiler.Consume();
@@ -174,11 +177,15 @@ namespace OpenVisionLab
 
             FrameworkElement view = PrepareHostedWpfDocument(document.View);
             Size warmSize = new Size(1180, 760);
-            toolWindowLifecycleController.PrepareDockedDocumentWorkspace(
-                view,
-                OpenVisionLanguageService.T("PipelineReview.Title"),
-                warmSize.Width,
-                warmSize.Height);
+            if (documentController.ActiveNativeDocument == null
+                && documentController.ActivePendingToolViewModel == null)
+            {
+                toolWindowLifecycleController.PrepareDockedDocumentWorkspace(
+                    view,
+                    OpenVisionLanguageService.T("PipelineReview.Title"),
+                    warmSize.Width,
+                    warmSize.Height);
+            }
             view.ApplyTemplate();
             view.Measure(warmSize);
             view.Arrange(new Rect(0, 0, warmSize.Width, warmSize.Height));
@@ -378,7 +385,10 @@ namespace OpenVisionLab
             ShowWpfToolWindow(view, item.Title, 820, 560, timing);
         }
 
-        private void CompleteToolSelection(string title, bool hasDisplayablePreviewResult)
+        private void CompleteToolSelection(
+            string title,
+            bool hasDisplayablePreviewResult,
+            bool refreshLayerRows = true)
         {
             if (hasDisplayablePreviewResult)
             {
@@ -390,7 +400,10 @@ namespace OpenVisionLab
             }
 
             setActiveDocumentText(title);
-            refreshHostLayerRows();
+            if (refreshLayerRows)
+            {
+                refreshHostLayerRows();
+            }
         }
 
         private bool HasDisplayablePreviewResult(OpenVisionNativeToolDocument document)

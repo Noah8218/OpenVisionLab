@@ -41,6 +41,7 @@ namespace OpenVisionLab
         public long NativeToolPrewarmElapsedMillisecondsForTest => toolTestFacade.NativeToolPrewarmElapsedMilliseconds;
         public int NativeToolDocumentCacheCountForTest => toolTestFacade.NativeToolDocumentCacheCount;
         public string LastToolOpenTimingTextForTest => toolTestFacade.LastToolOpenTimingText;
+        public bool HasPipelineReviewDocumentForTest => toolTestFacade.HasPipelineReviewDocument;
         public bool IsShellLoadedForTest => toolTestFacade.IsShellLoaded;
         public int HostedDocumentCount => toolTestFacade.HostedDocumentCount;
         public bool IsNativeDocumentActive => toolTestFacade.IsNativeDocumentActive;
@@ -396,6 +397,14 @@ namespace OpenVisionLab
             ?? string.Empty;
 
         public bool IsRecipeManagerOpenForTest => btnHostRecipeManager?.IsChecked == true;
+
+        public bool IsShellBusyOverlayVisibleForTest => busyPresenter.IsVisible;
+
+        public string ShellBusyTitleForTest => busyPresenter.Title;
+
+        public void ShowPipelineLoadingForTest() => busyPresenter.ShowPipelineLoading();
+
+        public void HideShellBusyForTest() => busyPresenter.Hide();
 
         public void QueuePendingRecipeEditDecisionForTest(
             OpenVisionRecipePendingEditDecision decision)

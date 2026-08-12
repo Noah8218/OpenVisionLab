@@ -38,6 +38,7 @@ namespace OpenVisionLab
         private bool suppressScaleCalibrationSelection;
         private bool suppressFixtureConsumerSelection;
         private bool hasScaleCalibrationRecord;
+        private bool useCompactImageLayout;
 
         public OpenVisionPipelineReviewView()
         {
@@ -57,6 +58,9 @@ namespace OpenVisionLab
             cmbScaleUnit.SelectedIndex = 0;
             ApplyLocalization();
             OpenVisionLanguageService.LanguageChanged += OnLanguageChanged;
+            SizeChanged += OnViewSizeChanged;
+            btnReviewGuideToggle.Checked += OnReviewGuideToggleChanged;
+            btnReviewGuideToggle.Unchecked += OnReviewGuideToggleChanged;
             Unloaded += OnUnloaded;
         }
 
@@ -148,6 +152,9 @@ namespace OpenVisionLab
         private void OnUnloaded(object sender, System.Windows.RoutedEventArgs e)
         {
             OpenVisionLanguageService.LanguageChanged -= OnLanguageChanged;
+            SizeChanged -= OnViewSizeChanged;
+            btnReviewGuideToggle.Checked -= OnReviewGuideToggleChanged;
+            btnReviewGuideToggle.Unchecked -= OnReviewGuideToggleChanged;
             Unloaded -= OnUnloaded;
             objectResultBaseImage?.Dispose();
             objectResultBaseImage = null;
@@ -204,6 +211,7 @@ namespace OpenVisionLab
             txtCalculateScaleCalibrationButton.Text = T("PipelineReview.ScaleCalibration.Calculate", "Calculate + save");
             txtApplyScaleCalibrationButton.Text = T("PipelineReview.ScaleCalibration.Apply", "Apply to Step");
             lblReadiness.Text = T("PipelineReview.Readiness.Title", "Inspection readiness");
+            txtReviewGuideToggle.Text = T("PipelineReview.Guide.Toggle", "Review guidance");
             lblReviewGuideStage.Text = T("PipelineReview.Guide.Stage", "Review");
             lblReviewGuideCurrent.Text = T("PipelineReview.Guide.Current", "Current Step");
             lblReviewGuideNext.Text = T("PipelineReview.Guide.Next", "Next Check");
@@ -603,14 +611,61 @@ namespace OpenVisionLab
 
         private void UpdateReviewDetailRowHeight()
         {
+            bool compactGuideExpanded = useCompactImageLayout && btnReviewGuideToggle.IsChecked == true;
+            reviewDetailTabs.Visibility = compactGuideExpanded
+                ? System.Windows.Visibility.Collapsed
+                : System.Windows.Visibility.Visible;
+            reviewDetailGapRow.Height = new System.Windows.GridLength(compactGuideExpanded ? 0D : 8D);
+            reviewDetailRow.MinHeight = compactGuideExpanded ? 0D : 96D;
+            if (compactGuideExpanded)
+            {
+                reviewDetailRow.Height = new System.Windows.GridLength(0D);
+                return;
+            }
+
+            if (useCompactImageLayout)
+            {
+                double compactHeight = matcherDiagnosticTab.Visibility == System.Windows.Visibility.Visible
+                    ? 180D
+                    : circleEvidenceTab.Visibility == System.Windows.Visibility.Visible
+                        ? 160D
+                        : 130D;
+                reviewDetailRow.Height = new System.Windows.GridLength(compactHeight);
+                return;
+            }
+
             double height = matcherDiagnosticTab.Visibility == System.Windows.Visibility.Visible
-                ? 300D
+                ? 240D
                 : objectInspectorTab.Visibility == System.Windows.Visibility.Visible
-                    ? 220D
+                    ? 180D
                 : circleEvidenceTab.Visibility == System.Windows.Visibility.Visible
-                    ? 280D
-                    : 160D;
+                    ? 220D
+                    : 130D;
             reviewDetailRow.Height = new System.Windows.GridLength(height);
+        }
+
+        private void OnViewSizeChanged(object sender, System.Windows.SizeChangedEventArgs e)
+        {
+            bool compact = ActualHeight < 650D;
+            if (compact == useCompactImageLayout)
+            {
+                return;
+            }
+
+            useCompactImageLayout = compact;
+            reviewSummaryGrid.Visibility = compact
+                ? System.Windows.Visibility.Collapsed
+                : System.Windows.Visibility.Visible;
+            reviewSummaryRow.Height = compact
+                ? new System.Windows.GridLength(0D)
+                : System.Windows.GridLength.Auto;
+            reviewSummaryGapRow.Height = new System.Windows.GridLength(compact ? 0D : 8D);
+            UpdateReviewDetailRowHeight();
+        }
+
+        private void OnReviewGuideToggleChanged(object sender, System.Windows.RoutedEventArgs e)
+        {
+            UpdateReviewDetailRowHeight();
         }
 
         internal bool MatcherDiagnosticTabVisibleForTest =>

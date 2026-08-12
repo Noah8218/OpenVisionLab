@@ -36,6 +36,16 @@ namespace OpenVisionLab
         public bool HasPipelineReviewDocument =>
             ActivePipelineReviewDocument != null || cachedPipelineReviewDocument != null;
 
+        public bool HasPipelineReviewFor(OpenVisionRecipeContext recipeContext) =>
+            IsSamePipelineContext(ActivePipelineReviewDocument?.RecipeContext, recipeContext)
+            || IsSamePipelineContext(cachedPipelineReviewDocument?.RecipeContext, recipeContext);
+
+        public void RefreshPipelineReviewInputLayerState()
+        {
+            ActivePipelineReviewDocument?.RefreshInputLayerState();
+            cachedPipelineReviewDocument?.RefreshInputLayerState();
+        }
+
         public bool TryCachePipelineReview(OpenVisionPipelineReviewDocument document)
         {
             ThrowIfDisposed();
@@ -89,6 +99,8 @@ namespace OpenVisionLab
                 return false;
             }
 
+            DetachActiveNativeDocument();
+            CloseActivePendingTool();
             ActivePipelineReviewDocument = cachedPipelineReviewDocument;
             cachedPipelineReviewDocument = null;
             ActivePipelineReviewDocument.LayerStateChanged += layerStateChanged;

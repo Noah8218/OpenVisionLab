@@ -25,6 +25,7 @@ namespace OpenVisionLab
         private VisionPipelineSampleCatalogItem activeCatalogSample;
         private VisionPipelineSampleCatalogItem activePairCounterpartSample;
         private string activePipelineName = string.Empty;
+        private DateTime activePipelineLastWriteUtc;
         private int selectedIndex;
         private PipelineFlowPreviewMode selectedMode = PipelineFlowPreviewMode.Overlay;
         private string reviewExecutionState = T("PipelineReview.Execution.NotRun", "Not run");
@@ -150,6 +151,7 @@ namespace OpenVisionLab
         {
             activePipelineName = ResolveActivePipelineName();
             pipeline = VisionPipelineStorage.Load(recipeContext.Name, activePipelineName);
+            activePipelineLastWriteUtc = GetPipelineLastWriteUtc(activePipelineName);
             RefreshActiveSamplePairGuide(activePipelineName);
             validationResult = VisionPipelineValidator.Validate(pipeline, GetLayerNames());
             executionController.Reset();
@@ -191,6 +193,42 @@ namespace OpenVisionLab
 
             SelectStep(selectedIndex, selectedMode);
             LayerStateChanged(this, EventArgs.Empty);
+        }
+
+        public void RefreshInputLayerState()
+        {
+            if (pipeline?.Steps == null || pipeline.Steps.Count == 0)
+            {
+                RefreshLayerState();
+                return;
+            }
+
+            executionController.Reset();
+            reviewExecutionState = T("PipelineReview.Execution.NotRun", "Not run");
+            validationResult = VisionPipelineValidator.Validate(pipeline, GetLayerNames());
+            view.SetReviewProgress(FormatReviewProgressText());
+            view.SetValidation(FormatValidationStatus(validationResult), FormatValidationDetails(validationResult));
+            RefreshReadiness();
+            view.SetSteps(CreateFlowItems(pipeline.Steps));
+            SelectStep(
+                selectedIndex >= 0 && selectedIndex < pipeline.Steps.Count ? selectedIndex : 0,
+                selectedMode);
+        }
+
+        public void RefreshIfPipelineChanged()
+        {
+            string resolvedPipelineName = ResolveActivePipelineName();
+            if (!string.Equals(activePipelineName, resolvedPipelineName, StringComparison.Ordinal)
+                || activePipelineLastWriteUtc != GetPipelineLastWriteUtc(resolvedPipelineName))
+            {
+                RefreshLayerState();
+            }
+        }
+
+        private DateTime GetPipelineLastWriteUtc(string pipelineName)
+        {
+            string path = RecipeWorkspaceService.GetVisionPipelinePath(recipeContext.Name, pipelineName);
+            return File.Exists(path) ? File.GetLastWriteTimeUtc(path) : DateTime.MinValue;
         }
 
         public void SelectStepForTest(int index, PipelineFlowPreviewMode mode)

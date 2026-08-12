@@ -162,6 +162,10 @@ namespace OpenVisionLab
             }
 
             RefreshAfterNativeLayerStateChanged(hasPreviewResult && showOutputWorkspacePreview);
+            if (sender is not OpenVisionPipelineReviewDocument)
+            {
+                documentController.RefreshPipelineReviewInputLayerState();
+            }
         }
 
         public void RefreshAfterNativeLayerStateChanged(bool hasPreviewResult)
