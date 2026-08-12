@@ -1183,6 +1183,12 @@ PipelineReview.RouteFormat	{0} -> {1}	{0} -> {1}
 PipelineReview.StepDetails.Title	Step 상세	Step Details
 PipelineReview.ObjectInspector.Title	검출 후보	Detection candidates
 PipelineReview.ObjectInspector.CountFormat	검출 후보 {0} / 검사 대상 {1} / 필터 제외 {2}	Candidates {0} / inspection objects {1} / filtered out {2}
+PipelineReview.ObjectInspector.StateColumn	판정	Status
+PipelineReview.ObjectInspector.AreaColumn	면적	Area
+PipelineReview.ObjectInspector.CenterXColumn	X	X
+PipelineReview.ObjectInspector.CenterYColumn	Y	Y
+PipelineReview.ObjectInspector.AngleColumn	각도	Deg
+PipelineReview.ObjectInspector.RejectReasonColumn	NG	NG
 PipelineReview.ObjectInspector.CandidateGuide	검출 후보는 이진화/윤곽에서 생성된 행이며 실제 물체 수와 다를 수 있습니다. 초록은 검사 대상, 빨강은 현재 PropertyGrid 범위에서 제외된 후보입니다.	Detection candidates come from segmentation/contours and may differ from the physical object count. Green marks inspection objects; red marks candidates filtered out by the current PropertyGrid ranges.
 PipelineReview.ObjectInspector.Highlight	선택 객체 강조	Selected object highlight
 SimplePreprocess.HistogramType	히스토그램 타입	Histogram type

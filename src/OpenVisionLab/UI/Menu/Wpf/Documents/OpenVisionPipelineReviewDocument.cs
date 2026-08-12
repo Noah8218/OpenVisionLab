@@ -118,6 +118,7 @@ namespace OpenVisionLab
         public bool CanSelectFirstIssueStep => view.CanSelectFirstIssueStep;
         public bool HasInputPreview => view.HasInputPreview;
         public bool HasOutputPreview => view.HasOutputPreview;
+        internal System.Windows.Media.Imaging.BitmapImage OutputPreviewImageForTest => view.OutputPreviewImageForTest;
         public int ObjectResultCount => view.ObjectResultCount;
         public int SelectedObjectResultNumber => view.SelectedObjectResultNumber;
         public bool HasObjectHighlight => view.HasObjectHighlight;
@@ -378,7 +379,7 @@ namespace OpenVisionLab
             VisionPipelineStep step = pipeline.Steps[index];
             view.SetSelectedToolLearnState(OpenVisionLearnTopicCatalog.TryResolveForToolType(step.ToolType, out _));
             Bitmap inputImage = ResolveLayerPreviewImage(step.InputLayer);
-            Bitmap outputImage = ResolveLayerPreviewImage(step.OutputLayer);
+            Bitmap outputImage = ResolveStepOutputPreviewImage(step.OutputLayer);
             executionController.TryGetSummary(step, out VisionPipelineStepResultSummary summary);
             OpenVisionPipelineReviewFlowProjection flow =
                 OpenVisionPipelineReviewFlowPresenter.CreateStepProjection(
@@ -890,6 +891,12 @@ namespace OpenVisionLab
             }
 
             return executionController.ResolveCachedOutput(layerName);
+        }
+
+        private Bitmap ResolveStepOutputPreviewImage(string layerName)
+        {
+            Bitmap reviewImage = executionController.ResolveCachedOutput(layerName);
+            return reviewImage ?? ResolveLayerPreviewImage(layerName);
         }
 
         private void RefreshReadiness()

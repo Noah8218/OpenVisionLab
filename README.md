@@ -18,6 +18,23 @@ rule-based inspection recipes from image samples.
   Layer comparison, public samples, and multi-image validation
 - LLM/XML assistance is optional and is not required to use the application
 
+## One Image, Every Inspection Stage
+
+![OpenVisionLab Filter, Threshold, Morphology, Blob, and Contour comparison](docs/assets/demo/openvisionlab_hole_array_pipeline_actual_exe_en.png)
+
+The current EXE can keep the source image and every intermediate Layer visible
+at the same time. This public perforated-plate recipe runs `Filter -> Threshold
+-> Morphology`, then branches the cleaned Layer to both Blob and Contour. The
+two final panels render 34 accepted holes on the source image; the full-image
+background contour is excluded by the same area gate used by both branches.
+
+[Open the reproducible public Pipeline](docs/samples/public/product/Product_Field_PerforatedPlate_Inspection.pipeline.xml)
+or select `Product_Field_PerforatedPlate_HoleArray` in the sample catalog.
+
+This is the central workflow OpenVisionLab is designed for: tune each Step,
+compare intermediate images, inspect final drawings and metrics, then confirm
+the same evidence in Pipeline Review. Preview and Run remain explicit actions.
+
 ## User Manual
 
 Open the application and select `Guide` to open the offline user manual. The

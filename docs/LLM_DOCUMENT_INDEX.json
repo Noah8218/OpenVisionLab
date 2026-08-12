@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0",
-  "updated": "2026-08-06",
+  "updated": "2026-08-12",
   "purpose": "Curated, machine-readable routing index for OpenVisionLab documentation. It is intentionally smaller than the full documentation registry.",
   "entrypoint": "docs/README.md",
   "detailedRegistry": "docs/admin/OPENVISIONLAB_DOCUMENTATION_MAP.md",
@@ -65,7 +65,7 @@
       "id": "samples_validation_and_external_assets",
       "intent": "Work with public samples, validation evidence, DLLs, or external references.",
       "keywords": ["sample", "validation", "asset", "DLL", "external reference", "evidence"],
-      "read": ["docs/contracts/openvisionlab/OPENVISIONLAB_PUBLIC_SAMPLE_ASSET_POLICY.md", "docs/contracts/openvisionlab/OPENVISIONLAB_EXTERNAL_REFERENCE_POLICY.md", "docs/reports/OPENVISIONLAB_VISION_SDK_3_MIGRATION_20260805.md", "docs/reports/OPENVISIONLAB_COMPLETED_TRACKER.md"]
+      "read": ["docs/contracts/openvisionlab/OPENVISIONLAB_PUBLIC_SAMPLE_ASSET_POLICY.md", "docs/contracts/openvisionlab/OPENVISIONLAB_EXTERNAL_REFERENCE_POLICY.md", "docs/reports/OPENVISIONLAB_PORTFOLIO_PATTERN_CAPTURE_20260812.md", "docs/reports/OPENVISIONLAB_PORTFOLIO_STAGE_SHOWCASE_20260812.md", "docs/reports/OPENVISIONLAB_VISION_SDK_3_MIGRATION_20260805.md", "docs/reports/OPENVISIONLAB_COMPLETED_TRACKER.md"]
     },
     {
       "id": "source_build_release_and_runtime_data",

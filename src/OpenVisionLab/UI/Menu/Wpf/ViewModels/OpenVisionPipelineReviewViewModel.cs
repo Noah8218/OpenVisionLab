@@ -170,6 +170,7 @@ namespace OpenVisionLab
         public BitmapImage MatcherCandidatePreviewImage { get => matcherCandidatePreviewImage; private set => SetField(ref matcherCandidatePreviewImage, value); }
         public bool HasInputPreview => InputPreviewImage != null;
         public bool HasOutputPreview => OutputPreviewImage != null;
+        internal BitmapImage OutputPreviewImageForTest => OutputPreviewImage;
 
         public void SetPipelineHeader(string pipelineName, int stepCount)
         {

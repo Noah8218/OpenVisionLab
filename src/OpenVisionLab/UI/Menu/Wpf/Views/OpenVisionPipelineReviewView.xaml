@@ -1223,9 +1223,9 @@
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="190" />
+                                <ColumnDefinition Width="160" />
                                 <ColumnDefinition Width="7" />
-                                <ColumnDefinition Width="330" />
+                                <ColumnDefinition Width="440" />
                                 <ColumnDefinition Width="7" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
@@ -1326,15 +1326,15 @@
                                     </Style>
                                 </DataGrid.RowStyle>
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="#" Binding="{Binding Number}" Width="42" />
-                                    <DataGridTextColumn Header="판정" Binding="{Binding StateText}" Width="62" />
-                                    <DataGridTextColumn Header="면적" Binding="{Binding Area, StringFormat={}{0:0.###}}" Width="68" />
-                                    <DataGridTextColumn Header="중심 X" Binding="{Binding CenterX, StringFormat={}{0:0.##}}" Width="64" />
-                                    <DataGridTextColumn Header="중심 Y" Binding="{Binding CenterY, StringFormat={}{0:0.##}}" Width="64" />
-                                    <DataGridTextColumn Header="W" Binding="{Binding BoundsWidth}" Width="44" />
-                                    <DataGridTextColumn Header="H" Binding="{Binding BoundsHeight}" Width="44" />
-                                    <DataGridTextColumn Header="각도" Binding="{Binding Angle, StringFormat={}{0:0.##}}" Width="58" />
-                                    <DataGridTextColumn Header="제외 사유" Binding="{Binding RejectReason}" Width="*" />
+                                    <DataGridTextColumn Header="#" Binding="{Binding Number}" Width="30" />
+                                    <DataGridTextColumn x:Name="objectStateColumn" Header="판정" Binding="{Binding StateText}" Width="60" />
+                                    <DataGridTextColumn x:Name="objectAreaColumn" Header="면적" Binding="{Binding Area, StringFormat={}{0:0.###}}" Width="60" />
+                                    <DataGridTextColumn x:Name="objectCenterXColumn" Header="X" Binding="{Binding CenterX, StringFormat={}{0:0.##}}" Width="50" />
+                                    <DataGridTextColumn x:Name="objectCenterYColumn" Header="Y" Binding="{Binding CenterY, StringFormat={}{0:0.##}}" Width="50" />
+                                    <DataGridTextColumn Header="W" Binding="{Binding BoundsWidth}" Width="40" />
+                                    <DataGridTextColumn Header="H" Binding="{Binding BoundsHeight}" Width="40" />
+                                    <DataGridTextColumn x:Name="objectAngleColumn" Header="각도" Binding="{Binding Angle, StringFormat={}{0:0.##}}" Width="50" />
+                                    <DataGridTextColumn x:Name="objectRejectReasonColumn" Header="제외 사유" Binding="{Binding RejectReason}" Width="*" />
                                 </DataGrid.Columns>
                                 </DataGrid>
                             </Grid>

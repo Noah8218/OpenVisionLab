@@ -213,7 +213,12 @@ namespace OpenVisionLab
                 return;
             }
 
-            ReplaceReviewLayerImage(outputLayer, BitmapImageConverter.ToBitmap(stepResult.ToolResult.ResultImage));
+            using Bitmap resultImage = BitmapImageConverter.ToBitmap(stepResult.ToolResult.ResultImage);
+            Bitmap reviewImage = VisionPipelineRunReportImageRenderer.Render(
+                resultImage,
+                stepResult,
+                GetStepDisplayIndex(stepResult.Step, activePipeline));
+            ReplaceReviewLayerImage(outputLayer, reviewImage);
         }
 
         private static int GetStepDisplayIndex(VisionPipelineStep step, VisionPipeline pipeline)

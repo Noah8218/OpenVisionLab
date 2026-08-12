@@ -7,6 +7,7 @@ using System.Drawing;
 using System.Linq;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media.Imaging;
 
 namespace OpenVisionLab
 {
@@ -108,6 +109,7 @@ namespace OpenVisionLab
         public bool CanSelectFirstIssueStep => ViewModel.CanSelectFirstIssueStep;
         public bool HasInputPreview => ViewModel.HasInputPreview;
         public bool HasOutputPreview => ViewModel.HasOutputPreview;
+        internal BitmapImage OutputPreviewImageForTest => ViewModel.OutputPreviewImageForTest;
         public int ObjectResultCount => objectResults.Count;
         public int SelectedObjectResultNumber => objectResultsGrid.SelectedItem is VisionPipelineObjectResult item ? item.Number : 0;
         internal string ValidationLabelTextForTest => lblState.Text;
@@ -174,6 +176,12 @@ namespace OpenVisionLab
             lblResult.Text = T("PipelineReview.Result", "Inspection result");
             lblRunLog.Text = T("PipelineReview.RunLog", "Run Log");
             objectInspectorTab.Header = T("PipelineReview.ObjectInspector.Title", "Detection candidates");
+            objectStateColumn.Header = T("PipelineReview.ObjectInspector.StateColumn", "Status");
+            objectAreaColumn.Header = T("PipelineReview.ObjectInspector.AreaColumn", "Area");
+            objectCenterXColumn.Header = T("PipelineReview.ObjectInspector.CenterXColumn", "Center X");
+            objectCenterYColumn.Header = T("PipelineReview.ObjectInspector.CenterYColumn", "Center Y");
+            objectAngleColumn.Header = T("PipelineReview.ObjectInspector.AngleColumn", "Deg");
+            objectRejectReasonColumn.Header = T("PipelineReview.ObjectInspector.RejectReasonColumn", "NG");
             txtObjectCandidateGuide.Text = T(
                 "PipelineReview.ObjectInspector.CandidateGuide",
                 "Detection candidates come from segmentation/contours and may differ from the physical object count. Green marks inspection objects; red marks candidates filtered out by the current PropertyGrid ranges.");

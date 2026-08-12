@@ -102,6 +102,7 @@ internal static class Program
         ["wpf_shell_host_pipeline_step_edit_handoff"] = CaptureShellHostPipelineStepEditHandoff,
         ["wpf_shell_host_fixture_step_edit_apply_rerun"] = CaptureShellHostFixtureStepEditApplyRerun,
         ["wpf_shell_host_workspace_sample_fixture_teach"] = CaptureShellHostWorkspaceSampleFixtureTeach,
+        ["wpf_pipeline_review_matching_overlay"] = CapturePipelineReviewMatchingOverlay,
         ["wpf_shell_host_workspace_product_sample_review"] = CaptureShellHostWorkspaceProductSampleReview,
         ["wpf_shell_host_workspace_product_sample_review_ng"] = CaptureShellHostWorkspaceProductSampleReviewNg,
         ["wpf_shell_host_workspace_product_sample_pair_open"] = CaptureShellHostWorkspaceProductSamplePairOpen,
@@ -12552,18 +12553,46 @@ internal static class Program
                     + $"ToolVisible={shellHost.IsActiveWpfToolWindowVisibleForTest}, NativeActive={shellHost.IsNativeDocumentActive}, Preview={shellHost.HasNativePreviewResult}");
             }
 
+            TextBox layerNameEditor = FindNamedVisualChild<TextBox>(shellHost, "txtHostTopLayerNameEditor")
+                ?? throw new InvalidOperationException("Top layer name editor was not found.");
+            Button renameButton = FindNamedVisualChild<Button>(shellHost, "btnHostRenameLayer")
+                ?? throw new InvalidOperationException("Top layer rename button was not found.");
+            const string editedLayer = "MATCH +15 deg [Scale 1.00]";
+            layerNameEditor.Text = editedLayer;
+            layerNameEditor.UpdateLayout();
+            if (!string.Equals(layerNameEditor.Text, editedLayer, StringComparison.Ordinal)
+                || renameButton.Command == null
+                || !renameButton.Command.CanExecute(renameButton.CommandParameter))
+            {
+                throw new InvalidOperationException(
+                    "Top layer name editor did not render an editable non-empty value or enable Rename. "
+                    + $"Text='{layerNameEditor.Text}', Enabled={renameButton.IsEnabled}");
+            }
+
+            renameButton.Command.Execute(renameButton.CommandParameter);
+            Pump(80);
+            if (shellHost.HasLayerForTest(renamedLayer)
+                || !shellHost.HasLayerForTest(editedLayer)
+                || !string.Equals(shellHost.ActiveHostLayerTitle, editedLayer, StringComparison.OrdinalIgnoreCase)
+                || shellHost.DockedLayerTitles.IndexOf(editedLayer, StringComparison.OrdinalIgnoreCase) < 0
+                || shellHost.NativePreviewRunCount != previewRunsBefore
+                || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, inputRouteBefore, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "Visible top layer rename did not preserve the docked image and no-run routing contract. "
+                    + $"Old={renamedLayer}, New={editedLayer}, Active={shellHost.ActiveHostLayerTitle}, "
+                    + $"Docked='{shellHost.DockedLayerTitles}', Runs={shellHost.NativePreviewRunCount}/{previewRunsBefore}");
+            }
+
             AssertVisibleAutomationIds(
                 shellHost,
                 "WPF layer rename detail controls",
                 "HostLayerNameCombo",
+                "HostTopLayerNameEditor",
+                "HostTopRenameLayerButton",
                 "HostTopCreateLayerButton",
                 "HostTopLoadImageIntoLayerButton",
                 "HostTopDeleteLayerButton");
-            AssertHiddenAutomationIds(
-                shellHost,
-                "WPF top layer rename controls",
-                "HostTopLayerNameEditor",
-                "HostTopRenameLayerButton");
         }, captureFloatingToolWindow: false);
     }
 
@@ -14137,6 +14166,130 @@ internal static class Program
             "Smoke_WpfShellHostWorkspaceSampleReviewFeatureNgMetrics",
             "WPF workspace sample review Feature NG metrics",
             minStepCount: 1);
+    }
+
+    private static CaptureResult CapturePipelineReviewMatchingOverlay(string outputPath)
+    {
+        const string recipeName = "Smoke_PipelineReviewMatchingOverlay";
+        const string pipelineName = "Matching_Overlay_Review";
+        string repositoryRoot = Directory.GetCurrentDirectory();
+        string sourcePath = Path.GetFullPath(Path.Combine(
+            repositoryRoot,
+            "docs",
+            "samples",
+            "public",
+            "Matching_DiePad_Synthetic_OK.png"));
+        string templatePath = Path.GetFullPath(Path.Combine(
+            repositoryRoot,
+            "docs",
+            "samples",
+            "public",
+            "templates",
+            "Matching_DiePad_Synthetic_Template.png"));
+        if (!File.Exists(sourcePath) || !File.Exists(templatePath))
+        {
+            throw new FileNotFoundException("Pipeline Review Matching overlay smoke assets were not found.");
+        }
+
+        DisplayManagerService displayManager = new();
+        using Bitmap source = new(sourcePath);
+        displayManager.CreateLayerDisplay(source, "Main", false);
+        displayManager.CreateLayerDisplay(source, "Matching_Preview", false);
+        displayManager.SelectedItem = "Main";
+
+        VisionPipeline pipeline = new() { Name = pipelineName };
+        VisionPipelineStep matching = new()
+        {
+            Name = "01 Matching Overlay",
+            ToolType = "Matching",
+            Enabled = true,
+            InputLayer = "Main",
+            OutputLayer = "Matching_Preview"
+        };
+        AddParameters(
+            matching,
+            ("Name", pipelineName),
+            ("TemplatePath", templatePath),
+            ("PATTERN_PATH", templatePath),
+            ("MATCH_MODE", "CCoeffNormed"),
+            ("SCORE_MIN", "0.6"),
+            ("MAGNIFIATION", "4"),
+            ("NUM_MATCH", "3"),
+            ("USE_FIND_ANGLE", "true"),
+            ("FIND_ANGLE", "7"),
+            ("FIND_ANGLE_MAX", "7"),
+            ("FIND_ANGLE_MIN", "-20"),
+            ("USE_CANNY", "false"),
+            ("USE_THRESHOLD", "false"),
+            ("USE_ADAPTIVE_THRESHOLD", "false"),
+            ("USE_ROI", "false"));
+        pipeline.Steps.Add(matching);
+        VisionPipelineStorage.Save(recipeName, pipeline);
+        VisionPipelineStorage.SaveActivePipelineName(recipeName, pipelineName);
+
+        try
+        {
+            using OpenVisionPipelineReviewDocument document = new(displayManager, recipeName);
+            Task run = document.RunReviewForTestAsync();
+            WaitForTaskWithPump(run, 30000, "Pipeline Review Matching overlay execution");
+            document.SelectStepForTest(0, PipelineFlowPreviewMode.Output);
+            Pump(80);
+
+            BitmapImage output = document.OutputPreviewImageForTest
+                ?? throw new InvalidOperationException("Pipeline Review Matching output preview was not produced.");
+            using Bitmap rendered = ConvertBitmapSourceToDrawingBitmap(output);
+            int changedPixels = CountChangedPixels(source, rendered, tolerance: 18);
+            if (changedPixels < 400)
+            {
+                throw new InvalidOperationException(
+                    "Pipeline Review Matching output did not prefer the current-run detection overlay. "
+                    + $"ChangedPixels={changedPixels}");
+            }
+
+            return CaptureElement(document.View, outputPath, 1180, 890);
+        }
+        finally
+        {
+            RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+        }
+    }
+
+    private static Bitmap ConvertBitmapSourceToDrawingBitmap(BitmapSource source)
+    {
+        PngBitmapEncoder encoder = new();
+        encoder.Frames.Add(BitmapFrame.Create(source));
+        using MemoryStream stream = new();
+        encoder.Save(stream);
+        stream.Position = 0;
+        using Bitmap decoded = new(stream);
+        return new Bitmap(decoded);
+    }
+
+    private static int CountChangedPixels(Bitmap expected, Bitmap actual, int tolerance)
+    {
+        if (expected == null || actual == null || expected.Size != actual.Size)
+        {
+            return int.MaxValue;
+        }
+
+        int changed = 0;
+        int step = Math.Max(1, Math.Min(expected.Width, expected.Height) / 500);
+        for (int y = 0; y < expected.Height; y += step)
+        {
+            for (int x = 0; x < expected.Width; x += step)
+            {
+                DrawingColor left = expected.GetPixel(x, y);
+                DrawingColor right = actual.GetPixel(x, y);
+                if (Math.Abs(left.R - right.R) > tolerance
+                    || Math.Abs(left.G - right.G) > tolerance
+                    || Math.Abs(left.B - right.B) > tolerance)
+                {
+                    changed++;
+                }
+            }
+        }
+
+        return changed;
     }
 
     private static CaptureResult CaptureShellHostWorkspaceSamplePipelineReviewEdgeNgMetrics(string outputPath)
@@ -35855,7 +36008,8 @@ internal static class Program
                 throw new InvalidOperationException(
                     name + " input was not keyboard reachable with a usable label. AutomationId='"
                     + inputId
-                    + "'.");
+                    + $"'. Focusable={input.Focusable}, TabStop={KeyboardNavigation.GetIsTabStop(input)}, "
+                    + $"Name='{System.Windows.Automation.AutomationProperties.GetName(input)}'.");
             }
 
             input.Focus();
@@ -36503,7 +36657,8 @@ internal static class Program
         {
             roots.AddRange(FindVisualChildren<ContentControl>(window)
                 .Where(item => item.IsVisible
-                    && string.Equals(item.Name, "dockedToolContentHost", StringComparison.Ordinal)
+                    && (string.Equals(item.Name, "dockedToolContentHost", StringComparison.Ordinal)
+                        || string.Equals(item.Name, "dockedDocumentContentHost", StringComparison.Ordinal))
                     && item.Content != null));
         }
 

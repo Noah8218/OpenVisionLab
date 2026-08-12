@@ -1,6 +1,6 @@
 # OpenVisionLab Current Project Handoff
 
-Updated: 2026-08-11 KST
+Updated: 2026-08-12 KST
 
 This is the compact live-status source for a new OpenVisionLab task. Read
 `AGENTS.md`, `docs/README.md`, and `docs/LLM_DOCUMENT_INDEX.json` first. Stable
@@ -52,6 +52,50 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
   hardware qualification, calibrated metrology, or field robustness.
 
 ## Latest Completed Work
+
+### 2026-08-12 Portfolio Multi-Stage Processing Showcase - Complete In Dev Working Tree
+
+- A reproducible public perforated-plate Pipeline now exposes one source image
+  through `Filter -> Threshold -> Morphology`, then branches the cleaned Layer
+  to Blob and Contour. Both branches retain 34 intended holes and exclude the
+  full-image background contour.
+- A shaft-pitting Pipeline confines 18 retained Contour candidates to one
+  reviewed ROI after preserving smaller point-like candidates with
+  `Threshold=100` and `MIN_AREA=2 px^2`. Its defect-free `ResultCount=0`
+  contract reports this defective sample as NG rather than passing a broad
+  count range. The existing semiconductor lead-width Pipeline retains 16
+  scans at 42.012 px / 0.252 mm. The public edge sample demonstrates
+  `EdgeDetection -> Morphology -> Contour` with four accepted shapes.
+- Current-EXE Korean and English captures show the source, every intermediate
+  Layer, final drawings on the source image, and completed Pipeline Review.
+  The capture reports record monitor/window intersection, EXE and input hashes,
+  pane counts, exact language display, and no Computer Use overlay.
+- README now leads with the six-panel English actual-EXE comparison and links
+  the reproducible public Pipeline.
+- Evidence:
+  `docs/reports/OPENVISIONLAB_PORTFOLIO_STAGE_SHOWCASE_20260812.md`.
+- Boundary: public sample/runtime/UI evidence only. The shaft sample has no
+  independent pixel-level ground truth, so the 18 candidates prove only the
+  configured runtime selection, not recall, accuracy, calibrated production
+  metrology, or field robustness for other data, optics, or hardware.
+
+### 2026-08-12 Portfolio Pattern Comparison And Clean EXE Capture - Complete In Dev Working Tree
+
+- The approved card Matching demonstration now uses a bounded `-20..20`
+  angle and `0.85..1.15` scale search. Five current runs scored
+  `91.949-99.072` and visibly selected the same taught lower pattern.
+- Pipeline Review now presents its current-run rendered detection overlay, and
+  the main toolbar exposes a themed, editable layer name plus Rename action.
+- A current-source Debug `OpenVisionLab.exe` produced a clean six-pane
+  comparison and a readable Pipeline Review input/output capture. The render
+  path used no Computer Use, cursor visualization, Codex chrome, or desktop
+  background. Debug build 0/0, focused UI smoke 2/2, readiness 13/13,
+  vendored references, public assets, and `git diff --check` passed.
+- Evidence:
+  `docs/reports/OPENVISIONLAB_PORTFOLIO_PATTERN_CAPTURE_20260812.md`.
+- Boundary: this is portfolio/runtime evidence in the Dev working tree, not a
+  release, physical-part robustness, calibrated metrology, camera, lighting,
+  or PLC/I/O qualification claim.
 
 ### 2026-08-11 Recipe Switch And Result Canvas Correction - Complete In Dev And Original
 

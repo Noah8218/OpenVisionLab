@@ -366,6 +366,18 @@ namespace OpenVisionLab
                     return true;
                 }
 
+                if (string.Equals(scenario, "portfolio-pattern-grid-captures", StringComparison.OrdinalIgnoreCase))
+                {
+                    RunPortfolioPatternGridCaptures(args, outputDirectory);
+                    return true;
+                }
+
+                if (string.Equals(scenario, "portfolio-stage-grid-captures", StringComparison.OrdinalIgnoreCase))
+                {
+                    RunPortfolioStageGridCaptures(args, outputDirectory);
+                    return true;
+                }
+
                 if (string.Equals(scenario, "portfolio-pin-array-probe", StringComparison.OrdinalIgnoreCase))
                 {
                     RunPortfolioPinArrayProbe(args, outputDirectory);
@@ -8002,6 +8014,368 @@ namespace OpenVisionLab
                 Encoding.UTF8);
         }
 
+        private static void RunPortfolioPatternGridCaptures(string[] args, string outputDirectory)
+        {
+            Directory.CreateDirectory(outputDirectory);
+            string layersDirectory = ResolveRequiredOption(args, "--layers-dir");
+            string pipelinePath = ResolveRequiredOption(args, "--pipeline");
+            string sourceImagePath = ResolveRequiredOption(args, "--source-image");
+            EnsureFileExists(pipelinePath, "Portfolio pipeline");
+            EnsureFileExists(sourceImagePath, "Portfolio source image");
+
+            string[] imageNames = Enumerable.Range(1, 6)
+                .Select(index => Path.Combine(layersDirectory, index.ToString("00", CultureInfo.InvariantCulture) + ".png"))
+                .ToArray();
+            foreach (string imagePath in imageNames)
+            {
+                EnsureFileExists(imagePath, "Portfolio layer image");
+            }
+
+            if (!SerializeHelper.TryLoadFromXmlFile(pipelinePath, out VisionPipeline pipeline)
+                || pipeline == null)
+            {
+                throw new InvalidOperationException("Portfolio pipeline could not be loaded: " + pipelinePath);
+            }
+            string recipeName = "Smoke_PortfolioPatternGrid_" + Guid.NewGuid().ToString("N").Substring(0, 12);
+            VisionPipelineStorage.Save(recipeName, pipeline);
+            VisionPipelineStorage.SaveActivePipelineName(recipeName, pipeline.Name);
+
+            string[] layerTitles =
+            {
+                "MATCH A0 S1.00 | 99.1",
+                "MATCH A+15 S1.00 | 94.3",
+                "MATCH A-10 S1.00 | 91.9",
+                "MATCH A0 S0.90 | 99.0",
+                "MATCH A+10 S1.10 | 97.9",
+                "THRESHOLD T130"
+            };
+            Application app = Application.Current ?? new Application();
+            app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+            OpenVisionShellHostWindow window = null;
+            try
+            {
+                ApplicationRuntimeContext runtimeContext = ApplicationRuntimeContext.CreateDefault();
+                runtimeContext.Global.Recipe.Name = recipeName;
+                window = new OpenVisionShellHostWindow(runtimeContext)
+                {
+                    Width = 1920,
+                    Height = 1032,
+                    WindowStartupLocation = WindowStartupLocation.Manual,
+                    Topmost = true
+                };
+                app.MainWindow = window;
+                window.Show();
+                string monitorEvidence = PlaceWindowOnLeftmostMonitor(window);
+                window.Activate();
+                Pump(50);
+
+                OpenVisionShellHostView shellHost = window.ShellHostForSmoke
+                    ?? throw new InvalidOperationException("OpenVision shell host was not created.");
+                shellHost.SwitchRecipeContextForTest(recipeName);
+                Pump(30);
+
+                for (int index = 0; index < layerTitles.Length; index++)
+                {
+                    using Bitmap image = new Bitmap(imageNames[index]);
+                    if (!shellHost.AddLayerImageForTest(layerTitles[index], image)
+                        && !shellHost.SetLayerImageForTest(layerTitles[index], image))
+                    {
+                        throw new InvalidOperationException("Portfolio layer could not be published: " + layerTitles[index]);
+                    }
+                }
+
+                shellHost.ClearDockedLayersForTest();
+                foreach (string layerTitle in layerTitles)
+                {
+                    if (!shellHost.DockLayerForTest(layerTitle))
+                    {
+                        throw new InvalidOperationException("Portfolio layer could not be docked: " + layerTitle);
+                    }
+                }
+                if (!shellHost.ArrangeDockedLayerGridForTest(layerTitles))
+                {
+                    throw new InvalidOperationException("Portfolio 2x3 layer grid could not be arranged.");
+                }
+                Pump(100);
+                if (shellHost.DockedLayerCount != 6
+                    || shellHost.DockedLayerPaneCount < 6
+                    || shellHost.DockedLayerTextureTileCount < 6)
+                {
+                    throw new InvalidOperationException(
+                        $"Portfolio grid is incomplete. Layers={shellHost.DockedLayerCount}, Panes={shellHost.DockedLayerPaneCount}, Tiles={shellHost.DockedLayerTextureTileCount}");
+                }
+                int gridPaneCount = shellHost.DockedLayerPaneCount;
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "01_pattern_rotation_scale_2x3.png"));
+
+                shellHost.ClearDockedLayersForTest();
+                if (!shellHost.LoadMainImageFromFileForTest(sourceImagePath))
+                {
+                    throw new InvalidOperationException("Portfolio source image could not be loaded: " + sourceImagePath);
+                }
+                shellHost.OpenSamplePipelineForTest();
+                Pump(50);
+                WaitForTaskWithPump(shellHost.RunPipelineReviewForTestAsync(), "portfolio Pattern Pipeline Review");
+                shellHost.SelectPipelineReviewStepForTest(0, OpenVisionLab.Pipeline.Controls.PipelineFlowPreviewMode.Output);
+                Pump(80);
+                if (!shellHost.HasPipelineReviewInputPreview
+                    || !shellHost.HasPipelineReviewOutputPreview
+                    || (!shellHost.PipelineReviewExecutionState.StartsWith("Completed", StringComparison.OrdinalIgnoreCase)
+                        && !shellHost.PipelineReviewExecutionState.StartsWith("완료", StringComparison.OrdinalIgnoreCase)))
+                {
+                    throw new InvalidOperationException(
+                        "Portfolio Pipeline Review did not complete with input and output evidence. State="
+                        + shellHost.PipelineReviewExecutionState);
+                }
+                window.Height = 1500;
+                window.UpdateLayout();
+                Pump(30);
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "02_pipeline_review_runtime_overlay.png"));
+
+                string executablePath = Environment.ProcessPath ?? Assembly.GetExecutingAssembly().Location;
+                string managedAssemblyPath = typeof(OpenVisionLabDirectSmokeRunner).Assembly.Location;
+                File.WriteAllText(
+                    Path.Combine(outputDirectory, "report.txt"),
+                    "Result: PASS" + Environment.NewLine
+                    + "Scenario: portfolio-pattern-grid-captures" + Environment.NewLine
+                    + "Executable: " + executablePath + Environment.NewLine
+                    + "ExecutableSha256: " + ComputeC9FileSha256(executablePath) + Environment.NewLine
+                    + "ManagedAssembly: " + managedAssemblyPath + Environment.NewLine
+                    + "ManagedAssemblySha256: " + ComputeC9FileSha256(managedAssemblyPath) + Environment.NewLine
+                    + monitorEvidence + Environment.NewLine
+                    + "Layers: 6" + Environment.NewLine
+                    + "Panes: " + gridPaneCount.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "SourceImage: " + sourceImagePath + Environment.NewLine
+                    + "SourceImageSha256: " + ComputeC9FileSha256(sourceImagePath) + Environment.NewLine
+                    + "PipelinePath: " + pipelinePath + Environment.NewLine
+                    + "PipelineSha256: " + ComputeC9FileSha256(pipelinePath) + Environment.NewLine
+                    + "Pipeline: " + pipeline.Name + Environment.NewLine
+                    + "PipelineReviewState: " + shellHost.PipelineReviewExecutionState + Environment.NewLine
+                    + "Boundary: actual OpenVisionLab EXE rendering; no Computer Use overlay or cursor visualization.",
+                    Encoding.UTF8);
+            }
+            finally
+            {
+                window?.Close();
+                app.Shutdown();
+                RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+            }
+        }
+
+        private static void RunPortfolioStageGridCaptures(string[] args, string outputDirectory)
+        {
+            Directory.CreateDirectory(outputDirectory);
+            string pipelinePath = ResolveRequiredOption(args, "--pipeline");
+            string sourceImagePath = ResolveRequiredOption(args, "--source-image");
+            string requestedLanguage = ResolveOptionalTextOption(args, "--language");
+            bool korean = !string.Equals(requestedLanguage, "en", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(requestedLanguage, "english", StringComparison.OrdinalIgnoreCase);
+            EnsureFileExists(pipelinePath, "Portfolio stage pipeline");
+            EnsureFileExists(sourceImagePath, "Portfolio stage source image");
+
+            if (!SerializeHelper.TryLoadFromXmlFile(pipelinePath, out VisionPipeline pipeline)
+                || pipeline == null
+                || pipeline.Steps.Count == 0)
+            {
+                throw new InvalidOperationException("Portfolio stage pipeline could not be loaded: " + pipelinePath);
+            }
+
+            string stageDirectory = Path.Combine(outputDirectory, "stage_images");
+            Directory.CreateDirectory(stageDirectory);
+            List<string> stageImagePaths = new List<string>();
+            List<string> layerTitles = new List<string>();
+            string sourceCopyPath = Path.Combine(stageDirectory, "01_source.png");
+            File.Copy(sourceImagePath, sourceCopyPath, true);
+            stageImagePaths.Add(sourceCopyPath);
+            layerTitles.Add(korean ? "1 원본 이미지" : "1 SOURCE IMAGE");
+
+            for (int index = 0; index < pipeline.Steps.Count; index++)
+            {
+                VisionPipelineStep step = pipeline.Steps[index];
+                string stagePath = Path.Combine(
+                    stageDirectory,
+                    (index + 2).ToString("D2", CultureInfo.InvariantCulture)
+                    + "_"
+                    + Regex.Replace(step.ToolType ?? "Step", "[^A-Za-z0-9_-]", "_")
+                    + ".png");
+                SavePortfolioPipelineStage(
+                    pipeline,
+                    index + 1,
+                    sourceImagePath,
+                    stagePath,
+                    renderRuntimeOverlaysWhenAvailable: true,
+                    suppressRuntimeOverlayLabels: true);
+                stageImagePaths.Add(stagePath);
+                layerTitles.Add(FormatPortfolioStageTitle(index + 2, step.ToolType, korean));
+            }
+
+            string recipeStem = pipeline.Name.Contains("HoleArray", StringComparison.OrdinalIgnoreCase)
+                || pipeline.Name.Contains("PerforatedPlate", StringComparison.OrdinalIgnoreCase)
+                ? "Hole_Array"
+                : pipeline.Name.Contains("Shaft", StringComparison.OrdinalIgnoreCase)
+                    ? "Shaft_Pitting"
+                    : pipeline.Name.Contains("LeadWidth", StringComparison.OrdinalIgnoreCase)
+                        ? "Lead_Width"
+                        : "Stage_Showcase";
+            string recipeName = recipeStem + "_" + Guid.NewGuid().ToString("N").Substring(0, 6);
+            VisionPipelineStorage.Save(recipeName, pipeline);
+            VisionPipelineStorage.SaveActivePipelineName(recipeName, pipeline.Name);
+
+            Application app = Application.Current ?? new Application();
+            app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            OpenVisionLanguageService.SetLanguage(
+                korean ? OpenVisionLanguage.Korean : OpenVisionLanguage.English,
+                false);
+            OpenVisionShellHostWindow window = null;
+            try
+            {
+                ApplicationRuntimeContext runtimeContext = ApplicationRuntimeContext.CreateDefault();
+                runtimeContext.Global.Recipe.Name = recipeName;
+                window = new OpenVisionShellHostWindow(runtimeContext)
+                {
+                    Width = 1920,
+                    Height = 1032,
+                    WindowStartupLocation = WindowStartupLocation.Manual,
+                    Topmost = true
+                };
+                app.MainWindow = window;
+                window.Show();
+                string monitorEvidence = PlaceWindowOnLeftmostMonitor(window);
+                window.Activate();
+                Pump(50);
+
+                OpenVisionShellHostView shellHost = window.ShellHostForSmoke
+                    ?? throw new InvalidOperationException("OpenVision shell host was not created.");
+                shellHost.SelectLanguageForTest(
+                    korean ? OpenVisionLanguage.Korean : OpenVisionLanguage.English);
+                Pump(30);
+                shellHost.SwitchRecipeContextForTest(recipeName);
+                Pump(30);
+
+                for (int index = 0; index < layerTitles.Count; index++)
+                {
+                    using Bitmap image = new Bitmap(stageImagePaths[index]);
+                    if (!shellHost.AddLayerImageForTest(layerTitles[index], image)
+                        && !shellHost.SetLayerImageForTest(layerTitles[index], image))
+                    {
+                        throw new InvalidOperationException("Portfolio stage layer could not be published: " + layerTitles[index]);
+                    }
+                }
+
+                shellHost.ClearDockedLayersForTest();
+                foreach (string layerTitle in layerTitles)
+                {
+                    if (!shellHost.DockLayerForTest(layerTitle))
+                    {
+                        throw new InvalidOperationException("Portfolio stage layer could not be docked: " + layerTitle);
+                    }
+                }
+                if (!shellHost.ArrangeDockedLayerGridForTest(layerTitles.ToArray()))
+                {
+                    throw new InvalidOperationException("Portfolio stage layer grid could not be arranged.");
+                }
+                Pump(100);
+                if (shellHost.DockedLayerCount != layerTitles.Count
+                    || shellHost.DockedLayerPaneCount < layerTitles.Count
+                    || shellHost.DockedLayerTextureTileCount < layerTitles.Count)
+                {
+                    throw new InvalidOperationException(
+                        $"Portfolio stage grid is incomplete. Layers={shellHost.DockedLayerCount}, Panes={shellHost.DockedLayerPaneCount}, Tiles={shellHost.DockedLayerTextureTileCount}");
+                }
+                int gridPaneCount = shellHost.DockedLayerPaneCount;
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "01_stage_grid_actual_exe.png"));
+
+                shellHost.ClearDockedLayersForTest();
+                if (!shellHost.LoadMainImageFromFileForTest(sourceImagePath))
+                {
+                    throw new InvalidOperationException("Portfolio source image could not be loaded: " + sourceImagePath);
+                }
+                shellHost.OpenSamplePipelineForTest();
+                Pump(50);
+                WaitForTaskWithPump(shellHost.RunPipelineReviewForTestAsync(), "portfolio stage Pipeline Review");
+                shellHost.SelectPipelineReviewStepForTest(
+                    pipeline.Steps.Count - 1,
+                    OpenVisionLab.Pipeline.Controls.PipelineFlowPreviewMode.Output);
+                Pump(80);
+                if (!shellHost.HasPipelineReviewInputPreview
+                    || !shellHost.HasPipelineReviewOutputPreview
+                    || (!shellHost.PipelineReviewExecutionState.StartsWith("Completed", StringComparison.OrdinalIgnoreCase)
+                        && !shellHost.PipelineReviewExecutionState.StartsWith("완료", StringComparison.OrdinalIgnoreCase)))
+                {
+                    throw new InvalidOperationException(
+                        "Portfolio stage Pipeline Review did not complete with input and output evidence. State="
+                        + shellHost.PipelineReviewExecutionState);
+                }
+                window.Height = 1500;
+                window.UpdateLayout();
+                Pump(30);
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "02_pipeline_review_actual_exe.png"));
+
+                string executablePath = Environment.ProcessPath ?? Assembly.GetExecutingAssembly().Location;
+                string managedAssemblyPath = typeof(OpenVisionLabDirectSmokeRunner).Assembly.Location;
+                File.WriteAllText(
+                    Path.Combine(outputDirectory, "report.txt"),
+                    "Result: PASS" + Environment.NewLine
+                    + "Scenario: portfolio-stage-grid-captures" + Environment.NewLine
+                    + "Language: " + (korean ? "ko" : "en") + Environment.NewLine
+                    + "LanguageDisplay: " + shellHost.SelectedLanguageDisplayNameForTest + Environment.NewLine
+                    + "Executable: " + executablePath + Environment.NewLine
+                    + "ExecutableSha256: " + ComputeC9FileSha256(executablePath) + Environment.NewLine
+                    + "ManagedAssembly: " + managedAssemblyPath + Environment.NewLine
+                    + "ManagedAssemblySha256: " + ComputeC9FileSha256(managedAssemblyPath) + Environment.NewLine
+                    + monitorEvidence + Environment.NewLine
+                    + "Layers: " + layerTitles.Count.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "Panes: " + gridPaneCount.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "SourceImage: " + sourceImagePath + Environment.NewLine
+                    + "SourceImageSha256: " + ComputeC9FileSha256(sourceImagePath) + Environment.NewLine
+                    + "PipelinePath: " + pipelinePath + Environment.NewLine
+                    + "PipelineSha256: " + ComputeC9FileSha256(pipelinePath) + Environment.NewLine
+                    + "Pipeline: " + pipeline.Name + Environment.NewLine
+                    + "PipelineReviewState: " + shellHost.PipelineReviewExecutionState + Environment.NewLine
+                    + "Boundary: actual OpenVisionLab desktop EXE rendering; no Computer Use overlay or cursor visualization.",
+                    Encoding.UTF8);
+            }
+            finally
+            {
+                window?.Close();
+                app.Shutdown();
+                RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+            }
+        }
+
+        private static string FormatPortfolioStageTitle(int index, string toolType, bool korean)
+        {
+            string normalizedToolType = string.IsNullOrWhiteSpace(toolType) ? "STEP" : toolType.Trim();
+            string title = normalizedToolType.ToUpperInvariant();
+            if (korean)
+            {
+                title = normalizedToolType switch
+                {
+                    "Filter" => "필터",
+                    "Threshold" => "스레시홀드",
+                    "Morphology" => "모폴로지",
+                    "Blob" => "블랍",
+                    "Contour" => "컨투어",
+                    "LineDistance" => "길이 측정",
+                    "EdgeDetection" => "엣지",
+                    _ => normalizedToolType
+                };
+            }
+            else
+            {
+                title = normalizedToolType switch
+                {
+                    "Blob" => "BLOB",
+                    "Contour" => "CONTOUR",
+                    "LineDistance" => "LINE WIDTH",
+                    "EdgeDetection" => "EDGE",
+                    _ => title
+                };
+            }
+
+            return index.ToString(CultureInfo.InvariantCulture) + " " + title;
+        }
+
         private static VisionPipeline CreatePortfolioEdgeBasedMatchingPipeline(string templatePath)
         {
             EdgeBasedMatchingProperty property = new EdgeBasedMatchingProperty("Portfolio_Card_EdgeBasedMatching");
@@ -8065,15 +8439,15 @@ namespace OpenVisionLab
                 SCORE_MIN = 0.8D,
                 NUM_MATCH = 1,
                 USE_FIND_ANGLE = true,
-                FIND_ANGLE_MIN = -100,
-                FIND_ANGLE_MAX = 100,
+                FIND_ANGLE_MIN = -20,
+                FIND_ANGLE_MAX = 20,
                 FIND_ANGLE = 1D,
                 USE_COARSE_TO_FINE_ANGLE_SEARCH = true,
                 COARSE_ANGLE_STEP = 5D,
-                COARSE_ANGLE_TOP_K = 5,
+                COARSE_ANGLE_TOP_K = 3,
                 USE_FIND_SCALE = true,
-                FIND_SCALE_MIN = 0.9D,
-                FIND_SCALE_MAX = 1.1D,
+                FIND_SCALE_MIN = 0.85D,
+                FIND_SCALE_MAX = 1.15D,
                 FIND_SCALE_STEP = 0.05D,
                 USE_CANNY = false,
                 USE_PADDING_COLOR_WHITE = false,
@@ -9252,6 +9626,7 @@ namespace OpenVisionLab
             string outputPath,
             string metricName = null,
             bool renderRuntimeOverlays = false,
+            bool renderRuntimeOverlaysWhenAvailable = false,
             bool suppressRuntimeOverlayLabels = false,
             bool distanceLinesOnly = false)
         {
@@ -9269,19 +9644,28 @@ namespace OpenVisionLab
                 .RunAsync(stage, source, VisionRecipeRunner.DefaultInputLayer, 5000, CancellationToken.None)
                 .GetAwaiter()
                 .GetResult();
-            if (!result.Success)
+            bool expectedAcceptanceNg = result.FirstFailedStep?.ToolSuccess == true
+                && result.FirstFailedStep.AcceptancePassed == false
+                && result.FirstFailedStep.ErrorCode == 0;
+            if (!result.Success && !expectedAcceptanceNg)
             {
                 throw new InvalidOperationException(
                     "Portfolio pipeline stage failed. "
                     + $"Stage={stepCount}, Steps={string.Join(" | ", result.Steps.Select(step => step.Name + ":" + step.Message))}");
             }
 
-            if (renderRuntimeOverlays)
+            if (renderRuntimeOverlays || renderRuntimeOverlaysWhenAvailable)
             {
                 VisionRecipeStepRunSummary summary = result.Steps?
                     .LastOrDefault(step => step?.Overlays != null && step.Overlays.Count > 0);
                 if (summary == null)
                 {
+                    if (renderRuntimeOverlaysWhenAvailable)
+                    {
+                        SaveRecipeResultImage(result, outputPath);
+                        return string.IsNullOrWhiteSpace(metricName) ? double.NaN : ReadRecipeMetric(result, metricName);
+                    }
+
                     throw new InvalidOperationException("Portfolio pipeline stage returned no runtime overlays.");
                 }
 

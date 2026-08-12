@@ -1,6 +1,6 @@
 # OpenVisionLab Documentation Map
 
-Updated: 2026-08-05 KST
+Updated: 2026-08-12 KST
 
 This map prevents a new chat from treating large historical records or old readiness estimates as the current plan.
 
@@ -45,6 +45,8 @@ If documents conflict, do not smooth over the conflict. Follow the higher-ranked
 
 | Document | Use it for | Freshness note |
 | --- | --- | --- |
+| `reports/OPENVISIONLAB_PORTFOLIO_STAGE_SHOWCASE_20260812.md` | Current Filter/Threshold/Morphology/Blob/Contour/Edge/Line stage captures, public recipe parameters, actual-EXE Korean/English evidence, hashes, and README asset boundary. | Current authority for this bounded Dev portfolio/public-sample workflow only; it is not production calibration or field robustness evidence. |
+| `reports/OPENVISIONLAB_PORTFOLIO_PATTERN_CAPTURE_20260812.md` | Current card-pattern Matching scores, runtime overlays, six-pane portfolio capture, Pipeline Review drawing correction, layer-name edit, exact hashes, and no-Computer-Use capture boundary. | Current authority for this bounded Dev portfolio workflow only; it is not release, physical-part robustness, calibrated metrology, camera, lighting, or PLC/I/O qualification. |
 | `reports/OPENVISIONLAB_2_1_0_RC1_PUBLICATION_20260805.md` | `v2.1.0-rc.1` tag/source identity, full local gate, hosted CI, GitHub pre-release, five asset digests, and public-download round-trip evidence. | Current authority for the first published 2.1.0 RC; it is unsigned portable framework-dependent evidence, not stable/GA, installer, signing, update, self-contained, multi-PC, hardware, or field qualification. |
 | `reports/OPENVISIONLAB_SHARED_ANALYSIS_STABILITY_REVIEW_20260806.md` | Shared ChatGPT analysis triage, accepted source defects, runtime ownership contract, excluded platform expansion, implementation, and verification evidence. | Current authority for Pipeline deadline draining, dispatcher exception classification, sample-check async cancellation, Bitmap/OpenGL ownership, and bounded logging corrections. |
 | `reports/OPENVISIONLAB_VISION_SDK_3_MIGRATION_20260805.md` | P289 SDK 3.0 source identity, namespace/DLL migration, app-owned converter and Affine metadata boundary, standalone/app/package/runtime verification, and promotion boundary. | Current authority for the OpenVisionLab Vision SDK dependency; historical Library-Noah reports remain provenance only. |
