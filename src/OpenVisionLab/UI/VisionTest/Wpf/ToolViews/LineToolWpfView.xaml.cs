@@ -288,7 +288,7 @@ namespace OpenVisionLab
         internal void ClearSignalEvidence()
         {
             signalInspector.ClearEvidence();
-            btnOpenSignalInspector.Visibility = Visibility.Collapsed;
+            btnOpenSignalInspector.Visibility = Visibility.Hidden;
             lineSignalInspectorOverlay.Visibility = Visibility.Collapsed;
             HideSignalEvidenceCue();
         }

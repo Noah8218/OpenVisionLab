@@ -277,7 +277,7 @@ namespace OpenVisionLab
             thresholdSuggestion = null;
             thresholdSuggestionPanel.Visibility = Visibility.Collapsed;
             btnUseThresholdSuggestion.IsEnabled = false;
-            btnOpenSignalInspector.Visibility = Visibility.Collapsed;
+            btnOpenSignalInspector.Visibility = Visibility.Hidden;
             signalInspectorOverlay.Visibility = Visibility.Collapsed;
             HideSignalEvidenceCue();
         }

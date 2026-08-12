@@ -61,7 +61,7 @@
                                 Padding="8,0"
                                 Click="OpenSignalInspector_Click"
                                 Content="Review signal"
-                                Visibility="Collapsed"
+                                Visibility="Hidden"
                                 ToolTip="Review the representative scan intensity and edge response"
                                 AutomationProperties.AutomationId="LineSignalInspectorOpenButton" />
                         <Border x:Name="signalEvidenceCue"

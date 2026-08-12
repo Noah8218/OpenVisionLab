@@ -70,7 +70,7 @@
                         Padding="10,0"
                         Click="OpenSignalInspector_Click"
                         Content="Review distribution"
-                        Visibility="Collapsed"
+                        Visibility="Hidden"
                         AutomationProperties.AutomationId="ThresholdSignalInspectorOpenButton" />
                 <Border x:Name="signalEvidenceCue"
                         Grid.Column="1"

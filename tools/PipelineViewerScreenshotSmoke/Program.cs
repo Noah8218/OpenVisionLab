@@ -21728,8 +21728,28 @@ internal static class Program
         {
             shellHost.SelectToolForTest(VISION_MENU.Threshold);
             Pump(16);
+            ThresholdToolWpfView thresholdView = FindActiveToolVisualRoots()
+                .SelectMany(root => FindVisualChildren<ThresholdToolWpfView>(root))
+                .LastOrDefault()
+                ?? throw new InvalidOperationException("Threshold basic did not expose its active WPF view.");
+            Button signalReviewButton = FindVisualChildren<Button>(thresholdView)
+                .FirstOrDefault(item => string.Equals(item.Name, "btnOpenSignalInspector", StringComparison.Ordinal))
+                ?? throw new InvalidOperationException("Threshold signal review button was not found.");
+            if (signalReviewButton.Visibility != Visibility.Hidden)
+            {
+                throw new InvalidOperationException(
+                    "Threshold must reserve the signal-review row before evidence exists. "
+                    + $"Visibility={signalReviewButton.Visibility}");
+            }
+
+            (double ModeY, double ParametersY, double ValueY, double SliderY) layoutBeforeEvidence =
+                CaptureThresholdTeachingLayout(thresholdView, "before evidence");
             shellHost.RunActiveNativePreviewForTest();
             Pump(24);
+            AssertThresholdTeachingLayoutStable(
+                "Threshold initial Preview",
+                layoutBeforeEvidence,
+                CaptureThresholdTeachingLayout(thresholdView, "after evidence"));
 
             if (!shellHost.IsNativeDocumentActive || !shellHost.HasNativePreviewResult)
             {
@@ -21746,11 +21766,13 @@ internal static class Program
                 throw new InvalidOperationException("Threshold basic summary was not visible.");
             }
 
-            AssertThresholdBasicSignalInspector(shellHost);
+            AssertThresholdBasicSignalInspector(shellHost, layoutBeforeEvidence);
         });
     }
 
-    private static void AssertThresholdBasicSignalInspector(OpenVisionShellHostView shellHost)
+    private static void AssertThresholdBasicSignalInspector(
+        OpenVisionShellHostView shellHost,
+        (double ModeY, double ParametersY, double ValueY, double SliderY) stableLayout)
     {
         ThresholdToolWpfView? thresholdView = FindActiveToolVisualRoots()
             .SelectMany(root => FindVisualChildren<ThresholdToolWpfView>(root))
@@ -21786,6 +21808,58 @@ internal static class Program
             throw new InvalidOperationException(
                 "Basic Threshold Preview must keep the signal inspector closed and show only the transient evidence cue.");
         }
+
+        Slider thresholdSlider = FindVisualChildren<Slider>(thresholdView)
+            .FirstOrDefault(item => string.Equals(item.Name, "sliderThreshold", StringComparison.Ordinal))
+            ?? throw new InvalidOperationException("Threshold teaching slider was not found.");
+        Button signalReviewButton = FindVisualChildren<Button>(thresholdView)
+            .FirstOrDefault(item => string.Equals(item.Name, "btnOpenSignalInspector", StringComparison.Ordinal))
+            ?? throw new InvalidOperationException("Threshold signal review button was not found.");
+        int sliderRunsBefore = shellHost.NativePreviewRunCount;
+        int sliderLayersBefore = shellHost.LayerDocumentCount;
+        string sliderActiveLayerBefore = shellHost.ActiveRecipeContextLayerNameForTest;
+        string sliderInputBefore = shellHost.ActiveNativeRouteInputLayerNameForTest;
+        string sliderOutputBefore = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+        thresholdSlider.Value = Math.Abs(thresholdSlider.Value - 149D) < 0.5D ? 173D : 149D;
+        thresholdSlider.UpdateLayout();
+        Pump(2);
+        if (signalReviewButton.Visibility != Visibility.Hidden || thresholdView.SignalInspectorHasEvidenceForTest)
+        {
+            throw new InvalidOperationException(
+                "Threshold slider teaching did not clear stale evidence while preserving the review-button slot. "
+                + $"Visibility={signalReviewButton.Visibility}, Evidence={thresholdView.SignalInspectorHasEvidenceForTest}");
+        }
+
+        AssertThresholdTeachingLayoutStable(
+            "Threshold slider evidence clear",
+            stableLayout,
+            CaptureThresholdTeachingLayout(thresholdView, "after slider change"));
+        Thread.Sleep(180);
+        Pump(30);
+        if (shellHost.NativePreviewRunCount <= sliderRunsBefore
+            || !thresholdView.SignalInspectorHasEvidenceForTest
+            || signalReviewButton.Visibility != Visibility.Visible)
+        {
+            throw new InvalidOperationException(
+                "Threshold slider teaching did not refresh Preview evidence and restore the review command. "
+                + $"Runs={sliderRunsBefore}->{shellHost.NativePreviewRunCount}, "
+                + $"Visibility={signalReviewButton.Visibility}, Evidence={thresholdView.SignalInspectorHasEvidenceForTest}");
+        }
+
+        AssertThresholdTeachingLayoutStable(
+            "Threshold slider refreshed evidence",
+            stableLayout,
+            CaptureThresholdTeachingLayout(thresholdView, "after slider Preview"));
+        if (shellHost.LayerDocumentCount != sliderLayersBefore
+            || !string.Equals(shellHost.ActiveRecipeContextLayerNameForTest, sliderActiveLayerBefore, StringComparison.Ordinal)
+            || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, sliderInputBefore, StringComparison.Ordinal)
+            || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, sliderOutputBefore, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "Threshold slider teaching changed layers, the active layer, or input/output routing.");
+        }
+
+        initialProperty = thresholdView.CreateProperty();
 
         thresholdView.OpenSignalInspectorForTest();
         Pump(4);
@@ -21914,6 +21988,47 @@ internal static class Program
         if (shellHost.NativePreviewRunCount != runsBeforeExport)
         {
             throw new InvalidOperationException("Threshold signal export triggered Preview/Run.");
+        }
+    }
+
+    private static (double ModeY, double ParametersY, double ValueY, double SliderY)
+        CaptureThresholdTeachingLayout(ThresholdToolWpfView view, string state)
+    {
+        FrameworkElement Find(string elementName) =>
+            FindVisualChildren<FrameworkElement>(view)
+                .FirstOrDefault(item => string.Equals(item.Name, elementName, StringComparison.Ordinal))
+            ?? throw new InvalidOperationException(
+                $"Threshold layout element '{elementName}' was not found in state '{state}'.");
+
+        double Y(FrameworkElement element)
+        {
+            element.ApplyTemplate();
+            element.UpdateLayout();
+            return element.TranslatePoint(new System.Windows.Point(0D, 0D), view).Y;
+        }
+
+        return (
+            Y(Find("gbMode")),
+            Y(Find("panelBasic")),
+            Y(Find("txtThreshold")),
+            Y(Find("sliderThreshold")));
+    }
+
+    private static void AssertThresholdTeachingLayoutStable(
+        string state,
+        (double ModeY, double ParametersY, double ValueY, double SliderY) expected,
+        (double ModeY, double ParametersY, double ValueY, double SliderY) actual)
+    {
+        const double tolerance = 0.5D;
+        if (Math.Abs(expected.ModeY - actual.ModeY) > tolerance
+            || Math.Abs(expected.ParametersY - actual.ParametersY) > tolerance
+            || Math.Abs(expected.ValueY - actual.ValueY) > tolerance
+            || Math.Abs(expected.SliderY - actual.SliderY) > tolerance)
+        {
+            throw new InvalidOperationException(
+                state + " moved Threshold teaching controls when signal evidence visibility changed. "
+                + $"Expected={expected.ModeY:0.0}/{expected.ParametersY:0.0}/{expected.ValueY:0.0}/{expected.SliderY:0.0}, "
+                + $"Actual={actual.ModeY:0.0}/{actual.ParametersY:0.0}/{actual.ValueY:0.0}/{actual.SliderY:0.0}");
         }
     }
 
