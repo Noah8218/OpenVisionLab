@@ -102,10 +102,10 @@ namespace OpenVisionLab
                 return false;
             }
 
-            closeFloatingWindow();
+            OpenVisionToolOpenProfiler.Measure("DockedDocumentCloseFloatingWindow", closeFloatingWindow);
             if (!ReferenceEquals(content, nextContent))
             {
-                contentHost.Content = null;
+                OpenVisionToolOpenProfiler.Measure("DockedDocumentClearPreviousContent", () => contentHost.Content = null);
             }
 
             content = nextContent;
@@ -113,10 +113,9 @@ namespace OpenVisionLab
             floatingWidth = nextFloatingWidth;
             floatingHeight = nextFloatingHeight;
             ShouldRestoreDocked = true;
-            OpenVisionToolDockModeHelper.Apply(content, false);
-            contentHost.Content = content;
-            titleText.Text = title;
-            panel.Visibility = visibility;
+            OpenVisionToolOpenProfiler.Measure("DockedDocumentSetContent", () => contentHost.Content = content);
+            OpenVisionToolOpenProfiler.Measure("DockedDocumentSetTitle", () => titleText.Text = title);
+            OpenVisionToolOpenProfiler.Measure("DockedDocumentSetVisibility", () => panel.Visibility = visibility);
             return true;
         }
 

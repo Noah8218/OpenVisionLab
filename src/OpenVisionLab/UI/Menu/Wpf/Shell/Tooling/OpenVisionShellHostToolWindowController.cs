@@ -107,7 +107,14 @@ namespace OpenVisionLab
                 }
                 else
                 {
-                    ShowWpfToolWindow(pipelineReviewDocument.View, title, 1180, 760, timing);
+                    ShowWpfToolWindow(
+                        pipelineReviewDocument.View,
+                        title,
+                        1180,
+                        760,
+                        timing,
+                        preferDockedWhenActive: false,
+                        applyToolDockMode: false);
                 }
                 phaseStopwatch.Restart();
                 CompleteToolSelection(title, hasDisplayablePreviewResult: false, refreshLayerRows: false);
@@ -272,7 +279,8 @@ namespace OpenVisionLab
             double width,
             double height,
             OpenVisionToolOpenTiming timing,
-            bool preferDockedWhenActive)
+            bool preferDockedWhenActive,
+            bool applyToolDockMode = true)
         {
             Stopwatch phaseStopwatch = Stopwatch.StartNew();
             FrameworkElement preparedContent = PrepareHostedWpfDocument(content);
@@ -282,7 +290,10 @@ namespace OpenVisionLab
                 return;
             }
 
-            OpenVisionToolDockModeHelper.Apply(preparedContent, false);
+            if (applyToolDockMode)
+            {
+                OpenVisionToolDockModeHelper.Apply(preparedContent, false);
+            }
             if (timing != null)
             {
                 timing.PrepareHostedDocumentMs = phaseStopwatch.ElapsedMilliseconds;

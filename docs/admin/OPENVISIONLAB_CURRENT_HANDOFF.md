@@ -302,7 +302,7 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
   original `a6bbf277dea4`. The original independently passed the same build,
   readiness, N-image, and focused WPF gates before push.
 
-### P294 Main No-Image Pipeline Open Performance - Complete In Dev And Original
+### P294 Main No-Image Pipeline Open Performance - F5 Regression Fixed In Dev
 
 - The corrected scope is the main no-image workspace's `Pipeline 열기` button,
   not Recipe Manager's Open Pipeline command.
@@ -319,6 +319,21 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
   `docs/reports/OPENVISIONLAB_WORKSPACE_EMPTY_PIPELINE_OPEN_PERFORMANCE_20260809.md`.
 - The 2026-08-13 exact-button correction and trace were promoted to original;
   current original direct/after-Tool application idle is `40/29 ms`.
+- A later current-Dev Visual Studio F5 run reproduced the operator's exact
+  button delay despite the direct-EXE result: three same-context F5 processes
+  returned in `10,139/10,119/9,971 ms`.
+- Phase logging isolated `9,947 ms` to the Tool-specific dock-mode visual-tree
+  traversal being applied to the central Pipeline Review document. General
+  documents and the Pipeline Review floating path now skip that traversal;
+  native Tool Views retain it.
+- Three fresh F5 processes now return in `23/19/19 ms`; a fresh direct-EXE
+  actual-button run returns in `15 ms` and reaches application idle in `39 ms`.
+  Debug build 0/0, Pipeline Review/entry-performance/dock-float smokes, and
+  readiness 13/13 pass. Evidence:
+  `docs/reports/OPENVISIONLAB_PIPELINE_F5_DOCKMODE_PERFORMANCE_20260813.md`.
+- This newer correction is Dev-only. The original repository's earlier direct
+  EXE result remains valid for that path, but original F5 equivalence is not
+  verified and no original change was made in this task.
 
 ### P293 Recipe Manager And Pipeline Entry UX - Complete In Dev
 
@@ -545,13 +560,15 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
 - The 2026-08-11 Recipe/layer/N-image/Edge regression batch is complete,
   independently verified, and pushed in Dev and original. No PR or Release
   publication is active.
-- The main `Pipeline 열기` cache/logging correction is complete and verified in
-  Dev and original actual EXEs. The current original reaches UI idle in
-  `40 ms` directly and `29 ms` after a Tool. Commit and push are the remaining
-  publication actions; reopen performance work only if a new current-original
-  trace reproduces the reported delay.
-- P294's earlier bounded evidence remains historical support for this current
-  actual-EXE closure.
+- The main `Pipeline 열기` direct-EXE cache/logging correction remains verified
+  in Dev and original, but current Dev F5 exposed a separate Tool-specific
+  dock-mode traversal regression. The Dev correction is complete at
+  `23/19/19 ms` across three F5 processes and `15 ms` in a fresh direct EXE.
+  Promotion to original and original F5 verification remain separate explicit
+  tasks; no commit or push is active.
+- P294's earlier direct-EXE evidence is historical support only for that path;
+  the current F5 evidence and boundary are recorded in the 2026-08-13 dock-mode
+  performance report.
 - P293 is complete and verified in Dev. Promotion to the original repository,
   commit, and push remain separate explicitly authorized tasks.
 - P292 is complete and verified in Dev. Promotion to the original repository
