@@ -23,6 +23,60 @@ The independently rebuilt original repository was verified with the persisted
 different Recipe/Pipeline model from the Dev measurements to check that the
 fast path is owned by document attachment rather than one saved model.
 
+## Dev And Original Reopen-Position Follow-Up
+
+A later current-Dev actual-EXE check reproduced a separate location defect:
+closing the central Pipeline Review document made the next explicit
+`Pipeline 열기` create a floating window. The document controller had persisted
+`ShouldRestoreDocked = false` for both explicit Float and ordinary Close, so a
+window-lifetime action was incorrectly reused as the next-open placement rule.
+
+The Dev correction makes normal Pipeline entry always attach Pipeline Review
+to the central document workspace. Explicit `툴 창 분리` still moves the
+current document to a floating host, but closing that floating host does not
+change the next-open placement. The removed restore flag and lifecycle query
+leave document placement with the Pipeline entry owner and current-window
+lifetime with the docked/floating hosts.
+
+Current Dev verification covered both exact sequences:
+
+1. `Pipeline 열기 -> 중앙 문서 닫기 -> Pipeline 열기`
+2. `Pipeline 열기 -> 툴 창 분리 -> 분리 창 닫기 -> Pipeline 열기`
+
+Both reopened in the central workspace with no separate `파이프라인 리뷰`
+window. A Visual Studio F5 repetition also reopened centrally. The direct-EXE
+reopen commands returned in 82 ms and 64 ms for the two sequences; the F5
+close/reopen command returned in 82 ms and reached application idle in 257 ms.
+No after trace contains `InternalCreateFloatingToolWindowMs`.
+
+Focused regression coverage now performs both close/reopen sequences inside
+`wpf_tool_window_dock_float_cycle` and retains the existing no Preview/Run,
+layer-count, active-layer, and routing invariants.
+
+The exact implementation and regression-test commit was promoted as Dev
+`9401a01` and original `4f75fc6`. All four Git blob IDs match between the two
+repositories. The independently rebuilt original passed a zero-warning Debug
+build, the three focused Pipeline Review/entry-performance/dock-float targets
+with zero layout/text/internal issues, and readiness 13/13.
+
+Evidence:
+
+- Before actual-EXE capture:
+  `D:\OpenVisionLab-TestData\OpenVisionLab\pipeline-review-reopen-position-20260813\before\01-close-reopen-floats.jpg`
+- After central close/reopen capture:
+  `D:\OpenVisionLab-TestData\OpenVisionLab\pipeline-review-reopen-position-20260813\after\01-close-reopen-restores-central.jpg`
+- After explicit Float close/reopen capture:
+  `D:\OpenVisionLab-TestData\OpenVisionLab\pipeline-review-reopen-position-20260813\after\02-explicit-float-close-reopen-central.jpg`
+- Visual Studio F5 close/reopen capture:
+  `D:\OpenVisionLab-TestData\OpenVisionLab\pipeline-review-reopen-position-20260813\after\03-visual-studio-f5-close-reopen-central.jpg`
+- Focused smoke output:
+  `D:\OpenVisionLab-TestData\OpenVisionLab\pipeline-review-reopen-position-20260813\focused-smoke`
+- Original focused smoke output:
+  `D:\OpenVisionLab-TestData\OpenVisionLab\pipeline-review-reopen-position-20260813\promotion\original-focused-smoke`
+
+This follow-up is implemented and verified in Dev and original. No PR, tag,
+or Release was created.
+
 ## Reproduction And Root Cause
 
 The current Dev source reproduced the operator's delay in three F5 processes:

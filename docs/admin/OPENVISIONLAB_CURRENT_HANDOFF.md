@@ -340,6 +340,20 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
   return, `30 ms` render priority, and `54 ms` application idle. Its current
   verification used `Portfolio_Pattern_Rotation_Scale`, so the result is not
   limited to the Dev measurement Recipe.
+- A current-Dev follow-up reproduced a separate placement regression: closing
+  the central Pipeline Review caused the next `Pipeline 열기` to create a
+  floating window because close and Float shared one persisted restore flag.
+  Normal Pipeline entry now always targets the central document workspace;
+  explicit Float affects only the current window lifetime. Central close/reopen,
+  explicit Float close/reopen, and Visual Studio F5 close/reopen all return to
+  the central workspace with no separate floating window. Direct-EXE reopen
+  commands were `82/64 ms`; F5 close/reopen was `82 ms` command return and
+  `257 ms` UI idle. The updated dock/float cycle smoke covers both sequences
+  while preserving no-execution/layer/routing invariants. The exact four-file
+  implementation/test port is Dev `9401a01` and original `4f75fc6`; all four
+  Git blob IDs match. The independently rebuilt original passed Debug build
+  0/0, all three focused targets with zero layout/text/internal issues, and
+  readiness 13/13. The result is recorded in the same P294 report.
 
 ### P293 Recipe Manager And Pipeline Entry UX - Complete In Dev
 
@@ -349,7 +363,9 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
   normal/focus/hover/read-only/disabled/error states use the shell theme.
 - Pipeline Review now defaults to the central document workspace instead of
   paying the separate floating-window construction cost on normal first entry.
-  Explicit Float remains available and keeps the operator's floating choice.
+  Explicit Float remains available for the current document window; after that
+  floating window is closed, the next Pipeline entry returns to the central
+  workspace.
 - On the current workstation, the measured two-Step first open changed from
   860 ms to 661 ms; internal activation changed from 329 ms to 214 ms. Central
   same-context reopen reached the visible control in 311-322 ms and completed
