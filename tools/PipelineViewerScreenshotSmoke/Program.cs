@@ -27438,6 +27438,40 @@ internal static class Program
                 throw new InvalidOperationException("Reopened Pipeline Review did not restore its central docked workspace.");
             }
 
+            if (!shellHost.FloatDockedWpfToolWindowForTest())
+            {
+                throw new InvalidOperationException("Reopened Pipeline Review did not accept the second float request.");
+            }
+
+            Pump(24);
+            if (!shellHost.CloseActiveWpfToolWindowForTest())
+            {
+                throw new InvalidOperationException("Floated Pipeline Review could not be closed before its reopen check.");
+            }
+
+            shellHost.SelectToolForTest(VISION_MENU.Pipeline);
+            Pump(24);
+            if (!shellHost.IsDockedDocumentWorkspaceVisibleForTest
+                || shellHost.IsDockedToolInspectorVisibleForTest
+                || CountVisibleFloatingToolWindows() != 0)
+            {
+                throw new InvalidOperationException("Pipeline Review reopened outside the central workspace after its floating window was closed.");
+            }
+
+            if (!shellHost.CloseActiveWpfToolWindowForTest())
+            {
+                throw new InvalidOperationException("Central Pipeline Review could not be closed before its reopen check.");
+            }
+
+            shellHost.SelectToolForTest(VISION_MENU.Pipeline);
+            Pump(24);
+            if (!shellHost.IsDockedDocumentWorkspaceVisibleForTest
+                || shellHost.IsDockedToolInspectorVisibleForTest
+                || CountVisibleFloatingToolWindows() != 0)
+            {
+                throw new InvalidOperationException("Pipeline Review reopened outside the central workspace after its docked document was closed.");
+            }
+
             if (shellHost.HostLayerRowCount != layerCountBeforePipeline
                 || !string.Equals(shellHost.WorkspaceLayerTitle, workspaceLayerBeforePipeline, StringComparison.Ordinal)
                 || !string.Equals(shellHost.ActiveRecipeContextLayerNameForTest, activeLayerBeforePipeline, StringComparison.Ordinal)

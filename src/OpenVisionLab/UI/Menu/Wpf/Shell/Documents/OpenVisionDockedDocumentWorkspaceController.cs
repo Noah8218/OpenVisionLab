@@ -29,8 +29,6 @@ namespace OpenVisionLab
 
         public bool IsVisible => panel.Visibility == Visibility.Visible && content != null;
 
-        public bool ShouldRestoreDocked { get; private set; } = true;
-
         public FrameworkElement ActiveContent => content;
 
         public string ActiveTitle => title;
@@ -54,7 +52,6 @@ namespace OpenVisionLab
 
             panel.Visibility = Visibility.Collapsed;
             titleText.Text = string.Empty;
-            ShouldRestoreDocked = true;
             return true;
         }
 
@@ -69,19 +66,19 @@ namespace OpenVisionLab
             string currentTitle = title;
             double width = floatingWidth;
             double height = floatingHeight;
-            ClearContent(keepDockedPreference: false);
+            ClearContent();
             showFloatingWindow(currentContent, currentTitle, width, height);
             return true;
         }
 
         public bool CloseSilently()
         {
-            if (!IsVisible && !ShouldRestoreDocked)
+            if (content == null)
             {
                 return false;
             }
 
-            ClearContent(keepDockedPreference: false);
+            ClearContent();
             return true;
         }
 
@@ -112,14 +109,13 @@ namespace OpenVisionLab
             title = nextTitle ?? string.Empty;
             floatingWidth = nextFloatingWidth;
             floatingHeight = nextFloatingHeight;
-            ShouldRestoreDocked = true;
             OpenVisionToolOpenProfiler.Measure("DockedDocumentSetContent", () => contentHost.Content = content);
             OpenVisionToolOpenProfiler.Measure("DockedDocumentSetTitle", () => titleText.Text = title);
             OpenVisionToolOpenProfiler.Measure("DockedDocumentSetVisibility", () => panel.Visibility = visibility);
             return true;
         }
 
-        private void ClearContent(bool keepDockedPreference)
+        private void ClearContent()
         {
             contentHost.Content = null;
             panel.Visibility = Visibility.Collapsed;
@@ -128,7 +124,6 @@ namespace OpenVisionLab
             title = string.Empty;
             floatingWidth = 0D;
             floatingHeight = 0D;
-            ShouldRestoreDocked = keepDockedPreference;
         }
     }
 }

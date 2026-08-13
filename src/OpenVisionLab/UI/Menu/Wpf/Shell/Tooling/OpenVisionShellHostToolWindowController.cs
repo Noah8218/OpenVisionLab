@@ -79,8 +79,6 @@ namespace OpenVisionLab
                 Title = item.Title
             };
             OpenVisionToolOpenProfiler.Begin();
-            bool showPipelineReviewDocked = item.Menu == VISION_MENU.Pipeline
-                && toolWindowLifecycleController.ShouldShowPipelineReviewDocked;
             toolWindowLifecycleController.PrepareForToolSelection(item.Menu);
 
             if (item.Menu == VISION_MENU.Pipeline)
@@ -101,21 +99,7 @@ namespace OpenVisionLab
                 }
                 timing.ActivateDocumentMs = phaseStopwatch.ElapsedMilliseconds;
                 timing.Document = pipelineReviewDocument.View?.GetType().Name ?? pipelineReviewDocument.GetType().Name;
-                if (showPipelineReviewDocked)
-                {
-                    ShowDockedDocumentWorkspace(pipelineReviewDocument.View, title, 1180, 760, timing);
-                }
-                else
-                {
-                    ShowWpfToolWindow(
-                        pipelineReviewDocument.View,
-                        title,
-                        1180,
-                        760,
-                        timing,
-                        preferDockedWhenActive: false,
-                        applyToolDockMode: false);
-                }
+                ShowDockedDocumentWorkspace(pipelineReviewDocument.View, title, 1180, 760, timing);
                 phaseStopwatch.Restart();
                 CompleteToolSelection(title, hasDisplayablePreviewResult: false, refreshLayerRows: false);
                 timing.CompleteSelectionMs = phaseStopwatch.ElapsedMilliseconds;

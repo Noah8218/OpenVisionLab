@@ -42,10 +42,6 @@ namespace OpenVisionLab
 
         public bool IsDockedDocumentWorkspaceVisible => dockedDocumentWorkspaceController.IsVisible;
 
-        public bool ShouldShowPipelineReviewDocked =>
-            dockedToolInspectorController.IsVisible
-            || dockedDocumentWorkspaceController.ShouldRestoreDocked;
-
         public bool ShowDockedToolWindow(FrameworkElement content, string title, double floatingWidth, double floatingHeight)
         {
             return dockedToolInspectorController.Show(content, title, floatingWidth, floatingHeight);
