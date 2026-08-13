@@ -72,8 +72,10 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
   `docs/reports/OPENVISIONLAB_PIPELINE_REVIEW_ENTRY_AND_COMPACT_LAYOUT_20260812.md`.
 - Runtime evidence:
   `D:\OpenVisionLab-TestData\OpenVisionLab\pipeline-main-button-original-promotion-20260813`.
-- Boundary: the originally reported ten-second observation was not reproduced;
-  reopen only with a new current-original trace. Commit and push remain.
+- Boundary: the originally reported ten-second observation was later reproduced
+  only under Visual Studio F5, isolated, corrected, and independently verified
+  in original. Reopen only with a new current-build trace; no PR or Release was
+  created.
 
 ### 2026-08-12 Startup Feedback, Pipeline Review Entry, And Compact Layout - Complete In Dev And Original
 
@@ -302,7 +304,7 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
   original `a6bbf277dea4`. The original independently passed the same build,
   readiness, N-image, and focused WPF gates before push.
 
-### P294 Main No-Image Pipeline Open Performance - F5 Regression Fixed In Dev
+### P294 Main No-Image Pipeline Open Performance - Complete In Dev And Original
 
 - The corrected scope is the main no-image workspace's `Pipeline 열기` button,
   not Recipe Manager's Open Pipeline command.
@@ -331,9 +333,13 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
   Debug build 0/0, Pipeline Review/entry-performance/dock-float smokes, and
   readiness 13/13 pass. Evidence:
   `docs/reports/OPENVISIONLAB_PIPELINE_F5_DOCKMODE_PERFORMANCE_20260813.md`.
-- This newer correction is Dev-only. The original repository's earlier direct
-  EXE result remains valid for that path, but original F5 equivalence is not
-  verified and no original change was made in this task.
+- The exact correction was promoted as Dev `4b4d3db1` and original `e60adc3`.
+  The rebuilt original independently passed a zero-warning Debug build, all
+  three focused Pipeline Review/entry-performance/dock-float targets, readiness
+  13/13, and the actual Visual Studio F5 main-screen button at `20 ms` command
+  return, `30 ms` render priority, and `54 ms` application idle. Its current
+  verification used `Portfolio_Pattern_Rotation_Scale`, so the result is not
+  limited to the Dev measurement Recipe.
 
 ### P293 Recipe Manager And Pipeline Entry UX - Complete In Dev
 
@@ -560,12 +566,11 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
 - The 2026-08-11 Recipe/layer/N-image/Edge regression batch is complete,
   independently verified, and pushed in Dev and original. No PR or Release
   publication is active.
-- The main `Pipeline 열기` direct-EXE cache/logging correction remains verified
-  in Dev and original, but current Dev F5 exposed a separate Tool-specific
-  dock-mode traversal regression. The Dev correction is complete at
-  `23/19/19 ms` across three F5 processes and `15 ms` in a fresh direct EXE.
-  Promotion to original and original F5 verification remain separate explicit
-  tasks; no commit or push is active.
+- The main `Pipeline 열기` direct-EXE cache/logging and F5 dock-mode corrections
+  are complete in Dev and original. Dev returned in `23/19/19 ms` across three
+  F5 processes and `15 ms` in a fresh direct EXE; the independently rebuilt
+  original returned in `20 ms` and reached UI idle in `54 ms` from its actual
+  Visual Studio F5 main-screen button. No PR, tag, or Release is active.
 - P294's earlier direct-EXE evidence is historical support only for that path;
   the current F5 evidence and boundary are recorded in the 2026-08-13 dock-mode
   performance report.

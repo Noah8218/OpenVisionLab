@@ -1,7 +1,7 @@
 # OpenVisionLab Pipeline F5 Dock-Mode Performance Correction
 
 Date: 2026-08-13
-Status: Complete in Dev
+Status: Complete in Dev and original
 
 ## Scope
 
@@ -16,6 +16,12 @@ The investigation used the same persisted context for every measured click:
 - Pipeline: `Public_Synthetic_Matching`
 - Pipeline Review cache: `CachedBefore=True`
 - Input state: no Main image
+
+The independently rebuilt original repository was verified with the persisted
+`Portfolio_Pattern_Rotation_Scale` Recipe and
+`Portfolio_Card_Rotation_Scale_Inspection` Pipeline. This intentionally used a
+different Recipe/Pipeline model from the Dev measurements to check that the
+fast path is owned by document attachment rather than one saved model.
 
 ## Reproduction And Root Cause
 
@@ -61,6 +67,12 @@ reached application idle in 39 ms. All after traces retained
 `CachedBefore=True` and recorded zero-millisecond central document attach
 phases with no `DockedDocumentApplyDockMode` phase.
 
+After exact promotion, the original Visual Studio F5 process returned from the
+same main-screen button in 20 ms, reached render priority in 30 ms, and reached
+application idle in 54 ms. Its internal document path completed in 5 ms with
+`CachedBefore=True`; no Tool-specific `DockedDocumentApplyDockMode` phase was
+recorded.
+
 ## Verification
 
 Commands executed from `C:\Git\OpenVisionLab_Dev` with `TEMP` and `TMP` routed
@@ -84,6 +96,23 @@ Results:
   `-1920,365,1920x1032`); the captured window rectangle was
   `-1760,431,1280x720`.
 
+The original repository independently passed:
+
+```powershell
+dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU" -m:1 -nodeReuse:false
+dotnet run --no-build --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target wpf_shell_host_pipeline_review,wpf_pipeline_review_entry_perf,wpf_tool_window_dock_float_cycle D:\OpenVisionLab-TestData\OpenVisionLab\pipeline-open-f5-original-20260813\focused-smoke
+dotnet run --no-build --project tools\OpenVisionReadinessCheck\OpenVisionReadinessCheck.csproj -c Debug -- "C:\Git\OpenVisionLab"
+```
+
+- Debug solution build: 0 warnings, 0 errors.
+- All three focused targets: PASS with zero layout, text, and internal issues.
+- Readiness: 13/13 PASS.
+- Original Visual Studio F5 main-screen button: 20 ms command return, 30 ms
+  render priority, 54 ms application idle.
+- Dev implementation commit `4b4d3db1` was exact-ported as original commit
+  `e60adc3`; the implementation and completion-document blobs match between
+  repositories after promotion.
+
 Evidence:
 
 - Runtime log:
@@ -92,19 +121,23 @@ Evidence:
   `D:\OpenVisionLab-TestData\OpenVisionLab\pipeline-open-f5-fix-20260813\after\02-direct-exe-pipeline-open-display2.png`
 - Focused current-source captures and reports:
   `D:\OpenVisionLab-TestData\OpenVisionLab\pipeline-open-f5-fix-20260813\focused-smoke-final`
+- Original runtime log:
+  `C:\Git\OpenVisionLab\bin\Debug\Log\2026\08\13\2026-08-13_ALL.log`
+- Original current F5 capture:
+  `D:\OpenVisionLab-TestData\OpenVisionLab\pipeline-open-f5-original-20260813\after\01-original-f5-pipeline-open.jpg`
 
 ## Boundary
 
-This task changes and verifies Dev only. The original repository was not
-modified, committed, or pushed. The earlier original direct-EXE evidence does
-not prove the Visual Studio F5 path; original F5 equivalence requires an
-explicit promotion and independent verification request.
+The correction is implemented and independently verified in Dev and original.
+This proves the main no-image Pipeline Review entry path and the focused
+dock/float contracts; it does not publish a tag or Release and does not claim
+algorithm, dataset, camera, lighting, PLC, or field qualification.
 
 ```text
 Status: Complete
-Scope: Dev main no-image Pipeline open F5 dock-mode performance correction
-Acceptance criteria: exact F5 delay reproduced and isolated -> pass; same-context F5 actual button under 100 ms in three fresh processes -> pass; direct EXE actual button and dock/float contracts preserved -> pass
-Verification: Debug build 0 warnings/0 errors; three focused WPF smokes pass; readiness 13/13 pass; F5 23/19/19 ms; direct EXE 15 ms
-Evidence: current runtime log, current DISPLAY2 EXE capture, and focused-smoke-final folder listed above
-Boundary / next dependency: original repository was not changed; original F5 equivalence needs explicit promotion and independent verification
+Scope: Dev and original main no-image Pipeline open F5 dock-mode performance correction
+Acceptance criteria: exact F5 delay reproduced and isolated -> pass; Dev same-context F5 actual button under 100 ms in three fresh processes -> pass; exact original promotion and independent original F5 actual-button verification -> pass; direct EXE and dock/float contracts preserved -> pass
+Verification: Dev and original Debug builds 0 warnings/0 errors; each repository's three focused WPF smokes pass; each readiness run 13/13 pass; Dev F5 23/19/19 ms; Dev direct EXE 15 ms; original F5 20 ms command return and 54 ms UI idle
+Evidence: current Dev/original runtime logs, current actual-EXE captures, and focused-smoke folders listed above
+Boundary / next dependency: no PR, tag, or Release was created; reopen only for a new current-build regression trace
 ```
