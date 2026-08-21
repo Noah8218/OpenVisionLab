@@ -175,3 +175,6 @@ and commercial GA work require a new explicit user direction.
 - OpenVisionLab은 `OpenVisionLab-Vision-SDK`와 `WPG-CUSTOM` 소스 프로젝트를 직접 참조하지 않는다.
 - 다른 PC 검증과 GitHub clone/build는 저장소 내부 DLL만 사용한다.
 - 별도 소스 저장소는 DLL을 갱신해야 할 때만 필요하다.
+- GitHub Actions는 일반 push/PR에서도 전체 Release Candidate gate를 실행하지만,
+  약 46 MB의 휴대용 패키지 Artifact는 명시적인 `workflow_dispatch` 실행에서만
+  업로드하고 3일간 보관한다. 사용자 배포본은 GitHub Release 자산으로 발행한다.

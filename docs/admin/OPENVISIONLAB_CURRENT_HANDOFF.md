@@ -1,6 +1,6 @@
 # OpenVisionLab Current Project Handoff
 
-Updated: 2026-08-13 KST
+Updated: 2026-08-21 KST
 
 This is the compact live-status source for a new OpenVisionLab task. Read
 `AGENTS.md`, `docs/README.md`, and `docs/LLM_DOCUMENT_INDEX.json` first. Stable
@@ -52,6 +52,27 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
   hardware qualification, calibrated metrology, or field robustness.
 
 ## Latest Completed Work
+
+### 2026-08-21 GitHub Actions Artifact Storage Cleanup - Complete In Dev And Original
+
+- The public original repository's 18 live
+  `OpenVisionLab-win-x64-framework-dependent-*` workflow artifacts were
+  deleted after exact name/count verification, freeing `836.06 MiB` of current
+  Actions artifact storage. A post-delete API read returned zero matching live
+  artifacts.
+- The five published `v2.1.0-rc.1` Release assets were verified before and
+  after cleanup and remain unchanged.
+- Dev and original `.github/workflows/ci.yml` keep the full Release Candidate
+  gate on push/PR, but upload the approximately 46 MB package only for explicit
+  `workflow_dispatch` runs and retain it for three days. The release policy
+  records the same distinction between CI evidence and user-facing Release
+  assets.
+- `git diff --check`, the focused workflow storage assertions, and
+  `TestDocumentationIndex.ps1` (`62` indexed paths, `12` routes, `101` root
+  redirects) pass.
+- Boundary: routine push/PR runs still build and verify the package but do not
+  retain it. A manual workflow run deliberately creates one three-day
+  Artifact. Product code, tags, and the five Release assets are unchanged.
 
 ### 2026-08-13 Main Pipeline Button Actual-EXE Regression - Complete In Dev And Original
 
@@ -575,6 +596,9 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
 
 ## Current Priority And Activation Conditions
 
+- Original Artifact cleanup and the recurrence-prevention workflow policy are
+  complete in Dev and original. No further repository storage correction is
+  active without new current-usage evidence.
 - The 2026-08-11 Contour first-open, Line signal cue, ROI editing, Recipe
   loading-lifetime, and Tool Preview large-viewer corrections are complete,
   independently verified, and pushed in Dev `5134e43c` and original
