@@ -12,3 +12,96 @@ software.
 
 Do not remove or obscure the attribution to 최노아(Noah-Choi) when redistributing
 this project or derivative works that include substantial portions of it.
+
+Retained third-party and vendored runtime notices
+
+The exact retained DLL paths, lengths, SHA-256 values, source identities, and
+release policies are recorded in
+docs/contracts/openvisionlab/OPENVISIONLAB_EXTERNAL_BINARY_MANIFEST.json.
+The entries below apply to the runtime files that may be included in a Release
+distribution.
+
+FontAwesome.Sharp
+
+The retained file dll/FontAwesome.Sharp.dll is FontAwesome.Sharp assembly
+version 5.15.3.0. The library is distributed under the Apache License, Version
+2.0. Source: https://github.com/awesome-inc/FontAwesome.Sharp
+
+Copyright (c) Awesome Incremented 2015-2020.
+
+The DLL embeds Font Awesome Free 5.15.1 Regular, Solid, and Brands font files.
+Font Awesome Free attribution and license scope:
+
+- Icons: CC BY 4.0, https://creativecommons.org/licenses/by/4.0/
+- Fonts: SIL Open Font License 1.1, https://scripts.sil.org/OFL
+- Code: MIT License, https://opensource.org/licenses/MIT
+- Full license: https://fontawesome.com/license/free
+
+Font Awesome brand icons are trademarks of their respective owners and do not
+indicate endorsement by the trademark holders.
+
+OpenCvSharp
+
+The retained files dll/OpenVisionLab-Vision-SDK/OpenCvSharp.dll and
+dll/OpenCVSharp/OpenCvSharpExtern.dll are the managed and shared native
+OpenCvSharp runtime. OpenCvSharp is distributed under the Apache License,
+Version 2.0. Source: https://github.com/shimat/opencvsharp
+
+Copyright 2008 shimat.
+
+OpenVisionLab Vision SDK
+
+The retained SDK files are:
+
+- dll/OpenVisionLab-Vision-SDK/OpenVisionLab.Core.dll
+- dll/OpenVisionLab-Vision-SDK/OpenVisionLab.Vision2D.dll
+- dll/OpenVisionLab-Vision-SDK/OpenVisionLab.Vision2D.Blob.dll
+- dll/OpenVisionLab-Vision-SDK/OpenCvSharp.Blob.dll
+
+They are from OpenVisionLab Vision SDK 3.0.0, source commit
+ba0055b713e0bf434b9d0a7fd3f4b0e445c1f982, and are distributed under the MIT
+License. Source: https://github.com/Noah8218/OpenVisionLab-Vision-SDK
+
+Copyright (c) 2026 최노아(Noah-Choi).
+
+SharpGL
+
+The retained files dll/SharpGL/SharpGL.dll and
+dll/SharpGL/SharpGL.WinForms.dll are distributed under the MIT License.
+Source: https://github.com/dwmkerr/sharpgl
+
+Copyright (c) 2014 Dave Kerr.
+
+The MIT License text for the OpenVisionLab Vision SDK and SharpGL components is
+included below.
+
+MIT License
+
+Copyright (c) 2026 최노아(Noah-Choi)
+Copyright (c) 2014 Dave Kerr
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+OpenVisionLab-owned prepared runtime
+
+The WPG-CUSTOM files dll/System.Windows.Controls.WpfPropertyGrid.dll and
+dll/System.Windows.Controls.WpfPropertyGrid.xml are user-created owner
+artifacts, not third-party software. Their identity and retention policy are
+recorded in docs/reports/OPENVISIONLAB_WPG_CUSTOM_OWNER_CLASSIFICATION_20260826.md
+and the external binary manifest.

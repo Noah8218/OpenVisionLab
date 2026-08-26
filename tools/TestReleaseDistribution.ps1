@@ -67,6 +67,12 @@ foreach ($requiredName in $requiredNames) {
     }
 }
 
+& powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $repoRoot "tools\TestThirdPartyNoticeCoverage.ps1") `
+    -NoticePath (Join-Path $distributionFullPath "NOTICE")
+if ($LASTEXITCODE -ne 0) {
+    throw "Release distribution NOTICE coverage failed."
+}
+
 if (-not $manifest.IncludeSymbols) {
     $symbols = @(Get-ChildItem -LiteralPath $distributionFullPath -Filter "*.pdb" -File -Recurse)
     if ($symbols.Count -gt 0) {

@@ -70,9 +70,6 @@
     <Reference Include="FontAwesome.Sharp">
       <HintPath>$(OpenVisionLabDllRoot)FontAwesome.Sharp.dll</HintPath>
     </Reference>
-    <Reference Include="Vila.Core">
-      <HintPath>$(OpenVisionLabDllRoot)Vila.Core.dll</HintPath>
-    </Reference>
     <Reference Include="System.Windows.Controls.WpfPropertyGrid">
       <HintPath>$(OpenVisionLabDllRoot)System.Windows.Controls.WpfPropertyGrid.dll</HintPath>
       <Private>True</Private>

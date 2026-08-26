@@ -89,6 +89,11 @@ Invoke-NativeStep "External references" {
     & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $repoRoot "tools\TestExternalReferences.ps1") -Configuration Release
 }
 
+Invoke-NativeStep "NOTICE coverage" {
+    & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $repoRoot "tools\TestThirdPartyNoticeCoverage.ps1") `
+        -OutputPath (Join-Path $outputFullPath "third_party_notice_coverage.txt")
+}
+
 Invoke-NativeStep "Public sample asset policy" {
     & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $repoRoot "tools\TestPublicSampleAssets.ps1")
 }
