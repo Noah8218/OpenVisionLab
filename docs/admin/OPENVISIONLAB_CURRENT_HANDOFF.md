@@ -73,22 +73,23 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
   `PL-0003` is resolved with current localized signal-inspector, generated
   PropertyGrid, and stable evidence-state assertions. Its evidence is recorded
   in `docs/reports/OPENVISIONLAB_NATIVE_TOOL_FOCUSED_SMOKE_BASELINE_20260825.md`.
-- The previously broad reliability bundle is now separated into seven pushed
-  Dev commits, each with one responsibility group. The branch is clean at
-  `cb3ead00` and matches `origin/codex/public-sample-ux-docs`; the grouped
+- The previously broad reliability bundle is now separated into grouped
+  pushed Dev commits, each with one responsibility group. The branch is clean
+  at the latest recorded commit and matches
+  `origin/codex/public-sample-ux-docs`; the grouped
   commit list and boundaries are recorded below.
 - `PL-0005` is resolved in Dev for the reviewed external-binary scope. The
   user-authorized prune removed the unused `Vila.Core.dll`, optional
   `opencv_ffmpeg400_64.dll`, seven first-candidate DLLs, and the two
   MaterialDesign DLLs; WPG-CUSTOM remains under the explicit owner declaration.
   Retained NOTICE coverage passes for all 10 present `allow*` manifest entries.
-  The clean Release candidate gate also passed at commit
-  `cb3ead002bf74a94db6af5776f2f365b2a64554f`: Debug/Release builds have zero
-  warnings/errors, readiness is 13/13, the public sample gate is 33/33, and
-  the copied win-x64 framework-dependent distribution contract passes. The
-  gate used `-SkipLaunch`, so EXE launch smoke remains a separate boundary;
-  product release, tag, publication, deployment, and original-repository
-  promotion remain unauthorized.
+  The complete clean Release candidate gate passed at commit
+  `0292656befc07a79e4e2d43ddd24d386a6b24909`: Debug/Release builds have zero
+  warnings/errors, readiness is 13/13, the public sample gate is 33/33, the
+  copied win-x64 framework-dependent distribution contract passes, and the
+  actual copied-runtime EXE launch/data-root smoke passes twice. Product
+  release, tag, publication, deployment, and original-repository promotion
+  remain separate authorization boundaries until explicitly performed.
 - `PL-0006` BitmapImageConverter memory safety is complete in Dev. `PL-0007`
   Recipe/Pipeline storage path containment is also complete in Dev; its current
   path-boundary, lifecycle, sample/report, qualified-snapshot, and public-runtime
@@ -397,26 +398,28 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
   `8dab07a4` Recipe/Pipeline storage boundaries and execution provenance,
   `63f022aa` smoke/operator walkthrough contracts, `f4cb0d12` forbidden DLL
   removal and NOTICE enforcement, and `cb3ead00` documentation, handoff,
-  issue-ledger, and RC2 evidence.
+  issue-ledger, and RC2 evidence; `0292656b` records the clean Release gate.
 - The canonical product version remains `2.1.0`; these development commits do
   not create or change `v2.1.0-rc.2`. No tag, GitHub release, deployment, or
   original-repository promotion was performed.
 - From the now-clean worktree at
-  `cb3ead002bf74a94db6af5776f2f365b2a64554f`,
-  `VerifyReleaseCandidate.ps1 -SkipLaunch
-  -OutputDir artifacts\release_candidate_20260826_grouped_push` passed.
+  `0292656befc07a79e4e2d43ddd24d386a6b24909`,
+  `VerifyReleaseCandidate.ps1
+  -OutputDir artifacts\release_candidate_20260826_actual_launch` passed.
   Locked restore, Debug/Release zero-warning/zero-error builds, readiness
   13/13, external references, NOTICE coverage, public assets, all 33 public
   sample rows, clean Release publish, copied distribution NOTICE, archive, and
   checksum passed. The framework-dependent `win-x64` package contains 73
   payload files and has SHA-256
-  `ED05307431B60B40511756333D3BA495C993E87BF3E7983BB5DC8C17367DE75C`.
+  `11A74CB7D10645FBEEA530FE5E2F13D80049F75435206146473A777CD84837F0`.
 - Evidence is recorded in
-  `.proofline/issues/PL-0005.json` (`E16`/`D6`),
+  `.proofline/issues/PL-0005.json` (`E16`/`E17`/`D6`),
   `docs/reports/OPENVISIONLAB_RETAINED_DEPENDENCY_NOTICE_COVERAGE_20260826.md`,
-  `C:\Git\OpenVisionLab_Dev\artifacts\release_candidate_20260826_grouped_push\release_candidate_summary.json`,
-  the clean runtime manifest, and the generated Release archive. `-SkipLaunch`
-  is explicit, so actual-EXE launch smoke remains unverified for this gate.
+  `C:\Git\OpenVisionLab_Dev\artifacts\release_candidate_20260826_actual_launch\release_candidate_summary.json`,
+  the clean runtime manifest, the generated Release archive, and
+  `artifacts\release_launch_smoke_20260826_122127`. The copied runtime started
+  twice, data-root migration completed with `Status=Complete`, and the Error
+  log was empty; only the expected migration-completion warning was recorded.
 - The generated pre-gate `dist\\OpenVisionLab` output was moved to the
   recoverable D-drive backup
   `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\pre_gate_backup_20260826`

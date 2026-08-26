@@ -21,7 +21,7 @@
   },
   "state": {
     "status": "resolved",
-    "current_summary": "PL-0005 is resolved in Dev for the reviewed external-binary scope: forbidden and user-authorized removable DLLs remain absent, retained allowlisted dependencies have NOTICE or owner-declaration coverage, and the exact clean Release candidate distribution gate passed at cb3ead002bf74a94db6af5776f2f365b2a64554f. The gate used -SkipLaunch, so EXE launch smoke remains a separate unverified boundary; no tag, release publication, deployment, or original-repository promotion was performed."
+    "current_summary": "PL-0005 is resolved in Dev for the reviewed external-binary scope: forbidden and user-authorized removable DLLs remain absent, retained allowlisted dependencies have NOTICE or owner-declaration coverage, and both the clean Release distribution gate and the actual copied-runtime EXE launch/data-root smoke passed at commit 0292656befc07a79e4e2d43ddd24d386a6b24909. No tag, release publication, deployment, or original-repository promotion has been performed."
   },
   "problem": {
     "claims": [
@@ -66,7 +66,8 @@
         "E12",
         "E13",
         "E14",
-        "E16"
+        "E16",
+        "E17"
       ]
     },
     {
@@ -80,7 +81,8 @@
         "E12",
         "E13",
         "E15",
-        "E16"
+        "E16",
+        "E17"
       ]
     },
     {
@@ -217,6 +219,13 @@
       "location": "C:\\Git\\OpenVisionLab_Dev\\artifacts\\release_candidate_20260826_grouped_push\\release_candidate_summary.json; C:\\Git\\OpenVisionLab_Dev\\dist\\OpenVisionLab\\clean_runtime_manifest.json; C:\\Git\\OpenVisionLab_Dev\\dist\\OpenVisionLab-win-x64-framework-dependent.zip; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pre_gate_backup_20260826\\OpenVisionLab",
       "observation": "On 2026-08-26 VerifyReleaseCandidate.ps1 -SkipLaunch completed with ReleaseCandidateVerification=PASS at commit cb3ead002bf74a94db6af5776f2f365b2a64554f on codex/public-sample-ux-docs. Locked restore, Debug and Release solution builds, readiness 13/13, Release external-reference policy, retained-dependency NOTICE coverage, public sample asset policy, and the 33-row public sample gate passed. Clean Release publish and TestReleaseDistribution passed with a win-x64 framework-dependent package containing 73 payload files; archive SHA-256 is ED05307431B60B40511756333D3BA495C993E87BF3E7983BB5DC8C17367DE75C. LaunchSmoke=Skipped by explicit command option.",
       "observed_at": "2026-08-26T11:53:38+09:00"
+    },
+    {
+      "id": "E17",
+      "kind": "full-release-candidate-launch-gate",
+      "location": "C:\\Git\\OpenVisionLab_Dev\\artifacts\\release_candidate_20260826_actual_launch\\release_candidate_summary.json; C:\\Git\\OpenVisionLab_Dev\\artifacts\\release_launch_smoke_20260826_122127; C:\\Git\\OpenVisionLab_Dev\\dist\\OpenVisionLab-win-x64-framework-dependent.zip; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pre_launch_gate_backup_20260826",
+      "observation": "On 2026-08-26 VerifyReleaseCandidate.ps1 without -SkipLaunch passed at commit 0292656befc07a79e4e2d43ddd24d386a6b24909. Debug/Release builds had zero warnings/errors; readiness 13/13, references, NOTICE, public assets, and 33-row samples passed. Clean publish/TestReleaseDistribution passed with 73 win-x64 framework-dependent payload files and archive SHA-256 11A74CB7D10645FBEEA530FE5E2F13D80049F75435206146473A777CD84837F0. The copied runtime launched twice without early exit; migration was Status=Complete with the conflict preserved, the Error log was empty, and only the expected migration warning was recorded. LaunchSmoke=PASS.",
+      "observed_at": "2026-08-26T12:22:44+09:00"
     }
   ],
   "events": [
@@ -273,7 +282,8 @@
       "at": "2026-08-26T11:53:38+09:00",
       "summary": "Close PL-0005 in Dev after the clean Release candidate gate passed for commit cb3ead002bf74a94db6af5776f2f365b2a64554f. Retain the explicit -SkipLaunch boundary; tag, release publication, deployment, and original-repository promotion remain separate authorizations.",
       "evidence_refs": [
-        "E16"
+        "E16",
+        "E17"
       ]
     },
     {
@@ -286,5 +296,5 @@
     }
   ],
   "created_at": "2026-08-25T11:56:04+09:00",
-  "updated_at": "2026-08-26T11:53:38+09:00"
+  "updated_at": "2026-08-26T12:22:44+09:00"
 }
