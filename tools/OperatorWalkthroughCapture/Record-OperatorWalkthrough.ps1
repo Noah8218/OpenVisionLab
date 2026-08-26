@@ -242,9 +242,17 @@ function Get-ProcessAutomationElement {
     else {
         [System.Windows.Automation.AndCondition]::new($conditions.ToArray())
     }
-    $matches = [System.Windows.Automation.AutomationElement]::RootElement.FindAll(
-        [System.Windows.Automation.TreeScope]::Descendants,
-        $condition)
+    try {
+        $matches = [System.Windows.Automation.AutomationElement]::RootElement.FindAll(
+            [System.Windows.Automation.TreeScope]::Descendants,
+            $condition)
+    }
+    catch {
+        # Windows UI Automation can briefly reject a tree query while a dialog
+        # or hosted WPF surface is being replaced. The caller's wait loop can
+        # retry without turning that transient state into a scenario failure.
+        return $null
+    }
     foreach ($match in $matches) {
         try {
             if ($match.Current.ProcessId -ne $script:appProcess.Id) {
@@ -953,11 +961,7 @@ function Load-WorkspaceImageFile {
         -AutomationId "1148" `
         -Value $ImagePath `
         -Label "Enter inspection image path"
-    Click-AutomationId `
-        -AutomationId "1" `
-        -Label "Open inspection image" `
-        -PauseAfterMilliseconds 1800 `
-        -ControlType ([System.Windows.Automation.ControlType]::Button)
+    Submit-FileDialogOpen "Open inspection image"
     Wait-AutomationElement `
         -AutomationId "WorkspaceMainActionThresholdButton" `
         -Name $null `
@@ -1109,6 +1113,21 @@ function Get-VisibleElementName {
 
     $element = Get-ProcessAutomationElement -AutomationId $AutomationId -Name $null
     return Get-AutomationElementText $element
+}
+
+function Submit-FileDialogOpen {
+    param(
+        [string]$Label,
+        [int]$TimeoutMilliseconds = 15000
+    )
+
+    # The Windows common file dialog can expose a transient or unrelated UIA
+    # button tree. The path edit retains focus after typing, so Enter submits
+    # the selected file without depending on an AutomationId or localized
+    # button name.
+    [System.Windows.Forms.SendKeys]::SendWait("{ENTER}")
+    Add-TimelineEvent "click" "$Label via Enter"
+    Start-Sleep -Milliseconds 1800
 }
 
 function Get-VisibleListItemNames {

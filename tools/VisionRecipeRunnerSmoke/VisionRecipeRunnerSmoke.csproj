@@ -17,6 +17,10 @@
       <HintPath>$(OpenVisionLabVisionSdkDllRoot)OpenVisionLab.Vision2D.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="OpenVisionLab.Vision2D.Blob">
+      <HintPath>$(OpenVisionLabVisionSdkDllRoot)OpenVisionLab.Vision2D.Blob.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="OpenCvSharp">
       <HintPath>$(OpenVisionLabVisionSdkDllRoot)OpenCvSharp.dll</HintPath>
       <Private>True</Private>

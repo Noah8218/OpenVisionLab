@@ -314,7 +314,7 @@ internal static class Program
 
         string pipelineReviewExecutionController = Read(repoRoot, @"src\OpenVisionLab\UI\Menu\Wpf\PipelineReview\Execution\OpenVisionPipelineReviewExecutionController.cs");
         RequireContains(pipelineReviewExecutionController, "internal sealed class OpenVisionPipelineReviewExecutionController", "Pipeline Review execution has an explicit controller owner.");
-        RequireContains(pipelineReviewExecutionController, "VisionPipelineExecutionService.RunAsync", "Pipeline Review execution controller invokes the shared pipeline runner.");
+        RequireContains(pipelineReviewExecutionController, "VisionPipelineExecutionService.RunPreparedAsync", "Pipeline Review execution controller invokes the shared prepared pipeline runner.");
         RequireContains(pipelineReviewExecutionController, "CreateReviewContextFromDisplayLayers", "Pipeline Review execution controller builds the display-layer execution context.");
         RequireContains(pipelineReviewExecutionController, "CacheReviewOutput", "Pipeline Review execution controller owns review output-image caches.");
         RequireContains(pipelineReviewExecutionController, "DisposeRunResultImages", "Pipeline Review execution controller owns result-image disposal.");

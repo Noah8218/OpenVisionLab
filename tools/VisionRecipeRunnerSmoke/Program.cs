@@ -3,14 +3,18 @@ using OpenVisionLab;
 using OpenVisionLab.Common;
 using OpenVisionLab.Core;
 using OpenVisionLab.Vision2D;
+using OpenVisionLab.Vision2D.Blob;
 using OpenVisionLab.Vision2D.Pipeline;
 using OpenVisionLab.Vision2D.Property;
+using OpenVisionLab.Vision2D.Result;
 using OpenVisionLab.Vision2D.Tool;
 using OpenVisionLab.Vision._1._Tools.OpenCV;
 using OpenVisionLab.ImageCanvas.OpenGLRendering;
+using OpenVisionLab.ImageSpace.Core;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -20,6 +24,8 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Drawing.Imaging;
+using System.Xml;
+using System.Xml.Serialization;
 using Bitmap = System.Drawing.Bitmap;
 
 if (args.Length == 1 && string.Equals(args[0], "--pinarraygap-intent-contract", StringComparison.OrdinalIgnoreCase))
@@ -34,9 +40,45 @@ if ((args.Length == 1 || args.Length == 2)
 }
 
 if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--bitmap-converter-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return RunBitmapConverterContract(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--recipe-storage-path-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return RunRecipeStoragePathContract(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--pipeline-provenance-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return await RunPipelineProvenanceContractAsync(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--pipeline-persistence-recovery-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return RunPipelinePersistenceRecoveryContract(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--reliability-soak-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return await RunReliabilitySoakContractAsync(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
     && string.Equals(args[0], "--object-dimension-filter-contract", StringComparison.OrdinalIgnoreCase))
 {
     return await RunObjectDimensionFilterContractAsync(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--blob-contour-audit-baseline", StringComparison.OrdinalIgnoreCase))
+{
+    return await RunBlobContourAuditBaselineAsync(args.Length == 2 ? args[1] : null);
 }
 
 if ((args.Length == 1 || args.Length == 2)
@@ -137,7 +179,12 @@ if (args.Length < 2)
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --batch-evidence <imageListPath> <datasetRoot> <pipelineXmlPath> <csvPath> <evidenceRoot>");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --pinarraygap-intent-contract");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --runtime-stability-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --bitmap-converter-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --recipe-storage-path-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --pipeline-provenance-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --reliability-soak-contract [evidenceDirectory]");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --object-dimension-filter-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --blob-contour-audit-baseline [evidenceDirectory]");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --tool-n-image-verification-contract [evidenceDirectory]");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --affine-transform-contract [evidenceDirectory]");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --affine-detected-points-contract [evidenceDirectory]");
@@ -283,6 +330,8 @@ static async Task<int> RunRuntimeStabilityContractAsync(string? requestedEvidenc
         }
     }
 
+    CheckCanvasImageLoaderContract(evidenceDirectory, failures);
+
     FieldInfo? glyphCountField = typeof(OpenGlDrawing).GetField(
         "FontGlyphCount",
         BindingFlags.Static | BindingFlags.NonPublic);
@@ -301,6 +350,7 @@ static async Task<int> RunRuntimeStabilityContractAsync(string? requestedEvidenc
             "PipelineDeadline: timed-out in-process work drained before Context ownership ends",
             "SampleCheck: async CancellationToken path active",
             "BitmapConverter: indexed BGR conversion and temporary Mat ownership checked",
+            "CanvasImageLoader: owned 8-bit Gray/BGR output, alpha drop, 16-to-8-bit conversion, and GC lifetime checked",
             "OpenGLFontLists: 256 contiguous glyph lists required"
         }.Concat(failures.Select(item => "Failure: " + item)));
 
@@ -317,6 +367,2072 @@ static async Task<int> RunRuntimeStabilityContractAsync(string? requestedEvidenc
         Console.Error.WriteLine("- " + failure);
     }
     return 1;
+}
+
+static int RunBitmapConverterContract(string? requestedEvidenceDirectory)
+{
+    string evidenceDirectory = Path.GetFullPath(requestedEvidenceDirectory
+        ?? Path.Combine("artifacts", "bitmap_converter_contract"));
+    Directory.CreateDirectory(evidenceDirectory);
+    List<string> observations = new List<string>();
+    List<string> failures = new List<string>();
+
+    RunBitmapConverterCase(
+        "indexed-odd-width-submatrix-guard",
+        CheckIndexedOddWidthSubmatrixGuard,
+        observations,
+        failures);
+    RunBitmapConverterCase(
+        "indexed-positive-negative-stride-and-palette",
+        CheckIndexedPositiveNegativeStrideAndPalette,
+        observations,
+        failures);
+    RunBitmapConverterCase(
+        "24-32bpp-positive-negative-stride-and-submatrix",
+        Check24And32BppStorage,
+        observations,
+        failures);
+    RunBitmapConverterCase(
+        "1-3-4-channel-round-trip",
+        CheckBitmapRoundTrips,
+        observations,
+        failures);
+    RunBitmapConverterCase(
+        "unsupported-format-contract",
+        CheckUnsupportedBitmapFormats,
+        observations,
+        failures);
+
+    string reportPath = Path.Combine(evidenceDirectory, "bitmap_converter_contract.txt");
+    File.WriteAllLines(
+        reportPath,
+        new[]
+        {
+            "Result: " + (failures.Count == 0 ? "PASS" : "FAIL"),
+            "Contract: PL-0006 BitmapImageConverter row-byte, signed-stride, submatrix, and ownership safety",
+            "EvidenceDirectory: " + evidenceDirectory,
+            "FactoryOwnership: allocating ToMat/ToBitmap catch paths are source-verified; no output is returned after a conversion exception."
+        }
+        .Concat(observations)
+        .Concat(failures.Select(item => "Failure: " + item)));
+
+    if (failures.Count == 0)
+    {
+        Console.WriteLine("Bitmap converter contract passed.");
+        Console.WriteLine(reportPath);
+        return 0;
+    }
+
+    Console.Error.WriteLine("Bitmap converter contract failed.");
+    foreach (string failure in failures)
+        Console.Error.WriteLine("- " + failure);
+    Console.Error.WriteLine(reportPath);
+    return 1;
+}
+
+static int RunRecipeStoragePathContract(string? requestedEvidenceDirectory)
+{
+    string defaultEvidenceDirectory = Path.Combine(
+        "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev",
+        "pl0007_recipe_storage_contract_" + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture));
+    string evidenceDirectory = Path.GetFullPath(requestedEvidenceDirectory ?? defaultEvidenceDirectory);
+    Directory.CreateDirectory(evidenceDirectory);
+    string dataRoot = Path.Combine(evidenceDirectory, "data");
+    Environment.SetEnvironmentVariable(AppPathService.DataRootEnvironmentVariable, dataRoot);
+
+    List<string> observations = new List<string>();
+    List<string> failures = new List<string>();
+    string recipeName = "한글 Recipe_01";
+    string recipeDirectory = string.Empty;
+
+    try
+    {
+        RecipeWorkspaceService.EnsureVisionWorkspace(recipeName);
+        recipeDirectory = RecipeWorkspaceService.GetRecipeDirectoryPath(recipeName);
+        string recipeRoot = Path.GetFullPath(Path.Combine(dataRoot, "RECIPE"));
+        Require(IsContainedPath(recipeRoot, recipeDirectory), "Recipe directory escaped the RECIPE root.");
+
+        string pipelinePath = RecipeWorkspaceService.GetVisionPipelinePath(recipeName, "Pipeline_01");
+        string imageDirectory = RecipeWorkspaceService.GetVisionPipelineImageDirectory(recipeName, "Pipeline_01");
+        string runDirectory = RecipeWorkspaceService.GetVisionPipelineRunDirectory(recipeName, "Pipeline_01", "Run_01");
+        string sampleSetDirectory = RecipeWorkspaceService.GetVisionPipelineSampleSetDirectory(recipeName, "Pipeline_01", "샘플_01");
+        string batchDirectory = RecipeWorkspaceService.GetVisionPipelineBatchRunDirectory(recipeName, "Pipeline_01", "Batch_01");
+        string configPath = RecipeWorkspaceService.GetVisionConfigPath(recipeName, "pipeline.active");
+        string dataPath = RecipeWorkspaceService.GetVisionDataPath(recipeName);
+        string recipeFilePath = RecipeWorkspaceService.GetRecipeFilePath(recipeName, "RecipeNote");
+
+        foreach ((string label, string path) in new[]
+        {
+            ("pipeline", pipelinePath),
+            ("pipeline-images", imageDirectory),
+            ("pipeline-run", runDirectory),
+            ("sample-set", sampleSetDirectory),
+            ("batch-run", batchDirectory),
+            ("vision-config", configPath),
+            ("vision-data", dataPath),
+            ("recipe-file", recipeFilePath)
+        })
+        {
+            Require(IsContainedPath(recipeDirectory, path), label + " escaped its Recipe directory.");
+            observations.Add(label + ": contained");
+        }
+
+        Require(Directory.Exists(imageDirectory), "Pipeline image directory was not created.");
+        Require(Directory.Exists(runDirectory), "Pipeline run directory was not created.");
+        Require(Directory.Exists(sampleSetDirectory), "Sample-set directory was not created.");
+        Require(Directory.Exists(batchDirectory), "Batch-run directory was not created.");
+
+        VisionPipeline lifecyclePipeline = new VisionPipeline { Name = "Pipeline_01" };
+        VisionPipelineStorage.Save(recipeName, lifecyclePipeline);
+        Require(
+            string.Equals(
+                VisionPipelineStorage.Load(recipeName, "Pipeline_01").Name,
+                "Pipeline_01",
+                StringComparison.Ordinal),
+            "Saved pipeline could not be loaded through the storage owner.");
+        Require(
+            VisionPipelineStorage.TryDuplicatePipeline(
+                recipeName,
+                "Pipeline_01",
+                "Pipeline_02",
+                out string pipelineMessage),
+            pipelineMessage);
+        Require(
+            VisionPipelineStorage.TryRenamePipeline(
+                recipeName,
+                "Pipeline_02",
+                "Pipeline_03",
+                out pipelineMessage),
+            pipelineMessage);
+        Require(
+            VisionPipelineStorage.TryDeletePipeline(
+                recipeName,
+                "Pipeline_03",
+                out string fallbackPipelineName,
+                out pipelineMessage),
+            pipelineMessage);
+        Require(
+            string.Equals(fallbackPipelineName, "Pipeline_01", StringComparison.Ordinal),
+            "Pipeline delete did not select the remaining pipeline as fallback.");
+        observations.Add("pipeline-crud: save/load/duplicate/rename/delete");
+
+        using (DisplayManagerService displayManager = new DisplayManagerService())
+        {
+            displayManager.CreateLayerDisplay(
+                ImageSpaceFrame.TakeOwnership(new Bitmap(8, 6)),
+                "Main");
+            displayManager.CreateLayerDisplay(
+                ImageSpaceFrame.TakeOwnership(new Bitmap(8, 6)),
+                "CON");
+            int savedLayerCount = VisionPipelineSampleSetStorage.Save(
+                recipeName,
+                "Pipeline_01",
+                "Sample_01",
+                displayManager);
+            Require(savedLayerCount == 2, "Sample-set save did not persist both layers.");
+
+            VisionPipelineSampleSetInfo sampleInfo = VisionPipelineSampleSetStorage
+                .List(recipeName, "Pipeline_01")
+                .Single(info => string.Equals(info.Name, "Sample_01", StringComparison.Ordinal));
+            Require(
+                IsContainedPath(recipeDirectory, sampleInfo.DirectoryPath),
+                "Sample-set directory escaped its Recipe directory.");
+            Require(
+                VisionPipelineSampleSetStorage.GetLayerTitles(sampleInfo).Count == 2,
+                "Sample-set manifest did not reload both layer titles.");
+            Require(
+                VisionPipelineSampleSetStorage.Load(
+                    recipeName,
+                    "Pipeline_01",
+                    "Sample_01",
+                    displayManager) == 2,
+                "Sample-set load did not restore both layers.");
+            VisionPipelineContext sampleContext = VisionPipelineSampleSetStorage.CreateContext(sampleInfo);
+            Require(sampleContext != null, "Sample-set context creation returned null.");
+            (sampleContext as IDisposable)?.Dispose();
+            VisionPipelineSampleSetStorage.Delete(sampleInfo);
+            Require(
+                !Directory.Exists(sampleInfo.DirectoryPath),
+                "Sample-set delete did not remove its contained directory.");
+        }
+        observations.Add("sample-set: save/load/context/delete contained");
+
+        DateTime storageStart = DateTime.Now;
+        string runReportPath = VisionPipelineRunReportStorage.Save(
+            recipeName,
+            lifecyclePipeline,
+            (VisionPipelineRunResult)null!,
+            storageStart,
+            storageStart.AddMilliseconds(1),
+            publishAllOutputs: false,
+            runLabel: "path-contract");
+        Require(
+            IsContainedPath(recipeDirectory, runReportPath)
+            && File.Exists(runReportPath),
+            "Run report path was not contained or was not written.");
+        Require(
+            VisionPipelineRunReportStorage.List(recipeName, "Pipeline_01").Count > 0,
+            "Run report list did not reload the saved report.");
+        observations.Add("run-report: saved/listed contained");
+
+        string batchSummaryPath = VisionPipelineBatchRunSummaryStorage.Save(
+            recipeName,
+            "Pipeline_01",
+            storageStart,
+            storageStart.AddMilliseconds(2),
+            new[]
+            {
+                new VisionPipelineBatchSampleRunResult
+                {
+                    SampleName = "Sample_01",
+                    Status = "OK",
+                    Success = true,
+                    TotalMilliseconds = 1D,
+                    RunReportPath = runReportPath
+                }
+            },
+            suiteName: "Path Contract",
+            suiteKind: "Batch",
+            notes: "PL-0007 storage boundary contract",
+            pipelineSnapshot: lifecyclePipeline);
+        Require(
+            IsContainedPath(recipeDirectory, batchSummaryPath)
+            && File.Exists(batchSummaryPath),
+            "Batch summary path was not contained or was not written.");
+        Require(
+            VisionPipelineBatchRunSummaryStorage.List(recipeName, "Pipeline_01").Count > 0,
+            "Batch summary list did not reload the saved summary.");
+        observations.Add("batch-summary: saved/listed contained");
+
+        string duplicateRecipeName = "한글 Recipe_02";
+        string renamedRecipeName = "한글 Recipe_03";
+        Require(
+            RecipeWorkspaceService.DuplicateVisionWorkspace(recipeName, duplicateRecipeName),
+            "Recipe duplicate operation failed.");
+        Require(
+            RecipeWorkspaceService.RenameVisionWorkspace(duplicateRecipeName, renamedRecipeName),
+            "Recipe rename operation failed.");
+        Require(
+            RecipeWorkspaceService.DeleteVisionWorkspace(renamedRecipeName),
+            "Recipe delete operation failed.");
+        observations.Add("recipe-crud: duplicate/rename/delete contained");
+
+        string upperCasePath = RecipeWorkspaceService.GetVisionPipelinePath(recipeName, "Case_01");
+        string lowerCasePath = RecipeWorkspaceService.GetVisionPipelinePath(recipeName, "case_01");
+        Require(
+            string.Equals(upperCasePath, lowerCasePath, StringComparison.OrdinalIgnoreCase),
+            "Case-insensitive pipeline names did not resolve to the same storage path.");
+        observations.Add("case-collision: canonicalized");
+
+        ExpectStoragePathRejected(
+            "recipe-child-traversal",
+            () => RecipeWorkspaceService.EnsureVisionWorkspace("..\\outside"),
+            observations,
+            failures);
+        string unexpectedRecipeDirectory = Path.Combine(recipeRoot, "outside");
+        Require(
+            !Directory.Exists(unexpectedRecipeDirectory),
+            "Rejected recipe traversal created a directory before validation.");
+        observations.Add("rejected-recipe-mutation: no outside directory created");
+        ExpectStoragePathRejected(
+            "pipeline-child-traversal",
+            () => RecipeWorkspaceService.GetVisionPipelinePath(recipeName, "..\\outside"),
+            observations,
+            failures);
+        ExpectStoragePathRejected(
+            "reserved-pipeline-device",
+            () => RecipeWorkspaceService.GetVisionPipelineImageDirectory(recipeName, "CON"),
+            observations,
+            failures);
+        ExpectStoragePathRejected(
+            "reserved-batch-device",
+            () => RecipeWorkspaceService.GetVisionPipelineBatchRunDirectory(recipeName, "Pipeline_01", "COM1"),
+            observations,
+            failures);
+        ExpectStoragePathRejected(
+            "trailing-space-sample-set",
+            () => RecipeWorkspaceService.GetVisionPipelineSampleSetDirectory(recipeName, "Pipeline_01", "Sample_01 "),
+            observations,
+            failures);
+        ExpectStoragePathRejected(
+            "control-character-config",
+            () => RecipeWorkspaceService.GetVisionConfigPath(recipeName, "Bad\u0001Config"),
+            observations,
+            failures);
+        ExpectStoragePathRejected(
+            "relative-artifact-traversal",
+            () => RecipeWorkspaceService.GetContainedStoragePath(
+                Path.Combine(recipeDirectory, "VISION"),
+                "PipelineRuns\\..\\outside.xml",
+                "Run artifact path"),
+            observations,
+            failures);
+
+        string unexpectedDirectory = Path.Combine(recipeDirectory, "VISION", "PipelineImages", "CON");
+        Require(!Directory.Exists(unexpectedDirectory), "Rejected reserved pipeline created a directory.");
+        observations.Add("rejected-mutation: no reserved directory created");
+    }
+    catch (Exception exception)
+    {
+        failures.Add("unexpected-contract-error: " + exception.GetBaseException().Message);
+    }
+
+    string reportPath = Path.Combine(evidenceDirectory, "recipe_storage_path_contract.txt");
+    File.WriteAllLines(
+        reportPath,
+        new[]
+        {
+            "Result: " + (failures.Count == 0 ? "PASS" : "FAIL"),
+            "Contract: PL-0007 Recipe/Pipeline storage segment validation and root containment",
+            "EvidenceDirectory: " + evidenceDirectory,
+            "DataRoot: " + dataRoot,
+            "RecipeDirectory: " + recipeDirectory
+        }
+        .Concat(observations)
+        .Concat(failures.Select(item => "Failure: " + item)));
+
+    if (failures.Count == 0)
+    {
+        Console.WriteLine("Recipe storage path contract passed.");
+        Console.WriteLine(reportPath);
+        return 0;
+    }
+
+    Console.Error.WriteLine("Recipe storage path contract failed.");
+    foreach (string failure in failures)
+    {
+        Console.Error.WriteLine("- " + failure);
+    }
+
+    Console.Error.WriteLine(reportPath);
+    return 1;
+}
+
+static int RunPipelinePersistenceRecoveryContract(string? requestedEvidenceDirectory)
+{
+    string defaultEvidenceDirectory = Path.Combine(
+        "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev",
+        "pl0009_pipeline_persistence_recovery_"
+            + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture));
+    string evidenceDirectory = Path.GetFullPath(
+        requestedEvidenceDirectory ?? defaultEvidenceDirectory);
+    Directory.CreateDirectory(evidenceDirectory);
+    string dataRoot = Path.Combine(evidenceDirectory, "data");
+    Environment.SetEnvironmentVariable(
+        AppPathService.DataRootEnvironmentVariable,
+        dataRoot);
+
+    List<string> observations = new List<string>();
+    List<string> failures = new List<string>();
+    VisionPipelineLifecycleFailureStage[] failureStages =
+    {
+        VisionPipelineLifecycleFailureStage.AfterJournalPrepared,
+        VisionPipelineLifecycleFailureStage.AfterBackupCreated,
+        VisionPipelineLifecycleFailureStage.AfterTargetCreated,
+        VisionPipelineLifecycleFailureStage.AfterActivePointerUpdated,
+        VisionPipelineLifecycleFailureStage.AfterSourceRemoved,
+        VisionPipelineLifecycleFailureStage.AfterBackupRemoved
+    };
+
+    string CreateSmokeRecipe(string kind, VisionPipelineLifecycleFailureStage stage)
+    {
+        string suffix = Guid.NewGuid().ToString("N").Substring(0, 12);
+        string recipeName = "Smoke_PL0009_"
+            + kind
+            + "_"
+            + stage
+            + "_"
+            + suffix;
+        RecipeWorkspaceService.EnsureVisionWorkspace(recipeName);
+        return recipeName;
+    }
+
+    void CleanupSmokeRecipe(string recipeName)
+    {
+        if (!RecipeWorkspaceService.DeleteVisionWorkspace(recipeName))
+        {
+            failures.Add("Reserved smoke Recipe cleanup failed: " + recipeName);
+        }
+    }
+
+    void AssertNoLifecycleArtifacts(string recipeName, string pipelineName)
+    {
+        string path = RecipeWorkspaceService.GetVisionPipelinePath(recipeName, pipelineName);
+        string directory = Path.GetDirectoryName(path) ?? string.Empty;
+        string journalPath = RecipeWorkspaceService.GetVisionConfigPath(
+            recipeName,
+            "pipeline.lifecycle.json");
+        Require(!File.Exists(journalPath), "Lifecycle journal remained after recovery.");
+        Require(
+            Directory.GetFiles(directory, "." + pipelineName + ".lifecycle-*.bak").Length == 0,
+            "Lifecycle backup remained after recovery.");
+        Require(
+            Directory.GetFiles(directory, ".pipeline.*.tmp").Length == 0,
+            "Atomic pointer/journal temporary file remained after recovery.");
+    }
+
+    void RunRenameFailure(VisionPipelineLifecycleFailureStage stage)
+    {
+        string recipeName = CreateSmokeRecipe("Rename", stage);
+        const string oldName = "PL0009_A";
+        const string newName = "PL0009_B";
+        try
+        {
+            VisionPipelineStorage.Save(recipeName, new VisionPipeline { Name = oldName });
+            VisionPipelineStorage.SaveActivePipelineName(recipeName, oldName);
+            string oldPath = RecipeWorkspaceService.GetVisionPipelinePath(recipeName, oldName);
+            string oldHash = ComputeSha256(oldPath);
+
+            using (VisionPipelineStorage.BeginLifecycleFailureInjectionForTest(stage))
+            {
+                Require(
+                    !VisionPipelineStorage.TryRenamePipeline(
+                        recipeName,
+                        oldName,
+                        newName,
+                        out string failureMessage),
+                    "Injected rename failure unexpectedly completed: " + failureMessage);
+            }
+
+            VisionPipelineStorage.ResetRuntimePersistenceStateForTest();
+            string activeName = VisionPipelineStorage.LoadActivePipelineName(
+                recipeName,
+                oldName);
+            string newPath = RecipeWorkspaceService.GetVisionPipelinePath(recipeName, newName);
+            bool priorState = File.Exists(oldPath)
+                && !File.Exists(newPath)
+                && string.Equals(activeName, oldName, StringComparison.OrdinalIgnoreCase);
+            bool completedState = !File.Exists(oldPath)
+                && File.Exists(newPath)
+                && string.Equals(activeName, newName, StringComparison.OrdinalIgnoreCase);
+            Require(
+                priorState || completedState,
+                "Rename recovery did not produce one valid prior or completed state at " + stage);
+            if (priorState)
+            {
+                Require(
+                    string.Equals(ComputeSha256(oldPath), oldHash, StringComparison.Ordinal),
+                    "Rename rollback changed the prior Pipeline bytes at " + stage);
+            }
+
+            string stateName = completedState ? newName : oldName;
+            Require(
+                VisionPipelineStorage.TryGetPersistenceState(
+                    recipeName,
+                    stateName,
+                    out VisionPipelinePersistenceState state)
+                && state.Kind == VisionPipelinePersistenceStateKind.LifecycleRecovered,
+                "Rename recovery state was not explained at " + stage);
+            AssertNoLifecycleArtifacts(recipeName, stateName);
+            observations.Add(
+                "rename-" + stage + ": "
+                + (priorState ? "rolled back" : "completed")
+                + "; active=" + activeName);
+        }
+        catch (Exception ex)
+        {
+            failures.Add("Rename " + stage + ": " + ex.GetBaseException().Message);
+        }
+        finally
+        {
+            CleanupSmokeRecipe(recipeName);
+        }
+    }
+
+    void RunDeleteFailure(VisionPipelineLifecycleFailureStage stage)
+    {
+        string recipeName = CreateSmokeRecipe("Delete", stage);
+        const string deletedName = "PL0009_A";
+        const string fallbackName = "PL0009_B";
+        try
+        {
+            VisionPipelineStorage.Save(recipeName, new VisionPipeline { Name = deletedName });
+            VisionPipelineStorage.Save(recipeName, new VisionPipeline { Name = fallbackName });
+            VisionPipelineStorage.SaveActivePipelineName(recipeName, deletedName);
+            string deletedPath = RecipeWorkspaceService.GetVisionPipelinePath(recipeName, deletedName);
+            string deletedHash = ComputeSha256(deletedPath);
+
+            using (VisionPipelineStorage.BeginLifecycleFailureInjectionForTest(stage))
+            {
+                Require(
+                    !VisionPipelineStorage.TryDeletePipeline(
+                        recipeName,
+                        deletedName,
+                        out string returnedFallback,
+                        out string failureMessage),
+                    "Injected delete failure unexpectedly completed: " + failureMessage);
+                Require(
+                    string.Equals(returnedFallback, fallbackName, StringComparison.OrdinalIgnoreCase),
+                    "Delete failure did not retain the deterministic fallback name.");
+            }
+
+            VisionPipelineStorage.ResetRuntimePersistenceStateForTest();
+            string activeName = VisionPipelineStorage.LoadActivePipelineName(
+                recipeName,
+                deletedName);
+            string fallbackPath = RecipeWorkspaceService.GetVisionPipelinePath(recipeName, fallbackName);
+            bool priorState = File.Exists(deletedPath)
+                && File.Exists(fallbackPath)
+                && string.Equals(activeName, deletedName, StringComparison.OrdinalIgnoreCase);
+            bool completedState = !File.Exists(deletedPath)
+                && File.Exists(fallbackPath)
+                && string.Equals(activeName, fallbackName, StringComparison.OrdinalIgnoreCase);
+            Require(
+                priorState || completedState,
+                "Delete recovery did not produce one valid prior or completed state at " + stage);
+            if (priorState)
+            {
+                Require(
+                    string.Equals(ComputeSha256(deletedPath), deletedHash, StringComparison.Ordinal),
+                    "Delete rollback changed the prior Pipeline bytes at " + stage);
+            }
+
+            string stateName = completedState ? fallbackName : deletedName;
+            Require(
+                VisionPipelineStorage.TryGetPersistenceState(
+                    recipeName,
+                    stateName,
+                    out VisionPipelinePersistenceState state)
+                && state.Kind == VisionPipelinePersistenceStateKind.LifecycleRecovered,
+                "Delete recovery state was not explained at " + stage);
+            AssertNoLifecycleArtifacts(recipeName, stateName);
+            observations.Add(
+                "delete-" + stage + ": "
+                + (priorState ? "rolled back" : "completed")
+                + "; active=" + activeName);
+        }
+        catch (Exception ex)
+        {
+            failures.Add("Delete " + stage + ": " + ex.GetBaseException().Message);
+        }
+        finally
+        {
+            CleanupSmokeRecipe(recipeName);
+        }
+    }
+
+    void RunPointerValidation()
+    {
+        string recipeName = CreateSmokeRecipe(
+            "Pointer",
+            VisionPipelineLifecycleFailureStage.AfterJournalPrepared);
+        const string firstName = "PL0009_A";
+        const string secondName = "PL0009_B";
+        try
+        {
+            VisionPipelineStorage.Save(recipeName, new VisionPipeline { Name = firstName });
+            VisionPipelineStorage.Save(recipeName, new VisionPipeline { Name = secondName });
+            VisionPipelineStorage.SaveActivePipelineName(recipeName, firstName);
+            string pointerPath = RecipeWorkspaceService.GetVisionConfigPath(
+                recipeName,
+                "pipeline.active");
+            Require(
+                string.Equals(File.ReadAllText(pointerPath, Encoding.UTF8), firstName, StringComparison.Ordinal),
+                "Atomic active pointer did not persist the first existing Pipeline.");
+            VisionPipelineStorage.SaveActivePipelineName(recipeName, secondName);
+            Require(
+                string.Equals(File.ReadAllText(pointerPath, Encoding.UTF8), secondName, StringComparison.Ordinal),
+                "Atomic active pointer did not replace the existing value.");
+            try
+            {
+                VisionPipelineStorage.SaveActivePipelineName(recipeName, "PL0009_Missing");
+                failures.Add("Active pointer accepted a Pipeline outside the inventory.");
+            }
+            catch (InvalidOperationException)
+            {
+                Require(
+                    string.Equals(
+                        File.ReadAllText(pointerPath, Encoding.UTF8),
+                        secondName,
+                        StringComparison.Ordinal),
+                    "Rejected active pointer write changed the existing pointer.");
+                observations.Add("active-pointer: atomic replacement and inventory validation");
+            }
+        }
+        catch (Exception ex)
+        {
+            failures.Add("Active pointer: " + ex.GetBaseException().Message);
+        }
+        finally
+        {
+            CleanupSmokeRecipe(recipeName);
+        }
+    }
+
+    void RunNormalLifecycleRoundTrip()
+    {
+        string recipeName = CreateSmokeRecipe(
+            "Normal",
+            VisionPipelineLifecycleFailureStage.AfterJournalPrepared);
+        const string firstName = "PL0009_A";
+        const string duplicateName = "PL0009_B";
+        const string renamedName = "PL0009_C";
+        try
+        {
+            VisionPipelineStorage.Save(recipeName, new VisionPipeline { Name = firstName });
+            VisionPipelineStorage.SaveActivePipelineName(recipeName, firstName);
+            Require(
+                VisionPipelineStorage.TryDuplicatePipeline(
+                    recipeName,
+                    firstName,
+                    duplicateName,
+                    out string duplicateMessage),
+                duplicateMessage);
+            VisionPipelineStorage.SaveActivePipelineName(recipeName, duplicateName);
+            Require(
+                VisionPipelineStorage.TryRenamePipeline(
+                    recipeName,
+                    duplicateName,
+                    renamedName,
+                    out string renameMessage),
+                renameMessage);
+            Require(
+                string.Equals(
+                    VisionPipelineStorage.LoadActivePipelineName(recipeName, firstName),
+                    renamedName,
+                    StringComparison.OrdinalIgnoreCase),
+                "Normal rename did not preserve the active pointer.");
+            Require(
+                VisionPipelineStorage.TryDeletePipeline(
+                    recipeName,
+                    renamedName,
+                    out string fallbackName,
+                    out string deleteMessage),
+                deleteMessage);
+            Require(
+                string.Equals(fallbackName, firstName, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(
+                    VisionPipelineStorage.LoadActivePipelineName(recipeName, firstName),
+                    firstName,
+                    StringComparison.OrdinalIgnoreCase),
+                "Normal delete did not restore the remaining Pipeline as active.");
+            VisionPipelineStorage.ResetRuntimePersistenceStateForTest();
+            Require(
+                VisionPipelineStorage.Load(recipeName, firstName)?.Name == firstName,
+                "Recipe reopen did not reload the remaining Pipeline.");
+            observations.Add(
+                "normal-crud-reopen: duplicate/rename/delete/active pointer round-trip; "
+                + "storage-only path has no Preview/Run, layer, or route mutation");
+        }
+        catch (Exception ex)
+        {
+            failures.Add("Normal lifecycle round-trip: " + ex.GetBaseException().Message);
+        }
+        finally
+        {
+            CleanupSmokeRecipe(recipeName);
+        }
+    }
+
+    try
+    {
+        foreach (VisionPipelineLifecycleFailureStage stage in failureStages)
+        {
+            RunRenameFailure(stage);
+            if (stage != VisionPipelineLifecycleFailureStage.AfterTargetCreated)
+            {
+                RunDeleteFailure(stage);
+            }
+        }
+
+        RunPointerValidation();
+        RunNormalLifecycleRoundTrip();
+    }
+    catch (Exception ex)
+    {
+        failures.Add("Pipeline persistence recovery contract: " + ex.GetBaseException().Message);
+    }
+
+    string reportPath = Path.Combine(
+        evidenceDirectory,
+        "pipeline_persistence_recovery_contract.txt");
+    File.WriteAllLines(
+        reportPath,
+        new[]
+        {
+            "Result: " + (failures.Count == 0 ? "PASS" : "FAIL"),
+            "Contract: PL-0009 recoverable Pipeline rename/delete and atomic active pointer",
+            "EvidenceDirectory: " + evidenceDirectory,
+            "FailureInjection: six rename stages and five applicable delete stages",
+            "Recovery: journal-backed prior-state rollback or completed-state adoption",
+            "Pointer: atomic temporary-file replacement plus existing-inventory validation"
+        }
+        .Concat(observations)
+        .Concat(failures.Select(item => "Failure: " + item)));
+
+    if (failures.Count == 0)
+    {
+        Console.WriteLine("Pipeline persistence recovery contract passed.");
+        Console.WriteLine(reportPath);
+        return 0;
+    }
+
+    Console.Error.WriteLine("Pipeline persistence recovery contract failed.");
+    foreach (string failure in failures)
+    {
+        Console.Error.WriteLine("- " + failure);
+    }
+    Console.Error.WriteLine(reportPath);
+    return 1;
+}
+
+static void ExpectStoragePathRejected(
+    string name,
+    Action action,
+    ICollection<string> observations,
+    ICollection<string> failures)
+{
+    try
+    {
+        action();
+        failures.Add(name + ": invalid path segment was accepted.");
+    }
+    catch (ArgumentException exception)
+    {
+        if (string.IsNullOrWhiteSpace(exception.Message))
+        {
+            failures.Add(name + ": rejection message was empty.");
+            return;
+        }
+
+        observations.Add(name + ": rejected");
+    }
+    catch (InvalidOperationException exception)
+    {
+        if (string.IsNullOrWhiteSpace(exception.Message))
+        {
+            failures.Add(name + ": rejection message was empty.");
+            return;
+        }
+
+        observations.Add(name + ": rejected");
+    }
+    catch (Exception exception)
+    {
+        failures.Add(name + ": unexpected exception " + exception.GetType().Name + ".");
+    }
+}
+
+static async Task<int> RunPipelineProvenanceContractAsync(string? requestedEvidenceDirectory)
+{
+    string defaultEvidenceDirectory = Path.Combine(
+        "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev",
+        "pl0008_pipeline_provenance_" + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture));
+    string evidenceDirectory = Path.GetFullPath(requestedEvidenceDirectory ?? defaultEvidenceDirectory);
+    Directory.CreateDirectory(evidenceDirectory);
+    string dataRoot = Path.Combine(evidenceDirectory, "data");
+    Environment.SetEnvironmentVariable(AppPathService.DataRootEnvironmentVariable, dataRoot);
+
+    List<string> observations = new List<string>();
+    List<string> failures = new List<string>();
+    string recipeName = "PL0008_Provenance";
+    string pipelinePath = Path.Combine(evidenceDirectory, "original-pipeline.xml");
+    string sourcePath = Path.Combine(evidenceDirectory, "source.png");
+
+    try
+    {
+        VisionPipeline sourcePipeline = CreatePipelineProvenanceContractPipeline();
+        Require(SerializeHelper.SaveXmlFile(pipelinePath, sourcePipeline), "Could not save the provenance contract Pipeline.");
+        byte[] originalFileBytes = File.ReadAllBytes(pipelinePath);
+        string pipelineXml = File.ReadAllText(pipelinePath);
+        using Mat source = new Mat(new OpenCvSharp.Size(160, 120), MatType.CV_8UC1, Scalar.All(0));
+        Cv2.Rectangle(source, new Rect(42, 30, 54, 40), Scalar.All(255), -1);
+        Require(Cv2.ImWrite(sourcePath, source), "Could not write the provenance contract source image.");
+
+        VisionPipeline objectRunnerPipeline = CreatePipelineProvenanceContractPipeline();
+        byte[] objectBefore = SerializePipelineForProvenanceContract(objectRunnerPipeline);
+        using (VisionRecipeRunResult firstRun = await new VisionRecipeRunner().RunAsync(
+            objectRunnerPipeline,
+            source.Clone(),
+            VisionRecipeRunner.DefaultInputLayer,
+            VisionRecipeRunner.DefaultStepTimeoutMilliseconds))
+        {
+            AssertProvenance(firstRun?.ExecutionProvenance, failures, "direct Runner");
+            Require(
+                firstRun?.ExecutionProvenance?.NormalizationChanges.Count == 4,
+                "Direct Runner did not retain exactly four structured normalization changes.");
+        }
+
+        byte[] objectAfterFirstRun = SerializePipelineForProvenanceContract(objectRunnerPipeline);
+        Require(objectBefore.SequenceEqual(objectAfterFirstRun), "Direct Runner changed the caller Pipeline.");
+        observations.Add("direct-runner: caller Pipeline unchanged");
+
+        using (VisionRecipeRunResult secondRun = await new VisionRecipeRunner().RunAsync(
+            objectRunnerPipeline,
+            source.Clone(),
+            VisionRecipeRunner.DefaultInputLayer,
+            VisionRecipeRunner.DefaultStepTimeoutMilliseconds))
+        {
+            AssertProvenance(secondRun?.ExecutionProvenance, failures, "repeated Runner");
+        }
+
+        byte[] objectAfterSecondRun = SerializePipelineForProvenanceContract(objectRunnerPipeline);
+        Require(objectBefore.SequenceEqual(objectAfterSecondRun), "Repeated Runner execution accumulated Pipeline changes.");
+        observations.Add("repeated-runner: no cumulative mutation");
+
+        VisionPipeline fileRunnerPipeline = CreatePipelineProvenanceContractPipeline();
+        Require(SerializeHelper.SaveXmlFile(pipelinePath, fileRunnerPipeline), "Could not reset the file Pipeline.");
+        originalFileBytes = File.ReadAllBytes(pipelinePath);
+        using (VisionRecipeRunResult fileRun = await new VisionRecipeRunner().RunAsync(
+            pipelinePath,
+            source.Clone()))
+        {
+            AssertProvenance(fileRun?.ExecutionProvenance, failures, "file Runner");
+            Require(
+                fileRun?.ExecutionProvenance?.OriginalPipelineSha256 == ComputeSha256(pipelinePath),
+                "File Runner did not retain the original source-file hash.");
+        }
+
+        Require(originalFileBytes.SequenceEqual(File.ReadAllBytes(pipelinePath)), "File Runner changed the source Pipeline file.");
+        observations.Add("file-runner: source XML bytes unchanged");
+
+        VisionPipeline reviewPipeline = CreatePipelineProvenanceContractPipeline();
+        byte[] reviewBefore = SerializePipelineForProvenanceContract(reviewPipeline);
+        using (DisplayManagerService displayManager = new DisplayManagerService())
+        {
+            displayManager.CreateLayerDisplay(
+                ImageSpaceFrame.TakeOwnership(new Bitmap(160, 120)),
+                "Main");
+            int reviewLayerCountBefore = displayManager.LayerCount;
+            string reviewSelectedItemBefore = displayManager.SelectedItem;
+            string[] reviewLayerTitlesBefore = displayManager.GetLayerInfos()
+                .Select(info => info?.Title ?? string.Empty)
+                .ToArray();
+            using OpenVisionPipelineReviewExecutionController review =
+                new OpenVisionPipelineReviewExecutionController(displayManager, action => action());
+            await review.RunAsync(reviewPipeline, VisionRecipeRunner.DefaultStepTimeoutMilliseconds);
+            string[] reviewLayerTitlesAfter = displayManager.GetLayerInfos()
+                .Select(info => info?.Title ?? string.Empty)
+                .ToArray();
+            Require(
+                displayManager.LayerCount == reviewLayerCountBefore
+                && string.Equals(displayManager.SelectedItem, reviewSelectedItemBefore, StringComparison.Ordinal)
+                && reviewLayerTitlesBefore.SequenceEqual(reviewLayerTitlesAfter),
+                "Pipeline Review changed the display layer set or selected layer.");
+        }
+
+        Require(
+            reviewBefore.SequenceEqual(SerializePipelineForProvenanceContract(reviewPipeline)),
+            "Pipeline Review changed the caller Pipeline.");
+        observations.Add("pipeline-review: caller Pipeline and display selection unchanged");
+
+        VisionPipeline samplePipeline = CreatePipelineProvenanceContractPipeline();
+        Require(SerializeHelper.SaveXmlFile(pipelinePath, samplePipeline), "Could not save the sample-validation Pipeline.");
+        byte[] sampleBefore = File.ReadAllBytes(pipelinePath);
+        VisionPipelineSampleCheckResult sampleCheck =
+            await VisionPipelineSampleCheckService.RunSampleCheckWithReportSafeAsync(
+                new VisionPipelineSampleCatalogItem
+                {
+                    SampleName = "PL0008 source",
+                    ImageFullPath = sourcePath,
+                    PairGroup = "PL0008",
+                    PairRole = "UNLABELED"
+                },
+                File.ReadAllText(pipelinePath),
+                recipeName,
+                normalizeInputToGray: false,
+                CancellationToken.None);
+        Require(sampleCheck != null && sampleCheck.ExecutionCompleted, "Sample validation did not complete.");
+        Require(sampleBefore.SequenceEqual(File.ReadAllBytes(pipelinePath)), "Sample validation changed the source Pipeline file.");
+        string sampleReportPath = sampleCheck?.RunReportPath
+            ?? throw new InvalidOperationException("Sample validation did not return a Run Report path.");
+        VisionPipelineRunReport? report = VisionPipelineRunReportStorage.Load(sampleReportPath);
+        VisionPipelineRunReport reportForContract = report
+            ?? throw new InvalidOperationException("Sample validation did not round-trip its Run Report.");
+        VisionPipelineExecutionProvenance reportProvenance = reportForContract.ExecutionProvenance
+            ?? throw new InvalidOperationException("Sample validation Run Report did not retain execution provenance.");
+        AssertPersistedProvenance(reportForContract, sampleReportPath, failures);
+        observations.Add("sample-validation: report retained original/effective evidence");
+
+        string legacyReportPath = Path.Combine(evidenceDirectory, "legacy-report.xml");
+        XmlDocument legacyReportDocument = new XmlDocument();
+        legacyReportDocument.Load(sampleReportPath);
+        XmlNode? legacySchemaNode = legacyReportDocument.SelectSingleNode(
+            "/*[local-name()='VisionPipelineRunReport']/*[local-name()='SchemaVersion']");
+        legacySchemaNode?.ParentNode?.RemoveChild(legacySchemaNode);
+        XmlNode? legacyProvenanceNode = legacyReportDocument.SelectSingleNode(
+            "/*[local-name()='VisionPipelineRunReport']/*[local-name()='ExecutionProvenance']");
+        legacyProvenanceNode?.ParentNode?.RemoveChild(legacyProvenanceNode);
+        legacyReportDocument.Save(legacyReportPath);
+        VisionPipelineRunReport? legacyReport = VisionPipelineRunReportStorage.Load(legacyReportPath);
+        Require(
+            legacyReport != null && !string.IsNullOrWhiteSpace(legacyReport.PipelineSnapshotFile),
+            "A legacy Run Report without PL-0008 fields was not readable.");
+        observations.Add("legacy-report: old Run Report remained readable");
+
+        string batchPath = VisionPipelineBatchRunSummaryStorage.Save(
+            recipeName,
+            samplePipeline.Name,
+            DateTime.Now,
+            DateTime.Now.AddMilliseconds(1),
+            new[]
+            {
+                new VisionPipelineBatchSampleRunResult
+                {
+                    SampleName = "PL0008 source",
+                    Status = "RUN OK",
+                    Success = sampleCheck.Success,
+                    TotalMilliseconds = sampleCheck.TotalMilliseconds,
+                    RunReportPath = sampleReportPath,
+                    SampleImagePath = sourcePath
+                }
+            },
+            suiteName: "PL0008 provenance",
+            suiteKind: "Batch",
+            notes: "PL-0008 immutable execution provenance contract",
+            pipelineSnapshot: samplePipeline,
+            executionProvenance: reportProvenance);
+        VisionPipelineBatchRunSummary batchForContract = VisionPipelineBatchRunSummaryStorage.Load(batchPath)
+            ?? throw new InvalidOperationException("Batch Summary did not round-trip.");
+        VisionPipelineExecutionProvenance batchProvenance = batchForContract.ExecutionProvenance
+            ?? throw new InvalidOperationException("Batch Summary did not retain execution provenance.");
+        Require(
+            string.Equals(
+                batchProvenance.OriginalPipelineSha256,
+                reportProvenance.OriginalPipelineSha256,
+                StringComparison.Ordinal)
+            && string.Equals(
+                batchProvenance.EffectivePipelineSha256,
+                reportProvenance.EffectivePipelineSha256,
+                StringComparison.Ordinal)
+            && batchProvenance.NormalizationChanges.Count == reportProvenance.NormalizationChanges.Count,
+            "Batch Summary provenance did not round-trip the report identity/change set.");
+        observations.Add("batch-summary: provenance round-tripped");
+
+        File.WriteAllLines(
+            Path.Combine(evidenceDirectory, "completion.txt"),
+            new[]
+            {
+                "Status=Complete",
+                "Contract=PL-0008 immutable original/effective Pipeline provenance",
+                "EvidenceDirectory=" + evidenceDirectory,
+                "RunReport=" + sampleReportPath,
+                "BatchSummary=" + batchPath
+            }
+            .Concat(observations)
+            .Concat(failures.Select(failure => "Failure=" + failure)));
+    }
+    catch (Exception exception)
+    {
+        failures.Add("unexpected-contract-error: " + exception.GetBaseException().Message);
+    }
+
+    string contractPath = Path.Combine(evidenceDirectory, "pipeline_provenance_contract.txt");
+    File.WriteAllLines(
+        contractPath,
+        new[]
+        {
+            "Result: " + (failures.Count == 0 ? "PASS" : "FAIL"),
+            "Contract: PL-0008 immutable original/effective Pipeline provenance",
+            "EvidenceDirectory: " + evidenceDirectory
+        }
+        .Concat(observations)
+        .Concat(failures.Select(failure => "Failure: " + failure)));
+
+    if (failures.Count == 0)
+    {
+        Console.WriteLine("Pipeline provenance contract passed.");
+        Console.WriteLine(contractPath);
+        return 0;
+    }
+
+    Console.Error.WriteLine("Pipeline provenance contract failed.");
+    foreach (string failure in failures)
+    {
+        Console.Error.WriteLine("- " + failure);
+    }
+
+    Console.Error.WriteLine(contractPath);
+    return 1;
+}
+
+static VisionPipeline CreatePipelineProvenanceContractPipeline()
+{
+    VisionPipeline pipeline = new VisionPipeline { Name = "PL0008 Provenance Pipeline" };
+    VisionPipelineStep threshold = new VisionPipelineStep
+    {
+        Name = "Threshold",
+        ToolType = "Threshold",
+        Enabled = true,
+        InputLayer = "Main",
+        OutputLayer = "Threshold_Output"
+    };
+    threshold.Parameters["Mode"] = "Threshold";
+    threshold.Parameters["Threshold"] = "127";
+    threshold.Parameters["MaxValue"] = "255";
+    threshold.Parameters["ThresholdType"] = ThresholdTypes.Binary.ToString();
+    pipeline.Steps.Add(threshold);
+
+    VisionPipelineStep blob = new VisionPipelineStep
+    {
+        Name = "Blob",
+        ToolType = "Blob",
+        Enabled = true,
+        InputLayer = "Main",
+        OutputLayer = "Blob_Output"
+    };
+    blob.Parameters["USE_ROI"] = "false";
+    blob.Parameters["USE_THRESHOLD"] = "true";
+    blob.Parameters["MIN_AREA"] = "10";
+    blob.Parameters["MAX_AREA"] = "100000";
+    pipeline.Steps.Add(blob);
+    return pipeline;
+}
+
+static byte[] SerializePipelineForProvenanceContract(VisionPipeline pipeline)
+{
+    using StringWriter writer = new StringWriter(CultureInfo.InvariantCulture);
+    new XmlSerializer(typeof(VisionPipeline)).Serialize(writer, pipeline);
+    return Encoding.UTF8.GetBytes(writer.ToString());
+}
+
+static void AssertProvenance(
+    VisionPipelineExecutionProvenance? provenance,
+    ICollection<string> failures,
+    string path)
+{
+    if (provenance == null)
+    {
+        failures.Add(path + ": execution provenance is missing.");
+        return;
+    }
+
+    if (provenance.SchemaVersion != 1
+        || !QualifiedRecipeSnapshotPreflight.IsSha256(provenance.OriginalPipelineSha256)
+        || !QualifiedRecipeSnapshotPreflight.IsSha256(provenance.EffectivePipelineSha256)
+        || string.IsNullOrWhiteSpace(provenance.ApplicationIdentity)
+        || string.IsNullOrWhiteSpace(provenance.VisionSdkIdentity)
+        || string.IsNullOrWhiteSpace(provenance.VisionSdkManifestIdentity))
+    {
+        failures.Add(path + ": execution provenance identity fields are incomplete.");
+    }
+}
+
+static void AssertPersistedProvenance(
+    VisionPipelineRunReport? report,
+    string? reportPath,
+    ICollection<string> failures)
+{
+    AssertProvenance(report?.ExecutionProvenance, failures, "saved Run Report");
+    if (report?.ExecutionProvenance == null || string.IsNullOrWhiteSpace(reportPath))
+    {
+        return;
+    }
+
+    string reportDirectory = Path.GetDirectoryName(reportPath) ?? string.Empty;
+    string originalPath = Path.Combine(reportDirectory, report.ExecutionProvenance.OriginalPipelineSnapshotFile);
+    string effectivePath = Path.Combine(reportDirectory, report.ExecutionProvenance.EffectivePipelineSnapshotFile);
+    if (!File.Exists(originalPath)
+        || !File.Exists(effectivePath)
+        || !string.Equals(ComputeSha256(originalPath), report.ExecutionProvenance.OriginalPipelineSha256, StringComparison.Ordinal)
+        || !string.Equals(ComputeSha256(effectivePath), report.ExecutionProvenance.EffectivePipelineSha256, StringComparison.Ordinal)
+        || report.ExecutionProvenance.NormalizationChanges.Count != 4)
+    {
+        failures.Add("saved Run Report: snapshot/hash/change evidence is incomplete.");
+    }
+}
+
+static bool IsContainedPath(string root, string path)
+{
+    string fullRoot = Path.GetFullPath(root).TrimEnd(
+        Path.DirectorySeparatorChar,
+        Path.AltDirectorySeparatorChar);
+    string fullPath = Path.GetFullPath(path).TrimEnd(
+        Path.DirectorySeparatorChar,
+        Path.AltDirectorySeparatorChar);
+    return string.Equals(fullRoot, fullPath, StringComparison.OrdinalIgnoreCase)
+        || fullPath.StartsWith(
+            fullRoot + Path.DirectorySeparatorChar,
+            StringComparison.OrdinalIgnoreCase);
+}
+
+static void RunBitmapConverterCase(
+    string name,
+    Action check,
+    ICollection<string> observations,
+    ICollection<string> failures)
+{
+    try
+    {
+        check();
+        observations.Add(name + ": PASS");
+    }
+    catch (Exception exception)
+    {
+        observations.Add(name + ": FAIL " + exception.GetType().Name);
+        failures.Add(name + ": " + exception.Message);
+    }
+}
+
+static void CheckIndexedOddWidthSubmatrixGuard()
+{
+    const int width = 13;
+    const int height = 2;
+    byte[][] rows = CreateIndexedRows(width, height);
+    using BitmapStorageLease source = CreateBitmapStorage(
+        width,
+        height,
+        PixelFormat.Format8bppIndexed,
+        rows,
+        negativeStride: false);
+    using Mat parent = new Mat(height + 1, width + 2, MatType.CV_8UC1, Scalar.All(0xA5));
+    Rect roiRect = new Rect(1, 0, width, height);
+    using Mat destination = new Mat(parent, roiRect);
+
+    BitmapImageConverter.ToMat(source.Bitmap, destination);
+
+    for (int y = 0; y < height; y++)
+    {
+        for (int x = 0; x < width; x++)
+        {
+            byte expected = GetIndexedRed(rows[y][x]);
+            Require(
+                destination.At<byte>(y, x) == expected,
+                $"Indexed guard ROI pixel mismatch at ({x},{y}).");
+        }
+    }
+
+    AssertMatGuard(parent, roiRect, 0xA5);
+}
+
+static void CheckIndexedPositiveNegativeStrideAndPalette()
+{
+    const int width = 13;
+    const int height = 3;
+    byte[][] rows = CreateIndexedRows(width, height);
+
+    foreach (bool negativeStride in new[] { false, true })
+    {
+        using BitmapStorageLease source = CreateBitmapStorage(
+            width,
+            height,
+            PixelFormat.Format8bppIndexed,
+            rows,
+            negativeStride);
+        using Mat gray = new Mat(height, width, MatType.CV_8UC1);
+        using Mat color = new Mat(height, width, MatType.CV_8UC3);
+
+        BitmapImageConverter.ToMat(source.Bitmap, gray);
+        BitmapImageConverter.ToMat(source.Bitmap, color);
+
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                byte index = rows[y][x];
+                byte expectedRed = GetIndexedRed(index);
+                Vec3b expectedColor = GetIndexedBgr(index);
+                Require(
+                    gray.At<byte>(y, x) == expectedRed,
+                    $"Indexed gray mismatch for {(negativeStride ? "negative" : "positive")} stride at ({x},{y}).");
+                Require(
+                    color.At<Vec3b>(y, x) == expectedColor,
+                    $"Indexed BGR mismatch for {(negativeStride ? "negative" : "positive")} stride at ({x},{y}).");
+            }
+        }
+    }
+}
+
+static void Check24And32BppStorage()
+{
+    const int width = 5;
+    const int height = 3;
+
+    foreach (bool negativeStride in new[] { false, true })
+    {
+        byte[][] rows24 = CreateColorRows(width, height, 3);
+        using BitmapStorageLease source24 = CreateBitmapStorage(
+            width,
+            height,
+            PixelFormat.Format24bppRgb,
+            rows24,
+            negativeStride);
+        using Mat parent24 = new Mat(height + 2, width + 2, MatType.CV_8UC3, Scalar.All(0xA5));
+        Rect roi24 = new Rect(1, 1, width, height);
+        using Mat destination24 = new Mat(parent24, roi24);
+        BitmapImageConverter.ToMat(source24.Bitmap, destination24);
+        VerifyColorMat(destination24, rows24, 3);
+        AssertMatGuard(parent24, roi24, 0xA5);
+
+        byte[][] rows32 = CreateColorRows(width, height, 4);
+        using BitmapStorageLease source32 = CreateBitmapStorage(
+            width,
+            height,
+            PixelFormat.Format32bppArgb,
+            rows32,
+            negativeStride);
+        using Mat parent32 = new Mat(height + 2, width + 2, MatType.CV_8UC4, Scalar.All(0xA5));
+        Rect roi32 = new Rect(1, 1, width, height);
+        using Mat destination32 = new Mat(parent32, roi32);
+        BitmapImageConverter.ToMat(source32.Bitmap, destination32);
+        VerifyColorMat(destination32, rows32, 4);
+        AssertMatGuard(parent32, roi32, 0xA5);
+
+        using Mat parent32ToBgr = new Mat(height + 2, width + 2, MatType.CV_8UC3, Scalar.All(0xA5));
+        using Mat destination32ToBgr = new Mat(parent32ToBgr, roi32);
+        BitmapImageConverter.ToMat(source32.Bitmap, destination32ToBgr);
+        VerifyColorMat(destination32ToBgr, rows32, 3);
+        AssertMatGuard(parent32ToBgr, roi32, 0xA5);
+
+        using BitmapStorageLease source32Rgb = CreateBitmapStorage(
+            width,
+            height,
+            PixelFormat.Format32bppRgb,
+            rows32,
+            negativeStride);
+        using Mat parent32Rgb = new Mat(height + 2, width + 2, MatType.CV_8UC3, Scalar.All(0xA5));
+        using Mat destination32Rgb = new Mat(parent32Rgb, roi32);
+        BitmapImageConverter.ToMat(source32Rgb.Bitmap, destination32Rgb);
+        VerifyColorMat(destination32Rgb, rows32, 3);
+        AssertMatGuard(parent32Rgb, roi32, 0xA5);
+    }
+}
+
+static void CheckBitmapRoundTrips()
+{
+    const int width = 13;
+    const int height = 2;
+
+    using Mat gray = new Mat(height, width, MatType.CV_8UC1);
+    using Mat bgr = new Mat(height, width, MatType.CV_8UC3);
+    using Mat bgra = new Mat(height, width, MatType.CV_8UC4);
+    for (int y = 0; y < height; y++)
+    {
+        for (int x = 0; x < width; x++)
+        {
+            byte value = (byte)(((x + y) & 1) == 0 ? 0 : 255);
+            gray.Set(y, x, value);
+            bgr.Set(y, x, new Vec3b((byte)(x + 1), (byte)(y + 11), (byte)(x + y + 21)));
+            bgra.Set(y, x, new Vec4b((byte)(x + 1), (byte)(y + 11), (byte)(x + y + 21), 200));
+        }
+    }
+
+    using Bitmap grayBitmap = BitmapImageConverter.ToBitmap(gray);
+    using Mat grayRoundTrip = BitmapImageConverter.ToMat(grayBitmap);
+    VerifyMatEqual(gray, grayRoundTrip, "8bpp gray round trip");
+
+    using Bitmap oneBitBitmap = BitmapImageConverter.ToBitmap(gray, PixelFormat.Format1bppIndexed);
+    using Mat oneBitRoundTrip = BitmapImageConverter.ToMat(oneBitBitmap);
+    VerifyMatEqual(gray, oneBitRoundTrip, "1bpp round trip");
+
+    using Bitmap bgrBitmap = BitmapImageConverter.ToBitmap(bgr);
+    using Mat bgrRoundTrip = BitmapImageConverter.ToMat(bgrBitmap);
+    VerifyMatEqual(bgr, bgrRoundTrip, "24bpp BGR round trip");
+
+    using Bitmap bgraBitmap = BitmapImageConverter.ToBitmap(bgra);
+    using Mat bgraRoundTrip = BitmapImageConverter.ToMat(bgraBitmap);
+    VerifyMatEqual(bgra, bgraRoundTrip, "32bpp BGRA round trip");
+
+    using Mat parent = new Mat(height + 2, width + 2, MatType.CV_8UC3, Scalar.All(0xA5));
+    Rect roi = new Rect(1, 1, width, height);
+    using Mat sourceSubmatrix = new Mat(parent, roi);
+    bgr.CopyTo(sourceSubmatrix);
+    using Bitmap submatrixBitmap = BitmapImageConverter.ToBitmap(sourceSubmatrix);
+    using Mat submatrixRoundTrip = BitmapImageConverter.ToMat(submatrixBitmap);
+    VerifyMatEqual(bgr, submatrixRoundTrip, "submatrix BGR round trip");
+}
+
+static void CheckUnsupportedBitmapFormats()
+{
+    using Bitmap unsupportedBitmap = new Bitmap(3, 2, PixelFormat.Format16bppRgb565);
+    ExpectNotSupported(
+        () => BitmapImageConverter.ToMat(unsupportedBitmap),
+        "unsupported Bitmap pixel format");
+
+    using Mat gray = new Mat(2, 3, MatType.CV_8UC1, Scalar.All(1));
+    ExpectNotSupported(
+        () => BitmapImageConverter.ToBitmap(gray, PixelFormat.Format24bppRgb),
+        "incompatible Mat/Bitmap channels");
+
+    using Mat twoChannel = new Mat(2, 3, MatType.CV_8UC2, Scalar.All(1));
+    ExpectNotSupported(
+        () => BitmapImageConverter.ToBitmap(twoChannel),
+        "unsupported Mat channel count");
+}
+
+static byte[][] CreateIndexedRows(int width, int height)
+{
+    byte[][] rows = new byte[height][];
+    for (int y = 0; y < height; y++)
+    {
+        rows[y] = new byte[width];
+        for (int x = 0; x < width; x++)
+            rows[y][x] = (byte)(1 + ((x + y) % 3));
+    }
+
+    return rows;
+}
+
+static byte[][] CreateColorRows(int width, int height, int channels)
+{
+    byte[][] rows = new byte[height][];
+    for (int y = 0; y < height; y++)
+    {
+        rows[y] = new byte[width * channels];
+        for (int x = 0; x < width; x++)
+        {
+            int offset = x * channels;
+            rows[y][offset] = (byte)(x + 1);
+            rows[y][offset + 1] = (byte)(y + 11);
+            rows[y][offset + 2] = (byte)(x + y + 21);
+            if (channels == 4)
+                rows[y][offset + 3] = 200;
+        }
+    }
+
+    return rows;
+}
+
+static BitmapStorageLease CreateBitmapStorage(
+    int width,
+    int height,
+    PixelFormat pixelFormat,
+    IReadOnlyList<byte[]> rows,
+    bool negativeStride)
+{
+    int visibleRowBytes = GetBitmapVisibleRowBytes(width, pixelFormat);
+    int absoluteStride = checked((visibleRowBytes + 3) / 4 * 4);
+    int stride = negativeStride ? -absoluteStride : absoluteStride;
+    IntPtr buffer = Marshal.AllocHGlobal(checked(absoluteStride * height));
+    Bitmap? bitmap = null;
+
+    try
+    {
+        byte[] cleared = new byte[checked(absoluteStride * height)];
+        Marshal.Copy(cleared, 0, buffer, cleared.Length);
+        IntPtr scan0 = negativeStride
+            ? new IntPtr(buffer.ToInt64() + (long)absoluteStride * (height - 1))
+            : buffer;
+        bitmap = new Bitmap(width, height, stride, pixelFormat, scan0);
+
+        if (pixelFormat == PixelFormat.Format8bppIndexed)
+            SetIndexedPalette(bitmap);
+
+        for (int y = 0; y < height; y++)
+        {
+            if (rows[y].Length < visibleRowBytes)
+                throw new InvalidOperationException("Bitmap test row is shorter than its visible pixel bytes.");
+
+            IntPtr row = new IntPtr(scan0.ToInt64() + ((long)y * stride));
+            Marshal.Copy(rows[y], 0, row, visibleRowBytes);
+        }
+
+        return new BitmapStorageLease(bitmap, buffer);
+    }
+    catch
+    {
+        bitmap?.Dispose();
+        Marshal.FreeHGlobal(buffer);
+        throw;
+    }
+}
+
+static int GetBitmapVisibleRowBytes(int width, PixelFormat pixelFormat)
+{
+    return pixelFormat switch
+    {
+        PixelFormat.Format1bppIndexed => (width + 7) / 8,
+        PixelFormat.Format8bppIndexed => width,
+        PixelFormat.Format24bppRgb => checked(width * 3),
+        PixelFormat.Format32bppRgb => checked(width * 4),
+        PixelFormat.Format32bppArgb => checked(width * 4),
+        PixelFormat.Format32bppPArgb => checked(width * 4),
+        _ => throw new NotSupportedException("Bitmap test format is not supported: " + pixelFormat)
+    };
+}
+
+static void SetIndexedPalette(Bitmap bitmap)
+{
+    ColorPalette palette = bitmap.Palette;
+    palette.Entries[0] = System.Drawing.Color.Black;
+    if (palette.Entries.Length > 1)
+        palette.Entries[1] = System.Drawing.Color.FromArgb(10, 20, 30);
+    if (palette.Entries.Length > 2)
+        palette.Entries[2] = System.Drawing.Color.FromArgb(40, 50, 60);
+    if (palette.Entries.Length > 3)
+        palette.Entries[3] = System.Drawing.Color.FromArgb(70, 80, 90);
+    bitmap.Palette = palette;
+}
+
+static byte GetIndexedRed(byte index)
+{
+    return index switch
+    {
+        1 => 10,
+        2 => 40,
+        3 => 70,
+        _ => 0
+    };
+}
+
+static Vec3b GetIndexedBgr(byte index)
+{
+    return index switch
+    {
+        1 => new Vec3b(30, 20, 10),
+        2 => new Vec3b(60, 50, 40),
+        3 => new Vec3b(90, 80, 70),
+        _ => new Vec3b(0, 0, 0)
+    };
+}
+
+static void VerifyColorMat(Mat mat, IReadOnlyList<byte[]> rows, int channels)
+{
+    int sourceChannels = rows.Count == 0 ? 0 : rows[0].Length / mat.Width;
+    Require(sourceChannels >= 3, "Color test rows do not contain three visible channels.");
+    for (int y = 0; y < rows.Count; y++)
+    {
+        for (int x = 0; x < mat.Width; x++)
+        {
+            int offset = x * sourceChannels;
+            byte expected0 = rows[y][offset];
+            byte expected1 = rows[y][offset + 1];
+            byte expected2 = rows[y][offset + 2];
+            if (channels == 3)
+            {
+                Vec3b actual = mat.At<Vec3b>(y, x);
+                Require(
+                    actual.Item0 == expected0
+                    && actual.Item1 == expected1
+                    && actual.Item2 == expected2,
+                    $"BGR pixel mismatch at ({x},{y}).");
+            }
+            else
+            {
+                Vec4b actual = mat.At<Vec4b>(y, x);
+                Require(
+                    actual.Item0 == expected0
+                    && actual.Item1 == expected1
+                    && actual.Item2 == expected2
+                    && sourceChannels >= 4
+                    && actual.Item3 == rows[y][offset + 3],
+                    $"BGRA pixel mismatch at ({x},{y}).");
+            }
+        }
+    }
+}
+
+static void VerifyMatEqual(Mat expected, Mat actual, string description)
+{
+    Require(
+        expected.Size() == actual.Size() && expected.Type() == actual.Type(),
+        description + " changed dimensions or channels.");
+    using Mat difference = new Mat();
+    Cv2.Absdiff(expected, actual, difference);
+    Require(Cv2.CountNonZero(difference.Reshape(1)) == 0, description + " changed pixel values.");
+}
+
+static void AssertMatGuard(Mat parent, Rect roi, byte expected)
+{
+    for (int y = 0; y < parent.Height; y++)
+    {
+        for (int x = 0; x < parent.Width; x++)
+        {
+            if (x >= roi.X && x < roi.X + roi.Width && y >= roi.Y && y < roi.Y + roi.Height)
+                continue;
+
+            switch (parent.Channels())
+            {
+                case 1:
+                    Require(parent.At<byte>(y, x) == expected, $"Guard byte changed at ({x},{y}).");
+                    break;
+                case 3:
+                    Require(parent.At<Vec3b>(y, x) == new Vec3b(expected, expected, expected), $"Guard BGR changed at ({x},{y}).");
+                    break;
+                case 4:
+                    Require(parent.At<Vec4b>(y, x) == new Vec4b(expected, expected, expected, expected), $"Guard BGRA changed at ({x},{y}).");
+                    break;
+                default:
+                    throw new InvalidOperationException("Unsupported guard Mat channel count.");
+            }
+        }
+    }
+}
+
+static void ExpectNotSupported(Action action, string description)
+{
+    try
+    {
+        action();
+    }
+    catch (NotSupportedException exception)
+    {
+        Require(!string.IsNullOrWhiteSpace(exception.Message), description + " returned an empty error message.");
+        return;
+    }
+
+    throw new InvalidOperationException(description + " did not throw NotSupportedException.");
+}
+
+static void Require(bool condition, string message)
+{
+    if (!condition)
+        throw new InvalidOperationException(message);
+}
+
+static void CheckCanvasImageLoaderContract(string evidenceDirectory, ICollection<string> failures)
+{
+    string loaderDirectory = Path.Combine(evidenceDirectory, "canvas-image-loader");
+    Directory.CreateDirectory(loaderDirectory);
+    List<string> report = new List<string>();
+
+    using (Mat gray8 = new Mat(2, 3, MatType.CV_8UC1))
+    {
+        byte[] values = { 10, 20, 30, 40, 50, 60 };
+        for (int index = 0; index < values.Length; index++)
+        {
+            gray8.Set(index / 3, index % 3, values[index]);
+        }
+
+        string path = Path.Combine(loaderDirectory, "gray8.png");
+        Cv2.ImWrite(path, gray8);
+        CheckCanvasImageLoaderCase(path, MatType.CV_8UC1, 210D, 0D, 0D, report, failures);
+    }
+
+    using (Mat bgr8 = new Mat(2, 3, MatType.CV_8UC3, new Scalar(10, 20, 30)))
+    {
+        string path = Path.Combine(loaderDirectory, "bgr8.png");
+        Cv2.ImWrite(path, bgr8);
+        CheckCanvasImageLoaderCase(path, MatType.CV_8UC3, 60D, 120D, 180D, report, failures);
+    }
+
+    using (Mat bgra8 = new Mat(2, 3, MatType.CV_8UC4, new Scalar(10, 20, 30, 40)))
+    {
+        string path = Path.Combine(loaderDirectory, "bgra8.png");
+        Cv2.ImWrite(path, bgra8);
+        CheckCanvasImageLoaderCase(path, MatType.CV_8UC3, 60D, 120D, 180D, report, failures);
+    }
+
+    using (Mat gray16 = new Mat(2, 3, MatType.CV_16UC1))
+    {
+        ushort[] values = { 0, 257, 514, 1028, 32768, 65535 };
+        for (int index = 0; index < values.Length; index++)
+        {
+            gray16.Set(index / 3, index % 3, values[index]);
+        }
+
+        string path = Path.Combine(loaderDirectory, "gray16.png");
+        Cv2.ImWrite(path, gray16);
+        CheckCanvasImageLoaderCase(path, MatType.CV_8UC1, 390D, 0D, 0D, report, failures);
+    }
+
+    File.WriteAllLines(
+        Path.Combine(loaderDirectory, "canvas_image_loader_contract.txt"),
+        new[] { "Result: " + (failures.Count == 0 ? "PASS" : "CHECK MAIN REPORT") }.Concat(report));
+}
+
+static void CheckCanvasImageLoaderCase(
+    string sourcePath,
+    MatType expectedType,
+    double expectedSum0,
+    double expectedSum1,
+    double expectedSum2,
+    ICollection<string> report,
+    ICollection<string> failures)
+{
+    string name = Path.GetFileNameWithoutExtension(sourcePath);
+    using Mat loaded = OpenVisionLab.ImageCanvas.CanvasImageLoader.LoadMatFromFile(sourcePath);
+    if (loaded.Empty())
+    {
+        failures.Add($"CanvasImageLoader returned an empty Mat for {name}.");
+        report.Add($"{name}: FAIL empty");
+        return;
+    }
+
+    MatType actualType = loaded.Type();
+    Scalar beforeGc = Cv2.Sum(loaded);
+    GC.Collect();
+    GC.WaitForPendingFinalizers();
+    GC.Collect();
+    Scalar afterGc = Cv2.Sum(loaded);
+
+    bool valid = actualType == expectedType
+        && loaded.Width == 3
+        && loaded.Height == 2
+        && Math.Abs(beforeGc.Val0 - expectedSum0) < 0.1D
+        && Math.Abs(beforeGc.Val1 - expectedSum1) < 0.1D
+        && Math.Abs(beforeGc.Val2 - expectedSum2) < 0.1D
+        && Math.Abs(afterGc.Val0 - beforeGc.Val0) < 0.1D
+        && Math.Abs(afterGc.Val1 - beforeGc.Val1) < 0.1D
+        && Math.Abs(afterGc.Val2 - beforeGc.Val2) < 0.1D;
+
+    report.Add(
+        $"{name}: Type={actualType}; Size={loaded.Width}x{loaded.Height}; "
+        + $"BeforeGc={beforeGc.Val0:0.###},{beforeGc.Val1:0.###},{beforeGc.Val2:0.###}; "
+        + $"AfterGc={afterGc.Val0:0.###},{afterGc.Val1:0.###},{afterGc.Val2:0.###}; "
+        + (valid ? "PASS" : "FAIL"));
+
+    if (!valid)
+    {
+        failures.Add(
+            $"CanvasImageLoader {name} mismatch. Expected {expectedType} "
+            + $"sum {expectedSum0:0.###},{expectedSum1:0.###},{expectedSum2:0.###}; "
+            + $"actual {actualType} sum {beforeGc.Val0:0.###},{beforeGc.Val1:0.###},{beforeGc.Val2:0.###}.");
+        return;
+    }
+
+    using Mat retained = loaded.Clone();
+    string retainedPath = Path.Combine(Path.GetDirectoryName(sourcePath) ?? ".", name + "-owned.png");
+    if (!Cv2.ImWrite(retainedPath, retained))
+    {
+        failures.Add($"CanvasImageLoader retained clone could not be saved for {name}.");
+    }
+}
+
+static async Task<int> RunReliabilitySoakContractAsync(string? requestedEvidenceDirectory)
+{
+    const int warmupRuns = 20;
+    const int measuredRuns = 1000;
+    const int resourceSampleInterval = 100;
+    const long maximumPrivateGrowthBytes = 96L * 1024L * 1024L;
+    const long maximumWorkingSetGrowthBytes = 128L * 1024L * 1024L;
+    const long maximumManagedGrowthBytes = 16L * 1024L * 1024L;
+    const int maximumHandleGrowth = 32;
+    const int maximumGdiGrowth = 8;
+    const int maximumUserGrowth = 8;
+
+    string evidenceDirectory = Path.GetFullPath(requestedEvidenceDirectory
+        ?? Path.Combine("artifacts", "reliability_soak_contract"));
+    string frozenDirectory = Path.Combine(evidenceDirectory, "frozen");
+    Directory.CreateDirectory(frozenDirectory);
+
+    string repositoryRoot = FindRepositoryRootForSmoke();
+    string sourcePath = Path.Combine(
+        repositoryRoot,
+        "docs",
+        "samples",
+        "public",
+        "Mean_Brightness_Synthetic_OK.png");
+    string recipePath = Path.Combine(
+        repositoryRoot,
+        "docs",
+        "samples",
+        "public",
+        "Public_Mean_BrightnessDrift.pipeline.xml");
+    if (!File.Exists(sourcePath) || !File.Exists(recipePath))
+    {
+        Console.Error.WriteLine("Reliability soak fixture or Recipe is missing.");
+        return 2;
+    }
+
+    string frozenSourcePath = Path.Combine(frozenDirectory, Path.GetFileName(sourcePath));
+    string frozenRecipePath = Path.Combine(frozenDirectory, Path.GetFileName(recipePath));
+    File.Copy(sourcePath, frozenSourcePath, true);
+    File.Copy(recipePath, frozenRecipePath, true);
+    string frozenSourceSha256 = ComputeSha256(frozenSourcePath);
+    string frozenRecipeSha256 = ComputeSha256(frozenRecipePath);
+
+    if (!SerializeHelper.TryLoadFromXmlFile(frozenRecipePath, out VisionPipeline pipeline)
+        || pipeline == null)
+    {
+        Console.Error.WriteLine("Reliability soak Recipe could not be loaded.");
+        return 2;
+    }
+
+    using Mat frozenSource = Cv2.ImRead(frozenSourcePath, ImreadModes.Unchanged);
+    if (frozenSource.Empty())
+    {
+        Console.Error.WriteLine("Reliability soak image could not be loaded.");
+        return 2;
+    }
+
+    string sourceMatSha256Before = ComputeMatSha256(frozenSource);
+    VisionRecipeRunner runner = new VisionRecipeRunner();
+    bool finalWarmupPassed = false;
+    string finalWarmupFailure = string.Empty;
+    for (int run = 1; run <= warmupRuns; run++)
+    {
+        try
+        {
+            using Mat source = frozenSource.Clone();
+            using VisionRecipeRunResult result = await runner.RunAsync(pipeline, source);
+            finalWarmupPassed = result.Success
+                && result.StepCount == 1
+                && result.FinalStepSummary?.Success == true
+                && result.FinalStepSummary.AcceptancePassed;
+            finalWarmupFailure = finalWarmupPassed
+                ? string.Empty
+                : $"Warm-up {run} failed: {result.SummaryText}";
+        }
+        catch (Exception ex)
+        {
+            finalWarmupPassed = false;
+            finalWarmupFailure = $"Warm-up {run} threw {ex.GetType().Name}: {ex.Message}";
+        }
+    }
+
+    string runtimeRecipeBeforePath = Path.Combine(frozenDirectory, "runtime_recipe_before.xml");
+    string runtimeRecipeAfterPath = Path.Combine(frozenDirectory, "runtime_recipe_after.xml");
+    if (!finalWarmupPassed || !SerializeHelper.SaveXmlFile(runtimeRecipeBeforePath, pipeline))
+    {
+        string failure = !finalWarmupPassed
+            ? finalWarmupFailure
+            : "Normalized runtime Recipe snapshot could not be saved.";
+        File.WriteAllLines(
+            Path.Combine(evidenceDirectory, "reliability_soak_summary.txt"),
+            new[] { "Result=FAIL", "Failure=" + failure });
+        Console.Error.WriteLine(failure);
+        return 1;
+    }
+
+    CollectForResourceSample();
+    SoakResourceSample baseline = CaptureSoakResourceSample(0);
+    List<SoakResourceSample> resourceSamples = new() { baseline };
+    List<double> wallTimes = new(measuredRuns);
+    List<string> failureDetails = new();
+    int failedRuns = 0;
+    int metricDrifts = 0;
+    int imageDrifts = 0;
+    string expectedResultSha256 = string.Empty;
+    double expectedMeanValue = double.NaN;
+    string firstResultPath = Path.Combine(evidenceDirectory, "result_first.png");
+    string lastResultPath = Path.Combine(evidenceDirectory, "result_last.png");
+    Stopwatch totalWatch = Stopwatch.StartNew();
+
+    using (StreamWriter writer = new(
+        Path.Combine(evidenceDirectory, "reliability_soak_runs.csv"),
+        false,
+        new UTF8Encoding(false)))
+    {
+        writer.WriteLine("Iteration,Success,StepStatus,MeanValueAvg,ResultSha256,WallElapsedMs,StepElapsedMs,Error");
+        for (int run = 1; run <= measuredRuns; run++)
+        {
+            bool success = false;
+            string stepStatus = string.Empty;
+            double meanValue = double.NaN;
+            string resultSha256 = string.Empty;
+            double stepElapsed = 0D;
+            string error = string.Empty;
+            Stopwatch runWatch = Stopwatch.StartNew();
+            try
+            {
+                using Mat source = frozenSource.Clone();
+                using VisionRecipeRunResult result = await runner.RunAsync(pipeline, source);
+                VisionRecipeStepRunSummary? step = result.FinalStepSummary;
+                stepStatus = step?.Status ?? string.Empty;
+                stepElapsed = step?.ElapsedMilliseconds ?? 0D;
+                success = result.Success
+                    && result.StepCount == 1
+                    && step?.Success == true
+                    && step.AcceptancePassed
+                    && result.ResultImage != null
+                    && !result.ResultImage.Empty()
+                    && step.Metrics.TryGetValue("MeanValueAvg", out meanValue);
+                if (success)
+                {
+                    Mat resultImage = result.ResultImage!;
+                    resultSha256 = ComputeMatSha256(resultImage);
+                    if (run == 1)
+                    {
+                        expectedResultSha256 = resultSha256;
+                        expectedMeanValue = meanValue;
+                        if (!Cv2.ImWrite(firstResultPath, resultImage))
+                        {
+                            success = false;
+                            error = "First result image could not be saved.";
+                        }
+                    }
+                    else
+                    {
+                        if (Math.Abs(meanValue - expectedMeanValue) > 1e-9D)
+                        {
+                            metricDrifts++;
+                        }
+
+                        if (!string.Equals(resultSha256, expectedResultSha256, StringComparison.Ordinal))
+                        {
+                            imageDrifts++;
+                        }
+                    }
+
+                    if (run == measuredRuns && !Cv2.ImWrite(lastResultPath, resultImage))
+                    {
+                        success = false;
+                        error = "Last result image could not be saved.";
+                    }
+                }
+                else if (string.IsNullOrWhiteSpace(error))
+                {
+                    error = result.SummaryText;
+                }
+            }
+            catch (Exception ex)
+            {
+                error = ex.GetType().Name + ": " + ex.Message;
+            }
+            finally
+            {
+                runWatch.Stop();
+            }
+
+            wallTimes.Add(runWatch.Elapsed.TotalMilliseconds);
+            if (!success)
+            {
+                failedRuns++;
+                AddBoundedSoakFailure(failureDetails, $"Run {run}: {error}");
+            }
+
+            writer.WriteLine(string.Join(",",
+                run.ToString(CultureInfo.InvariantCulture),
+                success ? "true" : "false",
+                EscapeBatchCsvValue(stepStatus),
+                double.IsFinite(meanValue) ? meanValue.ToString("0.############", CultureInfo.InvariantCulture) : string.Empty,
+                resultSha256,
+                runWatch.Elapsed.TotalMilliseconds.ToString("0.###", CultureInfo.InvariantCulture),
+                stepElapsed.ToString("0.###", CultureInfo.InvariantCulture),
+                EscapeBatchCsvValue(error)));
+
+            if (run % resourceSampleInterval == 0)
+            {
+                CollectForResourceSample();
+                resourceSamples.Add(CaptureSoakResourceSample(run));
+            }
+        }
+    }
+
+    totalWatch.Stop();
+    bool runtimeRecipeSaved = SerializeHelper.SaveXmlFile(runtimeRecipeAfterPath, pipeline);
+    string runtimeRecipeSha256Before = ComputeSha256(runtimeRecipeBeforePath);
+    string runtimeRecipeSha256After = runtimeRecipeSaved ? ComputeSha256(runtimeRecipeAfterPath) : string.Empty;
+    string frozenSourceSha256After = ComputeSha256(frozenSourcePath);
+    string frozenRecipeSha256After = ComputeSha256(frozenRecipePath);
+    string sourceMatSha256After = ComputeMatSha256(frozenSource);
+    string firstResultFileSha256 = File.Exists(firstResultPath) ? ComputeSha256(firstResultPath) : string.Empty;
+    string lastResultFileSha256 = File.Exists(lastResultPath) ? ComputeSha256(lastResultPath) : string.Empty;
+
+    WriteSoakResourceSamples(evidenceDirectory, resourceSamples);
+    SoakResourceSample last = resourceSamples[^1];
+    long privateGrowth = MaximumGrowth(resourceSamples, baseline, sample => sample.PrivateBytes);
+    long workingSetGrowth = MaximumGrowth(resourceSamples, baseline, sample => sample.WorkingSetBytes);
+    long managedGrowth = MaximumGrowth(resourceSamples, baseline, sample => sample.ManagedBytes);
+    int handleGrowth = MaximumIntGrowth(resourceSamples, baseline, sample => sample.HandleCount);
+    int gdiGrowth = MaximumIntGrowth(resourceSamples, baseline, sample => sample.GdiObjects);
+    int userGrowth = MaximumIntGrowth(resourceSamples, baseline, sample => sample.UserObjects);
+    SoakResourceSample[] plateauSamples = resourceSamples
+        .Where(sample => sample.Iteration >= measuredRuns / 2)
+        .ToArray();
+    int handlePlateauRange = plateauSamples.Max(sample => sample.HandleCount)
+        - plateauSamples.Min(sample => sample.HandleCount);
+    int gdiPlateauRange = plateauSamples.Max(sample => sample.GdiObjects)
+        - plateauSamples.Min(sample => sample.GdiObjects);
+    int userPlateauRange = plateauSamples.Max(sample => sample.UserObjects)
+        - plateauSamples.Min(sample => sample.UserObjects);
+
+    if (failedRuns != 0)
+    {
+        AddBoundedSoakFailure(failureDetails, $"Measured failures: {failedRuns}/{measuredRuns}.");
+    }
+    if (metricDrifts != 0 || imageDrifts != 0)
+    {
+        AddBoundedSoakFailure(failureDetails, $"Result drift: metric={metricDrifts}, image={imageDrifts}.");
+    }
+    if (!runtimeRecipeSaved
+        || !string.Equals(runtimeRecipeSha256Before, runtimeRecipeSha256After, StringComparison.Ordinal)
+        || !string.Equals(frozenSourceSha256, frozenSourceSha256After, StringComparison.Ordinal)
+        || !string.Equals(frozenRecipeSha256, frozenRecipeSha256After, StringComparison.Ordinal)
+        || !string.Equals(sourceMatSha256Before, sourceMatSha256After, StringComparison.Ordinal))
+    {
+        AddBoundedSoakFailure(failureDetails, "Frozen Recipe or input identity changed during the measured runs.");
+    }
+    if (string.IsNullOrWhiteSpace(firstResultFileSha256)
+        || !string.Equals(firstResultFileSha256, lastResultFileSha256, StringComparison.Ordinal))
+    {
+        AddBoundedSoakFailure(failureDetails, "First/last saved result image identity changed.");
+    }
+    if (privateGrowth > maximumPrivateGrowthBytes
+        || workingSetGrowth > maximumWorkingSetGrowthBytes
+        || managedGrowth > maximumManagedGrowthBytes
+        || handleGrowth > maximumHandleGrowth
+        || gdiGrowth > maximumGdiGrowth
+        || userGrowth > maximumUserGrowth)
+    {
+        AddBoundedSoakFailure(
+            failureDetails,
+            "Resource growth exceeded the contract. "
+            + $"Private={FormatMegabytes(privateGrowth)}MB, WorkingSet={FormatMegabytes(workingSetGrowth)}MB, "
+            + $"Managed={FormatMegabytes(managedGrowth)}MB, Handles={handleGrowth}, GDI={gdiGrowth}, USER={userGrowth}.");
+    }
+    if (handlePlateauRange > 2 || gdiPlateauRange > 2 || userPlateauRange > 2)
+    {
+        AddBoundedSoakFailure(
+            failureDetails,
+            $"Late resource plateau was not stable. Handles={handlePlateauRange}, GDI={gdiPlateauRange}, USER={userPlateauRange}.");
+    }
+
+    double[] sortedTimes = wallTimes.OrderBy(value => value).ToArray();
+    double median = PercentileNearestRank(sortedTimes, 0.50D);
+    double p95 = PercentileNearestRank(sortedTimes, 0.95D);
+    double maximum = sortedTimes.Length == 0 ? 0D : sortedTimes[^1];
+    if (p95 > 300D || maximum > 1000D)
+    {
+        AddBoundedSoakFailure(
+            failureDetails,
+            $"Run timing exceeded the contract. P95={p95:0.###}ms, Max={maximum:0.###}ms.");
+    }
+
+    string summaryPath = Path.Combine(evidenceDirectory, "reliability_soak_summary.txt");
+    List<string> summary = new()
+    {
+        "Result=" + (failureDetails.Count == 0 ? "PASS" : "FAIL"),
+        "Fixture=Public_Mean_BrightnessDrift",
+        $"WarmupRuns={warmupRuns}",
+        $"MeasuredRuns={measuredRuns}",
+        $"FailedRuns={failedRuns}",
+        $"MetricDrifts={metricDrifts}",
+        $"ImageDrifts={imageDrifts}",
+        $"FrozenSourceSha256={frozenSourceSha256}",
+        $"FrozenRecipeSha256={frozenRecipeSha256}",
+        $"RuntimeRecipeSha256={runtimeRecipeSha256Before}",
+        $"SourceMatSha256={sourceMatSha256Before}",
+        $"ResultMatSha256={expectedResultSha256}",
+        $"MeanValueAvg={expectedMeanValue.ToString("0.############", CultureInfo.InvariantCulture)}",
+        $"TotalElapsedMs={totalWatch.Elapsed.TotalMilliseconds.ToString("0.###", CultureInfo.InvariantCulture)}",
+        $"AverageElapsedMs={(wallTimes.Count == 0 ? 0D : wallTimes.Average()).ToString("0.###", CultureInfo.InvariantCulture)}",
+        $"MedianElapsedMs={median.ToString("0.###", CultureInfo.InvariantCulture)}",
+        $"P95ElapsedMs={p95.ToString("0.###", CultureInfo.InvariantCulture)}",
+        $"MaximumElapsedMs={maximum.ToString("0.###", CultureInfo.InvariantCulture)}",
+        $"PrivateGrowthMaxMB={FormatMegabytes(privateGrowth)}",
+        $"WorkingSetGrowthMaxMB={FormatMegabytes(workingSetGrowth)}",
+        $"ManagedGrowthMaxMB={FormatMegabytes(managedGrowth)}",
+        $"HandleGrowthMax={handleGrowth}",
+        $"GdiGrowthMax={gdiGrowth}",
+        $"UserGrowthMax={userGrowth}",
+        $"HandlePlateauRange={handlePlateauRange}",
+        $"GdiPlateauRange={gdiPlateauRange}",
+        $"UserPlateauRange={userPlateauRange}",
+        $"PrivateFinalMB={FormatMegabytes(last.PrivateBytes)}",
+        $"WorkingSetFinalMB={FormatMegabytes(last.WorkingSetBytes)}",
+        $"ManagedFinalMB={FormatMegabytes(last.ManagedBytes)}",
+        $"HandleFinal={last.HandleCount}",
+        $"GdiFinal={last.GdiObjects}",
+        $"UserFinal={last.UserObjects}",
+        "PrivateBytes includes managed and native/OpenCV process allocations.",
+        "Thresholds=Private96MB|WorkingSet128MB|Managed16MB|Handles32|GDI8|USER8|LatePlateau2|P95-300ms|Max-1000ms"
+    };
+    summary.AddRange(failureDetails.Select(failure => "Failure=" + failure));
+    File.WriteAllLines(summaryPath, summary);
+
+    if (failureDetails.Count == 0)
+    {
+        Console.WriteLine("Reliability soak contract passed.");
+        Console.WriteLine(summaryPath);
+        return 0;
+    }
+
+    Console.Error.WriteLine("Reliability soak contract failed.");
+    foreach (string failure in failureDetails)
+    {
+        Console.Error.WriteLine("- " + failure);
+    }
+    return 1;
+}
+
+static void AddBoundedSoakFailure(ICollection<string> failures, string failure)
+{
+    if (failures.Count < 20)
+    {
+        failures.Add(failure);
+    }
+}
+
+static void CollectForResourceSample()
+{
+    GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true, true);
+    GC.WaitForPendingFinalizers();
+    GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true, true);
+}
+
+static SoakResourceSample CaptureSoakResourceSample(int iteration)
+{
+    using System.Diagnostics.Process process = System.Diagnostics.Process.GetCurrentProcess();
+    process.Refresh();
+    return new SoakResourceSample(
+        iteration,
+        process.PrivateMemorySize64,
+        process.WorkingSet64,
+        GC.GetTotalMemory(false),
+        process.HandleCount,
+        SoakNativeResourceProbe.GetGdiObjectCount(process.Handle),
+        SoakNativeResourceProbe.GetUserObjectCount(process.Handle));
+}
+
+static void WriteSoakResourceSamples(string evidenceDirectory, IEnumerable<SoakResourceSample> samples)
+{
+    File.WriteAllLines(
+        Path.Combine(evidenceDirectory, "reliability_soak_resources.csv"),
+        new[] { "Iteration,PrivateBytes,WorkingSetBytes,ManagedBytes,HandleCount,GdiObjects,UserObjects" }
+            .Concat(samples.Select(sample => string.Join(",",
+                sample.Iteration.ToString(CultureInfo.InvariantCulture),
+                sample.PrivateBytes.ToString(CultureInfo.InvariantCulture),
+                sample.WorkingSetBytes.ToString(CultureInfo.InvariantCulture),
+                sample.ManagedBytes.ToString(CultureInfo.InvariantCulture),
+                sample.HandleCount.ToString(CultureInfo.InvariantCulture),
+                sample.GdiObjects.ToString(CultureInfo.InvariantCulture),
+                sample.UserObjects.ToString(CultureInfo.InvariantCulture)))));
+}
+
+static long MaximumGrowth(
+    IEnumerable<SoakResourceSample> samples,
+    SoakResourceSample baseline,
+    Func<SoakResourceSample, long> selector)
+{
+    long start = selector(baseline);
+    return Math.Max(0L, samples.Max(sample => selector(sample) - start));
+}
+
+static int MaximumIntGrowth(
+    IEnumerable<SoakResourceSample> samples,
+    SoakResourceSample baseline,
+    Func<SoakResourceSample, int> selector)
+{
+    int start = selector(baseline);
+    return Math.Max(0, samples.Max(sample => selector(sample) - start));
+}
+
+static double PercentileNearestRank(IReadOnlyList<double> sortedValues, double percentile)
+{
+    if (sortedValues.Count == 0)
+    {
+        return 0D;
+    }
+
+    int index = Math.Max(0, (int)Math.Ceiling(percentile * sortedValues.Count) - 1);
+    return sortedValues[Math.Min(index, sortedValues.Count - 1)];
+}
+
+static string FormatMegabytes(long bytes)
+{
+    return (bytes / 1024D / 1024D).ToString("0.###", CultureInfo.InvariantCulture);
+}
+
+static string ComputeMatSha256(Mat mat)
+{
+    byte[] header = Encoding.UTF8.GetBytes(
+        $"{mat.Rows}|{mat.Cols}|{mat.Type()}|{mat.Step()}|");
+    using IncrementalHash hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+    hash.AppendData(header);
+    hash.AppendData(mat.ToBytes());
+    return Convert.ToHexString(hash.GetHashAndReset());
+}
+
+static string FindRepositoryRootForSmoke()
+{
+    foreach (string seed in new[] { Environment.CurrentDirectory, AppContext.BaseDirectory })
+    {
+        DirectoryInfo? directory = new(Path.GetFullPath(seed));
+        while (directory != null)
+        {
+            if (File.Exists(Path.Combine(directory.FullName, "OpenVisionLab.sln"))
+                && Directory.Exists(Path.Combine(directory.FullName, "docs", "samples")))
+            {
+                return directory.FullName;
+            }
+
+            directory = directory.Parent;
+        }
+    }
+
+    throw new DirectoryNotFoundException("OpenVisionLab repository root was not found.");
 }
 
 static int RunEdgeGlobalPolarityContract(string? requestedEvidenceDirectory)
@@ -3577,6 +5693,326 @@ static async Task<int> RunObjectDimensionFilterContractAsync(string? evidenceDir
     }
 
     return 1;
+}
+
+static async Task<int> RunBlobContourAuditBaselineAsync(string? requestedEvidenceDirectory)
+{
+    string evidenceDirectory = Path.GetFullPath(
+        requestedEvidenceDirectory
+        ?? Path.Combine(
+            "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev",
+            "pl0010_blob_contour_audit_baseline_" + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture)));
+    Directory.CreateDirectory(evidenceDirectory);
+
+    List<string> failures = new List<string>();
+    List<string> observations = new List<string>();
+    string implementationPath = Path.GetFullPath(
+        Path.Combine(
+            "src",
+            "OpenVisionLab",
+            "Core",
+            "Pipeline",
+            "Execution",
+            "VisionPipelineObjectResults.cs"));
+    string implementation = File.ReadAllText(implementationPath);
+    bool hasSecondExecution = implementation.Contains("auditTool.Execute(auditInput)", StringComparison.Ordinal);
+    bool hasSilentAuditCatch = implementation.Contains("catch\r\n            {\r\n                return new List<VisionPipelineObjectResult>();", StringComparison.Ordinal)
+        || implementation.Contains("catch\n            {\n                return new List<VisionPipelineObjectResult>();", StringComparison.Ordinal);
+    bool hasAcceptedOnlyFallback = implementation.Contains("rows = CaptureAccepted(executedTool, criteria)", StringComparison.Ordinal);
+    if (!hasSecondExecution || !hasSilentAuditCatch || !hasAcceptedOnlyFallback)
+    {
+        failures.Add(
+            "Current PL-0010 baseline source shape changed; expected audit Execute, silent catch, and accepted-only fallback were not all found.");
+    }
+
+    observations.Add("SourceAuditExecution=" + (hasSecondExecution ? "Present" : "Missing"));
+    observations.Add("SourceAuditFailureCatch=" + (hasSilentAuditCatch ? "SilentEmptyList" : "Missing"));
+    observations.Add("SourceFallback=" + (hasAcceptedOnlyFallback ? "CaptureAcceptedOnly" : "Missing"));
+    observations.Add("RuntimeFailureInjection=Not performed; no test-only SDK/tool failure hook was introduced.");
+    observations.Add(
+        "CurrentFailureMeaning=If the audit Execute throws or returns unsuccessful, the source path returns an empty audit list and stores accepted-only rows.");
+
+    using Mat source = CreateBlobContourAuditBaselineSource();
+    string sourcePath = Path.Combine(evidenceDirectory, "source.png");
+    Require(Cv2.ImWrite(sourcePath, source), "Could not write the PL-0010 baseline source image.");
+
+    string sdkVersion = typeof(BlobTool).Assembly.GetName().Version?.ToString() ?? "unknown";
+    string sdkManifestPath = Path.GetFullPath(
+        Path.Combine("dll", "OpenVisionLab-Vision-SDK", "sdk-manifest.json"));
+    string sdkManifestSha256 = File.Exists(sdkManifestPath) ? ComputeSha256(sdkManifestPath) : "missing";
+    observations.Add("SdkAssembly=" + sdkVersion);
+    observations.Add("SdkManifestPath=" + sdkManifestPath);
+    observations.Add("SdkManifestSha256=" + sdkManifestSha256);
+    string blobResultProperties = string.Join(
+        ",",
+        typeof(BlobResult).GetProperties().Select(property => property.Name).OrderBy(name => name, StringComparer.Ordinal));
+    string contourResultProperties = string.Join(
+        ",",
+        typeof(ContourResult).GetProperties().Select(property => property.Name).OrderBy(name => name, StringComparer.Ordinal));
+    string[] onePassFields = { "AppliedLimits", "AcceptedState", "RejectReason" };
+    bool onePassFieldsMissing = onePassFields.All(field =>
+        !typeof(BlobResult).GetProperties().Any(property => string.Equals(property.Name, field, StringComparison.Ordinal))
+        && !typeof(ContourResult).GetProperties().Any(property => string.Equals(property.Name, field, StringComparison.Ordinal)));
+    observations.Add("BlobResultProperties=" + blobResultProperties);
+    observations.Add("ContourResultProperties=" + contourResultProperties);
+    observations.Add(
+        "MissingOnePassFields=" + (onePassFieldsMissing
+            ? string.Join(",", onePassFields) + " absent from both SDK result types"
+            : "not all absent; inspect observations before contract design"));
+
+    List<string> rows = new List<string>
+    {
+        "ToolType\tSdkVersion\tConfiguredMinArea\tConfiguredMaxArea\tAuditMinArea\tPrimaryWallMs\tPrimarySdkElapsedMs\tPrimarySuccess\tPrimaryCandidateCount\tPrimaryCandidateIds\tAuditWallMs\tAuditSdkElapsedMs\tAuditSuccess\tAuditCandidateCount\tAuditCandidateIds\tAuditException\tReportedStepElapsedMs\tRunTotalMs\tObjectRowCount\tAcceptedCount\tRejectedCount\tAcceptedOverlayCount\tRejectReasons"
+    };
+
+    foreach (string toolType in new[] { "Blob", "Contour" })
+    {
+        VisionPipelineStep step = CreateObjectDimensionPipeline(toolType, includeDimensions: true).Steps.Single();
+        int configuredMinimumArea = GetBaselineParameterInt(step.Parameters, "MIN_AREA", 200);
+        int configuredMaximumArea = GetBaselineParameterInt(step.Parameters, "MAX_AREA", 1000000);
+        int auditMinimumArea = string.Equals(toolType, "Contour", StringComparison.OrdinalIgnoreCase)
+            ? Math.Max(1, configuredMinimumArea / 4)
+            : 0;
+
+        WarmUpBlobContourExecution(step, source);
+        WarmUpBlobContourExecution(CreateBlobContourAuditStep(step, auditMinimumArea), source);
+
+        double primaryWallMilliseconds = 0D;
+        double primarySdkMilliseconds = -1D;
+        bool primarySuccess = false;
+        int primaryCandidateCount = 0;
+        string primaryCandidateIds = string.Empty;
+        string primaryException = string.Empty;
+        IVisionTool primaryTool = null!;
+        VisionToolResult? primaryResult = null;
+        try
+        {
+            primaryTool = VisionPipelineAppToolFactory.Create(step);
+            using (primaryTool as IDisposable)
+            using (Mat primaryInput = source.Clone())
+            {
+                Stopwatch stopwatch = Stopwatch.StartNew();
+                primaryResult = primaryTool.Execute(primaryInput);
+                stopwatch.Stop();
+                primaryWallMilliseconds = stopwatch.Elapsed.TotalMilliseconds;
+                primarySuccess = primaryResult?.Success == true;
+                primarySdkMilliseconds = primaryResult?.Elapsed.TotalMilliseconds ?? -1D;
+                primaryCandidateCount = CountBlobContourCandidates(primaryTool);
+                primaryCandidateIds = GetBlobContourCandidateIds(primaryTool);
+            }
+        }
+        catch (Exception exception)
+        {
+            primaryException = exception.GetBaseException().GetType().Name + ": " + exception.GetBaseException().Message;
+        }
+        finally
+        {
+            primaryResult?.Dispose();
+        }
+
+        double auditWallMilliseconds = 0D;
+        double auditSdkMilliseconds = -1D;
+        bool auditSuccess = false;
+        int auditCandidateCount = 0;
+        string auditCandidateIds = string.Empty;
+        string auditException = string.Empty;
+        IVisionTool auditTool = null!;
+        VisionToolResult? auditResult = null;
+        try
+        {
+            VisionPipelineStep auditStep = CreateBlobContourAuditStep(step, auditMinimumArea);
+            auditTool = VisionPipelineAppToolFactory.Create(auditStep);
+            using (auditTool as IDisposable)
+            using (Mat auditInput = source.Clone())
+            {
+                Stopwatch stopwatch = Stopwatch.StartNew();
+                auditResult = auditTool.Execute(auditInput);
+                stopwatch.Stop();
+                auditWallMilliseconds = stopwatch.Elapsed.TotalMilliseconds;
+                auditSuccess = auditResult?.Success == true;
+                auditSdkMilliseconds = auditResult?.Elapsed.TotalMilliseconds ?? -1D;
+                auditCandidateCount = CountBlobContourCandidates(auditTool);
+                auditCandidateIds = GetBlobContourCandidateIds(auditTool);
+            }
+        }
+        catch (Exception exception)
+        {
+            auditException = exception.GetBaseException().GetType().Name + ": " + exception.GetBaseException().Message;
+        }
+        finally
+        {
+            auditResult?.Dispose();
+        }
+
+        VisionPipeline pipeline = new VisionPipeline { Name = "PL0010 " + toolType + " audit baseline" };
+        pipeline.Steps.Add(step);
+        VisionRecipeStepRunSummary? runStep = null;
+        double runTotalMilliseconds = 0D;
+        try
+        {
+            using Mat runInput = source.Clone();
+            using VisionRecipeRunResult run = await new VisionRecipeRunner().RunAsync(pipeline, runInput);
+            runTotalMilliseconds = run?.TotalMilliseconds ?? 0D;
+            runStep = run?.Steps.SingleOrDefault();
+        }
+        catch (Exception exception)
+        {
+            failures.Add(toolType + ": current Runner baseline threw " + exception.GetBaseException().Message);
+        }
+
+        int objectRowCount = runStep?.ObjectResults?.Count ?? 0;
+        int acceptedCount = runStep?.ObjectResults?.Count(item => item.Accepted) ?? 0;
+        int rejectedCount = runStep?.ObjectResults?.Count(item => !item.Accepted) ?? 0;
+        int acceptedOverlayCount = runStep?.Overlays?.Count(item =>
+            string.Equals(item.Kind, "Rectangle", StringComparison.OrdinalIgnoreCase)
+            && string.Equals(item.Label, "Accepted object", StringComparison.Ordinal)) ?? 0;
+        string rejectReasons = string.Join(
+            " || ",
+            runStep?.ObjectResults?
+                .Where(item => !item.Accepted)
+                .Select(item => item.Number.ToString(CultureInfo.InvariantCulture) + ":" + item.RejectReason)
+            ?? Enumerable.Empty<string>());
+
+        if (!primarySuccess || !auditSuccess)
+        {
+            failures.Add(
+                $"{toolType}: representative baseline execution was not successful. Primary={primarySuccess}, Audit={auditSuccess}.");
+        }
+
+        rows.Add(string.Join(
+            "\t",
+            toolType,
+            sdkVersion,
+            configuredMinimumArea.ToString(CultureInfo.InvariantCulture),
+            configuredMaximumArea.ToString(CultureInfo.InvariantCulture),
+            auditMinimumArea.ToString(CultureInfo.InvariantCulture),
+            primaryWallMilliseconds.ToString("0.###", CultureInfo.InvariantCulture),
+            primarySdkMilliseconds.ToString("0.###", CultureInfo.InvariantCulture),
+            primarySuccess.ToString(CultureInfo.InvariantCulture),
+            primaryCandidateCount.ToString(CultureInfo.InvariantCulture),
+            primaryCandidateIds,
+            auditWallMilliseconds.ToString("0.###", CultureInfo.InvariantCulture),
+            auditSdkMilliseconds.ToString("0.###", CultureInfo.InvariantCulture),
+            auditSuccess.ToString(CultureInfo.InvariantCulture),
+            auditCandidateCount.ToString(CultureInfo.InvariantCulture),
+            auditCandidateIds,
+            string.IsNullOrWhiteSpace(auditException) ? primaryException : auditException,
+            (runStep?.ElapsedMilliseconds ?? 0D).ToString("0.###", CultureInfo.InvariantCulture),
+            runTotalMilliseconds.ToString("0.###", CultureInfo.InvariantCulture),
+            objectRowCount.ToString(CultureInfo.InvariantCulture),
+            acceptedCount.ToString(CultureInfo.InvariantCulture),
+            rejectedCount.ToString(CultureInfo.InvariantCulture),
+            acceptedOverlayCount.ToString(CultureInfo.InvariantCulture),
+            rejectReasons));
+    }
+
+    string rowsPath = Path.Combine(evidenceDirectory, "audit_baseline.tsv");
+    File.WriteAllLines(rowsPath, rows, new UTF8Encoding(false));
+    string observationsPath = Path.Combine(evidenceDirectory, "observations.txt");
+    File.WriteAllLines(observationsPath, observations, new UTF8Encoding(false));
+    string reportPath = Path.Combine(evidenceDirectory, "completion.txt");
+    File.WriteAllLines(
+        reportPath,
+        new[]
+        {
+            failures.Count == 0 ? "Status=Complete" : "Status=Incomplete",
+            "Scope=PL-0010 C1 baseline only; product audit behavior was not changed.",
+            "Acceptance=C1 primary/audit wall cost, SDK-reported timing, candidate counts/IDs, and current object evidence were captured for representative Blob and Contour cases.",
+            "Verification=Source-confirmed audit failure fallback plus current Runner object rows/metrics/accepted overlays.",
+            "Evidence=" + sourcePath + "; " + rowsPath + "; " + observationsPath,
+            "Boundary=One-pass removal remains blocked until the vendored SDK supplies and the app proves parity for applied limits, accepted state, reject reason, geometry, timing, reports, drawings, and selection.",
+            "FailureInjection=Not performed; no test-only fault hook was added.",
+        }.Concat(failures.Select(failure => "Failure=" + failure)),
+        new UTF8Encoding(false));
+
+    Console.WriteLine("PL-0010 Blob/Contour audit baseline captured.");
+    Console.WriteLine("Evidence=" + evidenceDirectory);
+    Console.WriteLine("Failures=" + failures.Count.ToString(CultureInfo.InvariantCulture));
+    return failures.Count == 0 ? 0 : 1;
+}
+
+static Mat CreateBlobContourAuditBaselineSource()
+{
+    Mat source = new Mat(new OpenCvSharp.Size(360, 140), MatType.CV_8UC1, Scalar.Black);
+    Cv2.Rectangle(source, new Rect(20, 20, 24, 32), Scalar.White, -1);
+    Cv2.Rectangle(source, new Rect(80, 20, 52, 24), Scalar.White, -1);
+    Cv2.Rectangle(source, new Rect(155, 20, 8, 32), Scalar.White, -1);
+    Cv2.Rectangle(source, new Rect(195, 20, 24, 8), Scalar.White, -1);
+    Cv2.Rectangle(source, new Rect(250, 20, 24, 60), Scalar.White, -1);
+    return source;
+}
+
+static VisionPipelineStep CreateBlobContourAuditStep(VisionPipelineStep source, int auditMinimumArea)
+{
+    VisionPipelineStep clone = new VisionPipelineStep
+    {
+        Name = source.Name,
+        ToolType = source.ToolType,
+        Enabled = source.Enabled,
+        InputLayer = source.InputLayer,
+        OutputLayer = source.OutputLayer
+    };
+    foreach (KeyValuePair<string, string> parameter in source.Parameters ?? new Dictionary<string, string>())
+    {
+        clone.Parameters[parameter.Key] = parameter.Value;
+    }
+
+    clone.Parameters["MIN_AREA"] = auditMinimumArea.ToString(CultureInfo.InvariantCulture);
+    clone.Parameters["MAX_AREA"] = int.MaxValue.ToString(CultureInfo.InvariantCulture);
+    return clone;
+}
+
+static void WarmUpBlobContourExecution(VisionPipelineStep step, Mat source)
+{
+    IVisionTool tool = VisionPipelineAppToolFactory.Create(step);
+    using (tool as IDisposable)
+    using (Mat input = source.Clone())
+    using (VisionToolResult result = tool.Execute(input))
+    {
+    }
+}
+
+static int GetBaselineParameterInt(IDictionary<string, string> parameters, string key, int fallback)
+{
+    return parameters != null
+        && parameters.TryGetValue(key, out string? value)
+        && int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsed)
+            ? parsed
+            : fallback;
+}
+
+static int CountBlobContourCandidates(IVisionTool tool)
+{
+    if (tool is BlobTool blob)
+    {
+        return blob.results?.Count(item => item != null) ?? 0;
+    }
+
+    if (tool is ContourTool contour)
+    {
+        return contour.results.Count(item => item != null);
+    }
+
+    return 0;
+}
+
+static string GetBlobContourCandidateIds(IVisionTool tool)
+{
+    if (tool is BlobTool blob)
+    {
+        return string.Join(",", (blob.results ?? new List<BlobResult>())
+            .Where(item => item != null)
+            .Select(item => item.Index.ToString(CultureInfo.InvariantCulture)));
+    }
+
+    if (tool is ContourTool contour)
+    {
+        return string.Join(",", contour.results
+            .Where(item => item != null)
+            .Select(item => item.Index.ToString(CultureInfo.InvariantCulture)));
+    }
+
+    return string.Empty;
 }
 
 static async Task<int> RunAffineTransformContractAsync(string? evidenceDirectory)
@@ -6954,3 +9390,51 @@ foreach (string failure in failures)
 }
 
 return 1;
+
+internal sealed class BitmapStorageLease : IDisposable
+{
+    private IntPtr buffer;
+
+    public BitmapStorageLease(Bitmap bitmap, IntPtr buffer)
+    {
+        Bitmap = bitmap ?? throw new ArgumentNullException(nameof(bitmap));
+        this.buffer = buffer;
+    }
+
+    public Bitmap Bitmap { get; }
+
+    public void Dispose()
+    {
+        Bitmap.Dispose();
+        if (buffer != IntPtr.Zero)
+        {
+            Marshal.FreeHGlobal(buffer);
+            buffer = IntPtr.Zero;
+        }
+    }
+}
+
+internal readonly record struct SoakResourceSample(
+    int Iteration,
+    long PrivateBytes,
+    long WorkingSetBytes,
+    long ManagedBytes,
+    int HandleCount,
+    int GdiObjects,
+    int UserObjects);
+
+internal static class SoakNativeResourceProbe
+{
+    public static int GetGdiObjectCount(IntPtr processHandle)
+    {
+        return checked((int)GetGuiResources(processHandle, 0));
+    }
+
+    public static int GetUserObjectCount(IntPtr processHandle)
+    {
+        return checked((int)GetGuiResources(processHandle, 1));
+    }
+
+    [DllImport("user32.dll")]
+    private static extern uint GetGuiResources(IntPtr processHandle, uint flags);
+}

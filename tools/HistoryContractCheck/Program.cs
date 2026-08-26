@@ -1,6 +1,7 @@
 using System;
 using System.Drawing;
 using OpenVisionLab.History;
+using OpenVisionLab.ImageSpace.Core;
 
 internal static class Program
 {
@@ -13,7 +14,9 @@ internal static class Program
             CheckSnapshotCommand();
             CheckPropertyGridUndoBinder();
             CheckBitmapHistorySnapshot();
+            CheckImageSpaceFrameOwnership();
             CheckImageSpaceInsertRemove();
+            CheckImageSpaceLeaseRetirement();
             Console.WriteLine("HistoryContract=OK");
             return 0;
         }
@@ -146,6 +149,55 @@ internal static class Program
         Assert(!string.IsNullOrWhiteSpace(reason), "Oversized bitmap snapshot must report rejection reason.");
     }
 
+    private static void CheckImageSpaceFrameOwnership()
+    {
+        using Bitmap borrowedImage = new Bitmap(3, 2);
+        ImageSpaceFrame borrowedFrame = ImageSpaceFrame.Borrow(borrowedImage);
+        Assert(ReferenceEquals(borrowedFrame.Image, borrowedImage), "Borrowed frame must expose the caller-owned Bitmap.");
+        borrowedFrame.Dispose();
+        _ = borrowedImage.GetPixel(0, 0);
+        AssertFrameDisposed(borrowedFrame);
+
+        Bitmap ownedImage = new Bitmap(3, 2);
+        ImageSpaceFrame ownedFrame = ImageSpaceFrame.TakeOwnership(ownedImage);
+        Assert(ReferenceEquals(ownedFrame.Image, ownedImage), "Owned frame must expose the transferred Bitmap.");
+        ownedFrame.Dispose();
+        AssertBitmapDisposed(ownedImage);
+        ownedFrame.Dispose();
+        AssertFrameDisposed(ownedFrame);
+
+        Assert(ImageSpaceFrame.Borrow(null) == null, "Borrowing a null Bitmap must return a null frame.");
+        Assert(ImageSpaceFrame.TakeOwnership(null) == null, "Taking ownership of a null Bitmap must return a null frame.");
+    }
+
+    private static void AssertFrameDisposed(ImageSpaceFrame frame)
+    {
+        try
+        {
+            _ = frame.Image;
+        }
+        catch (ObjectDisposedException)
+        {
+            return;
+        }
+
+        throw new InvalidOperationException("Disposed ImageSpaceFrame must reject Image access.");
+    }
+
+    private static void AssertBitmapDisposed(Bitmap image)
+    {
+        try
+        {
+            _ = image.GetPixel(0, 0);
+        }
+        catch (ArgumentException)
+        {
+            return;
+        }
+
+        throw new InvalidOperationException("Transferred Bitmap must be disposed with its ImageSpaceFrame.");
+    }
+
     private static void CheckImageSpaceInsertRemove()
     {
         OpenVisionLab.ImageSpace.Core.ImageSpaceService imageSpace = new OpenVisionLab.ImageSpace.Core.ImageSpaceService();
@@ -163,6 +215,34 @@ internal static class Program
 
         Assert(ReferenceEquals(imageSpace.GetImage(0), main), "Existing image must shift back after remove.");
         Assert(imageSpace.GetImage("Layer") == null, "Removed layer title must not remain addressable.");
+    }
+
+    private static void CheckImageSpaceLeaseRetirement()
+    {
+        using ImageSpaceService imageSpace = new ImageSpaceService();
+        Bitmap original = new Bitmap(4, 4);
+        Bitmap replacement = new Bitmap(6, 5);
+        original.SetPixel(1, 1, Color.Red);
+        replacement.SetPixel(2, 2, Color.Blue);
+
+        imageSpace.SetImage(0, "Main", original);
+        ImageSpaceImageLease originalLease = imageSpace.AcquireImage("Main");
+        Assert(originalLease != null, "Stored image must provide a lease.");
+
+        imageSpace.SetImage(0, "Main", replacement);
+        Assert(originalLease.Image.GetPixel(1, 1).ToArgb() == Color.Red.ToArgb(),
+            "A replaced image must remain valid while a borrower lease is active.");
+        originalLease.Dispose();
+        AssertBitmapDisposed(original);
+
+        ImageSpaceImageLease replacementLease = imageSpace.AcquireImage(0);
+        Assert(replacementLease != null, "Replacement image must provide a lease.");
+        imageSpace.RemoveImage("Main");
+        Assert(replacementLease.Image.GetPixel(2, 2).ToArgb() == Color.Blue.ToArgb(),
+            "A removed image must remain valid while a borrower lease is active.");
+        replacementLease.Dispose();
+        AssertBitmapDisposed(replacement);
+        Assert(imageSpace.AcquireImage("Main") == null, "Removed image must not issue a new lease.");
     }
 
     private static void Assert(bool condition, string message)

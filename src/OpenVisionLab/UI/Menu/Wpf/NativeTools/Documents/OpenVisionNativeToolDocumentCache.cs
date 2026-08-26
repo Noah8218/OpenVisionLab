@@ -34,7 +34,14 @@ namespace OpenVisionLab
         {
             if (documents.TryGetValue(menu, out document))
             {
-                document.ApplyRecipeContext(recipeContext);
+                // Background prewarm uses the legacy overload without a recipe context.
+                // It must not reset an already active document to Default while the
+                // operator is working in another recipe. Explicit tool activation
+                // still supplies and applies the current recipe context.
+                if (recipeContext != null)
+                {
+                    document.ApplyRecipeContext(recipeContext);
+                }
                 return true;
             }
 

@@ -126,6 +126,7 @@ internal static class Program
         ["p214_two_point_scale"] = CaptureP214TwoPointScale,
         ["wpf_shell_host_recipe_context_switch"] = CaptureShellHostRecipeContextSwitch,
         ["wpf_shell_host_recipe_change_safety"] = CaptureShellHostRecipeChangeSafety,
+        ["wpf_shell_host_pipeline_lifecycle_recovery"] = CaptureShellHostPipelineLifecycleRecovery,
         ["wpf_recipe_pending_edit_dialog"] = CaptureRecipePendingEditDialog,
         ["wpf_shell_host_llm_dependency_placeholder"] = CaptureShellHostLlmDependencyPlaceholder,
         ["wpf_shell_host_outer_corner_llm_review"] = CaptureShellHostOuterCornerLlmReview,
@@ -183,6 +184,8 @@ internal static class Program
         ["wpf_simple_preprocess_tool_learn_button"] = CaptureSimplePreprocessToolLearnButton,
         ["wpf_direct_multi_tool_inspection"] = CaptureDirectMultiToolInspection,
         ["wpf_shell_host_large_image"] = CaptureShellHostLargeImage,
+        ["wpf_shell_host_image_4512_reliability"] = CaptureShellHostImage4512Reliability,
+        ["wpf_shell_host_image_4512_lifetime"] = CaptureShellHostImage4512Lifetime,
         ["wpf_shell_host_large_image_16k_perf"] = CaptureShellHostLargeImage16KPerf,
         ["wpf_shell_host_layer_auto_docking"] = CaptureShellHostLayerAutoDocking,
         ["wpf_shell_host_layer_docking_vertical"] = CaptureShellHostLayerDockingVertical,
@@ -328,6 +331,8 @@ internal static class Program
         ["wpf_property_grid_matching_combo"] = CaptureMatchingPropertyGridCombo,
         ["wpf_roi_editor"] = CaptureRoiEditor,
         ["wpf_template_editor_opengl"] = CaptureOpenGlTemplateEditor,
+        ["wpf_opengl_native_readback"] = CaptureOpenGlNativeReadback,
+        ["wpf_imagecanvas_owned_mat_load"] = CaptureImageCanvasOwnedMatLoad,
         ["wpf_image_compare"] = CaptureImageCompare,
         ["log_panel_contract_check"] = CaptureLogPanel,
         ["localization_catalog_contract_check"] = CaptureLocalizationCatalog,
@@ -2217,6 +2222,7 @@ internal static class Program
 
     private static CaptureResult CaptureShellHostWorkspaceImageLoad(string outputPath)
     {
+        AssertDisplayManagerFrameConsumption();
         OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
         OpenVisionShellHostView shellHost = CreateShellHost("Smoke_WpfShellHostWorkspaceImageLoad", seedMainLayer: false);
         string imagePath = CreateWorkspaceLoadSmokeImageFile();
@@ -2707,6 +2713,72 @@ internal static class Program
     private static CaptureResult CaptureShellHostWorkspaceSampleOpen(string outputPath)
     {
         return CaptureShellHostWorkspaceSampleOpen(outputPath, OpenVisionLanguage.Korean);
+    }
+
+    private static void AssertDisplayManagerFrameConsumption()
+    {
+        DisplayManagerService displayManager = new();
+
+        Bitmap ownedImage = new(3, 2);
+        OpenVisionLab.ImageSpace.Core.ImageSpaceFrame ownedFrame =
+            OpenVisionLab.ImageSpace.Core.ImageSpaceFrame.TakeOwnership(ownedImage);
+        displayManager.CreateLayerDisplay(ownedFrame, "OwnedFrame", true);
+        AssertDisposedBitmap(ownedImage, "DisplayManager owned ImageSpaceFrame");
+        AssertDisposedFrame(ownedFrame, "DisplayManager owned ImageSpaceFrame");
+        using (Bitmap storedImage = new(displayManager.GetLayerImage("OwnedFrame")))
+        {
+            if (storedImage.Width != 3 || storedImage.Height != 2)
+            {
+                throw new InvalidOperationException("DisplayManager did not retain a valid clone from the owned ImageSpaceFrame.");
+            }
+        }
+
+        using Bitmap borrowedImage = new(4, 3);
+        OpenVisionLab.ImageSpace.Core.ImageSpaceFrame borrowedFrame =
+            OpenVisionLab.ImageSpace.Core.ImageSpaceFrame.Borrow(borrowedImage);
+        displayManager.CreateLayerDisplay(borrowedFrame, "BorrowedFrame", true);
+        _ = borrowedImage.GetPixel(0, 0);
+        AssertDisposedFrame(borrowedFrame, "DisplayManager borrowed ImageSpaceFrame");
+
+        using CvMat sourceMat = new(2, 2, OpenCvSharp.MatType.CV_8UC3, OpenCvSharp.Scalar.All(17));
+        OpenVisionLab.ImageSpace.Core.ImageSpaceFrame convertedFrame = ImageSpaceFrameAdapter.FromMat(sourceMat);
+        Bitmap convertedImage = convertedFrame.Image;
+        displayManager.CreateLayerDisplay(convertedFrame, "ConvertedFrame", true);
+        AssertDisposedBitmap(convertedImage, "DisplayManager Mat-converted ImageSpaceFrame");
+        if (sourceMat.Empty() || sourceMat.At<OpenCvSharp.Vec3b>(0, 0).Item0 != 17)
+        {
+            throw new InvalidOperationException("ImageSpaceFrame Mat conversion changed or disposed the caller-owned source Mat.");
+        }
+    }
+
+    private static void AssertDisposedFrame(
+        OpenVisionLab.ImageSpace.Core.ImageSpaceFrame frame,
+        string context)
+    {
+        try
+        {
+            _ = frame.Image;
+        }
+        catch (ObjectDisposedException)
+        {
+            return;
+        }
+
+        throw new InvalidOperationException(context + " was not disposed after the DisplayManager call.");
+    }
+
+    private static void AssertDisposedBitmap(Bitmap image, string context)
+    {
+        try
+        {
+            _ = image.GetPixel(0, 0);
+        }
+        catch (ArgumentException)
+        {
+            return;
+        }
+
+        throw new InvalidOperationException(context + " did not dispose the transferred Bitmap.");
     }
 
     private static CaptureResult CaptureShellHostWorkspaceSampleOpen(
@@ -17269,6 +17341,485 @@ internal static class Program
         }, captureFloatingToolWindow: false);
     }
 
+    private static CaptureResult CaptureShellHostImage4512Reliability(string outputPath)
+    {
+        const int imageSize = 4512;
+        const long maximumPrivateGrowthBytes = 768L * 1024L * 1024L;
+        const long maximumWorkingSetGrowthBytes = 768L * 1024L * 1024L;
+        const long maximumManagedGrowthBytes = 384L * 1024L * 1024L;
+        const int maximumHandleGrowth = 128;
+        const int maximumGdiGrowth = 64;
+        const int maximumUserGrowth = 64;
+        const long maximumTotalElapsedMilliseconds = 30000L;
+
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        OpenVisionShellHostView shellHost = CreateShellHost(
+            "Smoke_WpfShellHostImage4512Reliability",
+            seedMainLayer: false);
+        List<string> report = new()
+        {
+            "OpenVisionLab 4512 image reliability contract",
+            "Result=PENDING",
+            "Image=4512x4512 8bpp grayscale",
+            "Scope=Exact Main store identity plus 4512 workspace/automatic-dock viewer dimensions and texture creation; explicit dock/popout is covered by wpf_shell_host_large_image",
+            "Baseline=empty shell after Window.Show and initial layout/OpenGL initialization",
+            "ObservedSnapshots=AfterSet|RenderedBeforeGc|Retained; peak inside SetMain and GPU VRAM are not measured",
+            "Thresholds=Private768MB|WorkingSet768MB|Managed384MB|Handles128|GDI64|USER64|Total30000ms"
+        };
+        Stopwatch totalWatch = Stopwatch.StartNew();
+        string inputPath = Path.ChangeExtension(outputPath, ".input.png");
+        string reportPath = Path.ChangeExtension(outputPath, ".reliability.txt");
+
+        try
+        {
+            CaptureResult capture = CaptureWindowWithContent(
+                shellHost,
+                outputPath,
+                1600,
+                900,
+                () =>
+                {
+                    Pump(12);
+                    CollectLargeImageResources();
+                    LargeImageResourceSnapshot baseline = CaptureLargeImageResourceSnapshot();
+                    AppendLargeImageResourceSnapshot(report, "Baseline", baseline);
+
+                    string sourceRawSha256;
+                    Stopwatch createWatch = Stopwatch.StartNew();
+                    using (Bitmap largeBitmap = CreateLargeSmokeBitmap(imageSize, imageSize))
+                    {
+                        largeBitmap.Save(inputPath, ImageFormat.Png);
+                        sourceRawSha256 = VisionPipelineScaleCalibrationStorage.ComputeBitmapSha256(largeBitmap);
+                        createWatch.Stop();
+                        report.Add("InputPath=" + inputPath);
+                        report.Add("InputFileSha256=" + Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(inputPath))));
+                        report.Add("InputRawSha256=" + sourceRawSha256);
+                        report.Add("CreateAndSaveMs=" + createWatch.ElapsedMilliseconds.ToString(CultureInfo.InvariantCulture));
+
+                        Stopwatch setWatch = Stopwatch.StartNew();
+                        shellHost.SetMainLayerImageForTest(largeBitmap);
+                        setWatch.Stop();
+                        report.Add("SetMainLayerMs=" + setWatch.ElapsedMilliseconds.ToString(CultureInfo.InvariantCulture));
+                    }
+
+                    using (Bitmap stored = shellHost.GetLayerImageCloneForTest("Main"))
+                    {
+                        string storedRawSha256 = VisionPipelineScaleCalibrationStorage.ComputeBitmapSha256(stored);
+                        report.Add($"StoredLayerSize={stored.Width}x{stored.Height}");
+                        report.Add("StoredLayerRawSha256=" + storedRawSha256);
+                        if (stored.Width != imageSize
+                            || stored.Height != imageSize
+                            || !string.Equals(storedRawSha256, sourceRawSha256, StringComparison.Ordinal))
+                        {
+                            throw new InvalidOperationException("Display store changed the exact 4512 input identity.");
+                        }
+                    }
+
+                    LargeImageResourceSnapshot afterSet = CaptureLargeImageResourceSnapshot();
+                    AppendLargeImageResourceSnapshot(report, "AfterSet", afterSet);
+                    Stopwatch workspaceWatch = Stopwatch.StartNew();
+                    Pump(48);
+                    workspaceWatch.Stop();
+                    if (!shellHost.HasMainLayer
+                        || !shellHost.HasWorkspaceLayerPreview
+                        || shellHost.WorkspaceTextureTileCount <= 0)
+                    {
+                        throw new InvalidOperationException(
+                            "4512 image did not load into the main OpenGL workspace. "
+                            + $"Tiles={shellHost.WorkspaceTextureTileCount}, Layer={shellHost.WorkspaceLayerTitle}");
+                    }
+
+                    OpenVisionLayerViewerView? automaticDockedViewer =
+                        FindVisualChildren<OpenVisionLayerViewerView>(shellHost)
+                            .FirstOrDefault(viewer =>
+                                viewer.IsVisible
+                                && viewer.HasImage
+                                && viewer.TextureTileCount > 0
+                                && string.Equals(viewer.LayerTitle, "Main", StringComparison.OrdinalIgnoreCase));
+                    if (automaticDockedViewer == null
+                        || automaticDockedViewer.ImagePixelWidth != imageSize
+                        || automaticDockedViewer.ImagePixelHeight != imageSize)
+                    {
+                        throw new InvalidOperationException(
+                            "Automatic docked viewer did not retain the exact 4512 image dimensions. "
+                            + $"Size={automaticDockedViewer?.ImagePixelWidth ?? 0}x{automaticDockedViewer?.ImagePixelHeight ?? 0}, "
+                            + $"Tiles={automaticDockedViewer?.TextureTileCount ?? 0}.");
+                    }
+
+                    LargeImageResourceSnapshot renderedBeforeGc = CaptureLargeImageResourceSnapshot();
+                    AppendLargeImageResourceSnapshot(report, "RenderedBeforeGc", renderedBeforeGc);
+                    CollectLargeImageResources();
+                    LargeImageResourceSnapshot retained = CaptureLargeImageResourceSnapshot();
+                    AppendLargeImageResourceSnapshot(report, "Retained", retained);
+                    report.Add("WorkspaceMs=" + workspaceWatch.ElapsedMilliseconds.ToString(CultureInfo.InvariantCulture));
+                    report.Add("WorkspaceTiles=" + shellHost.WorkspaceTextureTileCount.ToString(CultureInfo.InvariantCulture));
+                    report.Add("DockedLayerCount=" + shellHost.DockedLayerCount.ToString(CultureInfo.InvariantCulture));
+                    report.Add("DockedTiles=" + shellHost.DockedLayerTextureTileCount.ToString(CultureInfo.InvariantCulture));
+                    report.Add($"DockedLayerSize={automaticDockedViewer.ImagePixelWidth}x{automaticDockedViewer.ImagePixelHeight}");
+
+                    long privateGrowth = Math.Max(0L, retained.PrivateBytes - baseline.PrivateBytes);
+                    long workingSetGrowth = Math.Max(0L, retained.WorkingSetBytes - baseline.WorkingSetBytes);
+                    long managedGrowth = Math.Max(0L, retained.ManagedBytes - baseline.ManagedBytes);
+                    int handleGrowth = Math.Max(0, retained.HandleCount - baseline.HandleCount);
+                    int gdiGrowth = Math.Max(0, retained.GdiObjects - baseline.GdiObjects);
+                    int userGrowth = Math.Max(0, retained.UserObjects - baseline.UserObjects);
+                    long maximumPrivateGrowth = MaximumGrowth(
+                        baseline.PrivateBytes,
+                        afterSet.PrivateBytes,
+                        renderedBeforeGc.PrivateBytes,
+                        retained.PrivateBytes);
+                    long maximumWorkingSetGrowth = MaximumGrowth(
+                        baseline.WorkingSetBytes,
+                        afterSet.WorkingSetBytes,
+                        renderedBeforeGc.WorkingSetBytes,
+                        retained.WorkingSetBytes);
+                    long maximumManagedGrowth = MaximumGrowth(
+                        baseline.ManagedBytes,
+                        afterSet.ManagedBytes,
+                        renderedBeforeGc.ManagedBytes,
+                        retained.ManagedBytes);
+                    int maximumHandlesGrowth = MaximumGrowth(
+                        baseline.HandleCount,
+                        afterSet.HandleCount,
+                        renderedBeforeGc.HandleCount,
+                        retained.HandleCount);
+                    int maximumGdiObjectsGrowth = MaximumGrowth(
+                        baseline.GdiObjects,
+                        afterSet.GdiObjects,
+                        renderedBeforeGc.GdiObjects,
+                        retained.GdiObjects);
+                    int maximumUserObjectsGrowth = MaximumGrowth(
+                        baseline.UserObjects,
+                        afterSet.UserObjects,
+                        renderedBeforeGc.UserObjects,
+                        retained.UserObjects);
+                    report.Add("PrivateGrowthMB=" + FormatMegabytes(privateGrowth));
+                    report.Add("WorkingSetGrowthMB=" + FormatMegabytes(workingSetGrowth));
+                    report.Add("ManagedGrowthMB=" + FormatMegabytes(managedGrowth));
+                    report.Add("HandleGrowth=" + handleGrowth.ToString(CultureInfo.InvariantCulture));
+                    report.Add("GdiGrowth=" + gdiGrowth.ToString(CultureInfo.InvariantCulture));
+                    report.Add("UserGrowth=" + userGrowth.ToString(CultureInfo.InvariantCulture));
+                    report.Add("MaximumObservedPrivateGrowthMB=" + FormatMegabytes(maximumPrivateGrowth));
+                    report.Add("MaximumObservedWorkingSetGrowthMB=" + FormatMegabytes(maximumWorkingSetGrowth));
+                    report.Add("MaximumObservedManagedGrowthMB=" + FormatMegabytes(maximumManagedGrowth));
+                    report.Add("MaximumObservedHandleGrowth=" + maximumHandlesGrowth.ToString(CultureInfo.InvariantCulture));
+                    report.Add("MaximumObservedGdiGrowth=" + maximumGdiObjectsGrowth.ToString(CultureInfo.InvariantCulture));
+                    report.Add("MaximumObservedUserGrowth=" + maximumUserObjectsGrowth.ToString(CultureInfo.InvariantCulture));
+
+                    if (maximumPrivateGrowth > maximumPrivateGrowthBytes
+                        || maximumWorkingSetGrowth > maximumWorkingSetGrowthBytes
+                        || maximumManagedGrowth > maximumManagedGrowthBytes
+                        || maximumHandlesGrowth > maximumHandleGrowth
+                        || maximumGdiObjectsGrowth > maximumGdiGrowth
+                        || maximumUserObjectsGrowth > maximumUserGrowth
+                        || totalWatch.ElapsedMilliseconds > maximumTotalElapsedMilliseconds)
+                    {
+                        throw new InvalidOperationException(
+                            "4512 image resource budget was exceeded. "
+                            + $"MaximumObservedPrivate={FormatMegabytes(maximumPrivateGrowth)}MB, "
+                            + $"MaximumObservedWorkingSet={FormatMegabytes(maximumWorkingSetGrowth)}MB, "
+                            + $"MaximumObservedManaged={FormatMegabytes(maximumManagedGrowth)}MB, "
+                            + $"MaximumObservedHandles={maximumHandlesGrowth}, "
+                            + $"GDI={maximumGdiObjectsGrowth}, USER={maximumUserObjectsGrowth}, "
+                            + $"Total={totalWatch.ElapsedMilliseconds}ms.");
+                    }
+
+                    report[1] = "Result=PASS";
+                    report.Add("TotalElapsedMs=" + totalWatch.ElapsedMilliseconds.ToString(CultureInfo.InvariantCulture));
+                    File.WriteAllLines(reportPath, report);
+                },
+                captureFloatingToolWindow: false);
+            return capture;
+        }
+        catch (Exception ex)
+        {
+            report[1] = "Result=FAIL";
+            report.Add("Failure=" + ex.GetType().Name + ": " + ex.Message);
+            report.Add("TotalElapsedMs=" + totalWatch.ElapsedMilliseconds.ToString(CultureInfo.InvariantCulture));
+            File.WriteAllLines(reportPath, report);
+            throw;
+        }
+    }
+
+    private static CaptureResult CaptureShellHostImage4512Lifetime(string outputPath)
+    {
+        const int imageSize = 4512;
+        const int cycleCount = 5;
+        const long maximumPlateauRangeBytes = 64L * 1024L * 1024L;
+        const long maximumManagedPlateauRangeBytes = 32L * 1024L * 1024L;
+        const int maximumHandleGrowth = 12;
+        const int maximumGdiPlateauRange = 12;
+        const int maximumUserPlateauRange = 12;
+        const long maximumTotalElapsedMilliseconds = 120000L;
+
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        OpenVisionShellHostView shellHost = CreateShellHost(
+            "Smoke_WpfShellHostImage4512Lifetime",
+            seedMainLayer: false);
+        List<string> report = new()
+        {
+            "OpenVisionLab 4512 display-store/viewer lifetime contract",
+            "Result=PENDING",
+            "Image=4512x4512 8bpp grayscale",
+            "Cycles=" + cycleCount.ToString(CultureInfo.InvariantCulture),
+            "Flow=Main load -> Lifetime add -> dock/popout -> exact replace -> close/delete -> GC -> reload",
+            "Scope=Store identity, central/docked/popout rebind, explicit popout close, delete cleanup, no-auto-run, active layer/routes, process plateau",
+            "HistoryIsolation=Undo/redo snapshots are cleared after each verified cycle so this gate measures live store/viewer retention rather than the intentional 20-command history budget",
+            "Boundary=Process/native/GDI/USER/handle observations only; GPU VRAM and intra-operation peaks are not measured"
+        };
+        string reportPath = Path.ChangeExtension(outputPath, ".lifetime.txt");
+        Stopwatch totalWatch = Stopwatch.StartNew();
+
+        try
+        {
+            CaptureResult capture = CaptureWindowWithContent(
+                shellHost,
+                outputPath,
+                1600,
+                900,
+                () =>
+                {
+                    Pump(12);
+                    using (Bitmap main = CreateLargeSmokeBitmap(imageSize, imageSize, 0))
+                    {
+                        shellHost.SetMainLayerImageForTest(main);
+                    }
+
+                    Pump(24);
+                    CollectLargeImageResources();
+                    LargeImageResourceSnapshot baseline = CaptureLargeImageResourceSnapshot();
+                    AppendLargeImageResourceSnapshot(report, "Baseline", baseline);
+                    int baselineLiveLayerViewers = shellHost.LiveLayerViewerInstanceCountForTest;
+                    report.Add("BaselineLiveLayerViewers=" + baselineLiveLayerViewers.ToString(CultureInfo.InvariantCulture));
+
+                    int previewRunsBefore = shellHost.NativePreviewRunCount;
+                    string routeInputBefore = shellHost.ActiveNativeRouteInputLayerNameForTest;
+                    string routeInputBBefore = shellHost.ActiveNativeRouteInputLayerBNameForTest;
+                    string routeOutputBefore = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+                    List<LargeImageResourceSnapshot> retainedSnapshots = new();
+
+                    for (int cycle = 0; cycle < cycleCount; cycle++)
+                    {
+                        byte initialVariation = checked((byte)(12 + cycle * 24));
+                        byte replacementVariation = checked((byte)(initialVariation + 7));
+                        using (Bitmap initial = CreateLargeSmokeBitmap(imageSize, imageSize, initialVariation))
+                        {
+                            if (!shellHost.AddLayerImageForTest("Lifetime", initial))
+                            {
+                                throw new InvalidOperationException("Lifetime layer could not be added.");
+                            }
+                        }
+
+                        if (!shellHost.DockLayerForTest("Lifetime"))
+                        {
+                            throw new InvalidOperationException("Lifetime layer could not be docked.");
+                        }
+
+                        Pump(32);
+
+                        if (!shellHost.OpenLayerViewerForTest("Lifetime"))
+                        {
+                            throw new InvalidOperationException("Lifetime popout viewer could not be opened.");
+                        }
+
+                        Pump(12);
+
+                        string replacementSha256;
+                        using (Bitmap replacement = CreateLargeSmokeBitmap(imageSize, imageSize, replacementVariation))
+                        {
+                            replacementSha256 = ComputeStreamingBitmapSha256(replacement);
+                            if (!shellHost.AddLayerImageForTest("Lifetime", replacement))
+                            {
+                                throw new InvalidOperationException("Lifetime layer replacement failed.");
+                            }
+                        }
+
+                        Pump(20);
+                        using (Bitmap stored = shellHost.GetLayerImageCloneForTest("Lifetime"))
+                        {
+                            string storedSha256 = ComputeStreamingBitmapSha256(stored);
+                            if (stored.Width != imageSize
+                                || stored.Height != imageSize
+                                || !string.Equals(storedSha256, replacementSha256, StringComparison.Ordinal))
+                            {
+                                throw new InvalidOperationException($"Cycle {cycle + 1}: display store retained stale pixels.");
+                            }
+                        }
+
+                        int dockedWidth = shellHost.GetDockedLayerImagePixelWidthForTest("Lifetime");
+                        int dockedHeight = shellHost.GetDockedLayerImagePixelHeightForTest("Lifetime");
+                        int dockedTiles = shellHost.GetDockedLayerTextureTileCountForTest("Lifetime");
+                        if (dockedWidth != imageSize
+                            || dockedHeight != imageSize
+                            || dockedTiles <= 0)
+                        {
+                            throw new InvalidOperationException(
+                                $"Cycle {cycle + 1}: docked viewer did not bind the replacement image. "
+                                + $"Titles={shellHost.DockedLayerTitles}; Size={dockedWidth}x{dockedHeight}; Tiles={dockedTiles}");
+                        }
+
+                        using (Bitmap dockedImage = shellHost.CloneDockedLayerImageForTest("Lifetime"))
+                        {
+                            string dockedSha256 = ComputeStreamingBitmapSha256(dockedImage);
+                            if (!string.Equals(dockedSha256, replacementSha256, StringComparison.Ordinal))
+                            {
+                                throw new InvalidOperationException($"Cycle {cycle + 1}: docked viewer retained stale pixels.");
+                            }
+                        }
+
+                        ValidateLifetimePopoutViewer(
+                            shellHost,
+                            imageSize,
+                            cycle + 1,
+                            replacementSha256,
+                            closeExplicitly: cycle == 0);
+
+                        if (!shellHost.DeleteLayerForTest("Lifetime"))
+                        {
+                            throw new InvalidOperationException($"Cycle {cycle + 1}: Lifetime layer delete failed.");
+                        }
+
+                        Pump(16);
+                        if (shellHost.HasLayerForTest("Lifetime")
+                            || shellHost.DockedLayerTitles.Split('|', StringSplitOptions.RemoveEmptyEntries)
+                                .Any(title => string.Equals(title, "Lifetime", StringComparison.OrdinalIgnoreCase))
+                            || shellHost.OpenLayerViewerWindowCount != 0)
+                        {
+                            throw new InvalidOperationException($"Cycle {cycle + 1}: deleted layer still has a store/dock/popout borrower.");
+                        }
+
+                        if (!string.Equals(shellHost.ActiveHostLayerTitle, "Main", StringComparison.OrdinalIgnoreCase))
+                        {
+                            throw new InvalidOperationException($"Cycle {cycle + 1}: active layer did not return to Main after delete.");
+                        }
+
+                        shellHost.ClearLayerImageHistoryForTest();
+                        System.Windows.Forms.Application.DoEvents();
+                        CollectLargeImageResources();
+                        Pump(12);
+                        CollectLargeImageResources();
+                        LargeImageResourceSnapshot retained = CaptureLargeImageResourceSnapshot();
+                        retainedSnapshots.Add(retained);
+                        AppendLargeImageResourceSnapshot(report, $"Cycle{cycle + 1}Retained", retained);
+                        int liveLayerViewers = shellHost.LiveLayerViewerInstanceCountForTest;
+                        string liveLayerViewerStates = shellHost.LiveLayerViewerInstanceStatesForTest;
+                        report.Add($"Cycle{cycle + 1}LiveLayerViewers={liveLayerViewers.ToString(CultureInfo.InvariantCulture)}");
+                        report.Add($"Cycle{cycle + 1}LiveLayerViewerStates={liveLayerViewerStates}");
+                        if (liveLayerViewers != baselineLiveLayerViewers
+                            || liveLayerViewerStates.Contains("Disposed:", StringComparison.Ordinal))
+                        {
+                            throw new InvalidOperationException(
+                                $"Cycle {cycle + 1}: disposed dock/popout viewer remained alive after collection. States={liveLayerViewerStates}");
+                        }
+                        report.Add($"Cycle{cycle + 1}ReplacementRawSha256={replacementSha256}");
+                    }
+
+                    long privateRange = retainedSnapshots.Max(item => item.PrivateBytes) - retainedSnapshots.Min(item => item.PrivateBytes);
+                    long workingSetRange = retainedSnapshots.Max(item => item.WorkingSetBytes) - retainedSnapshots.Min(item => item.WorkingSetBytes);
+                    long managedRange = retainedSnapshots.Max(item => item.ManagedBytes) - retainedSnapshots.Min(item => item.ManagedBytes);
+                    int handleRange = retainedSnapshots.Max(item => item.HandleCount) - retainedSnapshots.Min(item => item.HandleCount);
+                    int minimumObservedHandles = retainedSnapshots[0].HandleCount;
+                    int handleGrowth = 0;
+                    foreach (LargeImageResourceSnapshot snapshot in retainedSnapshots.Skip(1))
+                    {
+                        handleGrowth = Math.Max(handleGrowth, snapshot.HandleCount - minimumObservedHandles);
+                        minimumObservedHandles = Math.Min(minimumObservedHandles, snapshot.HandleCount);
+                    }
+                    int gdiRange = retainedSnapshots.Max(item => item.GdiObjects) - retainedSnapshots.Min(item => item.GdiObjects);
+                    int userRange = retainedSnapshots.Max(item => item.UserObjects) - retainedSnapshots.Min(item => item.UserObjects);
+                    report.Add("RetainedPrivateRangeMB=" + FormatMegabytes(privateRange));
+                    report.Add("RetainedWorkingSetRangeMB=" + FormatMegabytes(workingSetRange));
+                    report.Add("RetainedManagedRangeMB=" + FormatMegabytes(managedRange));
+                    report.Add("RetainedHandleRange=" + handleRange.ToString(CultureInfo.InvariantCulture));
+                    report.Add("RetainedHandleGrowth=" + handleGrowth.ToString(CultureInfo.InvariantCulture));
+                    report.Add("RetainedGdiRange=" + gdiRange.ToString(CultureInfo.InvariantCulture));
+                    report.Add("RetainedUserRange=" + userRange.ToString(CultureInfo.InvariantCulture));
+
+                    if (previewRunsBefore != shellHost.NativePreviewRunCount
+                        || !string.Equals(routeInputBefore, shellHost.ActiveNativeRouteInputLayerNameForTest, StringComparison.Ordinal)
+                        || !string.Equals(routeInputBBefore, shellHost.ActiveNativeRouteInputLayerBNameForTest, StringComparison.Ordinal)
+                        || !string.Equals(routeOutputBefore, shellHost.ActiveNativeRouteOutputLayerNameForTest, StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException("Layer lifetime cycles changed Preview/Run count or Pipeline routes.");
+                    }
+
+                    if (privateRange > maximumPlateauRangeBytes
+                        || workingSetRange > maximumPlateauRangeBytes
+                        || managedRange > maximumManagedPlateauRangeBytes
+                        || handleGrowth > maximumHandleGrowth
+                        || gdiRange > maximumGdiPlateauRange
+                        || userRange > maximumUserPlateauRange
+                        || totalWatch.ElapsedMilliseconds > maximumTotalElapsedMilliseconds)
+                    {
+                        throw new InvalidOperationException(
+                            "4512 lifetime resource plateau was exceeded. "
+                            + $"Private={FormatMegabytes(privateRange)}MB, WorkingSet={FormatMegabytes(workingSetRange)}MB, "
+                            + $"Managed={FormatMegabytes(managedRange)}MB, HandleRange={handleRange}, HandleGrowth={handleGrowth}, "
+                            + $"GDI={gdiRange}, USER={userRange}, "
+                            + $"Total={totalWatch.ElapsedMilliseconds}ms.");
+                    }
+
+                    report[1] = "Result=PASS";
+                    report.Add("TotalElapsedMs=" + totalWatch.ElapsedMilliseconds.ToString(CultureInfo.InvariantCulture));
+                    File.WriteAllLines(reportPath, report);
+                },
+                captureFloatingToolWindow: false);
+            return capture;
+        }
+        catch (Exception ex)
+        {
+            report[1] = "Result=FAIL";
+            report.Add("Failure=" + ex.GetType().Name + ": " + ex.Message);
+            report.Add("TotalElapsedMs=" + totalWatch.ElapsedMilliseconds.ToString(CultureInfo.InvariantCulture));
+            File.WriteAllLines(reportPath, report);
+            throw;
+        }
+    }
+
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    private static void ValidateLifetimePopoutViewer(
+        OpenVisionShellHostView shellHost,
+        int imageSize,
+        int cycleNumber,
+        string replacementSha256,
+        bool closeExplicitly)
+    {
+        OpenVisionFloatingToolWindow? popoutWindow = Application.Current.Windows
+            .OfType<OpenVisionFloatingToolWindow>()
+            .FirstOrDefault(window => window.HostedContent is OpenVisionLayerViewerView viewer
+                && string.Equals(viewer.LayerTitle, "Lifetime", StringComparison.OrdinalIgnoreCase));
+        OpenVisionLayerViewerView? popoutViewer = popoutWindow?.HostedContent as OpenVisionLayerViewerView;
+        if (popoutWindow == null
+            || popoutViewer == null
+            || popoutViewer.ImagePixelWidth != imageSize
+            || popoutViewer.ImagePixelHeight != imageSize
+            || popoutViewer.TextureTileCount <= 0)
+        {
+            throw new InvalidOperationException($"Cycle {cycleNumber}: popout viewer did not bind the replacement image.");
+        }
+
+        using (Bitmap popoutImage = popoutViewer.CloneImageForTest())
+        {
+            string popoutSha256 = ComputeStreamingBitmapSha256(popoutImage);
+            if (!string.Equals(popoutSha256, replacementSha256, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException($"Cycle {cycleNumber}: popout viewer retained stale pixels.");
+            }
+        }
+
+        if (!closeExplicitly)
+        {
+            return;
+        }
+
+        popoutWindow.Close();
+        Pump(6);
+        if (shellHost.OpenLayerViewerWindowCount != 0)
+        {
+            throw new InvalidOperationException("Explicit popout close did not release the viewer.");
+        }
+    }
+
     private static CaptureResult CaptureShellHostLargeImage16KPerf(string outputPath)
     {
         OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
@@ -21957,11 +22508,10 @@ internal static class Program
                 + $"SourceHashLength={thresholdView.SignalInspectorSourceSha256ForTest.Length}");
         }
 
-        if (thresholdView.IsSignalInspectorOverlayVisibleForTest
-            || !thresholdView.IsSignalEvidenceCueVisibleForTest)
+        if (thresholdView.IsSignalInspectorOverlayVisibleForTest)
         {
             throw new InvalidOperationException(
-                "Basic Threshold Preview must keep the signal inspector closed and show only the transient evidence cue.");
+                "Basic Threshold Preview must keep the signal inspector closed while retaining current evidence.");
         }
 
         Slider thresholdSlider = FindVisualChildren<Slider>(thresholdView)
@@ -22217,18 +22767,23 @@ internal static class Program
         }
 
         thresholdView.OpenSignalInspectorForTest();
+        Pump(4);
         if (!thresholdView.IsSignalInspectorOverlayVisibleForTest
             || thresholdView.IsSignalEvidenceCueVisibleForTest)
         {
             throw new InvalidOperationException(
                 "Range Threshold explicit signal-review action did not open the inspector or dismiss the cue.");
         }
+        VisionToolSignalInspectorView signalInspector = FindVisualChildren<VisionToolSignalInspectorView>(thresholdView)
+            .FirstOrDefault()
+            ?? throw new InvalidOperationException("Range Threshold signal inspector view was not found.");
         AssertVisibleTextContains(
-            thresholdView,
+            signalInspector,
             "Range Threshold signal inspector",
-            "Lower ",
-            "Upper ",
-            "Drag Lower/Upper");
+            "신호 검사기",
+            "현재 미리보기 근거",
+            "SHA-256",
+            "Gray population");
 
         int replacementLower = Math.Min(64, rangeProperty.RangeMax);
         int runsBeforeMarkerCommit = shellHost.NativePreviewRunCount;
@@ -23158,6 +23713,125 @@ internal static class Program
         foreach ((string key, string value) in expectedParameters)
         {
             AssertParameterValue(step, key, value);
+        }
+    }
+
+    private static CaptureResult CaptureShellHostPipelineLifecycleRecovery(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        CleanupTransientRecipeWorkspaces();
+
+        string recipeName = "Smoke_PipelineLifecycleRecovery_" + Guid.NewGuid().ToString("N").Substring(0, 12);
+        const string oldPipelineName = "Lifecycle_A";
+        const string newPipelineName = "Lifecycle_B";
+        VisionPipelineStorage.Save(
+            recipeName,
+            CreateRecipeContextSmokePipeline(oldPipelineName, 1));
+        VisionPipelineStorage.SaveActivePipelineName(recipeName, oldPipelineName);
+
+        using (VisionPipelineStorage.BeginLifecycleFailureInjectionForTest(
+            VisionPipelineLifecycleFailureStage.AfterSourceRemoved))
+        {
+            if (VisionPipelineStorage.TryRenamePipeline(
+                    recipeName,
+                    oldPipelineName,
+                    newPipelineName,
+                    out string failureMessage))
+            {
+                throw new InvalidOperationException(
+                    "Lifecycle recovery smoke did not retain an interrupted rename: " + failureMessage);
+            }
+        }
+
+        VisionPipelineStorage.ResetRuntimePersistenceStateForTest();
+        OpenVisionShellHostView shellHost;
+        try
+        {
+            shellHost = CreateShellHost(recipeName, seedMainLayer: true);
+            return CaptureWindowWithContent(
+                shellHost,
+                outputPath,
+                1600,
+                900,
+                () =>
+                {
+                    Pump(100);
+                    int previewRunsBefore = shellHost.NativePreviewRunCount;
+                    int layerCountBefore = shellHost.LayerDocumentCount;
+                    string activeLayerBefore = shellHost.ActiveHostLayerTitle;
+                    string routeInputBefore = shellHost.ActiveNativeRouteInputLayerNameForTest;
+                    string routeOutputBefore = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+                    ToggleButton recipeManagerButton = FindNamedVisualChild<ToggleButton>(
+                            shellHost,
+                            "btnHostRecipeManager")
+                        ?? throw new InvalidOperationException(
+                            "Recipe manager button was not found for lifecycle recovery smoke.");
+                    recipeManagerButton.IsChecked = true;
+                    Pump(80);
+                    string statusText = shellHost.RecipeCommands.SelectedRecipePersistenceStatusText;
+                    if (!shellHost.RecipeCommands.HasSelectedRecipePersistenceStatus
+                        || shellHost.RecipeCommands.HasSelectedRecipePersistenceFailure
+                        || !statusText.Contains("Pipeline 변경 복구 완료", StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            "Recipe Manager did not render the recovered Pipeline lifecycle state. "
+                            + $"HasStatus={shellHost.RecipeCommands.HasSelectedRecipePersistenceStatus}, "
+                            + $"HasFailure={shellHost.RecipeCommands.HasSelectedRecipePersistenceFailure}, "
+                            + $"Status='{statusText}'");
+                    }
+
+                    AssertVisibleAutomationIds(
+                        shellHost,
+                        "WPF Pipeline lifecycle recovery status",
+                        "HostRecipeManagerPanel",
+                        "HostRecipePersistenceStatus");
+                    Border statusBorder = FindVisualChildren<Border>(shellHost)
+                            .FirstOrDefault(border => string.Equals(
+                                AutomationProperties.GetAutomationId(border),
+                                "HostRecipePersistenceStatus",
+                                StringComparison.Ordinal))
+                        ?? throw new InvalidOperationException(
+                            "Recipe lifecycle recovery status border was not found.");
+                    if (statusBorder.Visibility != Visibility.Visible
+                        || !FindVisualChildren<TextBlock>(statusBorder)
+                            .Any(item => item.Text.Contains("Pipeline 변경 복구 완료", StringComparison.Ordinal)))
+                    {
+                        throw new InvalidOperationException(
+                            "Recipe lifecycle recovery status was not visibly rendered in the current WPF surface.");
+                    }
+
+                    if (!string.Equals(
+                            VisionPipelineStorage.LoadActivePipelineName(recipeName, newPipelineName),
+                            oldPipelineName,
+                            StringComparison.OrdinalIgnoreCase)
+                        || File.Exists(RecipeWorkspaceService.GetVisionPipelinePath(recipeName, newPipelineName))
+                        || File.Exists(RecipeWorkspaceService.GetVisionConfigPath(recipeName, "pipeline.lifecycle.json")))
+                    {
+                        throw new InvalidOperationException(
+                            "Recipe lifecycle recovery did not leave the prior Pipeline and clean journal state.");
+                    }
+
+                    if (shellHost.NativePreviewRunCount != previewRunsBefore
+                        || shellHost.LayerDocumentCount != layerCountBefore
+                        || !string.Equals(shellHost.ActiveHostLayerTitle, activeLayerBefore, StringComparison.Ordinal)
+                        || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, routeInputBefore, StringComparison.Ordinal)
+                        || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, routeOutputBefore, StringComparison.Ordinal)
+                        || shellHost.HasNativePreviewResult
+                        || shellHost.IsActiveWpfToolWindowVisibleForTest
+                        || shellHost.IsNativeDocumentActive)
+                    {
+                        throw new InvalidOperationException(
+                            "Recipe lifecycle recovery changed Preview/Run, layer, document, or route state. "
+                            + $"Runs={previewRunsBefore}->{shellHost.NativePreviewRunCount}, "
+                            + $"Layers={layerCountBefore}->{shellHost.LayerDocumentCount}");
+                    }
+                },
+                captureFloatingToolWindow: false,
+                captureScreen: true);
+        }
+        finally
+        {
+            RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
         }
     }
 
@@ -30326,6 +31000,17 @@ internal static class Program
                 }
                 else
                 {
+                    int propertyGridLabelCheckRuns = shellHost.NativePreviewRunCount;
+                    shellHost.ConfigureActiveEdgeBasedMatchingForTest(property =>
+                    {
+                        property.ShowAdvancedSettings = true;
+                    });
+                    Pump(8);
+                    if (shellHost.NativePreviewRunCount != propertyGridLabelCheckRuns)
+                    {
+                        throw new InvalidOperationException(
+                            "EdgeBasedMatching PropertyGrid label inspection triggered Preview.");
+                    }
                     SetActivePropertyGridSearchText("P227 unique-match PropertyGrid evidence", "고유");
                     Pump(6);
                     AssertActiveToolTextsVisible(
@@ -34178,7 +34863,7 @@ internal static class Program
         return bitmap;
     }
 
-    private static Bitmap CreateLargeSmokeBitmap(int width, int height)
+    private static Bitmap CreateLargeSmokeBitmap(int width, int height, byte variation = 0)
     {
         Bitmap bitmap = new(width, height, System.Drawing.Imaging.PixelFormat.Format8bppIndexed);
         ColorPalette palette = bitmap.Palette;
@@ -34223,7 +34908,7 @@ internal static class Program
                         value = Math.Min(245, value + 42);
                     }
 
-                    row[x] = (byte)Math.Clamp(value, 0, 255);
+                    row[x] = (byte)Math.Clamp(value + variation, 0, 255);
                 }
 
                 for (int x = width; x < stride; x++)
@@ -34240,6 +34925,70 @@ internal static class Program
         }
 
         return bitmap;
+    }
+
+    private static string ComputeStreamingBitmapSha256(Bitmap bitmap)
+    {
+        using SHA256 sha256 = SHA256.Create();
+        byte[] metadata = System.Text.Encoding.UTF8.GetBytes(
+            $"{bitmap.Width}x{bitmap.Height}:32bppArgb:");
+        sha256.TransformBlock(metadata, 0, metadata.Length, metadata, 0);
+
+        DrawingRectangle bounds = new(0, 0, bitmap.Width, bitmap.Height);
+        BitmapData data = bitmap.LockBits(bounds, ImageLockMode.ReadOnly, bitmap.PixelFormat);
+        try
+        {
+            int stride = Math.Abs(data.Stride);
+            byte[] sourceRow = new byte[stride];
+            byte[] normalizedRow = new byte[bitmap.Width * 4];
+            ColorPalette palette = bitmap.Palette;
+            for (int y = 0; y < bitmap.Height; y++)
+            {
+                Marshal.Copy(IntPtr.Add(data.Scan0, y * data.Stride), sourceRow, 0, stride);
+                if (bitmap.PixelFormat == System.Drawing.Imaging.PixelFormat.Format8bppIndexed)
+                {
+                    for (int x = 0; x < bitmap.Width; x++)
+                    {
+                        DrawingColor color = palette.Entries[sourceRow[x]];
+                        int offset = x * 4;
+                        normalizedRow[offset] = color.B;
+                        normalizedRow[offset + 1] = color.G;
+                        normalizedRow[offset + 2] = color.R;
+                        normalizedRow[offset + 3] = color.A;
+                    }
+                }
+                else if (bitmap.PixelFormat == System.Drawing.Imaging.PixelFormat.Format24bppRgb)
+                {
+                    for (int x = 0; x < bitmap.Width; x++)
+                    {
+                        int sourceOffset = x * 3;
+                        int targetOffset = x * 4;
+                        normalizedRow[targetOffset] = sourceRow[sourceOffset];
+                        normalizedRow[targetOffset + 1] = sourceRow[sourceOffset + 1];
+                        normalizedRow[targetOffset + 2] = sourceRow[sourceOffset + 2];
+                        normalizedRow[targetOffset + 3] = byte.MaxValue;
+                    }
+                }
+                else if (bitmap.PixelFormat == System.Drawing.Imaging.PixelFormat.Format32bppArgb)
+                {
+                    Buffer.BlockCopy(sourceRow, 0, normalizedRow, 0, normalizedRow.Length);
+                }
+                else
+                {
+                    throw new NotSupportedException(
+                        "Streaming smoke hash does not support " + bitmap.PixelFormat + ".");
+                }
+
+                sha256.TransformBlock(normalizedRow, 0, normalizedRow.Length, normalizedRow, 0);
+            }
+
+            sha256.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+            return Convert.ToHexString(sha256.Hash!);
+        }
+        finally
+        {
+            bitmap.UnlockBits(data);
+        }
     }
 
     private static string CreateMatchingTemplateFile(Bitmap source)
@@ -34740,6 +35489,90 @@ internal static class Program
         }, captureFloatingToolWindow: false);
     }
 
+    private static CaptureResult CaptureImageCanvasOwnedMatLoad(string outputPath)
+    {
+        string artifactDirectory = Path.GetDirectoryName(outputPath)
+            ?? throw new InvalidOperationException("ImageCanvas owned-load artifact directory is missing.");
+        Directory.CreateDirectory(artifactDirectory);
+        string grayPath = Path.Combine(artifactDirectory, "owned_loader_gray.png");
+        string colorPath = Path.Combine(artifactDirectory, "owned_loader_color.png");
+
+        using (CvMat gray = new(240, 320, OpenCvSharp.MatType.CV_8UC1, OpenCvSharp.Scalar.All(36)))
+        {
+            Cv.Circle(gray, new OpenCvSharp.Point(92, 120), 48, OpenCvSharp.Scalar.All(210), -1, OpenCvSharp.LineTypes.AntiAlias);
+            Cv.ImWrite(grayPath, gray);
+        }
+
+        using (CvMat color = new(384, 512, OpenCvSharp.MatType.CV_8UC3, new OpenCvSharp.Scalar(24, 31, 36)))
+        {
+            Cv.Rectangle(color, new OpenCvSharp.Rect(70, 76, 170, 116), new OpenCvSharp.Scalar(74, 176, 222), -1);
+            Cv.Circle(color, new OpenCvSharp.Point(368, 194), 74, new OpenCvSharp.Scalar(210, 162, 48), 8, OpenCvSharp.LineTypes.AntiAlias);
+            Cv.PutText(color, "Owned Mat", new OpenCvSharp.Point(64, 304), OpenCvSharp.HersheyFonts.HersheySimplex, 1.1, OpenCvSharp.Scalar.White, 2, OpenCvSharp.LineTypes.AntiAlias);
+            Cv.ImWrite(colorPath, color);
+        }
+
+        OpenVisionLab.ImageCanvas.ViewModels.RoiImageCanvasViewModel viewModel =
+            new("OwnedMatLoaderSmoke");
+        OpenVisionLab.ImageCanvas.Views.RoiImageCanvasView view = new()
+        {
+            DataContext = viewModel,
+            ShowStatusBar = true,
+            ShowToolBar = false
+        };
+
+        try
+        {
+            return CaptureWindowWithContent(view, outputPath, 820, 600, () =>
+            {
+                LoadOwnedCanvasMatCase(viewModel, grayPath, OpenCvSharp.MatType.CV_8UC1, Path.Combine(artifactDirectory, "owned_loader_gray_saved.png"));
+                LoadOwnedCanvasMatCase(viewModel, colorPath, OpenCvSharp.MatType.CV_8UC3, Path.Combine(artifactDirectory, "owned_loader_color_saved.png"));
+            });
+        }
+        finally
+        {
+            view.DataContext = null;
+            viewModel.Dispose();
+        }
+    }
+
+    private static void LoadOwnedCanvasMatCase(
+        OpenVisionLab.ImageCanvas.ViewModels.RoiImageCanvasViewModel viewModel,
+        string sourcePath,
+        OpenCvSharp.MatType expectedType,
+        string savedPath)
+    {
+        using (CvMat loaded = OpenVisionLab.ImageCanvas.CanvasImageLoader.LoadMatFromFile(sourcePath))
+        {
+            if (loaded.Empty() || loaded.Type() != expectedType)
+            {
+                throw new InvalidOperationException(
+                    $"ImageCanvas owned file load returned {loaded.Type()} for {Path.GetFileName(sourcePath)}, expected {expectedType}.");
+            }
+
+            viewModel.LoadImage(loaded, Path.GetFileName(sourcePath));
+            viewModel.FitImageToView();
+        }
+
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+        Pump(20);
+
+        int textureTileCount = viewModel.ImageViewer.TextureAreas.Values.Sum(items => items?.Count ?? 0);
+        if (textureTileCount < 1 || !viewModel.SaveCurrentImage(savedPath))
+        {
+            throw new InvalidOperationException(
+                $"ImageCanvas did not retain/upload/save {Path.GetFileName(sourcePath)} after the loader Mat was disposed. Tiles={textureTileCount}.");
+        }
+
+        using CvMat saved = Cv.ImRead(savedPath, CvImreadModes.Unchanged);
+        if (saved.Empty() || saved.Type() != expectedType)
+        {
+            throw new InvalidOperationException(
+                $"ImageCanvas retained save returned {saved.Type()} for {Path.GetFileName(sourcePath)}, expected {expectedType}.");
+        }
+    }
+
     private static CaptureResult CaptureOpenGlTemplateEditor(string outputPath)
     {
         using Bitmap bitmap = CreateRoiSmokeBitmap();
@@ -34841,6 +35674,369 @@ internal static class Program
                 throw new InvalidOperationException("Template editor rotation did not produce a valid zero-degree extracted template.");
             }
         });
+    }
+
+    private static CaptureResult CaptureOpenGlNativeReadback(string outputPath)
+    {
+        string artifactDirectory = Path.GetDirectoryName(outputPath)
+            ?? throw new InvalidOperationException("OpenGL native-readback artifact directory is missing.");
+        Directory.CreateDirectory(artifactDirectory);
+
+        const int width = 4;
+        const int height = 4;
+        byte[] expected = new byte[width * height * 4];
+        byte[] upload = new byte[expected.Length];
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                int expectedIndex = ((y * width) + x) * 4;
+                expected[expectedIndex] = (byte)(17 + (x * 29) + (y * 7));
+                expected[expectedIndex + 1] = (byte)(23 + (x * 11) + (y * 31));
+                expected[expectedIndex + 2] = (byte)(41 + (x * 37) + (y * 13));
+                expected[expectedIndex + 3] = 255;
+
+                int uploadIndex = (((height - 1 - y) * width) + x) * 4;
+                upload[uploadIndex] = expected[expectedIndex + 2];
+                upload[uploadIndex + 1] = expected[expectedIndex + 1];
+                upload[uploadIndex + 2] = expected[expectedIndex];
+                upload[uploadIndex + 3] = expected[expectedIndex + 3];
+            }
+        }
+
+        string sourceRawPath = Path.Combine(artifactDirectory, "native_readback_source.rgba");
+        string sourcePngPath = Path.Combine(artifactDirectory, "native_readback_source.png");
+        File.WriteAllBytes(sourceRawPath, expected);
+        using (Bitmap sourceBitmap = new(width, height, System.Drawing.Imaging.PixelFormat.Format32bppArgb))
+        {
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    int index = ((y * width) + x) * 4;
+                    sourceBitmap.SetPixel(
+                        x,
+                        y,
+                        DrawingColor.FromArgb(expected[index + 3], expected[index], expected[index + 1], expected[index + 2]));
+                }
+            }
+            sourceBitmap.Save(sourcePngPath, ImageFormat.Png);
+        }
+        string sourceRawSha256 = Convert.ToHexString(SHA256.HashData(expected));
+        string sourcePngSha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(sourcePngPath)));
+
+        OpenVisionLab.ImageCanvas.ViewModels.RoiImageCanvasViewModel viewModel =
+            new("OpenGlNativeReadbackSmoke");
+        OpenVisionLab.ImageCanvas.Views.RoiImageCanvasView view = new()
+        {
+            DataContext = viewModel,
+            ShowStatusBar = true,
+            ShowToolBar = false
+        };
+
+        try
+        {
+            return CaptureWindowWithContent(view, outputPath, 820, 600, () =>
+            {
+                using (CvMat display = new(32, 32, OpenCvSharp.MatType.CV_8UC3, new OpenCvSharp.Scalar(44, 54, 64)))
+                {
+                    viewModel.LoadImage(display, "opengl-native-readback.png");
+                    viewModel.FitImageToView();
+                }
+
+                var viewer = viewModel.ImageViewer;
+                dynamic gl = (object)viewer.GetOpenGL();
+                uint textureId = viewer.GenerateOpenGLTexture(width, height, 4);
+                GCHandle uploadHandle = GCHandle.Alloc(upload, GCHandleType.Pinned);
+                try
+                {
+                    viewer.UpdateTexture(uploadHandle.AddrOfPinnedObject(), width, height, 4, textureId);
+                }
+                finally
+                {
+                    uploadHandle.Free();
+                }
+
+                bool forcedExceptionObserved = false;
+                try
+                {
+                    OpenVisionLab.ImageCanvas.OpenGlRenderer.SetupFrameAndRenderBuffers(
+                        gl,
+                        textureId,
+                        width,
+                        height,
+                        (Action)(() => throw new InvalidOperationException("forced OpenGL cleanup reproduction")));
+                }
+                catch (InvalidOperationException exception) when (exception.Message.Contains("forced OpenGL cleanup reproduction", StringComparison.Ordinal))
+                {
+                    forcedExceptionObserved = true;
+                }
+
+                if (!forcedExceptionObserved)
+                {
+                    throw new InvalidOperationException("Forced OpenGL exception was not preserved as the primary failure.");
+                }
+
+                OpenVisionLab.ImageCanvas.OpenGlRenderer.SetupFrameAndRenderBuffers(
+                    gl,
+                    textureId,
+                    width,
+                    height,
+                    (Action)(() =>
+                    {
+                        gl.ClearColor(0.13F, 0.27F, 0.41F, 1F);
+                        gl.Clear(0x00004000U);
+                    }));
+
+                DrawingColor renderedColor = viewer.ReadTextureColor(gl, textureId, 0, 0);
+                if (renderedColor.R < 30 || renderedColor.G < 50 || renderedColor.B < 70 || renderedColor.A < 240)
+                {
+                    throw new InvalidOperationException(
+                        $"Rendering after forced cleanup did not produce the expected clear color: {renderedColor}.");
+                }
+
+                uploadHandle = GCHandle.Alloc(upload, GCHandleType.Pinned);
+                try
+                {
+                    viewer.UpdateTexture(uploadHandle.AddrOfPinnedObject(), width, height, 4, textureId);
+                }
+                finally
+                {
+                    uploadHandle.Free();
+                }
+
+                for (int y = 0; y < height; y++)
+                {
+                    for (int x = 0; x < width; x++)
+                    {
+                        int index = ((y * width) + x) * 4;
+                        DrawingColor color = viewer.ReadTextureColor(gl, textureId, x, y);
+                        AssertNativeColor(color, expected, index, $"pixel({x},{y})");
+                    }
+                }
+
+                byte[] fullRegion = viewer.ReadTextureRegionColors(gl, textureId, 0, 0, width, height, width, height);
+                AssertNativeBytes(fullRegion, expected, "full region");
+
+                byte[] rightBottomPixel = viewer.ReadTextureRegionColors(gl, textureId, width - 1, height - 1, 1, 1, width, height);
+                AssertNativeBytes(rightBottomPixel, expected, ((height - 1) * width + (width - 1)) * 4, "bottom-right 1x1 region");
+
+                byte[] rightEdge = viewer.ReadTextureRegionColors(gl, textureId, width - 1, 0, 1, height, width, height);
+                for (int y = 0; y < height; y++)
+                {
+                    AssertNativeBytes(rightEdge, expected, (y * width + width - 1) * 4, y * 4, "right edge row " + y);
+                }
+
+                byte[] bottomEdge = viewer.ReadTextureRegionColors(gl, textureId, 0, height - 1, width, 1, width, height);
+                AssertNativeBytes(bottomEdge, expected, (height - 1) * width * 4, "bottom edge");
+
+                byte[] centerRegion = viewer.ReadTextureRegionColors(gl, textureId, 2, 1, 2, 3, width, height);
+                if (centerRegion.Length != 2 * 3 * 4)
+                {
+                    throw new InvalidOperationException($"Region readback returned {centerRegion.Length} bytes instead of 24.");
+                }
+                for (int regionY = 0; regionY < 3; regionY++)
+                {
+                    for (int regionX = 0; regionX < 2; regionX++)
+                    {
+                        int sourceIndex = (((1 + regionY) * width) + 2 + regionX) * 4;
+                        int regionIndex = ((regionY * 2) + regionX) * 4;
+                        AssertNativeBytes(centerRegion, expected, sourceIndex, regionIndex, $"interior region ({regionX},{regionY})");
+                    }
+                }
+
+                byte[] clampedCornerRegion = viewer.ReadTextureRegionColors(gl, textureId, new System.Drawing.PointF(0.2F, 0.2F), 1, width, height);
+                if (clampedCornerRegion.Length != 2 * 2 * 4)
+                {
+                    throw new InvalidOperationException($"Corner region readback returned {clampedCornerRegion.Length} bytes instead of 16.");
+                }
+
+                byte[] restoreExpected = (byte[])expected.Clone();
+                byte[] restoreUpload = new byte[restoreExpected.Length];
+                for (int y = 0; y < height; y++)
+                {
+                    for (int x = 0; x < width; x++)
+                    {
+                        int index = ((y * width) + x) * 4;
+                        restoreExpected[index] = (byte)(151 + (x * 13) + (y * 5));
+                        restoreExpected[index + 1] = (byte)(83 + (x * 17) + (y * 19));
+                        restoreExpected[index + 2] = (byte)(211 - (x * 11) - (y * 7));
+                        restoreExpected[index + 3] = 255;
+
+                        int uploadIndex = (((height - 1 - y) * width) + x) * 4;
+                        restoreUpload[uploadIndex] = restoreExpected[index + 2];
+                        restoreUpload[uploadIndex + 1] = restoreExpected[index + 1];
+                        restoreUpload[uploadIndex + 2] = restoreExpected[index];
+                        restoreUpload[uploadIndex + 3] = restoreExpected[index + 3];
+                    }
+                }
+
+                uint backupTextureId = viewer.GenerateOpenGLTexture(width, height, 4);
+                try
+                {
+                    GCHandle restoreHandle = GCHandle.Alloc(restoreUpload, GCHandleType.Pinned);
+                    try
+                    {
+                        viewer.UpdateTexture(restoreHandle.AddrOfPinnedObject(), width, height, 4, backupTextureId);
+                    }
+                    finally
+                    {
+                        restoreHandle.Free();
+                    }
+
+                    OpenVisionLab.ImageCanvas.OpenGlRenderer.RestorePartTexture(
+                        gl,
+                        textureId,
+                        backupTextureId,
+                        width,
+                        height,
+                        1,
+                        1,
+                        2,
+                        2);
+
+                    for (int y = 0; y < height; y++)
+                    {
+                        for (int x = 0; x < width; x++)
+                        {
+                            int index = ((y * width) + x) * 4;
+                            byte[] source = x >= 1 && x < 3 && y >= 1 && y < 3 ? restoreExpected : expected;
+                            DrawingColor color = viewer.ReadTextureColor(gl, textureId, x, y);
+                            AssertNativeColor(color, source, index, $"restored pixel({x},{y})");
+                        }
+                    }
+                }
+                finally
+                {
+                    gl.DeleteTextures(1, new[] { backupTextureId });
+                }
+
+                uploadHandle = GCHandle.Alloc(upload, GCHandleType.Pinned);
+                try
+                {
+                    viewer.UpdateTexture(uploadHandle.AddrOfPinnedObject(), width, height, 4, textureId);
+                }
+                finally
+                {
+                    uploadHandle.Free();
+                }
+
+                foreach (Action invalidRead in new[]
+                {
+                    (Action)(() => viewer.ReadTextureColor(gl, textureId, -1, 0)),
+                    () => viewer.ReadTextureColor(gl, textureId, width, 0),
+                    () => viewer.ReadTextureColor(gl, textureId, 0, height)
+                })
+                {
+                    bool rejected = false;
+                    try { invalidRead(); }
+                    catch (ArgumentOutOfRangeException) { rejected = true; }
+                    if (!rejected) { throw new InvalidOperationException("An out-of-range native pixel read was accepted."); }
+                }
+
+                using (Bitmap bitmap = OpenVisionLab.ImageCanvas.OpenGlRenderer.TextureToBitmap(gl, textureId, 4))
+                {
+                    for (int y = 0; y < height; y++)
+                    {
+                        for (int x = 0; x < width; x++)
+                        {
+                            int index = ((y * width) + x) * 4;
+                            AssertNativeColor(bitmap.GetPixel(x, y), expected, index, $"bitmap({x},{y})");
+                        }
+                    }
+
+                    string bitmapEvidencePath = Path.Combine(artifactDirectory, "native_readback_bitmap.png");
+                    using Bitmap enlarged = new(width * 100, height * 100);
+                    using Graphics graphics = Graphics.FromImage(enlarged);
+                    for (int y = 0; y < height; y++)
+                    {
+                        for (int x = 0; x < width; x++)
+                        {
+                            using System.Drawing.SolidBrush brush = new(bitmap.GetPixel(x, y));
+                            graphics.FillRectangle(brush, x * 100, y * 100, 100, 100);
+                        }
+                    }
+                    enlarged.Save(bitmapEvidencePath, System.Drawing.Imaging.ImageFormat.Png);
+                }
+
+                using CvMat mat = OpenVisionLab.ImageCanvas.OpenGlRenderer.TextureToMat(gl, textureId, 4);
+                if (mat.Width != width || mat.Height != height || mat.Type() != OpenCvSharp.MatType.CV_8UC4)
+                {
+                    throw new InvalidOperationException($"Native Mat readback returned {mat.Width}x{mat.Height} type {mat.Type()}.");
+                }
+
+                File.WriteAllLines(Path.ChangeExtension(outputPath, ".coordinate.txt"), new[]
+                {
+                    "Result=PASS",
+                    "Fixture=4x4 RGBA with distinct corners, edges, and interior values",
+                    "UploadOrientation=Bottom-left native texture rows; expected comparisons are top-left image coordinates",
+                    $"SourceRaw={sourceRawPath}|SHA256={sourceRawSha256}",
+                    $"SourcePng={sourcePngPath}|SHA256={sourcePngSha256}",
+                    "ForcedExceptionCleanup=PASS|SetupFrameAndRenderBuffers action exception preserved; subsequent clear render succeeded",
+                    "PixelReadback=PASS|all 16 pixels, four corners, last row/column, and interior matched",
+                    "RegionReadback=PASS|1x1, right edge, bottom edge, full, interior 2x3, and clamped corner region matched",
+                    "RegionRestore=PASS|half-open [1,3) x [1,3) changed exactly four pixels; neighbors matched the original",
+                    "Bounds=PASS|negative x, x==width, and y==height rejected",
+                    "BitmapReadback=PASS|TextureToBitmap exact 4x4 identity",
+                    "MatReadback=PASS|TextureToMat returned 4x4 CV_8UC4",
+                    "NativePath=FBO + PBO + glReadPixels + MapBuffer",
+                    "Screenshot=Current-source WPF viewer capture; native bitmap evidence is native_readback_bitmap.png"
+                });
+
+                gl.DeleteTextures(1, new[] { textureId });
+                textureId = 0;
+            });
+        }
+        finally
+        {
+            view.DataContext = null;
+            viewModel.Dispose();
+        }
+    }
+
+    private static void AssertNativeColor(DrawingColor actual, byte[] expected, int expectedIndex, string label)
+    {
+        if (actual.R != expected[expectedIndex]
+            || actual.G != expected[expectedIndex + 1]
+            || actual.B != expected[expectedIndex + 2]
+            || actual.A != expected[expectedIndex + 3])
+        {
+            throw new InvalidOperationException(
+                $"{label} mismatch. Actual=ARGB({actual.A},{actual.R},{actual.G},{actual.B}) "
+                + $"Expected=ARGB({expected[expectedIndex + 3]},{expected[expectedIndex]},{expected[expectedIndex + 1]},{expected[expectedIndex + 2]}).");
+        }
+    }
+
+    private static void AssertNativeBytes(byte[] actual, byte[] expected, string label)
+    {
+        if (actual.Length != expected.Length)
+        {
+            throw new InvalidOperationException($"{label} length mismatch. Actual={actual.Length}; Expected={expected.Length}.");
+        }
+
+        for (int i = 0; i < actual.Length; i++)
+        {
+            if (actual[i] != expected[i])
+            {
+                throw new InvalidOperationException($"{label} byte mismatch at index {i}.");
+            }
+        }
+    }
+
+    private static void AssertNativeBytes(byte[] actual, byte[] expected, int expectedIndex, string label)
+    {
+        AssertNativeBytes(actual, expected, expectedIndex, 0, label);
+    }
+
+    private static void AssertNativeBytes(byte[] actual, byte[] expected, int expectedIndex, int actualIndex, string label)
+    {
+        for (int channel = 0; channel < 4; channel++)
+        {
+            if (actualIndex + channel >= actual.Length || expectedIndex + channel >= expected.Length || actual[actualIndex + channel] != expected[expectedIndex + channel])
+            {
+                throw new InvalidOperationException($"{label} byte mismatch at channel {channel}.");
+            }
+        }
     }
 
     private static CaptureResult CaptureImageCompare(string outputPath)
@@ -35271,6 +36467,11 @@ internal static class Program
             foreach (Window owned in Application.Current.Windows.OfType<Window>().Where(item => !ReferenceEquals(item, window)).ToArray())
             {
                 owned.Close();
+            }
+
+            if (content is IDisposable disposable)
+            {
+                disposable.Dispose();
             }
 
             window.Close();
@@ -35805,9 +37006,52 @@ internal static class Program
         }
     }
 
+    private static void CollectLargeImageResources()
+    {
+        GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true, true);
+        GC.WaitForPendingFinalizers();
+        GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true, true);
+    }
+
+    private static LargeImageResourceSnapshot CaptureLargeImageResourceSnapshot()
+    {
+        using Process process = Process.GetCurrentProcess();
+        process.Refresh();
+        return new LargeImageResourceSnapshot(
+            process.PrivateMemorySize64,
+            process.WorkingSet64,
+            GC.GetTotalMemory(false),
+            process.HandleCount,
+            checked((int)GetGuiResources(process.Handle, 0)),
+            checked((int)GetGuiResources(process.Handle, 1)));
+    }
+
+    private static void AppendLargeImageResourceSnapshot(
+        ICollection<string> report,
+        string name,
+        LargeImageResourceSnapshot snapshot)
+    {
+        report.Add(name + "PrivateMB=" + FormatMegabytes(snapshot.PrivateBytes));
+        report.Add(name + "WorkingSetMB=" + FormatMegabytes(snapshot.WorkingSetBytes));
+        report.Add(name + "ManagedMB=" + FormatMegabytes(snapshot.ManagedBytes));
+        report.Add(name + "Handles=" + snapshot.HandleCount.ToString(CultureInfo.InvariantCulture));
+        report.Add(name + "GDI=" + snapshot.GdiObjects.ToString(CultureInfo.InvariantCulture));
+        report.Add(name + "USER=" + snapshot.UserObjects.ToString(CultureInfo.InvariantCulture));
+    }
+
     private static string FormatMegabytes(long bytes)
     {
         return (bytes / 1024D / 1024D).ToString("0.0", CultureInfo.InvariantCulture);
+    }
+
+    private static long MaximumGrowth(long baseline, params long[] observedValues)
+    {
+        return Math.Max(0L, observedValues.Max() - baseline);
+    }
+
+    private static int MaximumGrowth(int baseline, params int[] observedValues)
+    {
+        return Math.Max(0, observedValues.Max() - baseline);
     }
 
     private static Bitmap CreateRoiSmokeBitmap()
@@ -39503,6 +40747,9 @@ internal static class Program
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool GetMonitorInfo(IntPtr monitor, ref NativeMonitorInfo monitorInfo);
 
+    [DllImport("user32.dll")]
+    private static extern uint GetGuiResources(IntPtr processHandle, uint flags);
+
     [StructLayout(LayoutKind.Sequential)]
     private struct NativePoint
     {
@@ -39533,6 +40780,14 @@ internal static class Program
         public NativeMonitorRect WorkArea;
         public uint Flags;
     }
+
+    private readonly record struct LargeImageResourceSnapshot(
+        long PrivateBytes,
+        long WorkingSetBytes,
+        long ManagedBytes,
+        int HandleCount,
+        int GdiObjects,
+        int UserObjects);
 
     private readonly record struct CaptureResult(int Width, int Height, double ElapsedMs);
 }
