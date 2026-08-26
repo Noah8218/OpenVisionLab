@@ -20,7 +20,16 @@ namespace OpenVisionLab
             string basePipelineName = string.IsNullOrWhiteSpace(pipeline.Name)
                 ? Path.GetFileNameWithoutExtension(sourcePath)
                 : pipeline.Name.Trim();
-            pipeline.Name = CreateUniquePipelineName(recipeName, basePipelineName);
+            if (!TryCreateUniquePipelineName(
+                    recipeName,
+                    basePipelineName,
+                    out string uniquePipelineName,
+                    out string nameError))
+            {
+                return OpenVisionRecipePipelineExchangeResult.Failure(nameError);
+            }
+
+            pipeline.Name = uniquePipelineName;
             VisionPipelineStorage.Save(recipeName, pipeline);
             VisionPipelineStorage.SaveActivePipelineName(recipeName, pipeline.Name);
             return OpenVisionRecipePipelineExchangeResult.Success(pipeline.Name, string.Empty);
@@ -67,11 +76,23 @@ namespace OpenVisionLab
             return writer.ToString();
         }
 
-        private static string CreateUniquePipelineName(string recipeName, string requestedBaseName)
+        private static bool TryCreateUniquePipelineName(
+            string recipeName,
+            string requestedBaseName,
+            out string pipelineName,
+            out string error)
         {
-            string normalizedBaseName = string.IsNullOrWhiteSpace(requestedBaseName)
-                ? VisionPipelineAppendService.DefaultPipelineName
-                : requestedBaseName.Trim();
+            if (!RecipeWorkspaceService.TryNormalizeStoragePathSegment(
+                    requestedBaseName,
+                    VisionPipelineAppendService.DefaultPipelineName,
+                    "Pipeline name",
+                    out string normalizedBaseName,
+                    out error))
+            {
+                pipelineName = string.Empty;
+                return false;
+            }
+
             HashSet<string> names = RecipeWorkspaceService.GetVisionPipelineNames(recipeName)
                 .Where(name => !string.IsNullOrWhiteSpace(name))
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -83,7 +104,9 @@ namespace OpenVisionLab
                 suffix++;
             }
 
-            return candidate;
+            pipelineName = candidate;
+            error = string.Empty;
+            return true;
         }
     }
 

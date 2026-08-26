@@ -332,9 +332,15 @@ namespace OpenVisionLab
 
         private static string CreateUniqueFilePath(string directory, string fileName)
         {
+            string safeName = RecipeWorkspaceService.NormalizeStoragePathSegment(
+                fileName,
+                "Dependency.bin",
+                "Recipe dependency file name");
+            string candidate = RecipeWorkspaceService.GetContainedStoragePath(
+                directory,
+                safeName,
+                "Recipe dependency path");
             Directory.CreateDirectory(directory);
-            string safeName = string.IsNullOrWhiteSpace(fileName) ? "Dependency.bin" : fileName;
-            string candidate = Path.Combine(directory, safeName);
             if (!File.Exists(candidate))
             {
                 return candidate;
@@ -344,7 +350,10 @@ namespace OpenVisionLab
             string extension = Path.GetExtension(safeName);
             for (int index = 2; ; index++)
             {
-                candidate = Path.Combine(directory, name + "_" + index.ToString(CultureInfo.InvariantCulture) + extension);
+                candidate = RecipeWorkspaceService.GetContainedStoragePath(
+                    directory,
+                    name + "_" + index.ToString(CultureInfo.InvariantCulture) + extension,
+                    "Recipe dependency path");
                 if (!File.Exists(candidate))
                 {
                     return candidate;

@@ -460,9 +460,10 @@ namespace OpenVisionLab
 
         private static string NormalizePipelineName(string pipelineName)
         {
-            string value = string.IsNullOrWhiteSpace(pipelineName) ? "Pipeline" : pipelineName.Trim();
-            char[] invalid = Path.GetInvalidFileNameChars();
-            return new string(value.Select(ch => invalid.Contains(ch) ? '_' : ch).ToArray());
+            return RecipeWorkspaceService.NormalizeStoragePathSegment(
+                pipelineName,
+                "Pipeline",
+                "Pipeline name");
         }
 
         private static string NormalizeToolType(string toolType)

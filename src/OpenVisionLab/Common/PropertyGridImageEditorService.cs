@@ -82,7 +82,10 @@ namespace OpenVisionLab
             Rect templateRegion = ClampToMatBounds(sourceImage, selectedRegion);
             if (!IsValidRoi(templateRegion)) { return string.Empty; }
 
-            string path = $@"{RecipeWorkspaceService.GetPatternDirectory(recipeNameAccessor())}\{DateTime.Now:yyyyMMdd_HHmmss}.bmp";
+            string path = RecipeWorkspaceService.GetContainedStoragePath(
+                RecipeWorkspaceService.GetPatternDirectory(recipeNameAccessor()),
+                $"{DateTime.Now:yyyyMMdd_HHmmss}.bmp",
+                "Pattern template image path");
 
             using (Mat imageTemplate = TemplateImageExtraction.Extract(sourceImage, templateRegion, rotationDegrees))
             {

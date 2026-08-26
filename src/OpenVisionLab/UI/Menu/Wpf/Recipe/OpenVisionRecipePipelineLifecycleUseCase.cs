@@ -2,7 +2,6 @@ using OpenVisionLab.Vision2D.Pipeline;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Linq;
 
 namespace OpenVisionLab
@@ -23,7 +22,15 @@ namespace OpenVisionLab
             string baseName = string.Equals(sourcePipelineName, requestedName, StringComparison.OrdinalIgnoreCase)
                 ? sourcePipelineName + "_Copy"
                 : requestedName;
-            string targetName = CreateUniquePipelineName(recipeName, baseName);
+            if (!TryCreateUniquePipelineName(
+                    recipeName,
+                    baseName,
+                    out string targetName,
+                    out string nameError))
+            {
+                return OpenVisionRecipePipelineLifecycleResult.Failure(nameError);
+            }
+
             if (!VisionPipelineStorage.TryDuplicatePipeline(recipeName, sourcePipelineName, targetName, out string message))
             {
                 return OpenVisionRecipePipelineLifecycleResult.Failure(message);
@@ -67,17 +74,38 @@ namespace OpenVisionLab
             string basePipelineName = string.IsNullOrWhiteSpace(sampleName)
                 ? pipeline.Name
                 : "Sample_" + sampleName;
-            pipeline.Name = CreateUniquePipelineName(recipeName, basePipelineName);
+            if (!TryCreateUniquePipelineName(
+                    recipeName,
+                    basePipelineName,
+                    out string uniqueName,
+                    out string nameError))
+            {
+                return OpenVisionRecipePipelineLifecycleResult.Failure(nameError);
+            }
+
+            pipeline.Name = uniqueName;
             VisionPipelineStorage.Save(recipeName, pipeline);
             VisionPipelineStorage.SaveActivePipelineName(recipeName, pipeline.Name);
             return OpenVisionRecipePipelineLifecycleResult.Success(pipeline.Name, string.Empty);
         }
 
-        private static string CreateUniquePipelineName(string recipeName, string requestedBaseName)
+        private static bool TryCreateUniquePipelineName(
+            string recipeName,
+            string requestedBaseName,
+            out string pipelineName,
+            out string error)
         {
-            string baseName = SanitizePathSegment(string.IsNullOrWhiteSpace(requestedBaseName)
-                ? VisionPipelineAppendService.DefaultPipelineName
-                : requestedBaseName.Trim());
+            if (!RecipeWorkspaceService.TryNormalizeStoragePathSegment(
+                    requestedBaseName,
+                    VisionPipelineAppendService.DefaultPipelineName,
+                    "Pipeline name",
+                    out string baseName,
+                    out error))
+            {
+                pipelineName = string.Empty;
+                return false;
+            }
+
             string candidate = baseName;
             int index = 2;
             HashSet<string> existing = RecipeWorkspaceService.GetVisionPipelineNames(recipeName)
@@ -88,16 +116,9 @@ namespace OpenVisionLab
                 index++;
             }
 
-            return candidate;
-        }
-
-        private static string SanitizePathSegment(string value)
-        {
-            char[] invalidChars = Path.GetInvalidFileNameChars();
-            string sanitized = new string((value ?? string.Empty)
-                .Select(ch => invalidChars.Contains(ch) ? '_' : ch)
-                .ToArray());
-            return string.IsNullOrWhiteSpace(sanitized) ? "Item" : sanitized;
+            pipelineName = candidate;
+            error = string.Empty;
+            return true;
         }
     }
 

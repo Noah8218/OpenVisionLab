@@ -80,10 +80,23 @@ namespace OpenVisionLab
                 return string.Empty;
             }
 
-            string candidate = Path.IsPathRooted(storedPath)
-                ? storedPath
-                : Path.Combine(reportDirectory ?? string.Empty, storedPath);
-            return File.Exists(candidate) ? Path.GetFullPath(candidate) : string.Empty;
+            try
+            {
+                string candidate = Path.IsPathRooted(storedPath)
+                    ? Path.GetFullPath(storedPath)
+                    : RecipeWorkspaceService.GetContainedStoragePath(
+                        reportDirectory,
+                        storedPath,
+                        "Qualification report artifact path");
+                return File.Exists(candidate) ? candidate : string.Empty;
+            }
+            catch (Exception exception) when (
+                exception is ArgumentException
+                || exception is IOException
+                || exception is NotSupportedException)
+            {
+                return string.Empty;
+            }
         }
 
         private static void ValidatePipeline(
@@ -431,15 +444,38 @@ namespace OpenVisionLab
             }
 
             string reportDirectory = Path.GetDirectoryName(row.RunReportPath) ?? string.Empty;
+            string originalPipelineSnapshotFile =
+                report.ExecutionProvenance?.OriginalPipelineSnapshotFile;
+            if (string.IsNullOrWhiteSpace(originalPipelineSnapshotFile))
+            {
+                originalPipelineSnapshotFile = report.PipelineSnapshotFile;
+            }
             string reportPipeline =
-                ResolveReportFile(reportDirectory, report.PipelineSnapshotFile);
+                ResolveReportFile(reportDirectory, originalPipelineSnapshotFile);
             string reportSource =
                 ResolveReportFile(reportDirectory, report.SourceImageFile);
-            if (string.IsNullOrWhiteSpace(reportPipeline)
-                || !string.Equals(
+            bool originalPipelineMatches = !string.IsNullOrWhiteSpace(reportPipeline)
+                && !string.IsNullOrWhiteSpace(preflight.PipelineDefinitionSha256)
+                && string.Equals(
                     ComputeTextSha256(File.ReadAllText(reportPipeline)),
                     preflight.PipelineDefinitionSha256,
-                    StringComparison.Ordinal))
+                    StringComparison.Ordinal);
+            bool effectivePipelineMatches = true;
+            if (report.ExecutionProvenance != null
+                && !string.IsNullOrWhiteSpace(report.ExecutionProvenance.EffectivePipelineSnapshotFile)
+                && !string.IsNullOrWhiteSpace(report.ExecutionProvenance.EffectivePipelineSha256))
+            {
+                string effectivePipeline = ResolveReportFile(
+                    reportDirectory,
+                    report.ExecutionProvenance.EffectivePipelineSnapshotFile);
+                effectivePipelineMatches = !string.IsNullOrWhiteSpace(effectivePipeline)
+                    && string.Equals(
+                        ComputeFileSha256(effectivePipeline),
+                        NormalizeSha(report.ExecutionProvenance.EffectivePipelineSha256),
+                        StringComparison.Ordinal);
+            }
+            if (!originalPipelineMatches
+                || !effectivePipelineMatches)
             {
                 preflight.Errors.Add(prefix + "stored Pipeline snapshot is missing or changed.");
             }

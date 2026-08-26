@@ -60,9 +60,13 @@ namespace OpenVisionLab
 
                 string fileName = GetUniqueImageFileName(SanitizeFileName(title), usedFileNames);
                 savedFileNames.Add(fileName);
+                string imagePath = RecipeWorkspaceService.GetContainedStoragePath(
+                    directory,
+                    fileName,
+                    "Sample-set layer image path");
                 using (Bitmap clone = new Bitmap(image))
                 {
-                    clone.Save(Path.Combine(directory, fileName), ImageFormat.Png);
+                    clone.Save(imagePath, ImageFormat.Png);
                 }
 
                 manifestLines.Add($"{EscapeManifestValue(title)}\t{EscapeManifestValue(fileName)}");
@@ -93,7 +97,19 @@ namespace OpenVisionLab
 
                 string title = UnescapeManifestValue(parts[0]);
                 string fileName = UnescapeManifestValue(parts[1]);
-                string imagePath = Path.Combine(directory, fileName);
+                string imagePath;
+                try
+                {
+                    imagePath = RecipeWorkspaceService.GetContainedStoragePath(
+                        directory,
+                        fileName,
+                        "Sample-set layer image path");
+                }
+                catch (ArgumentException)
+                {
+                    continue;
+                }
+
                 if (string.IsNullOrWhiteSpace(title) || !File.Exists(imagePath))
                 {
                     continue;
@@ -138,7 +154,19 @@ namespace OpenVisionLab
             VisionPipelineContext context = new VisionPipelineContext();
             foreach (SampleLayerEntry entry in ReadLayerEntries(sampleSet))
             {
-                string imagePath = Path.Combine(sampleSet.DirectoryPath, entry.FileName);
+                string imagePath;
+                try
+                {
+                    imagePath = RecipeWorkspaceService.GetContainedStoragePath(
+                        sampleSet.DirectoryPath,
+                        entry.FileName,
+                        "Sample-set layer image path");
+                }
+                catch (ArgumentException)
+                {
+                    continue;
+                }
+
                 if (string.IsNullOrWhiteSpace(entry.Title) || !File.Exists(imagePath))
                 {
                     continue;
@@ -221,7 +249,10 @@ namespace OpenVisionLab
 
         private static string GetManifestPath(string directory)
         {
-            return Path.Combine(directory, ManifestFileName);
+            return RecipeWorkspaceService.GetContainedStoragePath(
+                directory,
+                ManifestFileName,
+                "Sample-set manifest path");
         }
 
         private static string GetUniqueImageFileName(string baseName, IDictionary<string, int> usedFileNames)
@@ -270,7 +301,19 @@ namespace OpenVisionLab
 
             char[] invalidChars = Path.GetInvalidFileNameChars();
             string sanitized = new string(value.Select(ch => invalidChars.Contains(ch) ? '_' : ch).ToArray());
-            return string.IsNullOrWhiteSpace(sanitized) ? "Layer" : sanitized;
+            if (string.IsNullOrWhiteSpace(sanitized))
+            {
+                return "Layer";
+            }
+
+            return RecipeWorkspaceService.TryNormalizeStoragePathSegment(
+                    sanitized,
+                    "Layer",
+                    "Sample-set layer file name",
+                    out string normalized,
+                    out _)
+                ? normalized
+                : "Layer";
         }
 
         private static string EscapeManifestValue(string value)

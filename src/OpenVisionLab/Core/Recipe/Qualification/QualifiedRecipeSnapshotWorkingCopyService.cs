@@ -26,8 +26,7 @@ namespace OpenVisionLab
                 return Failure("Working-copy Recipe name is invalid.");
             }
 
-            string recipeRoot = AppPathService.RecipeRootDirectory;
-            string targetDirectory = Path.Combine(recipeRoot, recipeName);
+            string targetDirectory = RecipeWorkspaceService.GetRecipeDirectoryPath(recipeName);
             if (Directory.Exists(targetDirectory))
             {
                 return Failure("Working-copy Recipe already exists: " + recipeName);
@@ -220,18 +219,23 @@ namespace OpenVisionLab
             string directory,
             string fileName)
         {
-            string safeName = string.IsNullOrWhiteSpace(fileName)
-                ? "dependency.bin"
-                : fileName;
+            string safeName = RecipeWorkspaceService.NormalizeStoragePathSegment(
+                fileName,
+                "dependency.bin",
+                "Qualified Recipe dependency file name");
             string baseName = Path.GetFileNameWithoutExtension(safeName);
             string extension = Path.GetExtension(safeName);
-            string candidate = Path.Combine(directory, safeName);
+            string candidate = RecipeWorkspaceService.GetContainedStoragePath(
+                directory,
+                safeName,
+                "Qualified Recipe dependency path");
             int suffix = 2;
             while (File.Exists(candidate))
             {
-                candidate = Path.Combine(
+                candidate = RecipeWorkspaceService.GetContainedStoragePath(
                     directory,
-                    baseName + "_" + suffix++ + extension);
+                    baseName + "_" + suffix++ + extension,
+                    "Qualified Recipe dependency path");
             }
 
             return candidate;

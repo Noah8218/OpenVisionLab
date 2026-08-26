@@ -324,10 +324,37 @@ namespace OpenVisionLab
                 return string.Empty;
             }
 
-            string path = Path.IsPathRooted(imageFile)
-                ? imageFile
-                : Path.Combine(reportDirectory, imageFile);
-            return File.Exists(path) ? path : string.Empty;
+            try
+            {
+                string path;
+                if (Path.IsPathRooted(imageFile))
+                {
+                    // Absolute legacy evidence paths remain readable for compatibility;
+                    // newly written run artifacts are relative and contained.
+                    path = Path.GetFullPath(imageFile);
+                }
+                else
+                {
+                    if (string.IsNullOrWhiteSpace(reportDirectory))
+                    {
+                        return string.Empty;
+                    }
+
+                    path = RecipeWorkspaceService.GetContainedStoragePath(
+                        reportDirectory,
+                        imageFile,
+                        "Run evidence image path");
+                }
+
+                return File.Exists(path) ? path : string.Empty;
+            }
+            catch (Exception exception) when (
+                exception is ArgumentException
+                || exception is IOException
+                || exception is NotSupportedException)
+            {
+                return string.Empty;
+            }
         }
 
         private static string FirstExistingPath(params string[] paths)

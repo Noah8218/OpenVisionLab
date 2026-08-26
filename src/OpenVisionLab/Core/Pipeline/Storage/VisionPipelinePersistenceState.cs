@@ -7,7 +7,9 @@ namespace OpenVisionLab
         InvalidFileSubstituted,
         LoadFailed,
         SaveFailed,
-        SaveRecovered
+        SaveRecovered,
+        LifecycleRecoveryRequired,
+        LifecycleRecovered
     }
 
     internal sealed class VisionPipelinePersistenceState
@@ -44,6 +46,7 @@ namespace OpenVisionLab
         public DateTime OccurredAtUtc { get; }
 
         public bool IsFailure =>
-            Kind != VisionPipelinePersistenceStateKind.SaveRecovered;
+            Kind != VisionPipelinePersistenceStateKind.SaveRecovered
+                && Kind != VisionPipelinePersistenceStateKind.LifecycleRecovered;
     }
 }

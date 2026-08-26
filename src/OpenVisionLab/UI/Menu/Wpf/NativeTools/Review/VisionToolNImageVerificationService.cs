@@ -306,6 +306,9 @@ namespace OpenVisionLab
                 + (hasAcceptance
                     ? "Configured acceptance gate was evaluated."
                     : "No OK/NG acceptance gate was inferred.");
+            VisionPipelineExecutionProvenance executionProvenance = rows
+                .Select(row => VisionPipelineRunReportStorage.Load(row.RunReportPath)?.ExecutionProvenance)
+                .FirstOrDefault(provenance => provenance != null);
             return VisionPipelineBatchRunSummaryStorage.Save(
                 recipeName,
                 pipeline.Name,
@@ -315,7 +318,8 @@ namespace OpenVisionLab
                 suiteName: toolName + " N-image verification",
                 suiteKind: wasCancelled ? "ToolViewNImagePartial" : "ToolViewNImage",
                 notes: notes,
-                pipelineSnapshot: pipeline);
+                pipelineSnapshot: pipeline,
+                executionProvenance: executionProvenance);
         }
 
         private static void ApplyReviewReasons(

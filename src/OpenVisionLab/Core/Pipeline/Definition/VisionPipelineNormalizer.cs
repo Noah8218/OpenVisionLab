@@ -9,7 +9,16 @@ namespace OpenVisionLab
     {
         public int StepIndex { get; set; }
         public VisionPipelineStep Step { get; set; }
+        public string Kind { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;
+        public List<VisionPipelineNormalizationPropertyChange> Properties { get; set; } = new List<VisionPipelineNormalizationPropertyChange>();
+    }
+
+    internal sealed class VisionPipelineNormalizationPropertyChange
+    {
+        public string PropertyName { get; set; } = string.Empty;
+        public string OriginalValue { get; set; } = string.Empty;
+        public string EffectiveValue { get; set; } = string.Empty;
     }
 
     internal static class VisionPipelineNormalizer
@@ -102,7 +111,17 @@ namespace OpenVisionLab
             {
                 StepIndex = stepIndex,
                 Step = step,
-                Message = $"CHAIN LINK | {step.Name} | Input {oldInput} -> {previousOutput}. Previous preprocessing output is used as this inspection input."
+                Kind = "CHAIN_LINK",
+                Message = $"CHAIN LINK | {step.Name} | Input {oldInput} -> {previousOutput}. Previous preprocessing output is used as this inspection input.",
+                Properties = new List<VisionPipelineNormalizationPropertyChange>
+                {
+                    new VisionPipelineNormalizationPropertyChange
+                    {
+                        PropertyName = "InputLayer",
+                        OriginalValue = oldInput,
+                        EffectiveValue = previousOutput
+                    }
+                }
             };
         }
 
@@ -124,10 +143,11 @@ namespace OpenVisionLab
                 return null;
             }
 
+            List<VisionPipelineNormalizationPropertyChange> propertyChanges = new List<VisionPipelineNormalizationPropertyChange>();
             bool changed = false;
-            changed |= SetParameterIfDifferent(step, "USE_THRESHOLD", "false");
-            changed |= SetParameterIfDifferent(step, "USE_ADAPTIVE_THRESHOLD", "false");
-            changed |= SetParameterIfDifferent(step, "USE_BITWISENOT", "false");
+            changed |= SetParameterIfDifferent(step, "USE_THRESHOLD", "false", propertyChanges);
+            changed |= SetParameterIfDifferent(step, "USE_ADAPTIVE_THRESHOLD", "false", propertyChanges);
+            changed |= SetParameterIfDifferent(step, "USE_BITWISENOT", "false", propertyChanges);
 
             if (!changed)
             {
@@ -138,7 +158,9 @@ namespace OpenVisionLab
             {
                 StepIndex = stepIndex,
                 Step = step,
-                Message = $"CHAIN AUTO | {step.Name} | Chained input uses a processed layer, so internal threshold/adaptive/invert preprocessing was disabled."
+                Kind = "CHAIN_PREPROCESSING",
+                Message = $"CHAIN AUTO | {step.Name} | Chained input uses a processed layer, so internal threshold/adaptive/invert preprocessing was disabled.",
+                Properties = propertyChanges
             };
         }
 
@@ -289,20 +311,30 @@ namespace OpenVisionLab
             return value.Replace(" ", string.Empty).Replace("_", string.Empty).ToLowerInvariant();
         }
 
-        private static bool SetParameterIfDifferent(VisionPipelineStep step, string key, string value)
+        private static bool SetParameterIfDifferent(
+            VisionPipelineStep step,
+            string key,
+            string value,
+            ICollection<VisionPipelineNormalizationPropertyChange> changes)
         {
             if (step == null || string.IsNullOrWhiteSpace(key))
             {
                 return false;
             }
 
-            if (step.Parameters.TryGetValue(key, out string currentValue)
-                && string.Equals(currentValue, value, StringComparison.OrdinalIgnoreCase))
+            step.Parameters.TryGetValue(key, out string currentValue);
+            if (string.Equals(currentValue, value, StringComparison.OrdinalIgnoreCase))
             {
                 return false;
             }
 
             step.Parameters[key] = value;
+            changes?.Add(new VisionPipelineNormalizationPropertyChange
+            {
+                PropertyName = key,
+                OriginalValue = currentValue ?? string.Empty,
+                EffectiveValue = value
+            });
             return true;
         }
 

@@ -31,6 +31,14 @@ namespace OpenVisionLab
                     OpenVisionRecipeText.Local(
                         "Pipeline 저장 복구 완료 — 현재 정의가 디스크에 기록되었습니다.",
                         "Pipeline save recovered — the current definition is persisted."),
+                VisionPipelinePersistenceStateKind.LifecycleRecoveryRequired =>
+                    OpenVisionRecipeText.Local(
+                        "Pipeline 변경 복구 필요 — 중단된 이름 변경/삭제를 자동 복구하지 못했습니다. 파일을 확인하세요.",
+                        "Pipeline lifecycle recovery required — an interrupted rename/delete could not be recovered automatically. Review the files."),
+                VisionPipelinePersistenceStateKind.LifecycleRecovered =>
+                    OpenVisionRecipeText.Local(
+                        "Pipeline 변경 복구 완료 — 중단된 변경을 안전한 상태로 되돌렸습니다.",
+                        "Pipeline lifecycle recovered — the interrupted change was restored to a safe state."),
                 _ => string.Empty
             };
         }

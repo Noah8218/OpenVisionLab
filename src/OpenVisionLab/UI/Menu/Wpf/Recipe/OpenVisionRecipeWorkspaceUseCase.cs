@@ -11,8 +11,8 @@ namespace OpenVisionLab
         {
             string recipeName = CreateUniqueRecipeName(requestedBaseName);
             RecipeWorkspaceService.EnsureVisionWorkspace(recipeName);
-            VisionPipelineStorage.SaveActivePipelineName(recipeName, VisionPipelineAppendService.DefaultPipelineName);
             VisionPipelineStorage.Load(recipeName, VisionPipelineAppendService.DefaultPipelineName);
+            VisionPipelineStorage.SaveActivePipelineName(recipeName, VisionPipelineAppendService.DefaultPipelineName);
             return OpenVisionRecipeWorkspaceResult.Success(recipeName);
         }
 

@@ -584,9 +584,15 @@ namespace OpenVisionLab
                     VisionPipelineRunReportStorage.Load(reportPath);
                 string archivedReportDirectory =
                     Path.GetDirectoryName(reportPath) ?? string.Empty;
+                string reportPipelineArtifact =
+                    report?.ExecutionProvenance?.OriginalPipelineSnapshotFile;
+                if (string.IsNullOrWhiteSpace(reportPipelineArtifact))
+                {
+                    reportPipelineArtifact = report?.PipelineSnapshotFile;
+                }
                 string reportPipelinePath = ResolveArchivedReportArtifact(
                     archivedReportDirectory,
-                    report?.PipelineSnapshotFile);
+                    reportPipelineArtifact);
                 string reportSourcePath = ResolveArchivedReportArtifact(
                     archivedReportDirectory,
                     report?.SourceImageFile);

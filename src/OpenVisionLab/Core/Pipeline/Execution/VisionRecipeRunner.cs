@@ -55,7 +55,16 @@ namespace OpenVisionLab
                 throw new InvalidOperationException($"Recipe XML could not be loaded: {recipeXmlPath}");
             }
 
-            return await RunAsync(pipeline, sourceImage, inputLayerName, stepTimeoutMilliseconds, cancellationToken);
+            byte[] originalXmlBytes = File.ReadAllBytes(recipeXmlPath);
+            string originalXmlText = File.ReadAllText(recipeXmlPath);
+            return await RunAsync(
+                pipeline,
+                sourceImage,
+                inputLayerName,
+                stepTimeoutMilliseconds,
+                cancellationToken,
+                originalXmlText,
+                originalXmlBytes);
         }
 
         public async Task<VisionRecipeRunResult> RunAsync(
@@ -73,6 +82,25 @@ namespace OpenVisionLab
             int stepTimeoutMilliseconds,
             CancellationToken cancellationToken = default(CancellationToken))
         {
+            return await RunAsync(
+                pipeline,
+                sourceImage,
+                inputLayerName,
+                stepTimeoutMilliseconds,
+                cancellationToken,
+                null,
+                null);
+        }
+
+        private async Task<VisionRecipeRunResult> RunAsync(
+            VisionPipeline pipeline,
+            Mat sourceImage,
+            string inputLayerName,
+            int stepTimeoutMilliseconds,
+            CancellationToken cancellationToken,
+            string originalXmlText,
+            byte[] originalXmlBytes)
+        {
             if (pipeline == null)
             {
                 throw new ArgumentNullException(nameof(pipeline));
@@ -89,9 +117,14 @@ namespace OpenVisionLab
             }
 
             string sourceLayer = string.IsNullOrWhiteSpace(inputLayerName) ? DefaultInputLayer : inputLayerName;
-            List<string> normalizationMessages = VisionPipelineNormalizer.NormalizeForRun(pipeline)
+            VisionPipelineExecutionPlan executionPlan = VisionPipelineExecutionPlan.Create(
+                pipeline,
+                originalXmlText,
+                originalXmlBytes);
+            List<string> normalizationMessages = executionPlan.NormalizationChanges
                 .Select(change => change.Message)
                 .Where(message => !string.IsNullOrWhiteSpace(message))
+                .Distinct(StringComparer.Ordinal)
                 .ToList();
 
             using (VisionPipelineContext context = new VisionPipelineContext())
@@ -100,13 +133,15 @@ namespace OpenVisionLab
                 VisionPipelineRunResult runResult = null;
                 try
                 {
-                    runResult = await VisionPipelineExecutionService.RunAsync(
-                        pipeline,
+                    runResult = await VisionPipelineExecutionService.RunPreparedAsync(
+                        executionPlan.EffectivePipeline,
                         context,
                         stepTimeoutMilliseconds,
-                        cancellationToken);
+                        cancellationToken,
+                        null,
+                        executionPlan.NormalizationChanges);
 
-                    return CreateResult(pipeline, context, runResult, normalizationMessages);
+                    return CreateResult(executionPlan, context, runResult, normalizationMessages);
                 }
                 finally
                 {
@@ -116,7 +151,7 @@ namespace OpenVisionLab
         }
 
         private static VisionRecipeRunResult CreateResult(
-            VisionPipeline pipeline,
+            VisionPipelineExecutionPlan executionPlan,
             VisionPipelineContext context,
             VisionPipelineRunResult runResult,
             IEnumerable<string> normalizationMessages)
@@ -140,7 +175,7 @@ namespace OpenVisionLab
 
             return new VisionRecipeRunResult
             {
-                PipelineName = pipeline?.Name ?? string.Empty,
+                PipelineName = executionPlan?.EffectivePipeline?.Name ?? string.Empty,
                 Success = runResult?.Success == true,
                 Message = ResolveRunMessage(runResult),
                 FinalLayer = finalLayer,
@@ -151,7 +186,11 @@ namespace OpenVisionLab
                 ResultImageHeight = resultImage != null && !resultImage.Empty() ? resultImage.Height : 0,
                 TotalMilliseconds = steps.Sum(step => step.ElapsedMilliseconds),
                 Steps = steps,
-                NormalizationMessages = (normalizationMessages ?? Enumerable.Empty<string>()).ToList()
+                NormalizationMessages = (normalizationMessages ?? Enumerable.Empty<string>()).ToList(),
+                ExecutionProvenance = executionPlan?.Provenance,
+                EffectivePipeline = executionPlan?.EffectivePipeline,
+                OriginalPipelineXmlBytes = executionPlan?.OriginalPipelineXmlBytes,
+                EffectivePipelineXmlBytes = executionPlan?.EffectivePipelineXmlBytes
             };
         }
 
@@ -304,6 +343,10 @@ namespace OpenVisionLab
         public double TotalMilliseconds { get; set; }
         public List<VisionRecipeStepRunSummary> Steps { get; set; } = new List<VisionRecipeStepRunSummary>();
         public List<string> NormalizationMessages { get; set; } = new List<string>();
+        internal VisionPipelineExecutionProvenance ExecutionProvenance { get; set; }
+        internal VisionPipeline EffectivePipeline { get; set; }
+        internal byte[] OriginalPipelineXmlBytes { get; set; }
+        internal byte[] EffectivePipelineXmlBytes { get; set; }
         public int StepCount => Steps?.Count ?? 0;
         public int PassedStepCount => Steps?.Count(step => step.Success && !step.Skipped) ?? 0;
         public int FailedStepCount => Steps?.Count(step => !step.Success && !step.Skipped) ?? 0;

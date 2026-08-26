@@ -1,5 +1,6 @@
 using OpenVisionLab.Core;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml;
@@ -9,39 +10,34 @@ namespace OpenVisionLab
     internal static class RecipeWorkspaceService
     {
         private const string RecipeRoot = "RECIPE";
+        private static readonly HashSet<string> ReservedDeviceNames =
+            new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "AUX",
+                "CLOCK$",
+                "CON",
+                "NUL",
+                "PRN"
+            };
 
         public static void EnsureRoot()
         {
-            Directory.CreateDirectory(
-                Path.Combine(AppPathService.DataRootDirectory, RecipeRoot));
+            Directory.CreateDirectory(GetRecipeRootDirectory());
         }
 
         public static void EnsureVisionWorkspace(string recipeName)
         {
+            string recipeDirectory = GetRecipeDirectory(recipeName);
             EnsureRoot();
-            if (string.IsNullOrWhiteSpace(recipeName))
-            {
-                Directory.CreateDirectory(
-                    Path.Combine(AppPathService.DataRootDirectory, RecipeRoot, "VISION"));
-                Directory.CreateDirectory(
-                    Path.Combine(AppPathService.DataRootDirectory, RecipeRoot, "GRAPH"));
-                Directory.CreateDirectory(
-                    Path.Combine(AppPathService.DataRootDirectory, RecipeRoot, "PATTERN"));
-                return;
-            }
-
-            Directory.CreateDirectory(
-                Path.Combine(AppPathService.DataRootDirectory, RecipeRoot, recipeName, "VISION"));
-            Directory.CreateDirectory(
-                Path.Combine(AppPathService.DataRootDirectory, RecipeRoot, recipeName, "GRAPH"));
-            Directory.CreateDirectory(
-                Path.Combine(AppPathService.DataRootDirectory, RecipeRoot, recipeName, "PATTERN"));
+            Directory.CreateDirectory(CombineStoragePath(recipeDirectory, "VISION"));
+            Directory.CreateDirectory(CombineStoragePath(recipeDirectory, "GRAPH"));
+            Directory.CreateDirectory(CombineStoragePath(recipeDirectory, "PATTERN"));
         }
 
         public static string[] GetRecipeNames()
         {
             EnsureRoot();
-            string root = Path.Combine(AppPathService.DataRootDirectory, RecipeRoot);
+            string root = GetRecipeRootDirectory();
             if (!Directory.Exists(root))
             {
                 return new[] { "Default" };
@@ -73,21 +69,16 @@ namespace OpenVisionLab
 
         public static bool IsValidRecipeName(string recipeName)
         {
-            string normalized = recipeName?.Trim();
-            if (string.IsNullOrWhiteSpace(normalized)
-                || string.Equals(normalized, ".", StringComparison.Ordinal)
-                || string.Equals(normalized, "..", StringComparison.Ordinal))
-            {
-                return false;
-            }
-
-            char[] invalidChars = Path.GetInvalidFileNameChars();
-            return !normalized.Any(ch => invalidChars.Contains(ch));
+            return TryNormalizeStoragePathSegment(
+                recipeName,
+                string.Empty,
+                "Recipe name",
+                out _,
+                out _);
         }
 
         public static bool RenameVisionWorkspace(string oldRecipeName, string newRecipeName)
         {
-            EnsureRoot();
             string oldName = oldRecipeName?.Trim();
             string newName = newRecipeName?.Trim();
             if (!IsValidRecipeName(oldName)
@@ -97,6 +88,7 @@ namespace OpenVisionLab
                 return false;
             }
 
+            EnsureRoot();
             string oldPath = GetRecipeDirectory(oldName);
             string newPath = GetRecipeDirectory(newName);
             if (!IsSafeRecipeChildPath(oldPath)
@@ -113,13 +105,13 @@ namespace OpenVisionLab
 
         public static bool DeleteVisionWorkspace(string recipeName)
         {
-            EnsureRoot();
             string normalized = recipeName?.Trim();
             if (!IsValidRecipeName(normalized))
             {
                 return false;
             }
 
+            EnsureRoot();
             string path = GetRecipeDirectory(normalized);
             if (!IsSafeRecipeChildPath(path) || !Directory.Exists(path))
             {
@@ -132,7 +124,6 @@ namespace OpenVisionLab
 
         public static bool DuplicateVisionWorkspace(string sourceRecipeName, string targetRecipeName)
         {
-            EnsureRoot();
             string sourceName = sourceRecipeName?.Trim();
             string targetName = targetRecipeName?.Trim();
             if (!IsValidRecipeName(sourceName)
@@ -142,6 +133,7 @@ namespace OpenVisionLab
                 return false;
             }
 
+            EnsureRoot();
             string sourcePath = GetRecipeDirectory(sourceName);
             string targetPath = GetRecipeDirectory(targetName);
             if (!IsSafeRecipeChildPath(sourcePath)
@@ -248,133 +240,261 @@ namespace OpenVisionLab
 
         public static string GetRecipeFilePath(string recipeName, string fileName)
         {
+            string path = GetStorageFilePath(
+                GetRecipeDirectory(recipeName),
+                fileName,
+                "Recipe file name");
             EnsureRecipeDirectory(recipeName);
-            return Path.Combine(GetRecipeDirectory(recipeName), EnsureXmlExtension(fileName));
+            return path;
         }
 
         public static string GetVisionConfigPath(string recipeName, string configName)
         {
+            string path = GetStorageFilePath(
+                GetVisionDirectory(recipeName),
+                configName,
+                "Vision config name");
             EnsureVisionWorkspace(recipeName);
-            return Path.Combine(GetVisionDirectory(recipeName), EnsureXmlExtension(configName));
+            return path;
         }
 
         public static string GetAccountConfigPath(string configName)
         {
-            string accountDirectory = Path.Combine(AppPathService.DataRootDirectory, "CONFIG", "ACCOUNT");
+            string accountDirectory = CombineStoragePath(
+                Path.GetFullPath(AppPathService.DataRootDirectory),
+                "CONFIG",
+                "ACCOUNT");
+            string path = GetStorageFilePath(accountDirectory, configName, "Account config name");
             Directory.CreateDirectory(accountDirectory);
-            return Path.Combine(accountDirectory, EnsureXmlExtension(configName));
+            return path;
         }
 
         public static string GetSystemConfigPath(string configName)
         {
-            return Path.Combine(AppPathService.DataRootDirectory, EnsureXmlExtension(configName));
+            return GetStorageFilePath(
+                Path.GetFullPath(AppPathService.DataRootDirectory),
+                configName,
+                "System config name");
         }
 
         public static string GetVisionDataPath(string recipeName)
         {
+            string path = GetStorageFilePath(
+                GetRecipeDirectory(recipeName),
+                "VISION",
+                "Vision data file name");
             EnsureVisionWorkspace(recipeName);
-
-            if (string.IsNullOrWhiteSpace(recipeName))
-            {
-                return Path.Combine(AppPathService.DataRootDirectory, RecipeRoot, "VISION.xml");
-            }
-
-            return Path.Combine(AppPathService.DataRootDirectory, RecipeRoot, recipeName, "VISION.xml");
+            return path;
         }
 
         public static string GetVisionPipelinePath(string recipeName, string pipelineName)
         {
+            string path = GetStorageFilePath(
+                GetVisionDirectory(recipeName),
+                pipelineName,
+                "Pipeline name",
+                fallback: "Pipeline");
             EnsureVisionWorkspace(recipeName);
-
-            string safeName = string.IsNullOrWhiteSpace(pipelineName) ? "Pipeline" : pipelineName;
-            return Path.Combine(GetVisionDirectory(recipeName), EnsureXmlExtension(safeName));
+            return path;
         }
 
         public static string GetVisionPipelineImageDirectory(string recipeName, string pipelineName)
         {
+            string safeName = NormalizeStoragePathSegment(
+                pipelineName,
+                "Pipeline",
+                "Pipeline name");
+            string directory = CombineStoragePath(
+                GetVisionDirectory(recipeName),
+                "PipelineImages",
+                safeName);
             EnsureVisionWorkspace(recipeName);
-
-            string safeName = string.IsNullOrWhiteSpace(pipelineName) ? "Pipeline" : pipelineName;
-            string directory = Path.Combine(GetVisionDirectory(recipeName), "PipelineImages", safeName);
             Directory.CreateDirectory(directory);
             return directory;
         }
 
         public static string GetVisionPipelineRunDirectory(string recipeName, string pipelineName, string runName)
         {
+            string safePipelineName = NormalizeStoragePathSegment(
+                pipelineName,
+                "Pipeline",
+                "Pipeline name");
+            string safeRunName = NormalizeStoragePathSegment(
+                runName,
+                "Run",
+                "Run name");
+            string directory = CombineStoragePath(
+                GetVisionDirectory(recipeName),
+                "PipelineRuns",
+                safePipelineName,
+                safeRunName);
             EnsureVisionWorkspace(recipeName);
-
-            string safePipelineName = SanitizePathSegment(string.IsNullOrWhiteSpace(pipelineName) ? "Pipeline" : pipelineName);
-            string safeRunName = SanitizePathSegment(string.IsNullOrWhiteSpace(runName) ? "Run" : runName);
-            string directory = Path.Combine(GetVisionDirectory(recipeName), "PipelineRuns", safePipelineName, safeRunName);
             Directory.CreateDirectory(directory);
             return directory;
         }
 
         public static string GetVisionPipelineRunRootDirectory(string recipeName, string pipelineName)
         {
+            string safePipelineName = NormalizeStoragePathSegment(
+                pipelineName,
+                "Pipeline",
+                "Pipeline name");
+            string directory = CombineStoragePath(
+                GetVisionDirectory(recipeName),
+                "PipelineRuns",
+                safePipelineName);
             EnsureVisionWorkspace(recipeName);
-
-            string safePipelineName = SanitizePathSegment(string.IsNullOrWhiteSpace(pipelineName) ? "Pipeline" : pipelineName);
-            string directory = Path.Combine(GetVisionDirectory(recipeName), "PipelineRuns", safePipelineName);
             Directory.CreateDirectory(directory);
             return directory;
         }
 
         public static string GetVisionPipelineSampleSetRootDirectory(string recipeName, string pipelineName)
         {
+            string safePipelineName = NormalizeStoragePathSegment(
+                pipelineName,
+                "Pipeline",
+                "Pipeline name");
+            string directory = CombineStoragePath(
+                GetVisionDirectory(recipeName),
+                "PipelineSamples",
+                safePipelineName);
             EnsureVisionWorkspace(recipeName);
-
-            string safePipelineName = SanitizePathSegment(string.IsNullOrWhiteSpace(pipelineName) ? "Pipeline" : pipelineName);
-            string directory = Path.Combine(GetVisionDirectory(recipeName), "PipelineSamples", safePipelineName);
             Directory.CreateDirectory(directory);
             return directory;
         }
 
         public static string GetVisionPipelineSampleSetDirectory(string recipeName, string pipelineName, string sampleSetName)
         {
-            string safeSampleSetName = SanitizePathSegment(string.IsNullOrWhiteSpace(sampleSetName) ? "Sample" : sampleSetName);
-            string directory = Path.Combine(GetVisionPipelineSampleSetRootDirectory(recipeName, pipelineName), safeSampleSetName);
+            string safeSampleSetName = NormalizeStoragePathSegment(
+                sampleSetName,
+                "Sample",
+                "Sample-set name");
+            string directory = CombineStoragePath(
+                GetVisionPipelineSampleSetRootDirectory(recipeName, pipelineName),
+                safeSampleSetName);
             Directory.CreateDirectory(directory);
             return directory;
         }
 
         public static string GetVisionPipelineBatchRunRootDirectory(string recipeName, string pipelineName)
         {
+            string safePipelineName = NormalizeStoragePathSegment(
+                pipelineName,
+                "Pipeline",
+                "Pipeline name");
+            string directory = CombineStoragePath(
+                GetVisionDirectory(recipeName),
+                "PipelineBatchRuns",
+                safePipelineName);
             EnsureVisionWorkspace(recipeName);
-
-            string safePipelineName = SanitizePathSegment(string.IsNullOrWhiteSpace(pipelineName) ? "Pipeline" : pipelineName);
-            string directory = Path.Combine(GetVisionDirectory(recipeName), "PipelineBatchRuns", safePipelineName);
             Directory.CreateDirectory(directory);
             return directory;
         }
 
         public static string GetVisionPipelineBatchRunDirectory(string recipeName, string pipelineName, string batchName)
         {
-            string safeBatchName = SanitizePathSegment(string.IsNullOrWhiteSpace(batchName) ? "Batch" : batchName);
-            string directory = Path.Combine(GetVisionPipelineBatchRunRootDirectory(recipeName, pipelineName), safeBatchName);
+            string safeBatchName = NormalizeStoragePathSegment(
+                batchName,
+                "Batch",
+                "Batch name");
+            string directory = CombineStoragePath(
+                GetVisionPipelineBatchRunRootDirectory(recipeName, pipelineName),
+                safeBatchName);
             Directory.CreateDirectory(directory);
             return directory;
         }
 
-        private static string GetRecipeDirectory(string recipeName)
+        internal static string GetRecipeDirectoryPath(string recipeName)
         {
-            if (string.IsNullOrWhiteSpace(recipeName))
+            return GetRecipeDirectory(recipeName);
+        }
+
+        internal static string GetContainedStoragePath(
+            string intendedRoot,
+            string relativePath,
+            string pathDescription)
+        {
+            string root = Path.GetFullPath(intendedRoot ?? string.Empty);
+            string relative = relativePath ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(relative) || Path.IsPathRooted(relative))
             {
-                return Path.Combine(AppPathService.DataRootDirectory, RecipeRoot);
+                throw new ArgumentException(
+                    $"{pathDescription} must be a relative storage path.",
+                    nameof(relativePath));
             }
 
-            return Path.Combine(AppPathService.DataRootDirectory, RecipeRoot, recipeName);
+            string[] segments = relative.Split(
+                new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar },
+                StringSplitOptions.RemoveEmptyEntries);
+            if (segments.Length == 0)
+            {
+                throw new ArgumentException(
+                    $"{pathDescription} must contain at least one path segment.",
+                    nameof(relativePath));
+            }
+
+            string[] normalizedSegments = segments
+                .Select(segment => NormalizeStoragePathSegment(
+                    segment,
+                    string.Empty,
+                    pathDescription))
+                .ToArray();
+            return CombineStoragePath(root, normalizedSegments);
+        }
+
+        internal static string NormalizeStoragePathSegment(
+            string value,
+            string fallback,
+            string segmentDescription)
+        {
+            if (!TryNormalizeStoragePathSegment(
+                    value,
+                    fallback,
+                    segmentDescription,
+                    out string normalized,
+                    out string error))
+            {
+                throw new ArgumentException(error, segmentDescription);
+            }
+
+            return normalized;
+        }
+
+        private static string GetRecipeDirectory(string recipeName)
+        {
+            string root = GetRecipeRootDirectory();
+            if (string.IsNullOrWhiteSpace(recipeName))
+            {
+                return root;
+            }
+
+            string normalized = NormalizeStoragePathSegment(
+                recipeName,
+                string.Empty,
+                "Recipe name");
+            return CombineStoragePath(root, normalized);
+        }
+
+        private static string GetRecipeRootDirectory()
+        {
+            return Path.GetFullPath(
+                Path.Combine(AppPathService.DataRootDirectory, RecipeRoot));
         }
 
         private static bool IsSafeRecipeChildPath(string path)
         {
-            string root = Path.GetFullPath(Path.Combine(AppPathService.DataRootDirectory, RecipeRoot));
-            string target = Path.GetFullPath(path ?? string.Empty);
-            string rootWithSeparator = root.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal)
-                ? root
-                : root + Path.DirectorySeparatorChar;
-            return target.StartsWith(rootWithSeparator, StringComparison.OrdinalIgnoreCase)
+            string root = GetRecipeRootDirectory();
+            string target;
+            try
+            {
+                target = Path.GetFullPath(path ?? string.Empty);
+            }
+            catch (Exception ex) when (ex is ArgumentException || ex is IOException)
+            {
+                return false;
+            }
+
+            return IsSameOrChildPath(root, target)
                 && !string.Equals(target, root, StringComparison.OrdinalIgnoreCase);
         }
 
@@ -383,13 +503,19 @@ namespace OpenVisionLab
             Directory.CreateDirectory(targetDirectory);
             foreach (string directory in Directory.GetDirectories(sourceDirectory, "*", SearchOption.AllDirectories))
             {
-                string targetSubDirectory = Path.Combine(targetDirectory, Path.GetRelativePath(sourceDirectory, directory));
+                string targetSubDirectory = GetContainedStoragePath(
+                    targetDirectory,
+                    Path.GetRelativePath(sourceDirectory, directory),
+                    "Recipe duplicate directory");
                 Directory.CreateDirectory(targetSubDirectory);
             }
 
             foreach (string file in Directory.GetFiles(sourceDirectory, "*", SearchOption.AllDirectories))
             {
-                string targetFile = Path.Combine(targetDirectory, Path.GetRelativePath(sourceDirectory, file));
+                string targetFile = GetContainedStoragePath(
+                    targetDirectory,
+                    Path.GetRelativePath(sourceDirectory, file),
+                    "Recipe duplicate file");
                 Directory.CreateDirectory(Path.GetDirectoryName(targetFile));
                 File.Copy(file, targetFile, overwrite: false);
             }
@@ -397,18 +523,14 @@ namespace OpenVisionLab
 
         private static string GetVisionDirectory(string recipeName)
         {
-            if (string.IsNullOrWhiteSpace(recipeName))
-            {
-                return Path.Combine(AppPathService.DataRootDirectory, RecipeRoot, "VISION");
-            }
-
-            return Path.Combine(AppPathService.DataRootDirectory, RecipeRoot, recipeName, "VISION");
+            return CombineStoragePath(GetRecipeDirectory(recipeName), "VISION");
         }
 
         private static void EnsureRecipeDirectory(string recipeName)
         {
+            string recipeDirectory = GetRecipeDirectory(recipeName);
             EnsureRoot();
-            Directory.CreateDirectory(GetRecipeDirectory(recipeName));
+            Directory.CreateDirectory(recipeDirectory);
         }
 
         private static string EnsureXmlExtension(string fileName)
@@ -418,35 +540,143 @@ namespace OpenVisionLab
                 : $"{fileName}.xml";
         }
 
+        private static string GetStorageFilePath(
+            string root,
+            string fileName,
+            string fileDescription,
+            string fallback = "")
+        {
+            string normalized = NormalizeStoragePathSegment(
+                fileName,
+                fallback,
+                fileDescription);
+            return CombineStoragePath(root, EnsureXmlExtension(normalized));
+        }
+
         private static string CombineRecipePath(string recipeName, string childDirectory)
         {
-            if (string.IsNullOrWhiteSpace(recipeName))
-            {
-                string defaultPath = Path.Combine(
-                    AppPathService.DataRootDirectory,
-                    RecipeRoot,
-                    childDirectory);
-                Directory.CreateDirectory(defaultPath);
-                return defaultPath;
-            }
-
-            string recipePath = Path.Combine(
-                AppPathService.DataRootDirectory,
-                RecipeRoot,
-                recipeName,
+            string recipePath = CombineStoragePath(
+                GetRecipeDirectory(recipeName),
                 childDirectory);
             Directory.CreateDirectory(recipePath);
             return recipePath;
         }
 
-        private static string SanitizePathSegment(string value)
+        internal static bool TryNormalizeStoragePathSegment(
+            string value,
+            string fallback,
+            string segmentDescription,
+            out string normalized,
+            out string error)
         {
-            char[] invalidChars = Path.GetInvalidFileNameChars();
-            string sanitized = new string((value ?? string.Empty)
-                .Select(ch => invalidChars.Contains(ch) ? '_' : ch)
-                .ToArray());
+            normalized = string.IsNullOrWhiteSpace(value)
+                ? fallback?.Trim() ?? string.Empty
+                : value.Trim();
+            error = string.Empty;
 
-            return string.IsNullOrWhiteSpace(sanitized) ? "Item" : sanitized;
+            if (string.IsNullOrWhiteSpace(normalized))
+            {
+                error = $"{segmentDescription} is required for Recipe/Pipeline storage.";
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(value)
+                && (value[value.Length - 1] == ' ' || value[value.Length - 1] == '.'))
+            {
+                error = $"{segmentDescription} cannot end with a space or period.";
+                return false;
+            }
+
+            if (string.Equals(normalized, ".", StringComparison.Ordinal)
+                || string.Equals(normalized, "..", StringComparison.Ordinal))
+            {
+                error = $"{segmentDescription} cannot be '.' or '..'.";
+                return false;
+            }
+
+            char[] invalidChars = Path.GetInvalidFileNameChars();
+            if (normalized.Any(ch => char.IsControl(ch)
+                || invalidChars.Contains(ch)
+                || ch == '\\'
+                || ch == '/'))
+            {
+                error = $"{segmentDescription} contains a path separator, control character, or invalid filename character.";
+                return false;
+            }
+
+            if (IsReservedDeviceName(normalized))
+            {
+                error = $"{segmentDescription} cannot use a Windows reserved device name.";
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsReservedDeviceName(string value)
+        {
+            string baseName = value;
+            int extensionIndex = baseName.IndexOf('.');
+            if (extensionIndex >= 0)
+            {
+                baseName = baseName.Substring(0, extensionIndex);
+            }
+
+            if (ReservedDeviceNames.Contains(baseName))
+            {
+                return true;
+            }
+
+            if (baseName.Length != 4
+                || (!baseName.StartsWith("COM", StringComparison.OrdinalIgnoreCase)
+                    && !baseName.StartsWith("LPT", StringComparison.OrdinalIgnoreCase))
+                || !int.TryParse(baseName.Substring(3), out int deviceNumber))
+            {
+                return false;
+            }
+
+            return deviceNumber >= 1 && deviceNumber <= 9;
+        }
+
+        private static string CombineStoragePath(string root, params string[] segments)
+        {
+            string fullRoot = Path.GetFullPath(root ?? string.Empty);
+            string target = segments == null || segments.Length == 0
+                ? fullRoot
+                : Path.GetFullPath(
+                    Path.Combine(
+                        new[] { fullRoot }
+                            .Concat(segments)
+                            .ToArray()));
+
+            if (!IsSameOrChildPath(fullRoot, target)
+                || (segments != null
+                    && segments.Length > 0
+                    && string.Equals(fullRoot, target, StringComparison.OrdinalIgnoreCase)))
+            {
+                throw new InvalidOperationException(
+                    "Recipe/Pipeline storage path escaped its intended root: " + target);
+            }
+
+            return target;
+        }
+
+        private static bool IsSameOrChildPath(string root, string path)
+        {
+            string fullRoot = Path.GetFullPath(root ?? string.Empty).TrimEnd(
+                Path.DirectorySeparatorChar,
+                Path.AltDirectorySeparatorChar);
+            string fullPath = Path.GetFullPath(path ?? string.Empty).TrimEnd(
+                Path.DirectorySeparatorChar,
+                Path.AltDirectorySeparatorChar);
+            if (string.Equals(fullRoot, fullPath, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return fullPath.StartsWith(
+                fullRoot + Path.DirectorySeparatorChar,
+                StringComparison.OrdinalIgnoreCase);
         }
     }
 }

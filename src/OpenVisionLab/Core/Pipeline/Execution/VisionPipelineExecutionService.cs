@@ -36,13 +36,30 @@ namespace OpenVisionLab
             CancellationToken cancellationToken,
             Action<VisionPipelineStepExecutionUpdate> stepUpdate = null)
         {
+            VisionPipelineExecutionPlan executionPlan = VisionPipelineExecutionPlan.Create(pipeline);
+            return await RunPreparedAsync(
+                executionPlan.EffectivePipeline,
+                context,
+                stepTimeoutMilliseconds,
+                cancellationToken,
+                stepUpdate,
+                executionPlan.NormalizationChanges).ConfigureAwait(false);
+        }
+
+        internal static async Task<VisionPipelineRunResult> RunPreparedAsync(
+            VisionPipeline pipeline,
+            VisionPipelineContext context,
+            int stepTimeoutMilliseconds,
+            CancellationToken cancellationToken,
+            Action<VisionPipelineStepExecutionUpdate> stepUpdate = null,
+            IReadOnlyList<VisionPipelineNormalizationChange> normalizationChanges = null)
+        {
             if (pipeline == null) { throw new ArgumentNullException(nameof(pipeline)); }
             if (context == null) { throw new ArgumentNullException(nameof(context)); }
 
             VisionPipelineRunResult runResult = new VisionPipelineRunResult();
             Dictionary<string, VisionPipelineFixtureFrame> fixtureFrames = new Dictionary<string, VisionPipelineFixtureFrame>(StringComparer.OrdinalIgnoreCase);
-            IReadOnlyList<VisionPipelineNormalizationChange> normalizationChanges = VisionPipelineNormalizer.NormalizeForRun(pipeline);
-            foreach (VisionPipelineNormalizationChange change in normalizationChanges)
+            foreach (VisionPipelineNormalizationChange change in normalizationChanges ?? Array.Empty<VisionPipelineNormalizationChange>())
             {
                 stepUpdate?.Invoke(new VisionPipelineStepExecutionUpdate
                 {
@@ -324,6 +341,7 @@ namespace OpenVisionLab
                         stopwatch.Elapsed);
                 }
 
+                using IDisposable toolLifetime = tool as IDisposable;
                 VisionToolResult result = tool.Execute(input);
                 if (result == null)
                 {
@@ -334,9 +352,17 @@ namespace OpenVisionLab
                         stopwatch.Elapsed);
                 }
 
-                VisionPipelineObjectResultCaptureService.Capture(step, input, tool, result);
-                VisionPipelineMatchResultCaptureService.Capture(step, input, tool, result);
-                VisionPipelineGeometryFeatureCaptureService.Capture(step, input, tool, result);
+                try
+                {
+                    VisionPipelineObjectResultCaptureService.Capture(step, input, tool, result);
+                    VisionPipelineMatchResultCaptureService.Capture(step, input, tool, result);
+                    VisionPipelineGeometryFeatureCaptureService.Capture(step, input, tool, result);
+                }
+                catch
+                {
+                    result.Dispose();
+                    throw;
+                }
 
                 return result;
             }

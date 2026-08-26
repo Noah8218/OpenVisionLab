@@ -103,12 +103,14 @@ namespace OpenVisionLab
 
         public static string GetPath(string recipeName)
         {
-            string directory = Path.Combine(
-                RecipeWorkspaceService.GetRecipeWorkspaceDirectory(recipeName),
-                "VISION",
-                "ValidationSets");
+            RecipeWorkspaceService.EnsureVisionWorkspace(recipeName);
+            string path = RecipeWorkspaceService.GetContainedStoragePath(
+                RecipeWorkspaceService.GetRecipeDirectoryPath(recipeName),
+                Path.Combine("VISION", "ValidationSets", FileName),
+                "Validation-set storage path");
+            string directory = Path.GetDirectoryName(path);
             Directory.CreateDirectory(directory);
-            return Path.Combine(directory, FileName);
+            return path;
         }
 
         public static bool TryLoad(

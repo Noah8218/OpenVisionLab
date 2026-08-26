@@ -119,13 +119,13 @@ namespace OpenVisionLab
             ObjectFilterCriteria criteria,
             int auditMinimumArea)
         {
-            VisionToolResult auditResult = null;
             try
             {
                 VisionPipelineStep auditStep = CloneForAreaAudit(step, auditMinimumArea);
                 IVisionTool auditTool = VisionPipelineAppToolFactory.Create(auditStep);
+                using IDisposable auditToolLifetime = auditTool as IDisposable;
                 using Mat auditInput = input.Clone();
-                auditResult = auditTool.Execute(auditInput);
+                using VisionToolResult auditResult = auditTool.Execute(auditInput);
                 if (auditResult?.Success != true)
                 {
                     return new List<VisionPipelineObjectResult>();
@@ -136,10 +136,6 @@ namespace OpenVisionLab
             catch
             {
                 return new List<VisionPipelineObjectResult>();
-            }
-            finally
-            {
-                auditResult?.ResultImage?.Dispose();
             }
         }
 

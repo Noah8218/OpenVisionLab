@@ -16,6 +16,7 @@ namespace OpenVisionLab
         public string SuiteName { get; set; } = string.Empty;
         public string SuiteKind { get; set; } = string.Empty;
         public string PipelineSnapshotFile { get; set; } = string.Empty;
+        public VisionPipelineExecutionProvenance ExecutionProvenance { get; set; }
         public string Notes { get; set; } = string.Empty;
         public string StartedAt { get; set; } = string.Empty;
         public string FinishedAt { get; set; } = string.Empty;
@@ -168,7 +169,8 @@ namespace OpenVisionLab
             string suiteName = "Validation Suite",
             string suiteKind = "Batch",
             string notes = "",
-            VisionPipeline pipelineSnapshot = null)
+            VisionPipeline pipelineSnapshot = null,
+            VisionPipelineExecutionProvenance executionProvenance = null)
         {
             List<VisionPipelineBatchSampleRunResult> resultList = (results ?? Enumerable.Empty<VisionPipelineBatchSampleRunResult>()).ToList();
             string batchName = CreateUniqueBatchName(recipeName, pipelineName, startedAt);
@@ -182,6 +184,12 @@ namespace OpenVisionLab
                 SuiteName = string.IsNullOrWhiteSpace(suiteName) ? "Validation Suite" : suiteName.Trim(),
                 SuiteKind = string.IsNullOrWhiteSpace(suiteKind) ? "Batch" : suiteKind.Trim(),
                 PipelineSnapshotFile = pipelineSnapshot == null ? string.Empty : "pipeline.xml",
+                ExecutionProvenance = pipelineSnapshot == null
+                    ? null
+                    : VisionPipelineExecutionPlan.CopyForStorage(
+                        executionProvenance ?? VisionPipelineExecutionPlan.CreateIdentityOnly(pipelineSnapshot),
+                        "pipeline.xml",
+                        string.Empty),
                 Notes = notes?.Trim() ?? string.Empty,
                 StartedAt = startedAt.ToString("o"),
                 FinishedAt = finishedAt.ToString("o"),
@@ -218,12 +226,25 @@ namespace OpenVisionLab
 
             if (pipelineSnapshot != null)
             {
-                SerializeHelper.SaveXmlFile(Path.Combine(directory, summary.PipelineSnapshotFile), pipelineSnapshot);
+                SerializeHelper.SaveXmlFile(
+                    RecipeWorkspaceService.GetContainedStoragePath(
+                        directory,
+                        summary.PipelineSnapshotFile,
+                        "Batch pipeline snapshot path"),
+                    pipelineSnapshot);
             }
 
-            string xmlPath = Path.Combine(directory, "summary.xml");
+            string xmlPath = RecipeWorkspaceService.GetContainedStoragePath(
+                directory,
+                "summary.xml",
+                "Batch summary path");
             SerializeHelper.SaveXmlFile(xmlPath, summary);
-            File.WriteAllLines(Path.Combine(directory, "summary.tsv"), CreateTsvLines(summary));
+            File.WriteAllLines(
+                RecipeWorkspaceService.GetContainedStoragePath(
+                    directory,
+                    "summary.tsv",
+                    "Batch summary table path"),
+                CreateTsvLines(summary));
             return xmlPath;
         }
 
@@ -404,10 +425,37 @@ namespace OpenVisionLab
                 return string.Empty;
             }
 
-            string candidate = Path.IsPathRooted(storedPath)
-                ? storedPath
-                : Path.Combine(reportDirectory ?? string.Empty, storedPath);
-            return File.Exists(candidate) ? candidate : string.Empty;
+            try
+            {
+                string candidate;
+                if (Path.IsPathRooted(storedPath))
+                {
+                    // Absolute legacy evidence paths remain readable for compatibility;
+                    // all newly written report artifacts are relative and contained.
+                    candidate = Path.GetFullPath(storedPath);
+                }
+                else
+                {
+                    if (string.IsNullOrWhiteSpace(reportDirectory))
+                    {
+                        return string.Empty;
+                    }
+
+                    candidate = RecipeWorkspaceService.GetContainedStoragePath(
+                        reportDirectory,
+                        storedPath,
+                        "Batch report artifact path");
+                }
+
+                return File.Exists(candidate) ? candidate : string.Empty;
+            }
+            catch (Exception exception) when (
+                exception is ArgumentException
+                || exception is IOException
+                || exception is NotSupportedException)
+            {
+                return string.Empty;
+            }
         }
 
         private static void AddReviewReason(
@@ -486,7 +534,10 @@ namespace OpenVisionLab
             List<BatchRunSummaryInfo> summaries = new List<BatchRunSummaryInfo>();
             foreach (string directory in Directory.EnumerateDirectories(rootDirectory))
             {
-                string summaryPath = Path.Combine(directory, "summary.xml");
+                string summaryPath = RecipeWorkspaceService.GetContainedStoragePath(
+                    directory,
+                    "summary.xml",
+                    "Batch summary path");
                 if (!File.Exists(summaryPath))
                 {
                     continue;
@@ -732,7 +783,11 @@ namespace OpenVisionLab
             string rootDirectory = RecipeWorkspaceService.GetVisionPipelineBatchRunRootDirectory(recipeName, pipelineName);
             string candidate = baseName;
             int suffix = 2;
-            while (Directory.Exists(Path.Combine(rootDirectory, candidate)))
+            while (Directory.Exists(
+                RecipeWorkspaceService.GetContainedStoragePath(
+                    rootDirectory,
+                    candidate,
+                    "Batch run directory")))
             {
                 candidate = $"{baseName}_{suffix++}";
             }

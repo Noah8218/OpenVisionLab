@@ -196,11 +196,11 @@ namespace OpenVisionLab
 
         private static string GetPath(string recipeName)
         {
-            return Path.Combine(
-                RecipeWorkspaceService.GetRecipeWorkspaceDirectory(recipeName),
-                "VISION",
-                "IntentSkills",
-                FileName);
+            RecipeWorkspaceService.EnsureVisionWorkspace(recipeName);
+            return RecipeWorkspaceService.GetContainedStoragePath(
+                RecipeWorkspaceService.GetRecipeDirectoryPath(recipeName),
+                Path.Combine("VISION", "IntentSkills", FileName),
+                "Pin-array validation storage path");
         }
 
         private static bool TryCreateRecord(

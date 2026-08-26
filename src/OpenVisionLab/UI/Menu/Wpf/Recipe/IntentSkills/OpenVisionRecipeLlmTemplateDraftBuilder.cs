@@ -1,8 +1,6 @@
 using OpenVisionLab.Vision2D.Pipeline;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 
 namespace OpenVisionLab
 {
@@ -11,7 +9,10 @@ namespace OpenVisionLab
         internal static VisionPipeline Create(string template, string referenceImagePath, string pinGapRoiText)
         {
             string selectedTemplate = template ?? string.Empty;
-            string pipelineName = "LLM_Starter_" + SanitizePathSegment(selectedTemplate.Replace("+", "And").Replace(" ", string.Empty));
+            string pipelineName = "LLM_Starter_" + RecipeWorkspaceService.NormalizeStoragePathSegment(
+                selectedTemplate.Replace("+", "And").Replace(" ", string.Empty),
+                "Item",
+                "LLM template name");
             VisionPipeline pipeline = new VisionPipeline { Name = pipelineName };
 
             if (OpenVisionRecipeLlmIntent.IsPinArrayGapTemplate(selectedTemplate))
@@ -132,13 +133,5 @@ namespace OpenVisionLab
             };
         }
 
-        private static string SanitizePathSegment(string value)
-        {
-            char[] invalidChars = Path.GetInvalidFileNameChars();
-            string sanitized = new string((value ?? string.Empty)
-                .Select(ch => invalidChars.Contains(ch) ? '_' : ch)
-                .ToArray());
-            return string.IsNullOrWhiteSpace(sanitized) ? "Item" : sanitized;
-        }
     }
 }

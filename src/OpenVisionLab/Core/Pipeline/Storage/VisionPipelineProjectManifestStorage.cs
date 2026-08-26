@@ -85,7 +85,10 @@ namespace OpenVisionLab
             manifest.LayerCount = manifest.Layers.Count;
             manifest.Steps = CreateStepEntries(target, previewFiles);
 
-            string manifestPath = Path.Combine(pipelineImageDirectory, ProjectManifestFileName);
+            string manifestPath = RecipeWorkspaceService.GetContainedStoragePath(
+                pipelineImageDirectory,
+                ProjectManifestFileName,
+                "Pipeline project manifest path");
             SerializeHelper.SaveXmlFile(manifestPath, manifest);
             return manifestPath;
         }
@@ -162,7 +165,10 @@ namespace OpenVisionLab
 
         private static Dictionary<string, string> ReadLayerManifest(string pipelineImageDirectory)
         {
-            string manifestPath = Path.Combine(pipelineImageDirectory, LayerManifestFileName);
+            string manifestPath = RecipeWorkspaceService.GetContainedStoragePath(
+                pipelineImageDirectory,
+                LayerManifestFileName,
+                "Pipeline layer manifest path");
             Dictionary<string, string> entries = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             if (!File.Exists(manifestPath))
             {
@@ -179,9 +185,14 @@ namespace OpenVisionLab
 
                 string title = UnescapeManifestValue(parts[0]);
                 string fileName = UnescapeManifestValue(parts[1]);
-                if (!string.IsNullOrWhiteSpace(title))
+                if (!string.IsNullOrWhiteSpace(title)
+                    && TryGetContainedRelativePath(
+                        pipelineImageDirectory,
+                        fileName,
+                        "Pipeline layer image path",
+                        out string relativeFile))
                 {
-                    entries[title] = fileName ?? string.Empty;
+                    entries[title] = relativeFile;
                 }
             }
 
@@ -190,8 +201,14 @@ namespace OpenVisionLab
 
         private static Dictionary<string, string> ReadStepPreviewManifest(string pipelineImageDirectory)
         {
-            string previewDirectory = Path.Combine(pipelineImageDirectory, StepPreviewDirectoryName);
-            string manifestPath = Path.Combine(previewDirectory, StepPreviewManifestFileName);
+            string previewDirectory = RecipeWorkspaceService.GetContainedStoragePath(
+                pipelineImageDirectory,
+                StepPreviewDirectoryName,
+                "Pipeline step-preview directory");
+            string manifestPath = RecipeWorkspaceService.GetContainedStoragePath(
+                previewDirectory,
+                StepPreviewManifestFileName,
+                "Pipeline step-preview manifest path");
             Dictionary<string, string> entries = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             if (!File.Exists(manifestPath))
             {
@@ -210,11 +227,52 @@ namespace OpenVisionLab
                 string stepName = UnescapeManifestValue(parts[1]);
                 string outputLayer = UnescapeManifestValue(parts[2]);
                 string fileName = UnescapeManifestValue(parts[3]);
-                string relativeFile = Path.Combine(StepPreviewDirectoryName, fileName ?? string.Empty);
-                entries[CreateStepPreviewKey(stepIndex, stepName, outputLayer)] = relativeFile;
+                if (TryGetContainedRelativePath(
+                        previewDirectory,
+                        fileName,
+                        "Pipeline step-preview image path",
+                        out string relativePreviewFile)
+                    && !string.IsNullOrWhiteSpace(relativePreviewFile))
+                {
+                    entries[CreateStepPreviewKey(stepIndex, stepName, outputLayer)] = Path.Combine(
+                        StepPreviewDirectoryName,
+                        relativePreviewFile);
+                }
             }
 
             return entries;
+        }
+
+        private static bool TryGetContainedRelativePath(
+            string intendedRoot,
+            string storedPath,
+            string pathDescription,
+            out string relativePath)
+        {
+            relativePath = string.Empty;
+            if (string.IsNullOrWhiteSpace(storedPath))
+            {
+                return true;
+            }
+
+            try
+            {
+                string containedPath = RecipeWorkspaceService.GetContainedStoragePath(
+                    intendedRoot,
+                    storedPath,
+                    pathDescription);
+                relativePath = Path.GetRelativePath(
+                    Path.GetFullPath(intendedRoot),
+                    containedPath);
+                return !string.IsNullOrWhiteSpace(relativePath);
+            }
+            catch (Exception exception) when (
+                exception is ArgumentException
+                || exception is IOException
+                || exception is NotSupportedException)
+            {
+                return false;
+            }
         }
 
         private static string CreateStepPreviewKey(int zeroBasedIndex, string stepName, string outputLayer)

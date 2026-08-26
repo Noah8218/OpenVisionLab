@@ -88,7 +88,8 @@ namespace OpenVisionLab
             }
 
             isRunning = true;
-            activePipeline = pipeline;
+            VisionPipelineExecutionPlan executionPlan = VisionPipelineExecutionPlan.Create(pipeline);
+            activePipeline = executionPlan.EffectivePipeline;
             VisionPipelineRunResult runResult = null;
             try
             {
@@ -96,16 +97,17 @@ namespace OpenVisionLab
                 invokeOnUi(() => context = CreateReviewContextFromDisplayLayers());
                 using (context)
                 {
-                    runResult = await VisionPipelineExecutionService.RunAsync(
-                        pipeline,
+                    runResult = await VisionPipelineExecutionService.RunPreparedAsync(
+                        executionPlan.EffectivePipeline,
                         context,
                         stepTimeoutMilliseconds,
                         CancellationToken.None,
-                        OnStepExecutionUpdated);
+                        OnStepExecutionUpdated,
+                        executionPlan.NormalizationChanges);
                 }
 
                 OpenVisionPipelineReviewExecutionResult completedResult = null;
-                invokeOnUi(() => completedResult = CompleteRun(pipeline, runResult));
+                invokeOnUi(() => completedResult = CompleteRun(executionPlan.EffectivePipeline, runResult));
                 return completedResult ?? new OpenVisionPipelineReviewExecutionResult(0);
             }
             finally

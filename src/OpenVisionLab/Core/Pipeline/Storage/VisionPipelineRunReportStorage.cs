@@ -15,6 +15,7 @@ namespace OpenVisionLab
 {
     public sealed class VisionPipelineRunReport
     {
+        public int SchemaVersion { get; set; }
         public string RecipeName { get; set; } = string.Empty;
         public string PipelineName { get; set; } = string.Empty;
         public string StartedAt { get; set; } = string.Empty;
@@ -25,6 +26,7 @@ namespace OpenVisionLab
         public string PipelineSnapshotFile { get; set; } = string.Empty;
         public string SourceImageFile { get; set; } = string.Empty;
         public string SourceImageSha256 { get; set; } = string.Empty;
+        public VisionPipelineExecutionProvenance ExecutionProvenance { get; set; }
         public List<VisionPipelineStepRunReport> Steps { get; set; } = new List<VisionPipelineStepRunReport>();
     }
 
@@ -107,6 +109,10 @@ namespace OpenVisionLab
 
     internal static class VisionPipelineRunReportStorage
     {
+        internal const int CurrentSchemaVersion = 1;
+        private const string OriginalPipelineSnapshotFile = "pipeline.original.xml";
+        private const string EffectivePipelineSnapshotFile = "pipeline.xml";
+
         public sealed class RunReportInfo
         {
             public string Name { get; set; } = string.Empty;
@@ -135,11 +141,19 @@ namespace OpenVisionLab
             string runName = CreateUniqueRunName(recipeName, pipelineName, startedAt, runLabel);
             string directory = RecipeWorkspaceService.GetVisionPipelineRunDirectory(recipeName, pipelineName, runName);
 
-            string pipelineSnapshotFile = "pipeline.xml";
-            SerializeHelper.SaveXmlFile(Path.Combine(directory, pipelineSnapshotFile), pipeline ?? new VisionPipeline { Name = pipelineName });
+            VisionPipeline snapshotPipeline = pipeline ?? new VisionPipeline { Name = pipelineName };
+            VisionPipelineExecutionProvenance provenance = VisionPipelineExecutionPlan.CreateIdentityOnly(snapshotPipeline);
+            VisionPipelineExecutionProvenance persistedProvenance = SavePipelineSnapshots(
+                directory,
+                snapshotPipeline,
+                snapshotPipeline,
+                provenance,
+                VisionPipelineExecutionPlan.SerializePipeline(snapshotPipeline),
+                VisionPipelineExecutionPlan.SerializePipeline(snapshotPipeline));
 
             VisionPipelineRunReport report = new VisionPipelineRunReport
             {
+                SchemaVersion = CurrentSchemaVersion,
                 RecipeName = recipeName ?? string.Empty,
                 PipelineName = pipelineName,
                 StartedAt = startedAt.ToString("o"),
@@ -147,7 +161,8 @@ namespace OpenVisionLab
                 TotalMilliseconds = (finishedAt - startedAt).TotalMilliseconds,
                 Success = result?.Success == true,
                 PublishAllOutputs = publishAllOutputs,
-                PipelineSnapshotFile = pipelineSnapshotFile
+                PipelineSnapshotFile = persistedProvenance.EffectivePipelineSnapshotFile,
+                ExecutionProvenance = persistedProvenance
             };
 
             List<VisionPipelineStepResult> stepResults = result?.StepResults ?? new List<VisionPipelineStepResult>();
@@ -157,7 +172,10 @@ namespace OpenVisionLab
                 report.Steps.Add(CreateStepReport(directory, i + 1, stepResult));
             }
 
-            string reportPath = Path.Combine(directory, "report.xml");
+            string reportPath = RecipeWorkspaceService.GetContainedStoragePath(
+                directory,
+                "report.xml",
+                "Run report path");
             SerializeHelper.SaveXmlFile(reportPath, report);
             return reportPath;
         }
@@ -175,12 +193,24 @@ namespace OpenVisionLab
             string runName = CreateUniqueRunName(recipeName, pipelineName, startedAt, runLabel);
             string directory = RecipeWorkspaceService.GetVisionPipelineRunDirectory(recipeName, pipelineName, runName);
 
-            const string pipelineSnapshotFile = "pipeline.xml";
-            SerializeHelper.SaveXmlFile(Path.Combine(directory, pipelineSnapshotFile), pipeline ?? new VisionPipeline { Name = pipelineName });
+            VisionPipeline originalPipeline = pipeline ?? new VisionPipeline { Name = pipelineName };
+            VisionPipeline effectivePipeline = result?.EffectivePipeline ?? originalPipeline;
+            VisionPipelineExecutionProvenance provenance = result?.ExecutionProvenance
+                ?? VisionPipelineExecutionPlan.CreateIdentityOnly(originalPipeline);
+            VisionPipelineExecutionProvenance persistedProvenance = SavePipelineSnapshots(
+                directory,
+                originalPipeline,
+                effectivePipeline,
+                provenance,
+                result?.OriginalPipelineXmlBytes ?? VisionPipelineExecutionPlan.SerializePipeline(originalPipeline),
+                result?.EffectivePipelineXmlBytes ?? VisionPipelineExecutionPlan.SerializePipeline(effectivePipeline));
             string sourceImageFile = SaveSourceImage(directory, sourceImage);
             string sourceImagePath = string.IsNullOrWhiteSpace(sourceImageFile)
                 ? string.Empty
-                : Path.Combine(directory, sourceImageFile);
+                : RecipeWorkspaceService.GetContainedStoragePath(
+                    directory,
+                    sourceImageFile,
+                    "Run source image path");
 
             List<VisionRecipeStepRunSummary> summaries = (result?.Steps ?? new List<VisionRecipeStepRunSummary>())
                 .Where(step => step != null)
@@ -189,6 +219,7 @@ namespace OpenVisionLab
             bool saveEveryPinArrayGapDrawing = summaries.Count(IsExecutedPinArrayGapStep) > 1;
             VisionPipelineRunReport report = new VisionPipelineRunReport
             {
+                SchemaVersion = CurrentSchemaVersion,
                 RecipeName = recipeName ?? string.Empty,
                 PipelineName = pipelineName,
                 StartedAt = startedAt.ToString("o"),
@@ -196,14 +227,15 @@ namespace OpenVisionLab
                 TotalMilliseconds = result?.TotalMilliseconds ?? 0D,
                 Success = result?.Success == true,
                 PublishAllOutputs = false,
-                PipelineSnapshotFile = pipelineSnapshotFile,
+                PipelineSnapshotFile = persistedProvenance.EffectivePipelineSnapshotFile,
                 SourceImageFile = sourceImageFile,
                 SourceImageSha256 = ComputeFileSha256(sourceImagePath),
+                ExecutionProvenance = persistedProvenance,
                 Steps = summaries
                     .Select(summary => CreateStepReport(
                         directory,
                         summary,
-                        ResolvePipelineStep(pipeline, summary),
+                        ResolvePipelineStep(effectivePipeline, summary),
                         ReferenceEquals(summary, reviewEvidenceStep),
                         ReferenceEquals(summary, reviewEvidenceStep)
                             || (saveEveryPinArrayGapDrawing && IsExecutedPinArrayGapStep(summary)),
@@ -212,9 +244,42 @@ namespace OpenVisionLab
                     .ToList()
             };
 
-            string reportPath = Path.Combine(directory, "report.xml");
+            string reportPath = RecipeWorkspaceService.GetContainedStoragePath(
+                directory,
+                "report.xml",
+                "Run report path");
             SerializeHelper.SaveXmlFile(reportPath, report);
             return reportPath;
+        }
+
+        private static VisionPipelineExecutionProvenance SavePipelineSnapshots(
+            string directory,
+            VisionPipeline originalPipeline,
+            VisionPipeline effectivePipeline,
+            VisionPipelineExecutionProvenance provenance,
+            byte[] originalPipelineBytes,
+            byte[] effectivePipelineBytes)
+        {
+            byte[] originalBytes = originalPipelineBytes ?? VisionPipelineExecutionPlan.SerializePipeline(originalPipeline);
+            byte[] effectiveBytes = effectivePipelineBytes ?? VisionPipelineExecutionPlan.SerializePipeline(effectivePipeline);
+            string originalPath = RecipeWorkspaceService.GetContainedStoragePath(
+                directory,
+                OriginalPipelineSnapshotFile,
+                "Original run pipeline snapshot path");
+            string effectivePath = RecipeWorkspaceService.GetContainedStoragePath(
+                directory,
+                EffectivePipelineSnapshotFile,
+                "Effective run pipeline snapshot path");
+            VisionPipelineExecutionPlan.SaveSnapshot(originalPath, originalBytes);
+            VisionPipelineExecutionPlan.SaveSnapshot(effectivePath, effectiveBytes);
+
+            VisionPipelineExecutionProvenance persisted = VisionPipelineExecutionPlan.CopyForStorage(
+                provenance ?? VisionPipelineExecutionPlan.CreateIdentityOnly(originalPipeline),
+                OriginalPipelineSnapshotFile,
+                EffectivePipelineSnapshotFile);
+            persisted.OriginalPipelineSha256 = Convert.ToHexString(SHA256.HashData(originalBytes));
+            persisted.EffectivePipelineSha256 = Convert.ToHexString(SHA256.HashData(effectiveBytes));
+            return persisted;
         }
 
         private static string CreateUniqueRunName(string recipeName, string pipelineName, DateTime startedAt, string runLabel)
@@ -228,7 +293,11 @@ namespace OpenVisionLab
             string rootDirectory = RecipeWorkspaceService.GetVisionPipelineRunRootDirectory(recipeName, pipelineName);
             string candidate = baseName;
             int suffix = 2;
-            while (Directory.Exists(Path.Combine(rootDirectory, candidate)))
+            while (Directory.Exists(
+                RecipeWorkspaceService.GetContainedStoragePath(
+                    rootDirectory,
+                    candidate,
+                    "Pipeline run directory")))
             {
                 candidate = $"{baseName}_{suffix++}";
             }
@@ -247,7 +316,10 @@ namespace OpenVisionLab
             List<RunReportInfo> reports = new List<RunReportInfo>();
             foreach (string directory in Directory.EnumerateDirectories(rootDirectory))
             {
-                string reportPath = Path.Combine(directory, "report.xml");
+                string reportPath = RecipeWorkspaceService.GetContainedStoragePath(
+                    directory,
+                    "report.xml",
+                    "Run report path");
                 if (!File.Exists(reportPath))
                 {
                     continue;
@@ -507,7 +579,10 @@ namespace OpenVisionLab
             }
 
             string fileName = $"{summary.Index:00}_{SanitizeFileName(summary.Name)}_{SanitizeFileName(summary.OutputLayer)}_overlay.png";
-            string path = Path.Combine(directory, fileName);
+            string path = RecipeWorkspaceService.GetContainedStoragePath(
+                directory,
+                fileName,
+                "Run overlay image path");
             try
             {
                 Directory.CreateDirectory(directory);
@@ -536,7 +611,10 @@ namespace OpenVisionLab
             }
 
             const string fileName = "source.png";
-            string path = Path.Combine(directory, fileName);
+            string path = RecipeWorkspaceService.GetContainedStoragePath(
+                directory,
+                fileName,
+                "Run result image path");
             try
             {
                 Directory.CreateDirectory(directory);
@@ -564,7 +642,10 @@ namespace OpenVisionLab
             }
 
             string fileName = $"{index:00}_{SanitizeFileName(step?.Name)}_{SanitizeFileName(step?.OutputLayer)}.png";
-            string path = Path.Combine(directory, fileName);
+            string path = RecipeWorkspaceService.GetContainedStoragePath(
+                directory,
+                fileName,
+                "Run overlay image path");
             try
             {
                 Directory.CreateDirectory(directory);
@@ -594,7 +675,10 @@ namespace OpenVisionLab
             }
 
             string fileName = $"{index:00}_{SanitizeFileName(step?.Name)}_{SanitizeFileName(step?.OutputLayer)}_overlay.png";
-            string path = Path.Combine(directory, fileName);
+            string path = RecipeWorkspaceService.GetContainedStoragePath(
+                directory,
+                fileName,
+                "Run overlay image path");
             Directory.CreateDirectory(directory);
             using (Bitmap bitmap = CreatePngCompatibleBitmap(image))
             {
