@@ -21,7 +21,7 @@
   },
   "state": {
     "status": "resolved",
-    "current_summary": "PL-0005 is resolved in Dev for the reviewed external-binary scope: forbidden and user-authorized removable DLLs remain absent, retained allowlisted dependencies have NOTICE or owner-declaration coverage, and both the clean Release distribution gate and the actual copied-runtime EXE launch/data-root smoke passed at commit 0292656befc07a79e4e2d43ddd24d386a6b24909. No tag, release publication, deployment, or original-repository promotion has been performed."
+    "current_summary": "PL-0005 is resolved in Dev and its reviewed changes are now promoted to the original repository main at 4b92289133a593356c74b22505714a1f91112380. The original main clean Release candidate gate and actual copied-runtime launch/data-root smoke passed; no tag, release publication, or deployment has been performed."
   },
   "problem": {
     "claims": [
@@ -67,7 +67,8 @@
         "E13",
         "E14",
         "E16",
-        "E17"
+        "E17",
+        "E18"
       ]
     },
     {
@@ -82,7 +83,8 @@
         "E13",
         "E15",
         "E16",
-        "E17"
+        "E17",
+        "E18"
       ]
     },
     {
@@ -226,6 +228,13 @@
       "location": "C:\\Git\\OpenVisionLab_Dev\\artifacts\\release_candidate_20260826_actual_launch\\release_candidate_summary.json; C:\\Git\\OpenVisionLab_Dev\\artifacts\\release_launch_smoke_20260826_122127; C:\\Git\\OpenVisionLab_Dev\\dist\\OpenVisionLab-win-x64-framework-dependent.zip; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pre_launch_gate_backup_20260826",
       "observation": "On 2026-08-26 VerifyReleaseCandidate.ps1 without -SkipLaunch passed at commit 0292656befc07a79e4e2d43ddd24d386a6b24909. Debug/Release builds had zero warnings/errors; readiness 13/13, references, NOTICE, public assets, and 33-row samples passed. Clean publish/TestReleaseDistribution passed with 73 win-x64 framework-dependent payload files and archive SHA-256 11A74CB7D10645FBEEA530FE5E2F13D80049F75435206146473A777CD84837F0. The copied runtime launched twice without early exit; migration was Status=Complete with the conflict preserved, the Error log was empty, and only the expected migration warning was recorded. LaunchSmoke=PASS.",
       "observed_at": "2026-08-26T12:22:44+09:00"
+    },
+    {
+      "id": "E18",
+      "kind": "original-main-promotion-and-gate",
+      "location": "C:\\Git\\OpenVisionLab\\artifacts\\release_candidate_20260826_original_main\\release_candidate_summary.json; C:\\Git\\OpenVisionLab\\artifacts\\release_launch_smoke_20260826_123033; C:\\Git\\OpenVisionLab\\dist\\OpenVisionLab-win-x64-framework-dependent.zip; C:\\Git\\OpenVisionLab\\Temp.txt",
+      "observation": "On 2026-08-26 the nine reviewed Dev commits were cherry-picked to original main as 40e4124, d529ea9, 2d66702, a11610e, 90ff5b8, b712f53, 204f9b8, 5d55e33, and 4b92289, then pushed 8a02982..4b92289133a593356c74b22505714a1f91112380 to origin/main. VerifyReleaseCandidate.ps1 without -SkipLaunch passed on original main: Debug/Release zero warnings/errors, readiness 13/13, references/NOTICE, 33 samples, 73 payload files, and actual launch/data-root smoke passed. Archive SHA-256 is 0ECCBA97AC03ED48C2E2199DE89B281D49DB5E1E7167B1AEF29C511F59306E66. Existing untracked Temp.txt remained untouched with SHA-256 F1945CD6C19E56B3C1C78943EF5EC18116907A4CA1EFC40A57D48AB1DB7ADFC5.",
+      "observed_at": "2026-08-26T12:32:03+09:00"
     }
   ],
   "events": [
@@ -293,8 +302,17 @@
       "from": "open",
       "to": "resolved",
       "summary": "PL-0005 resolved in Dev after the exact clean Release candidate distribution gate passed at cb3ead002bf74a94db6af5776f2f365b2a64554f; the -SkipLaunch boundary remains explicit."
+    },
+    {
+      "id": "D7",
+      "kind": "decision",
+      "at": "2026-08-26T12:32:03+09:00",
+      "summary": "Complete the user-authorized reviewed promotion of the nine Dev commits to original repository main. The cherry-picked original commit is 4b92289133a593356c74b22505714a1f91112380 and was pushed to origin/main after the original-main full Release candidate gate passed. Keep tag, release publication, and deployment as separate boundaries.",
+      "evidence_refs": [
+        "E18"
+      ]
     }
   ],
   "created_at": "2026-08-25T11:56:04+09:00",
-  "updated_at": "2026-08-26T12:22:44+09:00"
+  "updated_at": "2026-08-26T12:32:03+09:00"
 }

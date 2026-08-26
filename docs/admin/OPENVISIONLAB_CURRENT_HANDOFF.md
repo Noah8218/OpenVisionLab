@@ -87,9 +87,10 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
   `0292656befc07a79e4e2d43ddd24d386a6b24909`: Debug/Release builds have zero
   warnings/errors, readiness is 13/13, the public sample gate is 33/33, the
   copied win-x64 framework-dependent distribution contract passes, and the
-  actual copied-runtime EXE launch/data-root smoke passes twice. Product
-  release, tag, publication, deployment, and original-repository promotion
-  remain separate authorization boundaries until explicitly performed.
+  actual copied-runtime EXE launch/data-root smoke passes twice. The reviewed
+  commits have now also been promoted to original `main` at
+  `4b92289133a593356c74b22505714a1f91112380`; product release, tag,
+  publication, and deployment remain separate authorization boundaries.
 - `PL-0006` BitmapImageConverter memory safety is complete in Dev. `PL-0007`
   Recipe/Pipeline storage path containment is also complete in Dev; its current
   path-boundary, lifecycle, sample/report, qualified-snapshot, and public-runtime
@@ -401,7 +402,8 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
   issue-ledger, and RC2 evidence; `0292656b` records the clean Release gate.
 - The canonical product version remains `2.1.0`; these development commits do
   not create or change `v2.1.0-rc.2`. No tag, GitHub release, deployment, or
-  original-repository promotion was performed.
+  release-stage mutation was performed in this Dev push; the separate original
+  `main` promotion is recorded in the following section.
 - From the now-clean worktree at
   `0292656befc07a79e4e2d43ddd24d386a6b24909`,
   `VerifyReleaseCandidate.ps1
@@ -425,6 +427,25 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
   `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\pre_gate_backup_20260826`
   before regeneration; source files and the original repository were not
   changed.
+
+### 2026-08-26 Original Main Promotion - Complete After Full Gate
+
+- The nine reviewed Dev commits were cherry-picked to the original repository
+  `main` as `40e4124`, `d529ea9`, `2d66702`, `a11610e`, `90ff5b8`, `b712f53`,
+  `204f9b8`, `5d55e33`, and `4b92289`. The original `Temp.txt` remained
+  untracked and unchanged.
+- The original `main` full gate passed at
+  `4b92289133a593356c74b22505714a1f91112380`: Debug/Release builds had zero
+  warnings/errors, readiness 13/13, external references and NOTICE passed,
+  all 33 public sample rows passed, the 73-file win-x64 framework-dependent
+  distribution passed, and actual copied-runtime launch/data-root smoke passed.
+  Archive SHA-256:
+  `0ECCBA97AC03ED48C2E2199DE89B281D49DB5E1E7167B1AEF29C511F59306E66`.
+- The exact commit was pushed to
+  `https://github.com/Noah8218/OpenVisionLab.git` as `origin/main`.
+  No tag, GitHub Release, or deployment was performed. Evidence is recorded
+  in `.proofline/issues/PL-0005.json` (`E18`/`D7`) and
+  `C:\Git\OpenVisionLab\artifacts\release_candidate_20260826_original_main\release_candidate_summary.json`.
 
 ### 2026-08-24 PL-0004 Display-Store/Viewer Lifetime - Complete In Dev
 
