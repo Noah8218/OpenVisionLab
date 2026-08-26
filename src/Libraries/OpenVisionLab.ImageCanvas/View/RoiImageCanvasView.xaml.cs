@@ -1,3 +1,4 @@
+using System;
 using OpenVisionLab.ImageCanvas.ViewModels;
 using System.Windows;
 using System.Windows.Controls;
@@ -6,9 +7,11 @@ using System.Windows.Threading;
 
 namespace OpenVisionLab.ImageCanvas.Views
 {
-	public partial class RoiImageCanvasView : UserControl
+	public partial class RoiImageCanvasView : UserControl, IDisposable
 	{
 		private RoiImageCanvasViewModel attachedViewModel;
+		private DispatcherOperation pendingImageViewerRefresh;
+		private bool disposed;
 
 		public static readonly DependencyProperty ShowStatusBarProperty =
 			DependencyProperty.Register(
@@ -79,10 +82,30 @@ namespace OpenVisionLab.ImageCanvas.Views
 
 		private void ImageCanvasView_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
 		{
+			if (!ReferenceEquals(e.OldValue, e.NewValue))
+			{
+				DetachImageViewer();
+			}
+
 			if (IsLoaded)
 			{
 				AttachImageViewer();
 			}
+		}
+
+		private void DetachImageViewer()
+		{
+			if (imageBoxCameraTwoD != null)
+			{
+				imageBoxCameraTwoD.Child = null;
+			}
+
+			if (MainGrid?.ContextMenu != null)
+			{
+				MainGrid.ContextMenu.DataContext = null;
+			}
+
+			attachedViewModel = null;
 		}
 
 		private void AttachImageViewer()
@@ -104,8 +127,14 @@ namespace OpenVisionLab.ImageCanvas.Views
 
 				SyncHostedImageViewerBounds();
 
-				Dispatcher.BeginInvoke(new System.Action(() =>
+				pendingImageViewerRefresh = Dispatcher.BeginInvoke(new System.Action(() =>
 				{
+					pendingImageViewerRefresh = null;
+					if (disposed || viewModel.ImageViewer == null)
+					{
+						return;
+					}
+
 					SyncHostedImageViewerBounds();
 					viewModel.ImageViewer.Reshape();
 					viewModel.ImageViewer.RefreshGL();
@@ -156,6 +185,36 @@ namespace OpenVisionLab.ImageCanvas.Views
 			{
 				viewModel.KeyUpCommand.Execute(e);
 			}
+		}
+
+		public void Dispose()
+		{
+			if (disposed)
+			{
+				return;
+			}
+
+			disposed = true;
+			if (pendingImageViewerRefresh?.Status == DispatcherOperationStatus.Pending)
+			{
+				pendingImageViewerRefresh.Abort();
+			}
+			pendingImageViewerRefresh = null;
+			Loaded -= ImageCanvasView_Loaded;
+			DataContextChanged -= ImageCanvasView_DataContextChanged;
+			SizeChanged -= ImageCanvasView_SizeChanged;
+			Unloaded -= ImageCanvasView_Unloaded;
+			PreviewKeyDown -= ImageCanvasView_PreviewKeyDown;
+			KeyUp -= ImageCanvasView_KeyUp;
+			attachedViewModel = null;
+			if (MainGrid?.ContextMenu != null)
+			{
+				MainGrid.ContextMenu.DataContext = null;
+			}
+			DataContext = null;
+			imageBoxCameraTwoD?.Dispose();
+			Content = null;
+			GC.SuppressFinalize(this);
 		}
 	}
 }

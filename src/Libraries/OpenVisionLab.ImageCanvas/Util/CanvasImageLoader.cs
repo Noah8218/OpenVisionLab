@@ -1,6 +1,5 @@
 ﻿using OpenVisionLab.ImageCanvas.OpenCVSharp;
 using OpenVisionLab.ImageCanvas.OpenGLRendering;
-using Emgu.CV.CvEnum;
 using OpenCvSharp;
 using System;
 using System.Drawing;
@@ -276,10 +275,7 @@ namespace OpenVisionLab.ImageCanvas
 
 		public static OpenCvSharp.Mat LoadMatFromFile(string path)
 		{
-			LoadImageType imReadMode = LoadImageType.Unchanged;
-			Emgu.CV.Mat mat = new Emgu.CV.Mat(path, imReadMode);
-			MatType cvMT = mat.NumberOfChannels == 1 ? OpenCvSharp.MatType.CV_8UC1 : OpenCvSharp.MatType.CV_8UC3;
-			return new OpenCvSharp.Mat(mat.Rows, mat.Cols, cvMT, mat.DataPointer);
+			return Cv2.ImRead(path, ImreadModes.AnyColor);
 		}
 
 	}

@@ -168,9 +168,14 @@ namespace OpenVisionLab.ImageCanvas.OpenGLRendering
 			if (shape.DisplayListId != 0)
 			{
 				gl.DeleteLists(shape.DisplayListId, 1);
+				shape.DisplayListId = 0;
 			}
 
 			shape.DisplayListId = gl.GenLists(1);
+			if (shape.DisplayListId == 0)
+			{
+				throw new InvalidOperationException("OpenGL could not allocate the overlay display list.");
+			}
 		}
 	}
 }

@@ -8,6 +8,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
@@ -82,20 +83,46 @@ namespace OpenVisionLab.ImageCanvas.OpenGLRendering
 				}
 				bitmap.RotateFlip(RotateFlipType.RotateNoneFlipY);
 
-				uint[] gtexture = new uint[1];
-				gl.GenTextures(1, gtexture);
-				gl.BindTexture(OpenGL.GL_TEXTURE_2D, gtexture[0]);
+				uint textureId = 0;
+				bool succeeded = false;
+				BitmapData data = null;
+				bool bitmapLocked = false;
+				try
+				{
+					uint[] gtexture = new uint[1];
+					gl.GenTextures(1, gtexture);
+					textureId = gtexture[0];
+					if (textureId == 0) { throw new InvalidOperationException("OpenGL could not allocate the text texture."); }
+					gl.BindTexture(OpenGL.GL_TEXTURE_2D, textureId);
 
-				gl.TexParameter(OpenGL.GL_TEXTURE_2D, OpenGL.GL_TEXTURE_MIN_FILTER, OpenGL.GL_LINEAR);
-				gl.TexParameter(OpenGL.GL_TEXTURE_2D, OpenGL.GL_TEXTURE_MAG_FILTER, OpenGL.GL_LINEAR);
-				gl.TexParameter(OpenGL.GL_TEXTURE_2D, OpenGL.GL_TEXTURE_WRAP_S, OpenGL.GL_CLAMP_TO_EDGE);
-				gl.TexParameter(OpenGL.GL_TEXTURE_2D, OpenGL.GL_TEXTURE_WRAP_T, OpenGL.GL_CLAMP_TO_EDGE);
+					gl.TexParameter(OpenGL.GL_TEXTURE_2D, OpenGL.GL_TEXTURE_MIN_FILTER, OpenGL.GL_LINEAR);
+					gl.TexParameter(OpenGL.GL_TEXTURE_2D, OpenGL.GL_TEXTURE_MAG_FILTER, OpenGL.GL_LINEAR);
+					gl.TexParameter(OpenGL.GL_TEXTURE_2D, OpenGL.GL_TEXTURE_WRAP_S, OpenGL.GL_CLAMP_TO_EDGE);
+					gl.TexParameter(OpenGL.GL_TEXTURE_2D, OpenGL.GL_TEXTURE_WRAP_T, OpenGL.GL_CLAMP_TO_EDGE);
 
-				BitmapData data = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-				gl.TexImage2D(OpenGL.GL_TEXTURE_2D, 0, (int)OpenGL.GL_RGBA, bitmap.Width, bitmap.Height, 0, OpenGL.GL_BGRA, OpenGL.GL_UNSIGNED_BYTE, data.Scan0);
-				bitmap.UnlockBits(data);
+					data = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+					bitmapLocked = true;
+					gl.TexImage2D(OpenGL.GL_TEXTURE_2D, 0, OpenGL.GL_RGBA, bitmap.Width, bitmap.Height, 0, OpenGL.GL_BGRA, OpenGL.GL_UNSIGNED_BYTE, data.Scan0);
+					bitmap.UnlockBits(data);
+					bitmapLocked = false;
+					data = null;
 
-				return gtexture[0];
+					succeeded = true;
+					return textureId;
+				}
+				finally
+				{
+					if (bitmapLocked && data != null)
+					{
+						try { bitmap.UnlockBits(data); } catch (Exception exception) { Trace.TraceWarning("OpenGL text bitmap unlock failed: {0}", exception); }
+					}
+					try { gl.BindTexture(OpenGL.GL_TEXTURE_2D, 0); } catch (Exception exception) { Trace.TraceWarning("OpenGL text texture unbind failed: {0}", exception); }
+					if (!succeeded && textureId != 0)
+					{
+						uint[] texture = { textureId };
+						try { gl.DeleteTextures(1, texture); } catch (Exception exception) { Trace.TraceWarning("OpenGL text texture deletion failed: {0}", exception); }
+					}
+				}
 			}
 		}
 	}

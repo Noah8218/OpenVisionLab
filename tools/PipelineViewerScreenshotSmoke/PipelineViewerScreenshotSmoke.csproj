@@ -21,6 +21,10 @@
       <HintPath>$(OpenVisionLabVisionSdkDllRoot)OpenVisionLab.Core.dll</HintPath>
       <Private>true</Private>
     </Reference>
+    <Reference Include="SharpGL">
+      <HintPath>$(OpenVisionLabDllRoot)SharpGL\SharpGL.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
     <Reference Include="OpenVisionLab.Vision2D">
       <HintPath>$(OpenVisionLabVisionSdkDllRoot)OpenVisionLab.Vision2D.dll</HintPath>
       <Private>true</Private>

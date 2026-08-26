@@ -162,8 +162,9 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 
 		public PointF GetScreenPosFromPixelCoordf(int pixelX, int pixelY)
 		{
-			float screenX = (pixelX + _offsetSize.Width) * GetControlMinSize() / _zoom;
-			float screenY = openGLControl.Size.Height - ((pixelY + _offsetSize.Height) * GetControlMinSize() / _zoom);
+			float scale = GetControlMinSize() / _zoom;
+			float screenX = (pixelX + 0.5F + _offsetSize.Width) * scale;
+			float screenY = openGLControl.Size.Height - ((pixelY + 0.5F + _offsetSize.Height) * scale);
 
 			return new PointF(screenX, screenY);
 		}
@@ -189,8 +190,9 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 
 		public Point GetScreenPosFromPixelCoord(int pixelX, int pixelY)
 		{
-			int screenX = (int)((pixelX + _offsetSize.Width) * GetControlMinSize() / _zoom);
-			int screenY = (int)(openGLControl.Size.Height - ((pixelY + _offsetSize.Height) * GetControlMinSize() / _zoom));
+			float scale = GetControlMinSize() / _zoom;
+			int screenX = (int)Math.Floor((pixelX + 0.5F + _offsetSize.Width) * scale);
+			int screenY = (int)Math.Floor(openGLControl.Size.Height - ((pixelY + 0.5F + _offsetSize.Height) * scale));
 
 			return new Point(screenX, screenY);
 		}

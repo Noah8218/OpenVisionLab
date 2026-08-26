@@ -308,6 +308,27 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 			_refreshTimer.Elapsed += _dataTimer_Elapsed;
 			_refreshTimer.Start();  // ?�?�머 ?�작
 		}
+
+		private void ReleaseEvents()
+		{
+			if (_imageViewer == null)
+			{
+				return;
+			}
+
+			_imageViewer.Load -= OnLoad;
+			_imageViewer.Resized -= OnResized;
+			_imageViewer.MouseDoubleClicked -= OnMouseDoubleClicked;
+			_imageViewer.Draw -= OnDraw;
+			_imageViewer.KeyDown -= OnKeyDown;
+			_imageViewer.KeyUp -= OnKeyUp;
+			_imageViewer.MouseClicked -= OnMouseClicked;
+			_imageViewer.MouseDown -= OnMouseDown;
+			_imageViewer.MouseMove -= OnMouseMove;
+			_imageViewer.MouseUp -= OnMouseUp;
+			_imageViewer.MouseLeave -= OnMouseLeave;
+			_imageViewer.MouseWheel -= OnMouseWheel;
+		}
 		private void InitMenuItems()
 		{
 			MenuItems = new ObservableCollection<MenuItemViewModel>();

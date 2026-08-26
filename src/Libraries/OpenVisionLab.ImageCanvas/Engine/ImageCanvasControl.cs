@@ -43,6 +43,26 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 
 		#endregion
 
+		private static void TryCleanupOpenGl(string resourceName, Action cleanup)
+		{
+			try
+			{
+				cleanup();
+			}
+			catch (Exception exception)
+			{
+				Trace.TraceWarning("OpenGL cleanup failed for {0}: {1}", resourceName, exception);
+			}
+		}
+
+		private static void ValidateReadRegion(int x, int y, int width, int height, int textureWidth, int textureHeight)
+		{
+			if (textureWidth <= 0 || textureHeight <= 0 || x < 0 || y < 0 || width <= 0 || height <= 0 || x > textureWidth - width || y > textureHeight - height)
+			{
+				throw new ArgumentOutOfRangeException(nameof(x), "The readback region must be a non-empty half-open image region.");
+			}
+		}
+
 		#region DllImport
 		[DllImport("opengl32.dll", SetLastError = true)]
 		public static extern void glTexSubImage2D(
@@ -283,6 +303,34 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 		public void SetViewMode(CanvasInteractionMode enumViewMode) => _viewMode = enumViewMode;
 		public CanvasInteractionMode GetViewMode() => _viewMode;
 		public void SetToFitRect(System.Drawing.RectangleF rect) => _fitRect = rect;
+
+		private void ReleaseOpenGlControl()
+		{
+			if (openGLControl == null)
+			{
+				return;
+			}
+
+			// SharpGL 3.1.1 does not add its WinForms drawing timer to the component container.
+			// Stop it explicitly so disposing a transient canvas releases its native USER timer.
+			openGLControl.FrameRate = 0;
+			openGLControl.Load -= OnLoad;
+			openGLControl.Resized -= OnResized;
+			openGLControl.MouseDoubleClick -= OnMouseDoubleClick;
+			openGLControl.OpenGLDraw -= OnDraw;
+			openGLControl.KeyUp -= OnKeyUp;
+			openGLControl.KeyDown -= OnKeyDown;
+			openGLControl.MouseClick -= OnMouseClick;
+			openGLControl.MouseDown -= OnMouseDown;
+			openGLControl.MouseMove -= OnMouseMove;
+			openGLControl.MouseUp -= OnMouseUp;
+			openGLControl.MouseWheel -= OnMouseWheel;
+			openGLControl.MouseLeave -= OnMouseLeave;
+
+			openGLControl.OpenGL?.RenderContextProvider?.Destroy();
+			openGLControl.Dispose();
+			openGLControl = null;
+		}
 
 		public OpenGlTextDrawOptions GetOpenGlTextDrawOptions()
 		{
@@ -958,10 +1006,14 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 
 		private int GetGrayValue(OpenGL gl, int x, int y)
 		{
+			if (gl == null || gl.RenderContextProvider == null || x < 0 || y < 0 || x >= gl.RenderContextProvider.Width || y >= gl.RenderContextProvider.Height)
+			{
+				return 0;
+			}
 			byte[] pixelData = new byte[4]; // RGBA
 
 			// OpenGL은 좌하단을 원점으로 사용하므로 y 좌표를 계산하거나 반전합니다.
-			int invertedY = gl.RenderContextProvider.Height - y;
+			int invertedY = gl.RenderContextProvider.Height - 1 - y;
 
 			gl.ReadPixels(x, invertedY, 1, 1, OpenGL.GL_RGBA, OpenGL.GL_UNSIGNED_BYTE, pixelData);
 
@@ -976,10 +1028,14 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 
 		public System.Drawing.Color GetScreenColor(OpenGL gl, int x, int y)
 		{
+			if (gl == null || gl.RenderContextProvider == null || x < 0 || y < 0 || x >= gl.RenderContextProvider.Width || y >= gl.RenderContextProvider.Height)
+			{
+				return System.Drawing.Color.Empty;
+			}
 			byte[] pixelData = new byte[4]; // RGBA
 
 			// OpenGL은 좌하단을 원점으로 사용하므로 y 좌표를 계산하거나 반전합니다.
-			int invertedY = gl.RenderContextProvider.Height - y;
+			int invertedY = gl.RenderContextProvider.Height - 1 - y;
 
 			gl.ReadPixels(x, invertedY, 1, 1, OpenGL.GL_RGBA, OpenGL.GL_UNSIGNED_BYTE, pixelData);
 
@@ -989,108 +1045,106 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 
 		public byte[] ReadTextureRegionColors(OpenGL gl, uint textureId, int x, int y, int readWidth, int readHeight, int textureWidth, int textureHeight)
 		{
-			gl.BindTexture(OpenGL.GL_TEXTURE_2D, textureId);
-
 			int[] widthArr = new int[1];
 			int[] heightArr = new int[1];
-			int[] formatArr = new int[1];
+			uint frameBufferId = 0;
+			uint pboId = 0;
+			bool mapped = false;
+			try
+			{
+			gl.BindTexture(OpenGL.GL_TEXTURE_2D, textureId);
 			gl.GetTexLevelParameter(OpenGL.GL_TEXTURE_2D, 0, OpenGL.GL_TEXTURE_WIDTH, widthArr);
 			gl.GetTexLevelParameter(OpenGL.GL_TEXTURE_2D, 0, OpenGL.GL_TEXTURE_HEIGHT, heightArr);
-			gl.GetTexLevelParameter(OpenGL.GL_TEXTURE_2D, 0, OpenGL.GL_TEXTURE_INTERNAL_FORMAT, formatArr);
-
-			int internalFormat = formatArr[0];
-
-			// PBO를 생성하고 바인딩합니다.
-			uint[] pbo = new uint[1];
-			gl.GenBuffers(1, pbo);
-			gl.BindBuffer(OpenGL.GL_PIXEL_PACK_BUFFER, pbo[0]);
-			int bufferSize = readWidth * readHeight * 4; // RGBA for each pixel
-			gl.BufferData(OpenGL.GL_PIXEL_PACK_BUFFER, bufferSize, IntPtr.Zero, OpenGL.GL_STREAM_READ);
-
-			// RGB 값을 0에서 255 사이의 값으로 변환합니다.
-			// 일반적인 가중치 방식으로 그레이스케일 값을 계산합니다.
-			gl.ReadPixels(x, (textureHeight - 1) - (y + readHeight - 1), readWidth, readHeight, OpenGL.GL_RGBA, OpenGL.GL_UNSIGNED_BYTE, IntPtr.Zero);
-
-			// GPU에서 픽셀 데이터를 읽어옵니다.
-			byte[] pixelData = new byte[bufferSize];
-			gl.BindBuffer(OpenGL.GL_PIXEL_PACK_BUFFER, pbo[0]);
-			IntPtr ptr = gl.MapBuffer(OpenGL.GL_PIXEL_PACK_BUFFER, OpenGL.GL_READ_ONLY);
-			if (ptr != IntPtr.Zero)
+			int actualWidth = widthArr[0];
+			int actualHeight = heightArr[0];
+			if (actualWidth != textureWidth || actualHeight != textureHeight)
 			{
+				throw new ArgumentException("The supplied texture dimensions do not match the native texture.");
+			}
+			ValidateReadRegion(x, y, readWidth, readHeight, actualWidth, actualHeight);
+
+				uint[] frameBuffer = new uint[1];
+				gl.GenFramebuffersEXT(1, frameBuffer);
+				frameBufferId = frameBuffer[0];
+				if (frameBufferId == 0) { throw new InvalidOperationException("OpenGL could not allocate the region frame buffer."); }
+				gl.BindFramebufferEXT(OpenGL.GL_FRAMEBUFFER_EXT, frameBufferId);
+				gl.FramebufferTexture2DEXT(OpenGL.GL_FRAMEBUFFER_EXT, OpenGL.GL_COLOR_ATTACHMENT0_EXT, OpenGL.GL_TEXTURE_2D, textureId, 0);
+				uint status = gl.CheckFramebufferStatusEXT(OpenGL.GL_FRAMEBUFFER_EXT);
+				if (status != OpenGL.GL_FRAMEBUFFER_COMPLETE_EXT) { throw new InvalidOperationException($"Region FBO incomplete. Status = {status}"); }
+
+				uint[] pbo = new uint[1];
+				gl.GenBuffers(1, pbo);
+				pboId = pbo[0];
+				if (pboId == 0) { throw new InvalidOperationException("OpenGL could not allocate the region PBO."); }
+				gl.BindBuffer(OpenGL.GL_PIXEL_PACK_BUFFER, pboId);
+				int bufferSize = readWidth * readHeight * 4;
+				gl.BufferData(OpenGL.GL_PIXEL_PACK_BUFFER, bufferSize, IntPtr.Zero, OpenGL.GL_STREAM_READ);
+				gl.ReadPixels(x, actualHeight - y - readHeight, readWidth, readHeight, OpenGL.GL_RGBA, OpenGL.GL_UNSIGNED_BYTE, IntPtr.Zero);
+
+				byte[] pixelData = new byte[bufferSize];
+				IntPtr ptr = gl.MapBuffer(OpenGL.GL_PIXEL_PACK_BUFFER, OpenGL.GL_READ_ONLY);
+				if (ptr == IntPtr.Zero) { throw new InvalidOperationException("OpenGL returned a null region mapping."); }
+				mapped = true;
 				Marshal.Copy(ptr, pixelData, 0, bufferSize);
 				gl.UnmapBuffer(OpenGL.GL_PIXEL_PACK_BUFFER);
+				mapped = false;
+
+				byte[] flippedPixels = new byte[pixelData.Length];
+				int stride = readWidth * 4;
+				for (int row = 0; row < readHeight; row++)
+				{
+					int sourceIndex = row * stride;
+					int destIndex = (readHeight - 1 - row) * stride;
+					Array.Copy(pixelData, sourceIndex, flippedPixels, destIndex, stride);
+				}
+				return flippedPixels;
 			}
-			gl.BindBuffer(OpenGL.GL_PIXEL_PACK_BUFFER, 0);
-			gl.DeleteBuffers(1, pbo);
-
-			byte[] flippedPixels = new byte[pixelData.Length];
-			int bytesPerPixel = 4; // RGBA 형식 기준입니다.
-			int stride = readWidth * bytesPerPixel;
-
-			for (int row = 0; row < readHeight; row++)
+			finally
 			{
-				int sourceIndex = row * stride;
-				int destIndex = (readHeight - 1 - row) * stride;
-				Array.Copy(pixelData, sourceIndex, flippedPixels, destIndex, stride);
+				if (mapped) { TryCleanupOpenGl("region PBO unmap", () => gl.UnmapBuffer(OpenGL.GL_PIXEL_PACK_BUFFER)); }
+				TryCleanupOpenGl("region PBO binding", () => gl.BindBuffer(OpenGL.GL_PIXEL_PACK_BUFFER, 0));
+				if (pboId != 0)
+				{
+					uint[] pbo = { pboId };
+					TryCleanupOpenGl("region PBO deletion", () => gl.DeleteBuffers(1, pbo));
+				}
+				TryCleanupOpenGl("region frame-buffer binding", () => gl.BindFramebufferEXT(OpenGL.GL_FRAMEBUFFER_EXT, 0));
+				if (frameBufferId != 0)
+				{
+					uint[] frameBuffer = { frameBufferId };
+					TryCleanupOpenGl("region frame-buffer deletion", () => gl.DeleteFramebuffersEXT(1, frameBuffer));
+				}
+				TryCleanupOpenGl("region texture binding", () => gl.BindTexture(OpenGL.GL_TEXTURE_2D, 0));
 			}
-			return flippedPixels;
 		}
 		public byte[] ReadTextureRegionColors(OpenGL gl, uint textureId, PointF centerPoint, int halfSize, int width, int height)
 		{
-			gl.BindTexture(OpenGL.GL_TEXTURE_2D, textureId);
-
-			int minX = (int)centerPoint.X - halfSize;
-			int minY = (int)centerPoint.Y - halfSize;
-
-			int maxX = (int)Math.Min(centerPoint.X + halfSize, width);
-			int maxY = (int)Math.Min(centerPoint.Y + halfSize, height);
-
-			int readWidth = maxX - minX + 1;
-			int readHeight = maxY - minY + 1;
-
-
-			// PBO를 생성하고 바인딩합니다.
-			uint[] pbo = new uint[1];
-			gl.GenBuffers(1, pbo);
-			gl.BindBuffer(OpenGL.GL_PIXEL_PACK_BUFFER, pbo[0]);
-			int bufferSize = readWidth * readHeight * 4; // RGBA for each pixel
-			gl.BufferData(OpenGL.GL_PIXEL_PACK_BUFFER, bufferSize, IntPtr.Zero, OpenGL.GL_STREAM_READ);
-
-			// glReadPixels 호출
-			gl.ReadPixels(minX, (height - 1) - maxY, readWidth, readHeight, OpenGL.GL_RGBA, OpenGL.GL_UNSIGNED_BYTE, IntPtr.Zero);
-
-			// GPU에서 픽셀 데이터를 읽어옵니다.
-			byte[] pixelData = new byte[bufferSize];
-			gl.BindBuffer(OpenGL.GL_PIXEL_PACK_BUFFER, pbo[0]);
-			IntPtr ptr = gl.MapBuffer(OpenGL.GL_PIXEL_PACK_BUFFER, OpenGL.GL_READ_ONLY);
-			if (ptr != IntPtr.Zero)
+			if (halfSize < 0) { throw new ArgumentOutOfRangeException(nameof(halfSize)); }
+			if (centerPoint.X < 0 || centerPoint.Y < 0 || centerPoint.X >= width || centerPoint.Y >= height)
 			{
-				Marshal.Copy(ptr, pixelData, 0, bufferSize);
-				gl.UnmapBuffer(OpenGL.GL_PIXEL_PACK_BUFFER);
+				throw new ArgumentOutOfRangeException(nameof(centerPoint));
 			}
-			gl.BindBuffer(OpenGL.GL_PIXEL_PACK_BUFFER, 0);
-			gl.DeleteBuffers(1, pbo);
 
-			byte[] flippedPixels = new byte[pixelData.Length];
-			int bytesPerPixel = 4; // RGBA 형식 기준입니다.
-			int stride = readWidth * bytesPerPixel;
-
-			for (int y = 0; y < readHeight; y++)
-			{
-				int sourceIndex = y * stride;
-				int destIndex = (readHeight - 1 - y) * stride;
-				Array.Copy(pixelData, sourceIndex, flippedPixels, destIndex, stride);
-			}
-			return flippedPixels;
+			int centerX = (int)Math.Floor(centerPoint.X);
+			int centerY = (int)Math.Floor(centerPoint.Y);
+			int minX = Math.Max(0, centerX - halfSize);
+			int minY = Math.Max(0, centerY - halfSize);
+			int maxX = Math.Min(width, centerX + halfSize + 1);
+			int maxY = Math.Min(height, centerY + halfSize + 1);
+			return ReadTextureRegionColors(gl, textureId, minX, minY, maxX - minX, maxY - minY, width, height);
 		}
 
 		public System.Drawing.Color ReadTextureColor(OpenGL gl, uint textureId, int x, int y)
 		{
-			gl.BindTexture(OpenGL.GL_TEXTURE_2D, textureId);
-
 			int[] widthArr = new int[1];
 			int[] heightArr = new int[1];
 			int[] formatArr = new int[1];
+			uint frameBufferId = 0;
+			uint pboId = 0;
+			bool mapped = false;
+			try
+			{
+			gl.BindTexture(OpenGL.GL_TEXTURE_2D, textureId);
 			gl.GetTexLevelParameter(OpenGL.GL_TEXTURE_2D, 0, OpenGL.GL_TEXTURE_WIDTH, widthArr);
 			gl.GetTexLevelParameter(OpenGL.GL_TEXTURE_2D, 0, OpenGL.GL_TEXTURE_HEIGHT, heightArr);
 			gl.GetTexLevelParameter(OpenGL.GL_TEXTURE_2D, 0, OpenGL.GL_TEXTURE_INTERNAL_FORMAT, formatArr);
@@ -1098,43 +1152,64 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 			int width = widthArr[0];
 			int height = heightArr[0];
 			int internalFormat = formatArr[0];
+			ValidateReadRegion(x, y, 1, 1, width, height);
 
-			uint[] pbo = new uint[1];
-			gl.GenBuffers(1, pbo);
-			gl.BindBuffer(OpenGL.GL_PIXEL_PACK_BUFFER, pbo[0]);
-			gl.BufferData(OpenGL.GL_PIXEL_PACK_BUFFER, 4, IntPtr.Zero, OpenGL.GL_STREAM_READ);
-			int invertedY = height - 1 - y;
+				uint[] frameBuffer = new uint[1];
+				gl.GenFramebuffersEXT(1, frameBuffer);
+				frameBufferId = frameBuffer[0];
+				if (frameBufferId == 0) { throw new InvalidOperationException("OpenGL could not allocate the pixel frame buffer."); }
+				gl.BindFramebufferEXT(OpenGL.GL_FRAMEBUFFER_EXT, frameBufferId);
+				gl.FramebufferTexture2DEXT(OpenGL.GL_FRAMEBUFFER_EXT, OpenGL.GL_COLOR_ATTACHMENT0_EXT, OpenGL.GL_TEXTURE_2D, textureId, 0);
+				uint status = gl.CheckFramebufferStatusEXT(OpenGL.GL_FRAMEBUFFER_EXT);
+				if (status != OpenGL.GL_FRAMEBUFFER_COMPLETE_EXT) { throw new InvalidOperationException($"Pixel FBO incomplete. Status = {status}"); }
 
-			// Use appropriate format based on the internal format
-			if (internalFormat == OpenGL.GL_LUMINANCE)
-			{
-				gl.ReadPixels(x, invertedY, 1, 1, OpenGL.GL_LUMINANCE, OpenGL.GL_UNSIGNED_BYTE, IntPtr.Zero);
-			}
-			else
-			{
-				gl.ReadPixels(x, invertedY, 1, 1, OpenGL.GL_RGBA, OpenGL.GL_UNSIGNED_BYTE, IntPtr.Zero);
-			}
+				uint[] pbo = new uint[1];
+				gl.GenBuffers(1, pbo);
+				pboId = pbo[0];
+				if (pboId == 0) { throw new InvalidOperationException("OpenGL could not allocate the pixel PBO."); }
+				gl.BindBuffer(OpenGL.GL_PIXEL_PACK_BUFFER, pboId);
+				int bytesPerPixel = internalFormat == OpenGL.GL_LUMINANCE ? 1 : 4;
+				gl.BufferData(OpenGL.GL_PIXEL_PACK_BUFFER, bytesPerPixel, IntPtr.Zero, OpenGL.GL_STREAM_READ);
+				int invertedY = height - 1 - y;
+				if (internalFormat == OpenGL.GL_LUMINANCE)
+				{
+					gl.ReadPixels(x, invertedY, 1, 1, OpenGL.GL_LUMINANCE, OpenGL.GL_UNSIGNED_BYTE, IntPtr.Zero);
+				}
+				else
+				{
+					gl.ReadPixels(x, invertedY, 1, 1, OpenGL.GL_RGBA, OpenGL.GL_UNSIGNED_BYTE, IntPtr.Zero);
+				}
 
-			byte[] pixelData = new byte[4];
-			gl.BindBuffer(OpenGL.GL_PIXEL_PACK_BUFFER, pbo[0]);
-			IntPtr ptr = gl.MapBuffer(OpenGL.GL_PIXEL_PACK_BUFFER, OpenGL.GL_READ_ONLY);
-			if (ptr != IntPtr.Zero)
-			{
-				Marshal.Copy(ptr, pixelData, 0, 4);
+				byte[] pixelData = new byte[bytesPerPixel];
+				IntPtr ptr = gl.MapBuffer(OpenGL.GL_PIXEL_PACK_BUFFER, OpenGL.GL_READ_ONLY);
+				if (ptr == IntPtr.Zero) { throw new InvalidOperationException("OpenGL returned a null pixel mapping."); }
+				mapped = true;
+				Marshal.Copy(ptr, pixelData, 0, pixelData.Length);
 				gl.UnmapBuffer(OpenGL.GL_PIXEL_PACK_BUFFER);
-			}
-			gl.BindBuffer(OpenGL.GL_PIXEL_PACK_BUFFER, 0);
-			gl.DeleteBuffers(1, pbo);
+				mapped = false;
 
-			// Interpret the pixel data based on the internal format
-			if (internalFormat == OpenGL.GL_LUMINANCE)
-			{
-				// For RED format, we will return a grayscale color
-				return System.Drawing.Color.FromArgb(pixelData[0], pixelData[0], pixelData[0]);
-			}
-			else
-			{
+				if (internalFormat == OpenGL.GL_LUMINANCE)
+				{
+					return System.Drawing.Color.FromArgb(255, pixelData[0], pixelData[0], pixelData[0]);
+				}
 				return System.Drawing.Color.FromArgb(pixelData[3], pixelData[0], pixelData[1], pixelData[2]);
+			}
+			finally
+			{
+				if (mapped) { TryCleanupOpenGl("pixel PBO unmap", () => gl.UnmapBuffer(OpenGL.GL_PIXEL_PACK_BUFFER)); }
+				TryCleanupOpenGl("pixel PBO binding", () => gl.BindBuffer(OpenGL.GL_PIXEL_PACK_BUFFER, 0));
+				if (pboId != 0)
+				{
+					uint[] pbo = { pboId };
+					TryCleanupOpenGl("pixel PBO deletion", () => gl.DeleteBuffers(1, pbo));
+				}
+				TryCleanupOpenGl("pixel frame-buffer binding", () => gl.BindFramebufferEXT(OpenGL.GL_FRAMEBUFFER_EXT, 0));
+				if (frameBufferId != 0)
+				{
+					uint[] frameBuffer = { frameBufferId };
+					TryCleanupOpenGl("pixel frame-buffer deletion", () => gl.DeleteFramebuffersEXT(1, frameBuffer));
+				}
+				TryCleanupOpenGl("pixel texture binding", () => gl.BindTexture(OpenGL.GL_TEXTURE_2D, 0));
 			}
 		}
 
@@ -1143,6 +1218,12 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 		public System.Drawing.Color[] ReadTextureColors(uint textureId)
 		{
 			OpenGL gl = GetOpenGL();
+			uint[] ids = new uint[1];
+			uint[] pbo = new uint[1];
+			uint[] renderBuffer = new uint[1];
+			bool pboMapped = false;
+			try
+			{
 			Stopwatch stopwatch = Stopwatch.StartNew();
 
 			gl.BindTexture(OpenGL.GL_TEXTURE_2D, textureId);
@@ -1159,21 +1240,21 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 			OpenGlRenderer.InitializeOpenGLSettings(gl, width, height);
 
 			// 이미지 캔버스의 좌표와 텍스처 상태를 처리합니다.
-			uint[] ids = new uint[1];
+			ids = new uint[1];
 			gl.GenFramebuffersEXT(1, ids);
 			uint frameBufferID = ids[0];
 			gl.BindFramebufferEXT(OpenGL.GL_FRAMEBUFFER_EXT, frameBufferID);
 			gl.FramebufferTexture2DEXT(OpenGL.GL_FRAMEBUFFER_EXT, OpenGL.GL_COLOR_ATTACHMENT0_EXT, OpenGL.GL_TEXTURE_2D, textureId, 0);
 
 			// PBO를 생성하고 바인딩합니다.
-			uint[] pbo = new uint[1];
+			pbo = new uint[1];
 			gl.GenBuffers(1, pbo);
 			gl.BindBuffer(OpenGL.GL_PIXEL_PACK_BUFFER, pbo[0]);
 			int bufferSize = width * height * 4; // RGBA for each pixel
 			gl.BufferData(OpenGL.GL_PIXEL_PACK_BUFFER, bufferSize, IntPtr.Zero, OpenGL.GL_STREAM_READ);
 
 			// 이미지 캔버스의 좌표와 텍스처 상태를 처리합니다.
-			uint[] renderBuffer = new uint[1];
+			renderBuffer = new uint[1];
 			gl.GenRenderbuffersEXT(1, renderBuffer);
 			gl.BindRenderbufferEXT(OpenGL.GL_RENDERBUFFER_EXT, renderBuffer[0]);
 			gl.RenderbufferStorageEXT(OpenGL.GL_RENDERBUFFER_EXT, OpenGL.GL_STENCIL_INDEX8_EXT, width, height);
@@ -1195,18 +1276,21 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 			byte[] pixelData = new byte[bufferSize];
 			gl.BindBuffer(OpenGL.GL_PIXEL_PACK_BUFFER, pbo[0]);
 			IntPtr ptr = gl.MapBuffer(OpenGL.GL_PIXEL_PACK_BUFFER, OpenGL.GL_READ_ONLY);
-			if (ptr != IntPtr.Zero)
-			{
-				Marshal.Copy(ptr, pixelData, 0, bufferSize);
-				gl.UnmapBuffer(OpenGL.GL_PIXEL_PACK_BUFFER);
-			}
+			if (ptr == IntPtr.Zero) { throw new InvalidOperationException("OpenGL returned a null full-readback mapping."); }
+			pboMapped = true;
+			Marshal.Copy(ptr, pixelData, 0, bufferSize);
+			gl.UnmapBuffer(OpenGL.GL_PIXEL_PACK_BUFFER);
+			pboMapped = false;
 			gl.BindBuffer(OpenGL.GL_PIXEL_PACK_BUFFER, 0);
 			gl.DeleteBuffers(1, pbo);
+			pbo[0] = 0;
 
 			// 이미지 캔버스의 좌표와 텍스처 상태를 처리합니다.
 			gl.BindFramebufferEXT(OpenGL.GL_FRAMEBUFFER_EXT, 0);
 			gl.DeleteFramebuffersEXT(1, ids);
+			ids[0] = 0;
 			gl.DeleteRenderbuffersEXT(1, renderBuffer);
+			renderBuffer[0] = 0;
 			gl.BindTexture(OpenGL.GL_TEXTURE_2D, 0);
 
 			ReshapeNonRefresh();
@@ -1240,11 +1324,28 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 			//Console.WriteLine($"{stopwatch.ElapsedMilliseconds}ms");
 
 			return colors;
+			}
+			finally
+			{
+				if (pboMapped) { TryCleanupOpenGl("full-readback PBO unmap", () => gl.UnmapBuffer(OpenGL.GL_PIXEL_PACK_BUFFER)); }
+				TryCleanupOpenGl("full-readback PBO binding", () => gl.BindBuffer(OpenGL.GL_PIXEL_PACK_BUFFER, 0));
+				if (pbo[0] != 0) { TryCleanupOpenGl("full-readback PBO deletion", () => gl.DeleteBuffers(1, pbo)); }
+				TryCleanupOpenGl("full-readback frame-buffer binding", () => gl.BindFramebufferEXT(OpenGL.GL_FRAMEBUFFER_EXT, 0));
+				if (ids[0] != 0) { TryCleanupOpenGl("full-readback frame-buffer deletion", () => gl.DeleteFramebuffersEXT(1, ids)); }
+				if (renderBuffer[0] != 0) { TryCleanupOpenGl("full-readback render-buffer deletion", () => gl.DeleteRenderbuffersEXT(1, renderBuffer)); }
+				TryCleanupOpenGl("full-readback texture binding", () => gl.BindTexture(OpenGL.GL_TEXTURE_2D, 0));
+			}
 		}
 
 		public byte[] ReadTextureBuffers(uint textureId)
 		{
 			OpenGL gl = GetOpenGL();
+			uint[] ids = new uint[1];
+			uint[] pbo = new uint[1];
+			uint[] renderBuffer = new uint[1];
+			bool pboMapped = false;
+			try
+			{
 			Stopwatch stopwatch = Stopwatch.StartNew();
 
 			gl.BindTexture(OpenGL.GL_TEXTURE_2D, textureId);
@@ -1261,21 +1362,21 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 			OpenGlRenderer.InitializeOpenGLSettings(gl, width, height);
 
 			// 이미지 캔버스의 좌표와 텍스처 상태를 처리합니다.
-			uint[] ids = new uint[1];
+			ids = new uint[1];
 			gl.GenFramebuffersEXT(1, ids);
 			uint frameBufferID = ids[0];
 			gl.BindFramebufferEXT(OpenGL.GL_FRAMEBUFFER_EXT, frameBufferID);
 			gl.FramebufferTexture2DEXT(OpenGL.GL_FRAMEBUFFER_EXT, OpenGL.GL_COLOR_ATTACHMENT0_EXT, OpenGL.GL_TEXTURE_2D, textureId, 0);
 
 			// PBO를 생성하고 바인딩합니다.
-			uint[] pbo = new uint[1];
+			pbo = new uint[1];
 			gl.GenBuffers(1, pbo);
 			gl.BindBuffer(OpenGL.GL_PIXEL_PACK_BUFFER, pbo[0]);
 			int bufferSize = width * height * 4; // RGBA for each pixel
 			gl.BufferData(OpenGL.GL_PIXEL_PACK_BUFFER, bufferSize, IntPtr.Zero, OpenGL.GL_STREAM_READ);
 
 			// 이미지 캔버스의 좌표와 텍스처 상태를 처리합니다.
-			uint[] renderBuffer = new uint[1];
+			renderBuffer = new uint[1];
 			gl.GenRenderbuffersEXT(1, renderBuffer);
 			gl.BindRenderbufferEXT(OpenGL.GL_RENDERBUFFER_EXT, renderBuffer[0]);
 			gl.RenderbufferStorageEXT(OpenGL.GL_RENDERBUFFER_EXT, OpenGL.GL_STENCIL_INDEX8_EXT, width, height);
@@ -1297,18 +1398,21 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 			byte[] pixelData = new byte[bufferSize];
 			gl.BindBuffer(OpenGL.GL_PIXEL_PACK_BUFFER, pbo[0]);
 			IntPtr ptr = gl.MapBuffer(OpenGL.GL_PIXEL_PACK_BUFFER, OpenGL.GL_READ_ONLY);
-			if (ptr != IntPtr.Zero)
-			{
-				Marshal.Copy(ptr, pixelData, 0, bufferSize);
-				gl.UnmapBuffer(OpenGL.GL_PIXEL_PACK_BUFFER);
-			}
+			if (ptr == IntPtr.Zero) { throw new InvalidOperationException("OpenGL returned a null full-buffer mapping."); }
+			pboMapped = true;
+			Marshal.Copy(ptr, pixelData, 0, bufferSize);
+			gl.UnmapBuffer(OpenGL.GL_PIXEL_PACK_BUFFER);
+			pboMapped = false;
 			gl.BindBuffer(OpenGL.GL_PIXEL_PACK_BUFFER, 0);
 			gl.DeleteBuffers(1, pbo);
+			pbo[0] = 0;
 
 			// 이미지 캔버스의 좌표와 텍스처 상태를 처리합니다.
 			gl.BindFramebufferEXT(OpenGL.GL_FRAMEBUFFER_EXT, 0);
 			gl.DeleteFramebuffersEXT(1, ids);
+			ids[0] = 0;
 			gl.DeleteRenderbuffersEXT(1, renderBuffer);
+			renderBuffer[0] = 0;
 			gl.BindTexture(OpenGL.GL_TEXTURE_2D, 0);
 
 			ReshapeNonRefresh();
@@ -1328,72 +1432,50 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 			Array.Copy(flippedPixels, pixelData, pixelData.Length);
 
 			return flippedPixels;
+			}
+			finally
+			{
+				if (pboMapped) { TryCleanupOpenGl("full-buffer PBO unmap", () => gl.UnmapBuffer(OpenGL.GL_PIXEL_PACK_BUFFER)); }
+				TryCleanupOpenGl("full-buffer PBO binding", () => gl.BindBuffer(OpenGL.GL_PIXEL_PACK_BUFFER, 0));
+				if (pbo[0] != 0) { TryCleanupOpenGl("full-buffer PBO deletion", () => gl.DeleteBuffers(1, pbo)); }
+				TryCleanupOpenGl("full-buffer frame-buffer binding", () => gl.BindFramebufferEXT(OpenGL.GL_FRAMEBUFFER_EXT, 0));
+				if (ids[0] != 0) { TryCleanupOpenGl("full-buffer frame-buffer deletion", () => gl.DeleteFramebuffersEXT(1, ids)); }
+				if (renderBuffer[0] != 0) { TryCleanupOpenGl("full-buffer render-buffer deletion", () => gl.DeleteRenderbuffersEXT(1, renderBuffer)); }
+				TryCleanupOpenGl("full-buffer texture binding", () => gl.BindTexture(OpenGL.GL_TEXTURE_2D, 0));
+			}
 		}
 
 		public byte[] ReadTextureByte(OpenGL gl, uint textureId, int width, int height)
 		{
-			// 뷰포트를 설정합니다.
-			gl.Viewport(0, 0, width, height);
-
-			// 이미지 캔버스의 좌표와 텍스처 상태를 처리합니다.
-			gl.MatrixMode(OpenGL.GL_PROJECTION);
-			gl.LoadIdentity();
-			// Y축의 시작과 끝을 반전합니다.
-			gl.Ortho2D(0, width, height, 0);  // Y축의 시작과 끝을 반전합니다.
-
-			// 이미지 캔버스의 좌표와 텍스처 상태를 처리합니다.
-			gl.MatrixMode(OpenGL.GL_MODELVIEW);
-			gl.LoadIdentity();
-
-			// 이미지 캔버스의 좌표와 텍스처 상태를 처리합니다.
-			uint[] ids = new uint[1];
-			gl.GenFramebuffersEXT(1, ids);
-			uint frameBufferID = ids[0];
-			gl.BindFramebufferEXT(OpenGL.GL_FRAMEBUFFER_EXT, frameBufferID);
-			gl.FramebufferTexture2DEXT(OpenGL.GL_FRAMEBUFFER_EXT, OpenGL.GL_COLOR_ATTACHMENT0_EXT, OpenGL.GL_TEXTURE_2D, textureId, 0);
-
-			// 이미지 캔버스의 좌표와 텍스처 상태를 처리합니다.
-			uint[] renderBuffer = new uint[1];
-			gl.GenRenderbuffersEXT(1, renderBuffer);
-			gl.BindRenderbufferEXT(OpenGL.GL_RENDERBUFFER_EXT, renderBuffer[0]);
-			gl.RenderbufferStorageEXT(OpenGL.GL_RENDERBUFFER_EXT, OpenGL.GL_STENCIL_INDEX8_EXT, width, height);
-
-			// 이미지 캔버스의 좌표와 텍스처 상태를 처리합니다.
-			gl.FramebufferRenderbufferEXT(OpenGL.GL_FRAMEBUFFER_EXT, OpenGL.GL_STENCIL_ATTACHMENT_EXT, OpenGL.GL_RENDERBUFFER_EXT, renderBuffer[0]);
-
-
-			//	Bind our texture object (make it the current texture).
-			gl.BindTexture(OpenGL.GL_TEXTURE_2D, textureId);
-			gl.FramebufferTexture2DEXT(OpenGL.GL_FRAMEBUFFER_EXT, OpenGL.GL_COLOR_ATTACHMENT0_EXT, OpenGL.GL_TEXTURE_2D, textureId, 0);
-
-			//  Set linear filtering mode.
-			gl.TexParameter(OpenGL.GL_TEXTURE_2D, OpenGL.GL_TEXTURE_MIN_FILTER, OpenGL.GL_LINEAR);
-			gl.TexParameter(OpenGL.GL_TEXTURE_2D, OpenGL.GL_TEXTURE_MAG_FILTER, OpenGL.GL_NEAREST);
-
-			// 생성한 텍스처 데이터를 업데이트합니다.
-			byte[] pixelData = new byte[width * height * 4]; // RGBA
-
-			// 생성한 텍스처 데이터를 업데이트합니다.
-			gl.ReadPixels(0, 0, width, height, OpenGL.GL_RGBA, OpenGL.GL_UNSIGNED_BYTE, pixelData);
-
-			// 이미지 캔버스의 좌표와 텍스처 상태를 처리합니다.
-			gl.BindTexture(OpenGL.GL_TEXTURE_2D, 0);
-			gl.BindFramebufferEXT(OpenGL.GL_FRAMEBUFFER_EXT, 0);
-			gl.DeleteFramebuffersEXT(1, ids);
+			if (width <= 0 || height <= 0) { throw new ArgumentOutOfRangeException(nameof(width)); }
+			byte[] pixelData = new byte[width * height * 4];
+			OpenGlRenderer.InitializeOpenGLSettings(gl, width, height);
+			OpenGlRenderer.SetupFrameAndRenderBuffers(gl, textureId, width, height, () =>
+			{
+				gl.ReadPixels(0, 0, width, height, OpenGL.GL_RGBA, OpenGL.GL_UNSIGNED_BYTE, pixelData);
+			});
+			TryCleanupOpenGl("readback texture binding", () => gl.BindTexture(OpenGL.GL_TEXTURE_2D, 0));
 			Reshape();
 			return pixelData;
 		}
 
 		public System.Drawing.Color GetPixelColor(OpenGL gl, int x, int y)
 		{
+			if (gl == null || gl.RenderContextProvider == null || x < 0 || y < 0)
+			{
+				return System.Drawing.Color.Empty;
+			}
 			byte[] pixelData = new byte[4]; // RGBA
 
-			// OpenGL은 좌하단을 원점으로 사용하므로 y 좌표를 계산하거나 반전합니다.
 			var screen = GetScreenPosFromPixelCoordf(x, y);
+			int screenX = (int)Math.Floor(screen.X);
+			int screenY = (int)Math.Floor(screen.Y);
+			if (screenX < 0 || screenY < 0 || screenX >= gl.RenderContextProvider.Width || screenY >= gl.RenderContextProvider.Height)
+			{
+				return System.Drawing.Color.Empty;
+			}
 
-			int invertedY = (int)(gl.RenderContextProvider.Height - Math.Round(screen.Y));
-
-			gl.ReadPixels((int)Math.Round(screen.X), invertedY, 1, 1, OpenGL.GL_RGBA, OpenGL.GL_UNSIGNED_BYTE, pixelData);
+			gl.ReadPixels(screenX, screenY, 1, 1, OpenGL.GL_RGBA, OpenGL.GL_UNSIGNED_BYTE, pixelData);
 
 			return System.Drawing.Color.FromArgb(pixelData[3], pixelData[0], pixelData[1], pixelData[2]);
 		}
@@ -1668,8 +1750,6 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 				gl.TexParameter(SharpGL.OpenGL.GL_TEXTURE_2D, SharpGL.OpenGL.GL_TEXTURE_MIN_FILTER, SharpGL.OpenGL.GL_LINEAR);
 				gl.TexParameter(SharpGL.OpenGL.GL_TEXTURE_2D, SharpGL.OpenGL.GL_TEXTURE_MAG_FILTER, SharpGL.OpenGL.GL_NEAREST);
 
-				gl.GenerateMipmapEXT(SharpGL.OpenGL.GL_TEXTURE_2D);
-
 				gl.BindTexture(SharpGL.OpenGL.GL_TEXTURE_2D, textureId);
 			}
 		}
@@ -1684,53 +1764,63 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 		/// <returns></returns>
 		public uint GenerateOpenGLTexture(int width, int height, uint bpp)
 		{
+			if (width <= 0 || height <= 0) { throw new ArgumentOutOfRangeException(nameof(width)); }
+			if (bpp != 1 && bpp != 3 && bpp != 4) { throw new ArgumentOutOfRangeException(nameof(bpp)); }
 			OpenGL gl = GetOpenGL();
 
 			uint textureId = 0;
 			Func<uint> action = delegate
 			{
-				uint[] gtexture = new uint[1];
-
-				gl.GenTextures(1, gtexture); // 텍스처 관련 값입니다.
-				gl.BindTexture(OpenGL.GL_TEXTURE_2D, gtexture[0]); // 텍스처 관련 값입니다.
-
-				gl.TexParameter(OpenGL.GL_TEXTURE_2D, OpenGL.GL_TEXTURE_MIN_FILTER, OpenGL.GL_LINEAR);
-				gl.TexParameter(OpenGL.GL_TEXTURE_2D, OpenGL.GL_TEXTURE_MAG_FILTER, OpenGL.GL_NEAREST);
-
-				// OpenGL 텍스처를 생성합니다.
-				gl.TexParameter(OpenGL.GL_TEXTURE_2D, OpenGL.GL_TEXTURE_WRAP_S, OpenGL.GL_CLAMP_TO_EDGE);
-				gl.TexParameter(OpenGL.GL_TEXTURE_2D, OpenGL.GL_TEXTURE_WRAP_T, OpenGL.GL_CLAMP_TO_EDGE);
-
-				gl.PixelStore(OpenGL.GL_UNPACK_ALIGNMENT, 1);
-
-				if (bpp == 3)
+				uint generatedTextureId = 0;
+				bool succeeded = false;
+				try
 				{
-					// for Color
-					gl.TexImage2D(OpenGL.GL_TEXTURE_2D, 0, OpenGL.GL_RGB, width, height, 0, OpenGL.GL_RGB, OpenGL.GL_UNSIGNED_BYTE, IntPtr.Zero);
+					uint[] gtexture = new uint[1];
+					gl.GenTextures(1, gtexture);
+					generatedTextureId = gtexture[0];
+					if (generatedTextureId == 0) { throw new InvalidOperationException("OpenGL could not allocate the texture."); }
+					gl.BindTexture(OpenGL.GL_TEXTURE_2D, generatedTextureId);
+
+					gl.TexParameter(OpenGL.GL_TEXTURE_2D, OpenGL.GL_TEXTURE_MIN_FILTER, OpenGL.GL_LINEAR);
+					gl.TexParameter(OpenGL.GL_TEXTURE_2D, OpenGL.GL_TEXTURE_MAG_FILTER, OpenGL.GL_NEAREST);
+					gl.TexParameter(OpenGL.GL_TEXTURE_2D, OpenGL.GL_TEXTURE_WRAP_S, OpenGL.GL_CLAMP_TO_EDGE);
+					gl.TexParameter(OpenGL.GL_TEXTURE_2D, OpenGL.GL_TEXTURE_WRAP_T, OpenGL.GL_CLAMP_TO_EDGE);
+					gl.PixelStore(OpenGL.GL_UNPACK_ALIGNMENT, 1);
+
+					if (bpp == 3)
+					{
+						gl.TexImage2D(OpenGL.GL_TEXTURE_2D, 0, OpenGL.GL_RGB, width, height, 0, OpenGL.GL_RGB, OpenGL.GL_UNSIGNED_BYTE, IntPtr.Zero);
+					}
+					else if (bpp == 4)
+					{
+						gl.TexImage2D(OpenGL.GL_TEXTURE_2D, 0, OpenGL.GL_RGBA, width, height, 0, OpenGL.GL_RGBA, OpenGL.GL_UNSIGNED_BYTE, IntPtr.Zero);
+					}
+					else
+					{
+						gl.TexImage2D(OpenGL.GL_TEXTURE_2D, 0, OpenGL.GL_LUMINANCE, width, height, 0, OpenGL.GL_LUMINANCE, OpenGL.GL_UNSIGNED_BYTE, IntPtr.Zero);
+					}
+
+					int[] widthArr = new int[1];
+					int[] heightArr = new int[1];
+					gl.GetTexLevelParameter(OpenGL.GL_TEXTURE_2D, 0, OpenGL.GL_TEXTURE_WIDTH, widthArr);
+					gl.GetTexLevelParameter(OpenGL.GL_TEXTURE_2D, 0, OpenGL.GL_TEXTURE_HEIGHT, heightArr);
+					if (widthArr[0] != width || heightArr[0] != height)
+					{
+						throw new InvalidOperationException("OpenGL texture allocation returned unexpected dimensions.");
+					}
+
+					succeeded = true;
+					return generatedTextureId;
 				}
-				else if (bpp == 4)
+				finally
 				{
-					// for Color
-					gl.TexImage2D(OpenGL.GL_TEXTURE_2D, 0, OpenGL.GL_RGBA, width, height, 0, OpenGL.GL_RGBA, OpenGL.GL_UNSIGNED_BYTE, IntPtr.Zero);
+					TryCleanupOpenGl("generated texture binding", () => gl.BindTexture(OpenGL.GL_TEXTURE_2D, 0));
+					if (!succeeded && generatedTextureId != 0)
+					{
+						uint[] texture = { generatedTextureId };
+						TryCleanupOpenGl("generated texture deletion", () => gl.DeleteTextures(1, texture));
+					}
 				}
-				else if (bpp == 1)
-				{
-					// for Mono
-					gl.TexImage2D(OpenGL.GL_TEXTURE_2D, 0, OpenGL.GL_LUMINANCE, width, height, 0, OpenGL.GL_LUMINANCE, OpenGL.GL_UNSIGNED_BYTE, IntPtr.Zero);
-				}
-
-				gl.GenerateMipmapEXT(OpenGL.GL_TEXTURE_2D);
-
-				int[] widthArr = new int[1];
-				int[] heightArr = new int[1];
-				int[] formatArr = new int[1];
-				gl.GetTexLevelParameter(OpenGL.GL_TEXTURE_2D, 0, OpenGL.GL_TEXTURE_WIDTH, widthArr);
-				gl.GetTexLevelParameter(OpenGL.GL_TEXTURE_2D, 0, OpenGL.GL_TEXTURE_HEIGHT, heightArr);
-				gl.GetTexLevelParameter(OpenGL.GL_TEXTURE_2D, 0, OpenGL.GL_TEXTURE_INTERNAL_FORMAT, formatArr);
-
-				gl.BindTexture(OpenGL.GL_TEXTURE_2D, 0);
-
-				return gtexture[0];
 			};
 			if (openGLControl.InvokeRequired == true)
 			{

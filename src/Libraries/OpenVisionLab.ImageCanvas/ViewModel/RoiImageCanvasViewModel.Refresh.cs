@@ -56,6 +56,14 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 
 			_currentImageMat?.Dispose();
 			_currentImageMat = null;
+
+			if (_imageViewer != null)
+			{
+				ReleaseEvents();
+				_imageViewer.ClearTexture();
+				_imageViewer.Dispose();
+				_imageViewer = null;
+			}
 		}
 	}
 }
