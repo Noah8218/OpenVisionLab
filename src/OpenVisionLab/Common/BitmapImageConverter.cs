@@ -1,56 +1,42 @@
 using System;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.Runtime.InteropServices;
 using OpenCvSharp;
 
 namespace OpenVisionLab.Common
 {
     /// <summary>
-    /// static class which provides conversion between System.Drawing.Bitmap and Mat
+    /// Provides conversion between System.Drawing.Bitmap and OpenCvSharp.Mat.
     /// </summary>
     public static class BitmapImageConverter
     {
         #region ToMat
 
         /// <summary>
-        /// Converts System.Drawing.Bitmap to Mat
+        /// Converts a System.Drawing.Bitmap to a Mat.
         /// </summary>
-        /// <param name="src">System.Drawing.Bitmap object to be converted</param>
-        /// <returns>A Mat object which is converted from System.Drawing.Bitmap</returns>
         public static Mat ToMat(this Bitmap src)
         {
             if (src == null)
                 throw new ArgumentNullException(nameof(src));
 
-            int w = src.Width;
-            int h = src.Height;
-            int channels;
-            switch (src.PixelFormat)
+            int channels = GetDefaultMatChannels(src.PixelFormat);
+            Mat dst = new Mat(src.Height, src.Width, MatType.CV_8UC(channels));
+            try
             {
-                case PixelFormat.Format24bppRgb:
-                case PixelFormat.Format32bppRgb:
-                    channels = 3; break;
-                case PixelFormat.Format32bppArgb:
-                case PixelFormat.Format32bppPArgb:
-                    channels = 4; break;
-                case PixelFormat.Format8bppIndexed:
-                case PixelFormat.Format1bppIndexed:
-                    channels = 1; break;
-                default:
-                    throw new NotImplementedException();
+                ToMat(src, dst);
+                return dst;
             }
-
-            Mat dst = new Mat(h, w, MatType.CV_8UC(channels));
-            ToMat(src, dst);
-            return dst;
+            catch
+            {
+                dst.Dispose();
+                throw;
+            }
         }
 
         /// <summary>
-        /// Converts System.Drawing.Bitmap to Mat
+        /// Converts a System.Drawing.Bitmap into an existing Mat.
         /// </summary>
-        /// <param name="src">System.Drawing.Bitmap object to be converted</param>
-        /// <param name="dst">A Mat object which is converted from System.Drawing.Bitmap</param>
         public static unsafe void ToMat(this Bitmap src, Mat dst)
         {
             if (src == null)
@@ -60,314 +46,152 @@ namespace OpenVisionLab.Common
             if (dst.IsDisposed)
                 throw new ArgumentException("The specified dst is disposed.", nameof(dst));
             if (dst.Depth() != MatType.CV_8U)
-                throw new NotSupportedException("Mat depth != CV_8U");
+                throw new NotSupportedException("Bitmap conversion requires a CV_8U destination Mat.");
             if (dst.Dims != 2)
-                throw new NotSupportedException("Mat dims != 2");
+                throw new NotSupportedException("Bitmap conversion requires a two-dimensional destination Mat.");
             if (src.Width != dst.Width || src.Height != dst.Height)
                 throw new ArgumentException("src.Size != dst.Size");
 
-            int w = src.Width;
-            int h = src.Height;
-            Rectangle rect = new Rectangle(0, 0, w, h);
-            BitmapData bd = null;
+            PixelFormat pixelFormat = src.PixelFormat;
+            int sourceRowBytes = GetBitmapRowBytes(src.Width, pixelFormat);
+            int channels = dst.Channels();
+            ValidateToMatChannels(pixelFormat, channels);
+            int destinationRowBytes = checked(src.Width * channels);
+            ValidateMatStorage(dst, destinationRowBytes);
+
+            Rectangle rect = new Rectangle(0, 0, src.Width, src.Height);
+            BitmapData bitmapData = null;
             try
             {
-                bd = src.LockBits(rect, ImageLockMode.ReadOnly, src.PixelFormat);
+                bitmapData = src.LockBits(rect, ImageLockMode.ReadOnly, pixelFormat);
+                ValidateBitmapStorage(bitmapData, sourceRowBytes);
 
-                switch (src.PixelFormat)
+                byte* sourceBase = (byte*)bitmapData.Scan0.ToPointer();
+                byte* destinationBase = (byte*)dst.Data.ToPointer();
+                long sourceStep = bitmapData.Stride;
+                long destinationStep = dst.Step();
+
+                for (int y = 0; y < src.Height; y++)
                 {
-                    case PixelFormat.Format1bppIndexed:
-                        Format1bppIndexed();
-                        break;
+                    byte* sourceRow = sourceBase + (sourceStep * y);
+                    byte* destinationRow = destinationBase + (destinationStep * y);
 
-                    case PixelFormat.Format8bppIndexed:
-                        Format8bppIndexed();
-                        break;
+                    switch (pixelFormat)
+                    {
+                        case PixelFormat.Format1bppIndexed:
+                            for (int x = 0; x < src.Width; x++)
+                            {
+                                byte sourceByte = sourceRow[x >> 3];
+                                destinationRow[x] = (sourceByte & (0x80 >> (x & 7))) == 0
+                                    ? (byte)0
+                                    : (byte)255;
+                            }
 
-                    case PixelFormat.Format24bppRgb:
-                        Format24bppRgb();
-                        break;
+                            break;
 
-                    case PixelFormat.Format32bppRgb:
-                    case PixelFormat.Format32bppArgb:
-                    case PixelFormat.Format32bppPArgb:
-                        Format32bppRgb();
-                        break;
+                        case PixelFormat.Format8bppIndexed:
+                            CopyIndexedRow(src.Palette, sourceRow, destinationRow, src.Width, channels);
+                            break;
+
+                        case PixelFormat.Format24bppRgb:
+                            Buffer.MemoryCopy(
+                                sourceRow,
+                                destinationRow,
+                                destinationRowBytes,
+                                destinationRowBytes);
+                            break;
+
+                        case PixelFormat.Format32bppRgb:
+                        case PixelFormat.Format32bppArgb:
+                        case PixelFormat.Format32bppPArgb:
+                            if (channels == 4)
+                            {
+                                Buffer.MemoryCopy(
+                                    sourceRow,
+                                    destinationRow,
+                                    destinationRowBytes,
+                                    destinationRowBytes);
+                            }
+                            else
+                            {
+                                for (int x = 0; x < src.Width; x++)
+                                {
+                                    int sourceOffset = x * 4;
+                                    int destinationOffset = x * 3;
+                                    destinationRow[destinationOffset] = sourceRow[sourceOffset];
+                                    destinationRow[destinationOffset + 1] = sourceRow[sourceOffset + 1];
+                                    destinationRow[destinationOffset + 2] = sourceRow[sourceOffset + 2];
+                                }
+                            }
+
+                            break;
+
+                        default:
+                            throw new NotSupportedException(
+                                $"Bitmap pixel format '{pixelFormat}' is not supported.");
+                    }
                 }
             }
             finally
             {
-                if (bd != null)
-                    src.UnlockBits(bd);
-            }
-
-            // ReSharper disable once InconsistentNaming
-            void Format1bppIndexed()
-            {
-                if (dst.Channels() != 1)
-                    throw new ArgumentException("Invalid nChannels");
-                if (dst.IsSubmatrix())
-                    throw new NotImplementedException("submatrix not supported");
-                if (bd == null)
-                    throw new NotSupportedException("BitmapData == null (Format1bppIndexed)");
-
-                byte* srcPtr = (byte*)bd.Scan0.ToPointer();
-                byte* dstPtr = dst.DataPointer;
-                int srcStep = bd.Stride;
-                uint dstStep = (uint)dst.Step();
-                int x = 0;
-
-                for (int y = 0; y < h; y++)
-                {
-                    // 横は必ず4byte幅に切り上げられる。
-                    // この行の各バイトを調べていく
-                    for (int bytePos = 0; bytePos < srcStep; bytePos++)
-                    {
-                        if (x < w)
-                        {
-                            // 現在の位置のバイトからそれぞれのビット8つを取り出す
-                            byte b = srcPtr[bytePos];
-                            for (int i = 0; i < 8; i++)
-                            {
-                                if (x >= w)
-                                {
-                                    break;
-                                }
-                                // IplImageは8bit/pixel
-                                dstPtr[dstStep * y + x] = ((b & 0x80) == 0x80) ? (byte)255 : (byte)0;
-                                b <<= 1;
-                                x++;
-                            }
-                        }
-                    }
-                    // 次の行へ
-                    x = 0;
-                    srcPtr += srcStep;
-                }
-            }
-
-            // ReSharper disable once InconsistentNaming
-            void Format8bppIndexed()
-            {
-                void Ch1(Mat dst2, int height, int srcStep2, uint dstStep2, IntPtr srcData, byte[] palette)
-                {
-                    if (dstStep2 == srcStep2 && !dst2.IsSubmatrix() && dst2.IsContinuous())
-                    {
-                        // Read Bitmap pixel data to managed array
-                        long length = dst2.DataEnd.ToInt64() - dst2.Data.ToInt64();
-                        if (length > int.MaxValue)
-                            throw new NotSupportedException("Too big dst Mat");
-                        var buffer = new byte[length];
-                        Marshal.Copy(srcData, buffer, 0, buffer.Length);
-                        ApplyPalette(buffer, palette);
-                        // Write to dst Mat
-                        Marshal.Copy(buffer, 0, dst2.Data, buffer.Length);
-                    }
-                    else
-                    {
-                        // Copy line bytes from src to dst for each line
-                        byte* sp = (byte*)srcData;
-                        byte* dp = (byte*)dst2.Data;
-                        var buffer = new byte[srcStep2];
-                        for (int y = 0; y < height; y++)
-                        {
-                            // Read Bitmap pixel data to managed array
-                            Marshal.Copy(new IntPtr(sp), buffer, 0, buffer.Length);
-                            ApplyPalette(buffer, palette);
-                            // Write to dst Mat
-                            Marshal.Copy(buffer, 0, new IntPtr(dp), buffer.Length);
-
-                            sp += srcStep2;
-                            dp += dstStep2;
-                        }
-                    }
-                }
-
-                int srcStep = bd.Stride;
-                uint dstStep = (uint)dst.Step();
-
-                int channels = dst.Channels();
-                if (channels == 1)
-                {
-                    var palette = new byte[256];
-                    var paletteLength = Math.Min(256, src.Palette.Entries.Length);
-                    for (int i = 0; i < paletteLength; i++)
-                    {
-                        // TODO src.Palette.Flags & 2 == 2
-                        // https://docs.microsoft.com/ja-jp/dotnet/api/system.drawing.imaging.colorpalette.flags?view=netframework-4.8
-                        palette[i] = src.Palette.Entries[i].R;
-                    }
-                    Ch1(dst, h, srcStep, dstStep, bd.Scan0, palette);
-                }
-                else if (channels == 3)
-                {
-                    // Palette
-                    var paletteR = new byte[256];
-                    var paletteG = new byte[256];
-                    var paletteB = new byte[256];
-                    var paletteLength = Math.Min(256, src.Palette.Entries.Length);
-                    for (int i = 0; i < paletteLength; i++)
-                    {
-                        var c = src.Palette.Entries[i];
-                        paletteR[i] = c.R;
-                        paletteG[i] = c.G;
-                        paletteB[i] = c.B;
-                    }
-
-                    using var dstR = new Mat(h, w, MatType.CV_8UC1);
-                    using var dstG = new Mat(h, w, MatType.CV_8UC1);
-                    using var dstB = new Mat(h, w, MatType.CV_8UC1);
-
-                    Ch1(dstR, h, srcStep, (uint)dstR.Step(), bd.Scan0, paletteR);
-                    Ch1(dstG, h, srcStep, (uint)dstG.Step(), bd.Scan0, paletteG);
-                    Ch1(dstB, h, srcStep, (uint)dstB.Step(), bd.Scan0, paletteB);
-                    Cv2.Merge(new[] { dstB, dstG, dstR }, dst);
-                }
-                else
-                {
-                    throw new ArgumentException($"Invalid channels of dst Mat ({channels})");
-                }
-
-                static void ApplyPalette(byte[] buffer, byte[] palette)
-                {
-                    for (int i = 0; i < buffer.Length; i++)
-                    {
-                        buffer[i] = palette[buffer[i]];
-                    }
-                }
-            }
-
-            // ReSharper disable once InconsistentNaming
-            void Format24bppRgb()
-            {
-                if (dst.Channels() != 3)
-                    throw new ArgumentException("Invalid nChannels");
-                if (dst.Depth() != MatType.CV_8U && dst.Depth() != MatType.CV_8S)
-                    throw new ArgumentException("Invalid depth of dst Mat");
-
-                int srcStep = bd.Stride;
-                long dstStep = dst.Step();
-                if (dstStep == srcStep && !dst.IsSubmatrix() && dst.IsContinuous())
-                {
-                    IntPtr dstData = dst.Data;
-                    long bytesToCopy = dst.DataEnd.ToInt64() - dstData.ToInt64();
-                    Buffer.MemoryCopy(bd.Scan0.ToPointer(), dstData.ToPointer(), bytesToCopy, bytesToCopy);
-                }
-                else
-                {
-                    // Copy line bytes from src to dst for each line
-                    byte* sp = (byte*)bd.Scan0;
-                    byte* dp = (byte*)dst.Data;
-                    for (int y = 0; y < h; y++)
-                    {
-                        Buffer.MemoryCopy(sp, dp, dstStep, dstStep);
-                        sp += srcStep;
-                        dp += dstStep;
-                    }
-                }
-            }
-
-            // ReSharper disable once InconsistentNaming
-            void Format32bppRgb()
-            {
-                int srcStep = bd.Stride;
-                long dstStep = dst.Step();
-
-                switch (dst.Channels())
-                {
-                    case 4:
-                        if (!dst.IsSubmatrix() && dst.IsContinuous())
-                        {
-                            IntPtr dstData = dst.Data;
-                            long bytesToCopy = dst.DataEnd.ToInt64() - dstData.ToInt64();
-                            Buffer.MemoryCopy(bd.Scan0.ToPointer(), dstData.ToPointer(), bytesToCopy, bytesToCopy);
-                        }
-                        else
-                        {
-                            byte* sp = (byte*)bd.Scan0;
-                            byte* dp = (byte*)dst.Data;
-                            for (int y = 0; y < h; y++)
-                            {
-                                Buffer.MemoryCopy(sp, dp, dstStep, dstStep);
-                                sp += srcStep;
-                                dp += dstStep;
-                            }
-                        }
-
-                        break;
-                    case 3:
-                        byte* srcPtr = (byte*)bd.Scan0.ToPointer();
-                        byte* dstPtr = (byte*)dst.Data.ToPointer();
-                        for (int y = 0; y < h; y++)
-                        {
-                            for (int x = 0; x < w; x++)
-                            {
-                                dstPtr[y * dstStep + x * 3 + 0] = srcPtr[y * srcStep + x * 4 + 0];
-                                dstPtr[y * dstStep + x * 3 + 1] = srcPtr[y * srcStep + x * 4 + 1];
-                                dstPtr[y * dstStep + x * 3 + 2] = srcPtr[y * srcStep + x * 4 + 2];
-                            }
-                        }
-
-                        break;
-                    default:
-                        throw new ArgumentException("Invalid nChannels");
-                }
+                if (bitmapData != null)
+                    src.UnlockBits(bitmapData);
             }
         }
+
         #endregion
 
         #region ToBitmap
 
         /// <summary>
-        /// Converts Mat to System.Drawing.Bitmap
+        /// Converts a Mat to a System.Drawing.Bitmap.
         /// </summary>
-        /// <param name="src">Mat</param>
-        /// <returns></returns>
         public static Bitmap ToBitmap(this Mat src)
         {
             if (src == null)
-            {
                 throw new ArgumentNullException(nameof(src));
-            }
 
-            PixelFormat pf;
-            switch (src.Channels())
+            src.ThrowIfDisposed();
+            PixelFormat pixelFormat = src.Channels() switch
             {
-                case 1:
-                    pf = PixelFormat.Format8bppIndexed; break;
-                case 3:
-                    pf = PixelFormat.Format24bppRgb; break;
-                case 4:
-                    pf = PixelFormat.Format32bppArgb; break;
-                default:
-                    throw new ArgumentException("Number of channels must be 1, 3 or 4.", nameof(src));
-            }
-            return ToBitmap(src, pf);
+                1 => PixelFormat.Format8bppIndexed,
+                3 => PixelFormat.Format24bppRgb,
+                4 => PixelFormat.Format32bppArgb,
+                _ => throw new NotSupportedException(
+                    "Mat conversion supports only 1, 3, or 4 channels.")
+            };
+            return ToBitmap(src, pixelFormat);
         }
 
         /// <summary>
-        /// Converts Mat to System.Drawing.Bitmap
+        /// Converts a Mat to a System.Drawing.Bitmap with the requested pixel format.
         /// </summary>
-        /// <param name="src">Mat</param>
-        /// <param name="pf">Pixel Depth</param>
-        /// <returns></returns>
-        public static Bitmap ToBitmap(this Mat src, PixelFormat pf)
+        public static Bitmap ToBitmap(this Mat src, PixelFormat pixelFormat)
         {
             if (src == null)
                 throw new ArgumentNullException(nameof(src));
-            src.ThrowIfDisposed();
 
-            Bitmap bitmap = new Bitmap(src.Width, src.Height, pf);
-            ToBitmap(src, bitmap);
-            return bitmap;
+            src.ThrowIfDisposed();
+            GetBitmapRowBytes(src.Width, pixelFormat);
+            ValidateToBitmapChannels(pixelFormat, src.Channels());
+            ValidateMatStorage(src, checked(src.Width * src.Channels()));
+
+            Bitmap bitmap = new Bitmap(src.Width, src.Height, pixelFormat);
+            try
+            {
+                ToBitmap(src, bitmap);
+                return bitmap;
+            }
+            catch
+            {
+                bitmap.Dispose();
+                throw;
+            }
         }
 
         /// <summary>
-        /// Converts Mat to System.Drawing.Bitmap
+        /// Converts a Mat into an existing Bitmap.
         /// </summary>
-        /// <param name="src">Mat</param>
-        /// <param name="dst">Mat</param>
-        /// <remarks>Author: shimat, Gummo (ROI support)</remarks>
         public static unsafe void ToBitmap(this Mat src, Bitmap dst)
         {
             if (src == null)
@@ -376,122 +200,226 @@ namespace OpenVisionLab.Common
                 throw new ArgumentNullException(nameof(dst));
             if (src.IsDisposed)
                 throw new ArgumentException("The image is disposed.", nameof(src));
+            if (src.Dims != 2)
+                throw new NotSupportedException("Bitmap conversion requires a two-dimensional source Mat.");
             if (src.Depth() != MatType.CV_8U)
-                throw new ArgumentException("Depth of the image must be CV_8U");
-            //if (src.IsSubmatrix())
-            //    throw new ArgumentException("Submatrix is not supported");
+                throw new NotSupportedException("Bitmap conversion requires a CV_8U source Mat.");
             if (src.Width != dst.Width || src.Height != dst.Height)
-                throw new ArgumentException("");
+                throw new ArgumentException("src.Size != dst.Size");
 
-            PixelFormat pf = dst.PixelFormat;
+            PixelFormat pixelFormat = dst.PixelFormat;
+            int bitmapRowBytes = GetBitmapRowBytes(src.Width, pixelFormat);
+            ValidateToBitmapChannels(pixelFormat, src.Channels());
+            int sourceRowBytes = checked(src.Width * src.Channels());
+            ValidateMatStorage(src, sourceRowBytes);
 
-            // 1プレーン用の場合、グレースケールのパレット情報を生成する
-            if (pf == PixelFormat.Format8bppIndexed)
-            {
-                ColorPalette plt = dst.Palette;
-                for (int x = 0; x < 256; x++)
-                {
-                    plt.Entries[x] = Color.FromArgb(x, x, x);
-                }
-                dst.Palette = plt;
-            }
+            if (pixelFormat == PixelFormat.Format8bppIndexed)
+                SetGrayPalette(dst);
 
-            int w = src.Width;
-            int h = src.Height;
-            Rectangle rect = new Rectangle(0, 0, w, h);
-            BitmapData bd = null;
-
-            bool submat = src.IsSubmatrix();
-            bool continuous = src.IsContinuous();
-
+            Rectangle rect = new Rectangle(0, 0, src.Width, src.Height);
+            BitmapData bitmapData = null;
             try
             {
-                bd = dst.LockBits(rect, ImageLockMode.WriteOnly, pf);
+                bitmapData = dst.LockBits(rect, ImageLockMode.WriteOnly, pixelFormat);
+                ValidateBitmapStorage(bitmapData, bitmapRowBytes);
 
-                IntPtr srcData = src.Data;
-                byte* pSrc = (byte*)(srcData.ToPointer());
-                byte* pDst = (byte*)(bd.Scan0.ToPointer());
-                int ch = src.Channels();
-                int srcStep = (int)src.Step();
-                int dstStep = ((src.Width * ch) + 3) / 4 * 4; // 4の倍数に揃える
-                int stride = bd.Stride;
+                byte* sourceBase = (byte*)src.Data.ToPointer();
+                byte* destinationBase = (byte*)bitmapData.Scan0.ToPointer();
+                long sourceStep = src.Step();
+                long destinationStep = bitmapData.Stride;
 
-                switch (pf)
+                for (int y = 0; y < src.Height; y++)
                 {
-                    case PixelFormat.Format1bppIndexed:
+                    byte* sourceRow = sourceBase + (sourceStep * y);
+                    byte* destinationRow = destinationBase + (destinationStep * y);
+
+                    if (pixelFormat == PixelFormat.Format1bppIndexed)
+                    {
+                        for (int byteIndex = 0; byteIndex < bitmapRowBytes; byteIndex++)
+                            destinationRow[byteIndex] = 0;
+
+                        for (int x = 0; x < src.Width; x++)
                         {
-                            if (submat)
-                                throw new NotImplementedException("submatrix not supported");
-
-                            // BitmapDataは4byte幅だが、IplImageは1byte幅
-                            // 手作業で移し替える
-                            //int offset = stride - (w / 8);
-                            int x = 0;
-                            byte b = 0;
-                            for (int y = 0; y < h; y++)
-                            {
-                                for (int bytePos = 0; bytePos < stride; bytePos++)
-                                {
-                                    if (x < w)
-                                    {
-                                        for (int i = 0; i < 8; i++)
-                                        {
-                                            var mask = (byte)(0x80 >> i);
-                                            if (x < w && pSrc[srcStep * y + x] == 0)
-                                                b &= (byte)(mask ^ 0xff);
-                                            else
-                                                b |= mask;
-
-                                            x++;
-                                        }
-                                        pDst[bytePos] = b;
-                                    }
-                                }
-                                x = 0;
-                                pDst += stride;
-                            }
-                            break;
+                            if (sourceRow[x] != 0)
+                                destinationRow[x >> 3] |= (byte)(0x80 >> (x & 7));
                         }
-
-                    case PixelFormat.Format8bppIndexed:
-                    case PixelFormat.Format24bppRgb:
-                    case PixelFormat.Format32bppArgb:
-                        if (srcStep == dstStep && !submat && continuous)
-                        {
-                            try
-                            {
-                                long bytesToCopy = src.DataEnd.ToInt64() - src.Data.ToInt64();
-                                Buffer.MemoryCopy(pSrc, pDst, bytesToCopy, bytesToCopy);
-                            }
-                            catch
-                            {
-                                long bytesToCopy = src.DataEnd.ToInt64() - src.Data.ToInt64();
-                                Buffer.MemoryCopy(pSrc, pDst, bytesToCopy, bytesToCopy);
-                            }
-                        }
-                        else
-                        {
-                            for (int y = 0; y < h; y++)
-                            {
-                                long offsetSrc = (y * srcStep);
-                                long offsetDst = (y * dstStep);
-                                long bytesToCopy = w * ch;
-                                // 一列ごとにコピー
-                                Buffer.MemoryCopy(pSrc + offsetSrc, pDst + offsetDst, bytesToCopy, bytesToCopy);
-                            }
-                        }
-                        break;
-
-                    default:
-                        throw new NotImplementedException();
+                    }
+                    else
+                    {
+                        Buffer.MemoryCopy(
+                            sourceRow,
+                            destinationRow,
+                            bitmapRowBytes,
+                            bitmapRowBytes);
+                    }
                 }
             }
             finally
             {
-                if (bd != null)
-                    dst.UnlockBits(bd);
+                if (bitmapData != null)
+                    dst.UnlockBits(bitmapData);
             }
         }
+
         #endregion
+
+        private static int GetDefaultMatChannels(PixelFormat pixelFormat)
+        {
+            return pixelFormat switch
+            {
+                PixelFormat.Format1bppIndexed => 1,
+                PixelFormat.Format8bppIndexed => 1,
+                PixelFormat.Format24bppRgb => 3,
+                PixelFormat.Format32bppRgb => 3,
+                PixelFormat.Format32bppArgb => 4,
+                PixelFormat.Format32bppPArgb => 4,
+                _ => throw new NotSupportedException(
+                    $"Bitmap pixel format '{pixelFormat}' is not supported.")
+            };
+        }
+
+        private static int GetBitmapRowBytes(int width, PixelFormat pixelFormat)
+        {
+            if (width < 1)
+                throw new NotSupportedException("Bitmap width must be positive.");
+
+            long rowBytes = pixelFormat switch
+            {
+                PixelFormat.Format1bppIndexed => (width + 7L) / 8L,
+                PixelFormat.Format8bppIndexed => width,
+                PixelFormat.Format24bppRgb => width * 3L,
+                PixelFormat.Format32bppRgb => width * 4L,
+                PixelFormat.Format32bppArgb => width * 4L,
+                PixelFormat.Format32bppPArgb => width * 4L,
+                _ => throw new NotSupportedException(
+                    $"Bitmap pixel format '{pixelFormat}' is not supported.")
+            };
+
+            if (rowBytes > int.MaxValue)
+                throw new NotSupportedException("Bitmap row is too large.");
+            return (int)rowBytes;
+        }
+
+        private static void ValidateToMatChannels(PixelFormat pixelFormat, int channels)
+        {
+            bool valid = pixelFormat switch
+            {
+                PixelFormat.Format1bppIndexed => channels == 1,
+                PixelFormat.Format8bppIndexed => channels == 1 || channels == 3,
+                PixelFormat.Format24bppRgb => channels == 3,
+                PixelFormat.Format32bppRgb => channels == 3 || channels == 4,
+                PixelFormat.Format32bppArgb => channels == 3 || channels == 4,
+                PixelFormat.Format32bppPArgb => channels == 3 || channels == 4,
+                _ => false
+            };
+
+            if (!valid)
+            {
+                throw new NotSupportedException(
+                    $"Bitmap pixel format '{pixelFormat}' is not compatible with a {channels}-channel Mat.");
+            }
+        }
+
+        private static void ValidateToBitmapChannels(PixelFormat pixelFormat, int channels)
+        {
+            bool valid = pixelFormat switch
+            {
+                PixelFormat.Format1bppIndexed => channels == 1,
+                PixelFormat.Format8bppIndexed => channels == 1,
+                PixelFormat.Format24bppRgb => channels == 3,
+                PixelFormat.Format32bppRgb => channels == 4,
+                PixelFormat.Format32bppArgb => channels == 4,
+                PixelFormat.Format32bppPArgb => channels == 4,
+                _ => false
+            };
+
+            if (!valid)
+            {
+                throw new NotSupportedException(
+                    $"Bitmap pixel format '{pixelFormat}' is not compatible with a {channels}-channel Mat.");
+            }
+        }
+
+        private static void ValidateBitmapStorage(BitmapData bitmapData, int rowBytes)
+        {
+            if (bitmapData == null || bitmapData.Scan0 == IntPtr.Zero)
+                throw new NotSupportedException("Bitmap pixel storage is unavailable.");
+
+            long absoluteStride = Math.Abs((long)bitmapData.Stride);
+            if (absoluteStride < rowBytes)
+            {
+                throw new NotSupportedException(
+                    $"Bitmap stride {bitmapData.Stride} is smaller than the visible row size {rowBytes}.");
+            }
+        }
+
+        private static void ValidateMatStorage(Mat mat, int rowBytes)
+        {
+            long step = mat.Step();
+            if (step < rowBytes)
+            {
+                throw new NotSupportedException(
+                    $"Mat row step {step} is smaller than the visible row size {rowBytes}.");
+            }
+
+            IntPtr data = mat.Data;
+            IntPtr dataEnd = mat.DataEnd;
+            if (data == IntPtr.Zero || dataEnd == IntPtr.Zero)
+                throw new NotSupportedException("Mat pixel storage is unavailable.");
+
+            long requiredEnd = checked(
+                data.ToInt64()
+                + checked(step * (mat.Height - 1L))
+                + rowBytes);
+            if (requiredEnd > dataEnd.ToInt64())
+            {
+                throw new NotSupportedException(
+                    "Mat row capacity is smaller than the requested visible pixel range.");
+            }
+        }
+
+        private static unsafe void CopyIndexedRow(
+            ColorPalette palette,
+            byte* sourceRow,
+            byte* destinationRow,
+            int width,
+            int channels)
+        {
+            byte[] red = new byte[256];
+            byte[] green = new byte[256];
+            byte[] blue = new byte[256];
+            int paletteLength = Math.Min(256, palette?.Entries.Length ?? 0);
+            for (int index = 0; index < paletteLength; index++)
+            {
+                Color color = palette.Entries[index];
+                red[index] = color.R;
+                green[index] = color.G;
+                blue[index] = color.B;
+            }
+
+            if (channels == 1)
+            {
+                for (int x = 0; x < width; x++)
+                    destinationRow[x] = red[sourceRow[x]];
+                return;
+            }
+
+            for (int x = 0; x < width; x++)
+            {
+                int offset = x * 3;
+                byte index = sourceRow[x];
+                destinationRow[offset] = blue[index];
+                destinationRow[offset + 1] = green[index];
+                destinationRow[offset + 2] = red[index];
+            }
+        }
+
+        private static void SetGrayPalette(Bitmap bitmap)
+        {
+            ColorPalette palette = bitmap.Palette;
+            for (int index = 0; index < 256; index++)
+                palette.Entries[index] = Color.FromArgb(index, index, index);
+            bitmap.Palette = palette;
+        }
     }
 }
