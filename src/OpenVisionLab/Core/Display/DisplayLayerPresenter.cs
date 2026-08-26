@@ -56,8 +56,7 @@ namespace OpenVisionLab.Core
 
         public void CreatePanel(ImageSpaceFrame frame = null)
         {
-            Bitmap image = frame?.Image ?? new Bitmap(10, 10);
-            CreateLayerDisplay(ImageSpaceFrameAdapter.FromBitmap(image), CreateNewLayerName(), true);
+            CreateLayerDisplay(frame, CreateNewLayerName(), true);
         }
 
         private string CreateNewLayerName()
@@ -86,7 +85,8 @@ namespace OpenVisionLab.Core
 
         private void CreateLayerDisplay(ImageSpaceFrame frame, string title, bool useClose, int? insertIndex)
         {
-            if (frame?.Image == null) { return; }
+            if (frame == null) { return; }
+            Bitmap image = frame.Image;
 
             lock (displaySync)
             {
@@ -94,11 +94,11 @@ namespace OpenVisionLab.Core
                 int displayIndex = layers.FindIndex(title);
                 if (displayIndex < 0)
                 {
-                    AddLayer(frame.Image, title, useClose, insertIndex);
+                    AddLayer(image, title, useClose, insertIndex);
                     return;
                 }
 
-                UpdateLayer(displayIndex, frame.Image, title);
+                UpdateLayer(displayIndex, image, title);
             }
         }
 

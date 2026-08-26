@@ -1,4 +1,7 @@
 using System;
+using System.Drawing;
+using OpenVisionLab.Core;
+using OpenVisionLab.ImageSpace.Core;
 
 namespace OpenVisionLab
 {
@@ -6,7 +9,14 @@ namespace OpenVisionLab
     {
         private readonly OpenVisionBitmapCanvasPresenter canvasPresenter =
             new OpenVisionBitmapCanvasPresenter("OpenVisionLab_Workspace", "Workspace");
+        private readonly IDisplayManager displayManager;
+        private ImageSpaceImageLease currentImageLease;
         private bool disposed;
+
+        public OpenVisionShellHostWorkspacePreviewController(IDisplayManager displayManager)
+        {
+            this.displayManager = displayManager ?? throw new ArgumentNullException(nameof(displayManager));
+        }
 
         public object CanvasViewModel => canvasPresenter.CanvasViewModel;
 
@@ -14,9 +24,23 @@ namespace OpenVisionLab
 
         public int TextureTileCount => canvasPresenter.TextureTileCount;
 
-        public void SetLayer(OpenVisionShellHostLayerDetailState detail)
+        public void SetLayer(OpenVisionShellHostLayerDetailState detail, Action<Bitmap> rebindBorrower)
         {
-            canvasPresenter.SetBitmap(detail?.Image, detail?.LayerTitle);
+            ImageSpaceImageLease nextLease = string.IsNullOrWhiteSpace(detail?.LayerTitle)
+                ? null
+                : displayManager.ImageSpace.AcquireImage(detail.LayerTitle);
+            ImageSpaceImageLease previousLease = currentImageLease;
+            currentImageLease = nextLease;
+            Bitmap image = nextLease?.Image;
+            try
+            {
+                canvasPresenter.SetBitmap(image, detail?.LayerTitle);
+                rebindBorrower?.Invoke(image);
+            }
+            finally
+            {
+                previousLease?.Dispose();
+            }
         }
 
         public void RefreshCanvas()
@@ -38,6 +62,8 @@ namespace OpenVisionLab
 
             disposed = true;
             canvasPresenter.Dispose();
+            currentImageLease?.Dispose();
+            currentImageLease = null;
         }
     }
 }

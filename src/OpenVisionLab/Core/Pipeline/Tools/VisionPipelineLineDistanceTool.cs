@@ -52,12 +52,12 @@ namespace OpenVisionLab
                 return new VisionPipelineGapEdgePairTool(Name, leftProperty, parameters).Execute(source);
             }
 
-            LineGaugeTool leftTool = new LineGaugeTool();
-            LineGaugeTool rightTool = new LineGaugeTool();
+            using LineGaugeTool leftTool = new LineGaugeTool();
+            using LineGaugeTool rightTool = new LineGaugeTool();
             leftTool.SetProperty((LineGaugeProperty)leftProperty.DeepCopy());
             rightTool.SetProperty((LineGaugeProperty)rightProperty.DeepCopy());
 
-            VisionToolResult leftResult = leftTool.Execute(source);
+            using VisionToolResult leftResult = leftTool.Execute(source);
             if (!leftResult.Success)
             {
                 stopwatch.Stop();
@@ -68,7 +68,7 @@ namespace OpenVisionLab
                     leftResult.Exception);
             }
 
-            VisionToolResult rightResult = rightTool.Execute(source);
+            using VisionToolResult rightResult = rightTool.Execute(source);
             if (!rightResult.Success)
             {
                 stopwatch.Stop();

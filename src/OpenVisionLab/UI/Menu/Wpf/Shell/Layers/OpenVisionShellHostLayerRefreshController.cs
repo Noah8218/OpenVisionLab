@@ -16,6 +16,7 @@ namespace OpenVisionLab
         private readonly OpenVisionShellHostLayerWorkspacePresenter layerWorkspacePresenter;
         private readonly Func<string> selectedLayerTitleProvider;
         private readonly IOpenVisionDockedLayerWorkspaceSynchronization dockedLayerWorkspace;
+        private readonly OpenVisionShellHostLayerViewerController layerViewerController;
         private readonly Action<IReadOnlyList<string>, string> updateLayerOptions;
 
         public OpenVisionShellHostLayerRefreshController(
@@ -27,6 +28,7 @@ namespace OpenVisionLab
             OpenVisionShellHostLayerWorkspacePresenter layerWorkspacePresenter,
             Func<string> selectedLayerTitleProvider,
             IOpenVisionDockedLayerWorkspaceSynchronization dockedLayerWorkspace,
+            OpenVisionShellHostLayerViewerController layerViewerController,
             Action<IReadOnlyList<string>, string> updateLayerOptions = null)
         {
             this.dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
@@ -37,6 +39,7 @@ namespace OpenVisionLab
             this.layerWorkspacePresenter = layerWorkspacePresenter ?? throw new ArgumentNullException(nameof(layerWorkspacePresenter));
             this.selectedLayerTitleProvider = selectedLayerTitleProvider ?? throw new ArgumentNullException(nameof(selectedLayerTitleProvider));
             this.dockedLayerWorkspace = dockedLayerWorkspace ?? throw new ArgumentNullException(nameof(dockedLayerWorkspace));
+            this.layerViewerController = layerViewerController ?? throw new ArgumentNullException(nameof(layerViewerController));
             this.updateLayerOptions = updateLayerOptions;
         }
 
@@ -48,7 +51,6 @@ namespace OpenVisionLab
             SetSelection(result.SelectedIndex);
             RefreshSelectedLayerDetail(result.SelectedLayerTitle);
             ScrollRowsTo(result.SelectedIndex);
-            dockedLayerWorkspace.RefreshLayerViewers();
         }
 
         public List<string> CreateWorkspaceLayerTitleSnapshot()
@@ -84,6 +86,7 @@ namespace OpenVisionLab
         {
             layerWorkspacePresenter.ApplyWorkspace(detail);
             dockedLayerWorkspace.RefreshLayerViewers();
+            layerViewerController.RefreshOpenLayerViewers();
         }
 
         private void SetSelection(int selectedIndex)

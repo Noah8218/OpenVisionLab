@@ -471,7 +471,7 @@ namespace OpenVisionLab
 
     public sealed class OpenVisionRecipeLayerCard
     {
-        public OpenVisionRecipeLayerCard(string layerName, string statusText, BitmapImage thumbnail, bool canNavigate)
+        public OpenVisionRecipeLayerCard(string layerName, string statusText, BitmapSource thumbnail, bool canNavigate)
         {
             LayerName = string.IsNullOrWhiteSpace(layerName) ? "-" : layerName.Trim();
             StatusText = string.IsNullOrWhiteSpace(statusText) ? "-" : statusText.Trim();
@@ -483,7 +483,7 @@ namespace OpenVisionLab
 
         public string StatusText { get; }
 
-        public BitmapImage Thumbnail { get; }
+        public BitmapSource Thumbnail { get; }
 
         public bool CanNavigate { get; }
 

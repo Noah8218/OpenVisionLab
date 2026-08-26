@@ -284,37 +284,31 @@ namespace OpenVisionLab
                 meanStep.Parameters["MEAN_MAX"] = "255";
 
                 IVisionTool meanTool = VisionPipelineAppToolFactory.Create(meanStep);
-                VisionToolResult meanResult = meanTool.Execute(normalized.ResultImage);
-                try
+                using IDisposable meanToolLifetime = meanTool as IDisposable;
+                using VisionToolResult meanResult = meanTool.Execute(normalized.ResultImage);
+                if (meanResult?.Success != true
+                    || !meanResult.Metrics.TryGetValue(
+                        VisionPipelineKnownMetrics.MeanValueAvg,
+                        out double meanValue)
+                    || !IsFinite(meanValue))
                 {
-                    if (meanResult?.Success != true
-                        || !meanResult.Metrics.TryGetValue(
-                            VisionPipelineKnownMetrics.MeanValueAvg,
-                            out double meanValue)
-                        || !IsFinite(meanValue))
-                    {
-                        instance.RejectReason = meanResult?.Message
-                            ?? "Mean inspection returned no finite value.";
-                    }
-                    else
-                    {
-                        instance.MeanValue = meanValue;
-                        instance.Accepted =
-                            meanValue >= config.MinimumMean
-                            && meanValue <= config.MaximumMean;
-                        instance.RejectReason = instance.Accepted
-                            ? string.Empty
-                            : $"Mean {meanValue:0.###} is outside {config.MinimumMean:0.###}..{config.MaximumMean:0.###}";
-                    }
+                    instance.RejectReason = meanResult?.Message
+                        ?? "Mean inspection returned no finite value.";
                 }
-                finally
+                else
                 {
-                    meanResult?.ResultImage?.Dispose();
+                    instance.MeanValue = meanValue;
+                    instance.Accepted =
+                        meanValue >= config.MinimumMean
+                        && meanValue <= config.MaximumMean;
+                    instance.RejectReason = instance.Accepted
+                        ? string.Empty
+                        : $"Mean {meanValue:0.###} is outside {config.MinimumMean:0.###}..{config.MaximumMean:0.###}";
                 }
             }
             finally
             {
-                normalized?.ResultImage?.Dispose();
+                normalized?.Dispose();
             }
 
             DrawInstance(

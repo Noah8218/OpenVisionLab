@@ -67,6 +67,11 @@ namespace OpenVisionLab
             layerRefreshController?.RefreshActionButtons();
         }
 
+        public void RefreshHostCommandCanExecute()
+        {
+            RefreshCommandCanExecute();
+        }
+
         public void ApplyWorkspacePointerStatus(OpenVisionZoomableImageStatus status)
         {
             layerRefreshController?.ApplyWorkspacePointerStatus(status);

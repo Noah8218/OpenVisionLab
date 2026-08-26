@@ -183,6 +183,11 @@ namespace OpenVisionLab
             orchestrator.StopPendingSave();
         }
 
+        public void ReleaseLayerViewerContents()
+        {
+            orchestrator.ClearDocuments();
+        }
+
         public void AttachDockLifecycle(IOpenVisionDockLifecycle lifecycle)
         {
             orchestrator.AttachLifecycle(lifecycle);

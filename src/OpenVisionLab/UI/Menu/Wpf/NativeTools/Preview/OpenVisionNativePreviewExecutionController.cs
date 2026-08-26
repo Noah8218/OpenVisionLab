@@ -58,7 +58,7 @@ namespace OpenVisionLab
             }
             finally
             {
-                result?.ResultImage?.Dispose();
+                result?.Dispose();
             }
         }
 
@@ -111,7 +111,7 @@ namespace OpenVisionLab
             }
             finally
             {
-                result?.ResultImage?.Dispose();
+                result?.Dispose();
             }
         }
 

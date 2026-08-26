@@ -1,6 +1,7 @@
 using OpenVisionLab.Docking.Controls;
 using System;
 using System.Windows;
+using DrawingBitmap = System.Drawing.Bitmap;
 
 namespace OpenVisionLab
 {
@@ -143,6 +144,18 @@ namespace OpenVisionLab
             IOpenVisionDockedLayerViewer viewer = dockedLayerWorkspace.FindLayerViewer(layerTitle);
             return viewer?.SaveImageToFileForTest(path) ?? false;
         }
+
+        public DrawingBitmap CloneDockedLayerImage(string layerTitle) =>
+            dockedLayerWorkspace.FindLayerViewer(layerTitle)?.CloneImageForTest();
+
+        public int GetLayerImagePixelWidth(string layerTitle) =>
+            dockedLayerWorkspace.FindLayerViewer(layerTitle)?.ImagePixelWidth ?? 0;
+
+        public int GetLayerImagePixelHeight(string layerTitle) =>
+            dockedLayerWorkspace.FindLayerViewer(layerTitle)?.ImagePixelHeight ?? 0;
+
+        public int GetLayerTextureTileCount(string layerTitle) =>
+            dockedLayerWorkspace.FindLayerViewer(layerTitle)?.TextureTileCount ?? 0;
 
         private OpenVisionDockedLayerWorkspaceDiagnostics Diagnostics =>
             dockedLayerWorkspace.CreateDiagnostics() ?? OpenVisionDockedLayerWorkspaceDiagnostics.Empty;

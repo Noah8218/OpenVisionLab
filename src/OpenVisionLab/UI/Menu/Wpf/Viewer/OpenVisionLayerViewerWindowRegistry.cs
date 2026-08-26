@@ -11,6 +11,8 @@ namespace OpenVisionLab
 
         public string Titles => string.Join("|", windows.Select(window => window.Title));
 
+        public IReadOnlyList<OpenVisionFloatingToolWindow> Windows => windows.ToList();
+
         public void Add(OpenVisionFloatingToolWindow window)
         {
             if (window == null)

@@ -102,11 +102,10 @@ namespace OpenVisionLab
             {
                 using Bitmap loaded = new Bitmap(path);
                 layerName = string.IsNullOrWhiteSpace(layerName) ? ResolveLayerNameForLoad(role, fallbackToMain: true) : layerName;
-                Bitmap image = OpenVisionPreviewImageFileService.CloneBitmapPreservingPixelFormat(loaded);
+                using Bitmap image = OpenVisionPreviewImageFileService.CloneBitmapPreservingPixelFormat(loaded);
                 int width = image.Width;
                 int height = image.Height;
-                displayManager.CreateLayerDisplay(ImageSpaceFrame.FromBitmap(OpenVisionPreviewImageFileService.CloneBitmapPreservingPixelFormat(image)), layerName, false);
-                image.Dispose();
+                displayManager.CreateLayerDisplay(ImageSpaceFrame.Borrow(image), layerName, false);
 
                 // Loading an output preview must not steal the selected input layer from the tool.
                 string activationLayer = role == VisionToolPreviewImageRole.Output

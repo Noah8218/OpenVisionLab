@@ -74,7 +74,14 @@ namespace OpenVisionLab
 
             TProperty property = createProperty(view);
             IVisionTool tool = createTool(property);
-            return tool.Execute(source);
+            try
+            {
+                return tool.Execute(source);
+            }
+            finally
+            {
+                (tool as IDisposable)?.Dispose();
+            }
         }
     }
 

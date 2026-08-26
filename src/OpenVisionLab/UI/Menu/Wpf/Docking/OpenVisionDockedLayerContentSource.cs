@@ -1,5 +1,6 @@
 using OpenVisionLab.Core;
 using OpenVisionLab.Docking.Controls;
+using OpenVisionLab.ImageSpace.Core;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -37,7 +38,8 @@ namespace OpenVisionLab
 
         public object UpdateDocumentContent(string documentId, object currentContent)
         {
-            Bitmap image = GetLayerImage(documentId);
+            using ImageSpaceImageLease lease = displayManager.ImageSpace.AcquireImage(documentId);
+            Bitmap image = lease?.Image;
             string statusText = BuildStatusText(documentId, image);
             IOpenVisionDockedLayerViewer viewer = currentContent as IOpenVisionDockedLayerViewer
                 ?? viewerFactory.Create();
@@ -45,11 +47,6 @@ namespace OpenVisionLab
             viewer.SetCompactChrome(true);
             viewer.SetLayer(documentId, image, statusText);
             return viewer;
-        }
-
-        private Bitmap GetLayerImage(string layerTitle)
-        {
-            return displayManager.GetLayerImage(layerTitle);
         }
 
         private string BuildStatusText(string layerTitle, Bitmap image)

@@ -40,9 +40,13 @@ namespace OpenVisionLab
                 return false;
             }
 
-            Bitmap image = displayManager.GetLayerImage(layerTitle);
             OpenVisionLayerViewerView viewer = new OpenVisionLayerViewerView();
-            viewer.SetLayer(layerTitle, image, BuildStatus(layerTitle, image));
+            viewer.Tag = layerTitle;
+            using (ImageSpaceImageLease lease = displayManager.ImageSpace.AcquireImage(layerTitle))
+            {
+                Bitmap leasedImage = lease?.Image;
+                viewer.SetLayer(layerTitle, leasedImage, BuildStatus(layerTitle, leasedImage));
+            }
 
             string title = string.Format(
                 CultureInfo.CurrentCulture,
@@ -155,10 +159,33 @@ namespace OpenVisionLab
             windowRegistry.CloseAll();
         }
 
+        public void RefreshOpenLayerViewers()
+        {
+            foreach (OpenVisionFloatingToolWindow window in windowRegistry.Windows)
+            {
+                if (window.HostedContent is not OpenVisionLayerViewerView viewer
+                    || viewer.Tag is not string layerTitle)
+                {
+                    continue;
+                }
+
+                using ImageSpaceImageLease lease = displayManager.ImageSpace.AcquireImage(layerTitle);
+                if (lease == null)
+                {
+                    window.Close();
+                    continue;
+                }
+
+                Bitmap image = lease.Image;
+                viewer.SetLayer(layerTitle, image, BuildStatus(layerTitle, image));
+            }
+        }
+
         private void UpdateToolPreview(string title, string layerTitle)
         {
-            Bitmap image = displayManager.GetLayerImage(layerTitle);
             toolPreviewWindow.SetTitle(title);
+            using ImageSpaceImageLease lease = displayManager.ImageSpace.AcquireImage(layerTitle);
+            Bitmap image = lease?.Image;
             toolPreviewViewer.SetLayer(title, image, BuildStatus(layerTitle, image));
         }
 

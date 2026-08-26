@@ -51,8 +51,16 @@ namespace OpenVisionLab
                 property =>
                 {
                     FilterTool tool = new FilterTool();
-                    tool.SetProperty(property);
-                    return tool;
+                    try
+                    {
+                        tool.SetProperty(property);
+                        return tool;
+                    }
+                    catch
+                    {
+                        tool.Dispose();
+                        throw;
+                    }
                 },
                 (property, inputLayer, outputLayer) => VisionPipelineStepBuilder.FromFilterProperty(
                     property,
@@ -91,8 +99,16 @@ namespace OpenVisionLab
                 property =>
                 {
                     MorphologyTool tool = new MorphologyTool();
-                    tool.SetProperty(property);
-                    return tool;
+                    try
+                    {
+                        tool.SetProperty(property);
+                        return tool;
+                    }
+                    catch
+                    {
+                        tool.Dispose();
+                        throw;
+                    }
                 },
                 (property, inputLayer, outputLayer) => VisionPipelineStepBuilder.FromMorphologyProperty(
                     property,

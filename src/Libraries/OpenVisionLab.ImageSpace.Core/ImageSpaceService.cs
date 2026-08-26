@@ -1,79 +1,151 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
 using System.Drawing;
 
 namespace OpenVisionLab.ImageSpace.Core
 {
     public sealed class ImageSpaceService : IImageSpace
     {
+        private readonly object sync = new object();
         private readonly List<ImageSpaceItem> items = new List<ImageSpaceItem>();
         private Bitmap activeImage;
+        private bool disposed;
 
         public void SetActiveImage(Bitmap image)
         {
-            activeImage = image;
+            lock (sync)
+            {
+                ThrowIfDisposed();
+                activeImage = image;
+            }
         }
 
         public Bitmap GetActiveImage()
         {
-            return activeImage;
+            lock (sync)
+            {
+                ThrowIfDisposed();
+                return activeImage;
+            }
         }
 
         public void SetImage(int index, string title, Bitmap image)
         {
-            ImageSpaceItem item = GetOrCreate(index);
-            item.Title = title ?? string.Empty;
-            item.Image = image;
+            ImageSpaceImage previous;
+            lock (sync)
+            {
+                ThrowIfDisposed();
+                ImageSpaceItem item = GetOrCreate(index);
+                item.Title = title ?? string.Empty;
+                previous = item.Image;
+                if (previous?.References(image) == true)
+                {
+                    return;
+                }
+
+                item.Image = image == null ? null : new ImageSpaceImage(image);
+                if (previous?.References(activeImage) == true)
+                {
+                    activeImage = image;
+                }
+            }
+
+            previous?.Release();
         }
 
         public void InsertImage(int index, string title, Bitmap image)
         {
-            int insertIndex = index < 0 ? items.Count : index;
-            while (items.Count < insertIndex)
+            lock (sync)
             {
-                items.Add(new ImageSpaceItem());
-            }
+                ThrowIfDisposed();
+                int insertIndex = index < 0 ? items.Count : index;
+                while (items.Count < insertIndex)
+                {
+                    items.Add(new ImageSpaceItem());
+                }
 
-            if (insertIndex > items.Count)
-            {
-                insertIndex = items.Count;
-            }
+                if (insertIndex > items.Count)
+                {
+                    insertIndex = items.Count;
+                }
 
-            items.Insert(insertIndex, new ImageSpaceItem
-            {
-                Title = title ?? string.Empty,
-                Image = image
-            });
+                items.Insert(insertIndex, new ImageSpaceItem
+                {
+                    Title = title ?? string.Empty,
+                    Image = image == null ? null : new ImageSpaceImage(image)
+                });
+            }
         }
 
         public Bitmap GetImage(int index)
         {
-            return GetOrNull(index)?.Image;
+            lock (sync)
+            {
+                ThrowIfDisposed();
+                return GetOrNull(index)?.Image?.Image;
+            }
         }
 
         public Bitmap GetImage(string title)
         {
-            return FindByTitle(title)?.Image;
+            lock (sync)
+            {
+                ThrowIfDisposed();
+                return FindByTitle(title)?.Image?.Image;
+            }
+        }
+
+        public ImageSpaceImageLease AcquireImage(int index)
+        {
+            lock (sync)
+            {
+                ThrowIfDisposed();
+                return GetOrNull(index)?.Image?.Acquire();
+            }
+        }
+
+        public ImageSpaceImageLease AcquireImage(string title)
+        {
+            lock (sync)
+            {
+                ThrowIfDisposed();
+                return FindByTitle(title)?.Image?.Acquire();
+            }
         }
 
         public void RemoveImage(int index)
         {
-            if (index < 0 || index >= items.Count)
+            ImageSpaceImage removed;
+            lock (sync)
             {
-                return;
+                ThrowIfDisposed();
+                if (index < 0 || index >= items.Count)
+                {
+                    return;
+                }
+
+                ImageSpaceItem item = items[index];
+                removed = item.Image;
+                if (removed?.References(activeImage) == true)
+                {
+                    activeImage = null;
+                }
+
+                items.RemoveAt(index);
             }
 
-            ImageSpaceItem item = items[index];
-            if (ReferenceEquals(activeImage, item.Image))
-            {
-                activeImage = null;
-            }
-
-            items.RemoveAt(index);
+            removed?.Release();
         }
 
         public void RemoveImage(string title)
         {
-            int index = FindIndexByTitle(title);
+            int index;
+            lock (sync)
+            {
+                ThrowIfDisposed();
+                index = FindIndexByTitle(title);
+            }
+
             if (index >= 0)
             {
                 RemoveImage(index);
@@ -82,51 +154,112 @@ namespace OpenVisionLab.ImageSpace.Core
 
         public void SetRoi(int index, Rectangle roi)
         {
-            GetOrCreate(index).Roi = roi;
+            lock (sync)
+            {
+                ThrowIfDisposed();
+                GetOrCreate(index).Roi = roi;
+            }
         }
 
         public Rectangle GetRoi(int index)
         {
-            return GetOrNull(index)?.Roi ?? Rectangle.Empty;
+            lock (sync)
+            {
+                ThrowIfDisposed();
+                return GetOrNull(index)?.Roi ?? Rectangle.Empty;
+            }
         }
 
         public Rectangle GetRoi(string title)
         {
-            return FindByTitle(title)?.Roi ?? Rectangle.Empty;
+            lock (sync)
+            {
+                ThrowIfDisposed();
+                return FindByTitle(title)?.Roi ?? Rectangle.Empty;
+            }
         }
 
         public void SetTrainRoi(int index, Rectangle roi)
         {
-            GetOrCreate(index).TrainRoi = roi;
+            lock (sync)
+            {
+                ThrowIfDisposed();
+                GetOrCreate(index).TrainRoi = roi;
+            }
         }
 
         public Rectangle GetTrainRoi(int index)
         {
-            return GetOrNull(index)?.TrainRoi ?? Rectangle.Empty;
+            lock (sync)
+            {
+                ThrowIfDisposed();
+                return GetOrNull(index)?.TrainRoi ?? Rectangle.Empty;
+            }
         }
 
         public Rectangle GetTrainRoi(string title)
         {
-            return FindByTitle(title)?.TrainRoi ?? Rectangle.Empty;
+            lock (sync)
+            {
+                ThrowIfDisposed();
+                return FindByTitle(title)?.TrainRoi ?? Rectangle.Empty;
+            }
         }
 
         public void MarkImageChanged(string title, bool changed)
         {
-            ImageSpaceItem item = FindByTitle(title);
-            if (item != null)
+            lock (sync)
             {
-                item.ImageChanged = changed;
+                ThrowIfDisposed();
+                ImageSpaceItem item = FindByTitle(title);
+                if (item != null)
+                {
+                    item.ImageChanged = changed;
+                }
             }
         }
 
         public bool IsImageChanged(string title)
         {
-            return FindByTitle(title)?.ImageChanged ?? false;
+            lock (sync)
+            {
+                ThrowIfDisposed();
+                return FindByTitle(title)?.ImageChanged ?? false;
+            }
         }
 
         public void AcceptImageChanged(string title)
         {
             MarkImageChanged(title, false);
+        }
+
+        public void Dispose()
+        {
+            List<ImageSpaceImage> ownedImages = new List<ImageSpaceImage>();
+            lock (sync)
+            {
+                if (disposed)
+                {
+                    return;
+                }
+
+                disposed = true;
+                foreach (ImageSpaceItem item in items)
+                {
+                    if (item.Image != null)
+                    {
+                        ownedImages.Add(item.Image);
+                    }
+                }
+
+                items.Clear();
+                activeImage = null;
+            }
+
+            foreach (ImageSpaceImage image in ownedImages)
+            {
+                image.Release();
+            }
         }
 
         private ImageSpaceItem GetOrCreate(int index)
@@ -159,6 +292,14 @@ namespace OpenVisionLab.ImageSpace.Core
             }
 
             return -1;
+        }
+
+        private void ThrowIfDisposed()
+        {
+            if (disposed)
+            {
+                throw new ObjectDisposedException(nameof(ImageSpaceService));
+            }
         }
     }
 }

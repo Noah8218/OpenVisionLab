@@ -228,6 +228,8 @@ namespace OpenVisionLab
 
         public bool DeleteLayerForTest(string layerTitle) => layerManagementController.DeleteLayer(layerTitle);
 
+        public void ClearLayerImageHistoryForTest() => (displayManager as DisplayManagerService)?.ClearLayerImageHistory();
+
         public bool SplitDockedLayerForTest(string layerTitle) => dockingTestFacade.SplitLayerToNewPane(layerTitle);
 
         public bool ArrangeDockedLayerPanesForTest(string orientationName, params string[] layerTitles) =>
@@ -259,6 +261,22 @@ namespace OpenVisionLab
 
         public bool SaveDockedLayerImageToFileForTest(string layerTitle, string path) =>
             dockingTestFacade.SaveDockedLayerImageToFile(layerTitle, path);
+
+        public Bitmap CloneDockedLayerImageForTest(string layerTitle) =>
+            dockingTestFacade.CloneDockedLayerImage(layerTitle);
+
+        public int GetDockedLayerImagePixelWidthForTest(string layerTitle) =>
+            dockingTestFacade.GetLayerImagePixelWidth(layerTitle);
+
+        public int GetDockedLayerImagePixelHeightForTest(string layerTitle) =>
+            dockingTestFacade.GetLayerImagePixelHeight(layerTitle);
+
+        public int GetDockedLayerTextureTileCountForTest(string layerTitle) =>
+            dockingTestFacade.GetLayerTextureTileCount(layerTitle);
+
+        public int LiveLayerViewerInstanceCountForTest => OpenVisionLayerViewerView.LiveInstanceCountForTest;
+
+        public string LiveLayerViewerInstanceStatesForTest => OpenVisionLayerViewerView.LiveInstanceStatesForTest;
 
         public bool CloseActiveWpfToolWindowForTest() => toolTestFacade.CloseActiveWpfToolWindow();
 

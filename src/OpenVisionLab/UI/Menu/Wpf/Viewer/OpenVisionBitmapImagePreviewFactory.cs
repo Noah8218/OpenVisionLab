@@ -1,17 +1,18 @@
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
-using System.Drawing.Imaging;
-using System.IO;
+using System.Runtime.InteropServices;
+using System.Windows;
+using System.Windows.Interop;
 using System.Windows.Media.Imaging;
 
 namespace OpenVisionLab
 {
     internal static class OpenVisionBitmapImagePreviewFactory
     {
-        private const int MaxPreviewDimension = 2048;
+        private const int MaxPreviewDimension = 1024;
 
-        public static BitmapImage Create(Bitmap image)
+        public static BitmapSource Create(Bitmap image)
         {
             if (image == null)
             {
@@ -38,25 +39,35 @@ namespace OpenVisionLab
             return CreateBitmapImage(preview);
         }
 
-        private static BitmapImage CreateBitmapImage(Bitmap image)
+        private static BitmapSource CreateBitmapImage(Bitmap image)
         {
+            IntPtr hBitmap = IntPtr.Zero;
             try
             {
-                using MemoryStream stream = new MemoryStream();
-                image.Save(stream, ImageFormat.Bmp);
-                stream.Position = 0;
-                BitmapImage bitmapImage = new BitmapImage();
-                bitmapImage.BeginInit();
-                bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-                bitmapImage.StreamSource = stream;
-                bitmapImage.EndInit();
-                bitmapImage.Freeze();
-                return bitmapImage;
+                hBitmap = image.GetHbitmap();
+                BitmapSource source = Imaging.CreateBitmapSourceFromHBitmap(
+                    hBitmap,
+                    IntPtr.Zero,
+                    Int32Rect.Empty,
+                    BitmapSizeOptions.FromEmptyOptions());
+                source.Freeze();
+                return source;
             }
             catch
             {
                 return null;
             }
+            finally
+            {
+                if (hBitmap != IntPtr.Zero)
+                {
+                    DeleteObject(hBitmap);
+                }
+            }
         }
+
+        [DllImport("gdi32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool DeleteObject(IntPtr handle);
     }
 }

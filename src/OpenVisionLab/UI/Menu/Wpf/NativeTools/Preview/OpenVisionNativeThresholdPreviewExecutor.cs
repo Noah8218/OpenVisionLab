@@ -11,7 +11,7 @@ namespace OpenVisionLab
         {
             view.ClearSignalEvidence();
             ThresholdToolProperty property = view.CreateProperty();
-            ThresholdTool tool = new ThresholdTool();
+            using ThresholdTool tool = new ThresholdTool();
             tool.SetProperty(property);
             VisionToolResult result = tool.Execute(source);
             if (result != null

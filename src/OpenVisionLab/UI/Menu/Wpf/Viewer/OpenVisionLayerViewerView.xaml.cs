@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
 using System.Windows;
@@ -9,14 +10,22 @@ namespace OpenVisionLab
 {
     public sealed partial class OpenVisionLayerViewerView : UserControl, IOpenVisionDockedLayerViewer, IDisposable
     {
+        private static readonly object liveInstancesSync = new();
+        private static readonly List<WeakReference<OpenVisionLayerViewerView>> liveInstances = new();
         private readonly OpenVisionBitmapCanvasPresenter canvasPresenter;
         private readonly OpenVisionZoomableImageController fallbackImageZoomController;
+        private DispatcherOperation pendingCanvasRefresh;
         private Bitmap ownedLayerImage;
         private bool isCompactChrome;
         private bool disposed;
 
         public OpenVisionLayerViewerView()
         {
+            lock (liveInstancesSync)
+            {
+                liveInstances.Add(new WeakReference<OpenVisionLayerViewerView>(this));
+            }
+
             InitializeComponent();
             canvasPresenter = new OpenVisionBitmapCanvasPresenter("OpenVisionLab_LayerViewer", "Layer");
             fallbackImageZoomController = new OpenVisionZoomableImageController(layerImageSurface, layerFallbackImage);
@@ -43,6 +52,47 @@ namespace OpenVisionLab
         public int ImagePixelHeight => canvasPresenter.ImagePixelHeight;
 
         public int TextureTileCount => canvasPresenter.TextureTileCount;
+
+        internal static int LiveInstanceCountForTest
+        {
+            get
+            {
+                lock (liveInstancesSync)
+                {
+                    liveInstances.RemoveAll(reference => !reference.TryGetTarget(out _));
+                    return liveInstances.Count;
+                }
+            }
+        }
+
+        internal static string LiveInstanceStatesForTest
+        {
+            get
+            {
+                lock (liveInstancesSync)
+                {
+                    liveInstances.RemoveAll(reference => !reference.TryGetTarget(out _));
+                    List<string> states = new();
+                    foreach (WeakReference<OpenVisionLayerViewerView> reference in liveInstances)
+                    {
+                        if (reference.TryGetTarget(out OpenVisionLayerViewerView view))
+                        {
+                            states.Add(
+                                (view.disposed ? "Disposed:" : "Active:")
+                                + view.LayerTitle
+                                + (view.Tag is string ? ":Tagged" : ":Untagged"));
+                        }
+                    }
+
+                    return string.Join("|", states);
+                }
+            }
+        }
+
+        public Bitmap CloneImageForTest()
+        {
+            return CloneLayerBitmap(ownedLayerImage);
+        }
 
         public bool SaveImageToFileForTest(string path)
         {
@@ -126,7 +176,14 @@ namespace OpenVisionLab
 
         private void LayerCanvas_Loaded(object sender, RoutedEventArgs e)
         {
-            Dispatcher.BeginInvoke(new Action(canvasPresenter.RefreshCanvas), DispatcherPriority.ContextIdle);
+            pendingCanvasRefresh = Dispatcher.BeginInvoke(new Action(() =>
+            {
+                pendingCanvasRefresh = null;
+                if (!disposed)
+                {
+                    canvasPresenter.RefreshCanvas();
+                }
+            }), DispatcherPriority.ContextIdle);
         }
 
         private void OnLanguageChanged(object sender, System.EventArgs e)
@@ -141,11 +198,19 @@ namespace OpenVisionLab
 
             OpenVisionLanguageService.LanguageChanged -= OnLanguageChanged;
             layerCanvas.Loaded -= LayerCanvas_Loaded;
+            if (pendingCanvasRefresh?.Status == DispatcherOperationStatus.Pending)
+            {
+                pendingCanvasRefresh.Abort();
+            }
+            pendingCanvasRefresh = null;
+            canvasPresenter.Dispose();
             layerCanvas.DataContext = null;
+            layerCanvas.Dispose();
             fallbackImageZoomController.Dispose();
             layerFallbackImage.Source = null;
             ReplaceOwnedLayerImage(null);
-            canvasPresenter.Dispose();
+            DataContext = null;
+            Content = null;
             GC.SuppressFinalize(this);
         }
 

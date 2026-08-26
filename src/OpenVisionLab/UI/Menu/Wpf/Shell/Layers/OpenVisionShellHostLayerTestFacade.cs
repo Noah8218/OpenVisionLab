@@ -151,7 +151,7 @@ namespace OpenVisionLab
             }
 
             displayManager.CreateLayerDisplay(
-                ImageSpaceFrame.FromBitmap(OpenVisionShellHostWorkspaceImageController.CloneBitmapForLayer(image)),
+                ImageSpaceFrame.Borrow(image),
                 layerTitle,
                 true);
             displayManager.SelectedItem = layerTitle;

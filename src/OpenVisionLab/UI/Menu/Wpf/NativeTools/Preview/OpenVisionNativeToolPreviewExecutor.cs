@@ -25,7 +25,7 @@ namespace OpenVisionLab
                 return VisionToolResult.Passed(visual, TimeSpan.Zero);
             }
 
-            BlobTool tool = new BlobTool();
+            using BlobTool tool = new BlobTool();
             tool.SetProperty(property);
             VisionToolResult result = tool.Execute(source);
             VisionPipelineObjectResultCaptureService.ApplyNativeFilter(property, tool, result);
@@ -52,7 +52,7 @@ namespace OpenVisionLab
                 return VisionToolResult.Passed(visual, TimeSpan.Zero);
             }
 
-            ContourTool tool = new ContourTool();
+            using ContourTool tool = new ContourTool();
             tool.SetProperty(property);
             VisionToolResult result = tool.Execute(source);
             VisionPipelineObjectResultCaptureService.ApplyNativeFilter(property, tool, result);
@@ -73,7 +73,7 @@ namespace OpenVisionLab
 
         public static VisionToolResult ExecuteAffineTransformPreview(Mat source, AffineTransformToolWpfView view)
         {
-            AffineTransformTool tool = new AffineTransformTool();
+            using AffineTransformTool tool = new AffineTransformTool();
             tool.SetProperty(view.CreateProperty());
             VisionToolResult result = tool.Execute(source);
             view.SetResultReview(result);
@@ -110,7 +110,7 @@ namespace OpenVisionLab
                 return ExecuteLineIntersectionPreview(source, view);
             }
 
-            LineGaugeTool tool = new LineGaugeTool();
+            using LineGaugeTool tool = new LineGaugeTool();
             tool.SetProperty(selectedProperty);
             VisionToolResult result = tool.Execute(source);
             view.SetResultReview(tool.resultList);
@@ -134,7 +134,7 @@ namespace OpenVisionLab
         public static VisionToolResult ExecuteMatchingPreview(Mat source, MatchingToolWpfView view)
         {
             MatchingProperty property = view.CreateProperty();
-            MatchingTool tool = new MatchingTool();
+            using MatchingTool tool = new MatchingTool();
             tool.SetProperty(property);
             if (!OpenCvHelper.IsImageEmpty(property.ImageTemplate))
             {
@@ -147,7 +147,7 @@ namespace OpenVisionLab
         public static VisionToolResult ExecuteEdgeBasedMatchingPreview(Mat source, EdgeBasedMatchingToolWpfView view)
         {
             EdgeBasedMatchingProperty property = view.CreateProperty();
-            EdgeBasedTemplateMatchingTool tool = new EdgeBasedTemplateMatchingTool();
+            using EdgeBasedTemplateMatchingTool tool = new EdgeBasedTemplateMatchingTool();
             tool.SetProperty(property);
             if (!OpenCvHelper.IsImageEmpty(property.ImageTemplate))
             {
@@ -166,7 +166,7 @@ namespace OpenVisionLab
         public static VisionToolResult ExecuteFeatureMatchingPreview(Mat source, FeatureMatchingToolWpfView view)
         {
             FeatureMatchingProperty property = view.CreateProperty();
-            SiftTool tool = new SiftTool();
+            using SiftTool tool = new SiftTool();
             tool.SetProperty(property);
             if (!OpenCvHelper.IsImageEmpty(property.ImageTemplate))
             {
@@ -223,9 +223,9 @@ namespace OpenVisionLab
             view.SetDistanceResultReview(result);
             if (result?.Success == true)
             {
-                LineGaugeTool diagnosticTool = new LineGaugeTool();
+                using LineGaugeTool diagnosticTool = new LineGaugeTool();
                 diagnosticTool.SetProperty(selectedProperty);
-                VisionToolResult diagnosticResult = diagnosticTool.Execute(source);
+                using VisionToolResult diagnosticResult = diagnosticTool.Execute(source);
                 if (diagnosticResult?.Success == true)
                 {
                     TryPublishLineSignalEvidence(
@@ -235,8 +235,6 @@ namespace OpenVisionLab
                         diagnosticTool.resultList,
                         view);
                 }
-
-                diagnosticResult?.ResultImage?.Dispose();
             }
 
             return result;

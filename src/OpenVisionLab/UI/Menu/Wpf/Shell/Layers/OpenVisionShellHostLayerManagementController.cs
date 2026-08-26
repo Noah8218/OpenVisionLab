@@ -47,7 +47,7 @@ namespace OpenVisionLab
             string layerTitle = CreateUniqueLayerTitle("Layer");
             using Bitmap placeholder = CreatePlaceholderLayerBitmap();
             displayManager.CreateLayerDisplay(
-                ImageSpaceFrame.FromBitmap(OpenVisionShellHostWorkspaceImageController.CloneBitmapForLayer(placeholder)),
+                ImageSpaceFrame.Borrow(placeholder),
                 layerTitle,
                 true);
 

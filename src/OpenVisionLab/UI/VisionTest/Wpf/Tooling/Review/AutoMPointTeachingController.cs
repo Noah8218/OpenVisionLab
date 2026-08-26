@@ -147,8 +147,6 @@ namespace OpenVisionLab
             panel.StatusText.Text = OpenVisionLanguageService.T("VisionTool.AutoMPoint.Analyzing");
             panel.CandidateList.Items.Clear();
 
-            VisionToolResult execution = null;
-            AutoMPointTool tool = null;
             List<Mat> representativeImages = new List<Mat>();
             try
             {
@@ -161,9 +159,9 @@ namespace OpenVisionLab
                     representativeImages.Add(Cv2.ImRead(path, ImreadModes.Unchanged));
                 }
 
-                tool = new AutoMPointTool();
+                using AutoMPointTool tool = new AutoMPointTool();
                 tool.SetProperty(autoProperty);
-                execution = representativeImages.Count > 0
+                using VisionToolResult execution = representativeImages.Count > 0
                     ? tool.Execute(source, representativeImages)
                     : tool.Execute(source);
 
@@ -224,10 +222,6 @@ namespace OpenVisionLab
             }
             finally
             {
-                execution?.ResultImage?.Dispose();
-                tool?.imageSource?.Dispose();
-                tool?.imageResult?.Dispose();
-                tool?.imageTemplate?.Dispose();
                 foreach (Mat image in representativeImages)
                 {
                     image.Dispose();

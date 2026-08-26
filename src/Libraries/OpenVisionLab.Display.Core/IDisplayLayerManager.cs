@@ -9,9 +9,11 @@ namespace OpenVisionLab.Core
 
         IReadOnlyList<DisplayLayerInfo> GetLayerInfos();
         string GetLayerTitle(int index);
+        /// <summary>Consumes and disposes a non-null frame before returning.</summary>
         void CreatePanel(ImageSpaceFrame frame = null);
         int FindIndex(string title);
         int FindIndex();
+        /// <summary>Consumes and disposes the frame before returning.</summary>
         void CreateLayerDisplay(ImageSpaceFrame frame, string title, bool useClose = true);
         void RefreshLayer(int index);
         void ActivateLayer(string title);

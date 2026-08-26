@@ -46,19 +46,6 @@ namespace OpenVisionLab
             FrameworkElement element,
             string toolName,
             string defaultOutputLayer,
-            Func<IVisionTool> createTool,
-            Func<string, string, VisionPipelineStep> createStep,
-            bool normalizeSingleChannelInput = true)
-            : this(displayManager, view, element, toolName, defaultOutputLayer, source => createTool().Execute(source), createStep, normalizeSingleChannelInput)
-        {
-        }
-
-        internal OpenVisionNativeToolDocument(
-            IDisplayManager displayManager,
-            ISingleInputVisionToolWpfView view,
-            FrameworkElement element,
-            string toolName,
-            string defaultOutputLayer,
             Func<Mat, VisionToolResult> executePreview,
             Func<string, string, VisionPipelineStep> createStep,
             bool normalizeSingleChannelInput = true)

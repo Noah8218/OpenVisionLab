@@ -6,6 +6,10 @@ namespace OpenVisionLab
     {
         int TextureTileCount { get; }
 
+        int ImagePixelWidth { get; }
+
+        int ImagePixelHeight { get; }
+
         bool IsCompactSizeReady { get; }
 
         bool IsCompactChrome { get; }
@@ -13,6 +17,8 @@ namespace OpenVisionLab
         void SetCompactChrome(bool compact);
 
         void SetLayer(string layerTitle, Bitmap image, string statusText);
+
+        Bitmap CloneImageForTest();
 
         bool SaveImageToFileForTest(string path);
     }

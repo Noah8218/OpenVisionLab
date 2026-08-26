@@ -6,7 +6,7 @@ using System.Drawing;
 
 namespace OpenVisionLab.Core
 {
-    public sealed class DisplayManagerService : IDisplayManager
+    public sealed class DisplayManagerService : IDisplayManager, IDisposable
     {
         public static DisplayManagerService Default { get; } = new DisplayManagerService();
 
@@ -14,6 +14,7 @@ namespace OpenVisionLab.Core
         private readonly VisionRuntimeState state = new VisionRuntimeState();
         private readonly DisplayLayerPresenter layerPresenter;
         private readonly DisplayLayerImageHistoryService layerImageHistory;
+        private bool disposed;
 
         public event EventHandler<EventArgs> UpdateParameter;
         public event EventHandler<EventArgs> UpdateResult;
@@ -73,7 +74,15 @@ namespace OpenVisionLab.Core
 
         public void CreatePanel(ImageSpaceFrame frame = null)
         {
-            layerPresenter.CreatePanel(frame);
+            frame ??= ImageSpaceFrame.TakeOwnership(new Bitmap(10, 10));
+            try
+            {
+                layerPresenter.CreatePanel(frame);
+            }
+            finally
+            {
+                frame.Dispose();
+            }
         }
 
         public IReadOnlyList<DisplayLayerInfo> GetLayerInfos()
@@ -98,31 +107,38 @@ namespace OpenVisionLab.Core
 
         public void CreateLayerDisplay(ImageSpaceFrame frame, string title, bool useClose = true)
         {
-            int beforeIndex = FindIndex(title);
-            DisplayLayerImageSnapshot beforeSnapshot = beforeIndex >= 0
-                ? CaptureLayerImageSnapshot(beforeIndex, title)
-                : null;
-            DisplayLayerSnapshot beforeLayerSnapshot = beforeIndex >= 0
-                ? CaptureLayerSnapshot(beforeIndex, title)
-                : DisplayLayerSnapshot.Missing(beforeIndex, title);
-
-            layerPresenter.CreateLayerDisplay(frame, title, useClose);
-
-            if (beforeSnapshot != null)
+            try
             {
-                int afterIndex = FindIndex(title);
-                DisplayLayerImageSnapshot afterSnapshot = afterIndex >= 0
-                    ? CaptureLayerImageSnapshot(afterIndex, title)
+                int beforeIndex = FindIndex(title);
+                DisplayLayerImageSnapshot beforeSnapshot = beforeIndex >= 0
+                    ? CaptureLayerImageSnapshot(beforeIndex, title)
                     : null;
-                layerImageHistory.Record($"Layer Image: {title}", beforeSnapshot, afterSnapshot);
+                DisplayLayerSnapshot beforeLayerSnapshot = beforeIndex >= 0
+                    ? CaptureLayerSnapshot(beforeIndex, title)
+                    : DisplayLayerSnapshot.Missing(beforeIndex, title);
+
+                layerPresenter.CreateLayerDisplay(frame, title, useClose);
+
+                if (beforeSnapshot != null)
+                {
+                    int afterIndex = FindIndex(title);
+                    DisplayLayerImageSnapshot afterSnapshot = afterIndex >= 0
+                        ? CaptureLayerImageSnapshot(afterIndex, title)
+                        : null;
+                    layerImageHistory.Record($"Layer Image: {title}", beforeSnapshot, afterSnapshot);
+                }
+                else if (beforeLayerSnapshot != null)
+                {
+                    int afterIndex = FindIndex(title);
+                    DisplayLayerSnapshot afterLayerSnapshot = afterIndex >= 0
+                        ? CaptureLayerSnapshot(afterIndex, title)
+                        : DisplayLayerSnapshot.Missing(afterIndex, title);
+                    layerImageHistory.RecordLayer($"Layer Create: {title}", beforeLayerSnapshot, afterLayerSnapshot);
+                }
             }
-            else if (beforeLayerSnapshot != null)
+            finally
             {
-                int afterIndex = FindIndex(title);
-                DisplayLayerSnapshot afterLayerSnapshot = afterIndex >= 0
-                    ? CaptureLayerSnapshot(afterIndex, title)
-                    : DisplayLayerSnapshot.Missing(afterIndex, title);
-                layerImageHistory.RecordLayer($"Layer Create: {title}", beforeLayerSnapshot, afterLayerSnapshot);
+                frame?.Dispose();
             }
         }
 
@@ -252,8 +268,7 @@ namespace OpenVisionLab.Core
                 return;
             }
 
-            using Bitmap image = snapshot.Image?.ToBitmap();
-            Bitmap restoreImage = image ?? new Bitmap(10, 10);
+            using Bitmap restoreImage = snapshot.Image?.ToBitmap() ?? new Bitmap(10, 10);
             int index = FindIndex(snapshot.Title);
             if (index >= 0)
             {
@@ -261,7 +276,8 @@ namespace OpenVisionLab.Core
             }
             else
             {
-                layerPresenter.CreateLayerDisplayAt(ImageSpaceFrameAdapter.FromBitmap(restoreImage), snapshot.Title, snapshot.UseClose, snapshot.Index);
+                using ImageSpaceFrame frame = ImageSpaceFrameAdapter.BorrowBitmap(restoreImage);
+                layerPresenter.CreateLayerDisplayAt(frame, snapshot.Title, snapshot.UseClose, snapshot.Index);
                 index = FindIndex(snapshot.Title);
             }
 
@@ -272,6 +288,18 @@ namespace OpenVisionLab.Core
                 RefreshLayer(index);
                 ActivateLayer(index);
             }
+        }
+
+        public void Dispose()
+        {
+            if (disposed)
+            {
+                return;
+            }
+
+            disposed = true;
+            layerImageHistory.Clear();
+            imageSpace.Dispose();
         }
 
     }

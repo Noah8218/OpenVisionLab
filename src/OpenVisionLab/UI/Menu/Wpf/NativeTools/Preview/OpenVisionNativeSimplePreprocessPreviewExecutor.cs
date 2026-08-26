@@ -12,21 +12,21 @@ namespace OpenVisionLab
         // Preview execution is isolated from document creation so tool behavior can be changed without touching shell wiring.
         public static VisionToolResult ExecuteEdgeDetectionPreview(Mat source, SimplePreprocessToolWpfView view)
         {
-            EdgeDetectionTool tool = new EdgeDetectionTool();
+            using EdgeDetectionTool tool = new EdgeDetectionTool();
             tool.SetProperty(OpenVisionNativeSimplePreprocessPropertyFactory.CreateEdgeDetectionProperty(view));
             return tool.Execute(source);
         }
 
         public static VisionToolResult ExecuteRotateScalePreview(Mat source, SimplePreprocessToolWpfView view)
         {
-            RotateScaleTool tool = new RotateScaleTool();
+            using RotateScaleTool tool = new RotateScaleTool();
             tool.SetProperty(OpenVisionNativeSimplePreprocessPropertyFactory.CreateRotateScaleProperty(view));
             return tool.Execute(source);
         }
 
         public static VisionToolResult ExecuteMeanPreview(Mat source, SimplePreprocessToolWpfView view)
         {
-            MeanTool tool = new MeanTool();
+            using MeanTool tool = new MeanTool();
             tool.SetProperty(OpenVisionNativeSimplePreprocessPropertyFactory.CreateMeanProperty(view));
             VisionToolResult result = tool.Execute(source);
             if (result == null || !result.Success)

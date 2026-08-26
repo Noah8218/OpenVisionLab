@@ -2,7 +2,7 @@
 
 namespace OpenVisionLab.ImageSpace.Core
 {
-    public interface IImageSpace
+    public interface IImageSpace : System.IDisposable
     {
         void SetActiveImage(Bitmap image);
         Bitmap GetActiveImage();
@@ -10,6 +10,8 @@ namespace OpenVisionLab.ImageSpace.Core
         void InsertImage(int index, string title, Bitmap image);
         Bitmap GetImage(int index);
         Bitmap GetImage(string title);
+        ImageSpaceImageLease AcquireImage(int index);
+        ImageSpaceImageLease AcquireImage(string title);
         void RemoveImage(int index);
         void RemoveImage(string title);
         void SetRoi(int index, Rectangle roi);

@@ -1,19 +1,44 @@
-﻿using System.Drawing;
+using System;
+using System.Drawing;
 
 namespace OpenVisionLab.ImageSpace.Core
 {
-    public sealed class ImageSpaceFrame
+    /// <summary>
+    /// Carries one Bitmap across the synchronous display boundary and becomes invalid when disposed.
+    /// </summary>
+    public sealed class ImageSpaceFrame : IDisposable
     {
-        public ImageSpaceFrame(Bitmap image)
+        private readonly bool ownsImage;
+        private Bitmap image;
+
+        private ImageSpaceFrame(Bitmap image, bool ownsImage)
         {
-            Image = image;
+            this.image = image ?? throw new ArgumentNullException(nameof(image));
+            this.ownsImage = ownsImage;
         }
 
-        public Bitmap Image { get; }
+        public Bitmap Image => image ?? throw new ObjectDisposedException(nameof(ImageSpaceFrame));
 
-        public static ImageSpaceFrame FromBitmap(Bitmap image)
+        /// <summary>Wraps a caller-owned Bitmap without disposing that Bitmap.</summary>
+        public static ImageSpaceFrame Borrow(Bitmap image)
         {
-            return image == null ? null : new ImageSpaceFrame(image);
+            return image == null ? null : new ImageSpaceFrame(image, false);
+        }
+
+        /// <summary>Transfers Bitmap ownership to the frame; disposing the frame disposes the Bitmap.</summary>
+        public static ImageSpaceFrame TakeOwnership(Bitmap image)
+        {
+            return image == null ? null : new ImageSpaceFrame(image, true);
+        }
+
+        public void Dispose()
+        {
+            Bitmap currentImage = image;
+            image = null;
+            if (ownsImage)
+            {
+                currentImage?.Dispose();
+            }
         }
     }
 }

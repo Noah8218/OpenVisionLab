@@ -61,6 +61,8 @@ namespace OpenVisionLab
 
         protected override void OnClosed(EventArgs e)
         {
+            ShellHostForSmoke?.Dispose();
+            contentHost.Content = null;
             windowSource?.RemoveHook(WindowProc);
             windowSource = null;
             base.OnClosed(e);

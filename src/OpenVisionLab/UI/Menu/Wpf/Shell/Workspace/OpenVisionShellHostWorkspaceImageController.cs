@@ -1,5 +1,7 @@
 using OpenVisionLab.Core;
 using OpenVisionLab.ImageSpace.Core;
+using OpenVisionLab.Logging;
+using OpenVisionLab.Logging.Model;
 using System;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -12,23 +14,23 @@ namespace OpenVisionLab
         private readonly IDisplayManager displayManager;
         private readonly OpenVisionShellHostDocumentController documentController;
         private readonly Action setDirectRunPending;
-        private readonly Action<string> refreshSelectedLayerDetail;
         private readonly Action refreshRows;
+        private readonly Action refreshCommandCanExecute;
         private readonly Action refreshDirectRouteText;
 
         public OpenVisionShellHostWorkspaceImageController(
             IDisplayManager displayManager,
             OpenVisionShellHostDocumentController documentController,
             Action setDirectRunPending,
-            Action<string> refreshSelectedLayerDetail,
             Action refreshRows,
+            Action refreshCommandCanExecute,
             Action refreshDirectRouteText)
         {
             this.displayManager = displayManager ?? throw new ArgumentNullException(nameof(displayManager));
             this.documentController = documentController ?? throw new ArgumentNullException(nameof(documentController));
             this.setDirectRunPending = setDirectRunPending ?? throw new ArgumentNullException(nameof(setDirectRunPending));
-            this.refreshSelectedLayerDetail = refreshSelectedLayerDetail ?? throw new ArgumentNullException(nameof(refreshSelectedLayerDetail));
             this.refreshRows = refreshRows ?? throw new ArgumentNullException(nameof(refreshRows));
+            this.refreshCommandCanExecute = refreshCommandCanExecute ?? throw new ArgumentNullException(nameof(refreshCommandCanExecute));
             this.refreshDirectRouteText = refreshDirectRouteText ?? throw new ArgumentNullException(nameof(refreshDirectRouteText));
         }
 
@@ -39,7 +41,22 @@ namespace OpenVisionLab
                 return false;
             }
 
-            Bitmap image = new Bitmap(path);
+            Bitmap image;
+            try
+            {
+                image = new Bitmap(path);
+            }
+            catch (Exception ex)
+            {
+                OVLog.Write(
+                    LogCategory.Main,
+                    LogLevel.Error,
+                    "Workspace image load failed.",
+                    path,
+                    ex);
+                return false;
+            }
+
             ApplyMainLayerImage(image, disposeAfterApply: true);
             return true;
         }
@@ -53,7 +70,7 @@ namespace OpenVisionLab
 
             try
             {
-                displayManager.CreateLayerDisplay(ImageSpaceFrame.FromBitmap(CloneBitmapForLayer(image)), "Main", false);
+                displayManager.CreateLayerDisplay(ImageSpaceFrame.Borrow(image), "Main", false);
                 displayManager.SelectedItem = "Main";
                 displayManager.ActivateLayer("Main");
                 OpenVisionNativeToolDocument activeDocument = documentController.ActiveNativeDocument;
@@ -61,8 +78,8 @@ namespace OpenVisionLab
                 activeDocument?.RefreshLayerState();
                 documentController.RefreshPipelineReviewInputLayerState();
                 setDirectRunPending();
-                refreshSelectedLayerDetail("Main");
                 refreshRows();
+                refreshCommandCanExecute();
                 refreshDirectRouteText();
             }
             finally

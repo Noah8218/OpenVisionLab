@@ -59,7 +59,7 @@ namespace OpenVisionLab.Core
 
         public static void CreatePanel(this IDisplayManager displayManager, Bitmap image)
         {
-            displayManager?.CreatePanel(ImageSpaceFrameAdapter.FromBitmap(image));
+            displayManager?.CreatePanel(ImageSpaceFrameAdapter.BorrowBitmap(image));
         }
 
         public static void CreateLayerDisplay(this IDisplayManager displayManager, Mat imageSource, string title, bool useClose = true)
@@ -70,7 +70,7 @@ namespace OpenVisionLab.Core
 
         public static void CreateLayerDisplay(this IDisplayManager displayManager, Bitmap imageSource, string title, bool useClose = true)
         {
-            displayManager?.CreateLayerDisplay(ImageSpaceFrameAdapter.FromBitmap(imageSource), title, useClose);
+            displayManager?.CreateLayerDisplay(ImageSpaceFrameAdapter.BorrowBitmap(imageSource), title, useClose);
         }
 
         public static Bitmap GetLayerImage(this IDisplayManager displayManager, string title)

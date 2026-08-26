@@ -125,6 +125,7 @@ namespace OpenVisionLab
         private bool failNextRecipeStepEditCommitForTest;
         private bool failNextRecipeStepSaveForTest;
         private bool failNextRecipeStepRoundTripValidationForTest;
+        private bool disposed;
         private Point recipeManagerPanelDragStartPoint;
         private double recipeManagerPanelDragStartX;
         private double recipeManagerPanelDragStartY;
@@ -151,7 +152,7 @@ namespace OpenVisionLab
             PropertyGridEditorFactory.SetSourceLayerContext(() => documentController.ActiveNativeDocument?.RouteInputLayerName ?? string.Empty);
             layerListPresenter = new OpenVisionShellHostLayerListPresenter(displayManager);
             layerDetailPresenter = new OpenVisionShellHostLayerDetailPresenter(displayManager);
-            workspacePreviewController = new OpenVisionShellHostWorkspacePreviewController();
+            workspacePreviewController = new OpenVisionShellHostWorkspacePreviewController(displayManager);
             layerViewerController = new OpenVisionShellHostLayerViewerController(
                 displayManager,
                 layerDetailPresenter,
@@ -356,6 +357,7 @@ namespace OpenVisionLab
                 layerWorkspacePresenter,
                 () => layerListPresenter.GetSelectedLayerTitle(hostLayerRowsList.SelectedIndex),
                 dockedLayerWorkspaceComposition.Synchronization,
+                layerViewerController,
                 (layerNames, selectedLayer) =>
                 {
                     viewModel.SetLayerOptions(layerNames, selectedLayer);
@@ -366,8 +368,8 @@ namespace OpenVisionLab
                 displayManager,
                 documentController,
                 chromeController.SetDirectRunPending,
-                refreshCoordinator.RefreshHostSelectedLayerDetail,
                 refreshCoordinator.RefreshHostLayerRows,
+                refreshCoordinator.RefreshHostCommandCanExecute,
                 chromeController.RefreshDirectRouteText);
             sampleWorkflowPresenter = new OpenVisionShellHostSampleWorkflowPresenter(
                 workspaceSampleWorkflowOverlay,
@@ -491,7 +493,8 @@ namespace OpenVisionLab
                 toolWindowLifecycleController,
                 value => DataContext = value,
                 refreshCoordinator.RefreshHostLayerRows,
-                layerViewerController.CloseAll);
+                layerViewerController.CloseAll,
+                ReleaseDisplayManager);
             SessionCommands = new OpenVisionShellHostSessionCommandSurface(
                 sessionController,
                 Dispose,
@@ -718,6 +721,12 @@ namespace OpenVisionLab
 
         public void Dispose()
         {
+            if (disposed)
+            {
+                return;
+            }
+
+            disposed = true;
             recipeLlmBrowserAssistWebView?.Dispose();
             llmBrowserAssistController.Dispose();
 
@@ -727,6 +736,19 @@ namespace OpenVisionLab
             }
 
             GC.SuppressFinalize(this);
+        }
+
+        private void ReleaseDisplayManager()
+        {
+            InputBindings.Clear();
+            ClearValue(LayerCommandsProperty);
+            ClearValue(WorkspaceCommandsProperty);
+            ClearValue(RecipeCommandsProperty);
+            ClearValue(CommandSurfacesProperty);
+            ClearValue(ChromeCommandsProperty);
+            ClearValue(SessionCommandsProperty);
+            Content = null;
+            (displayManager as IDisposable)?.Dispose();
         }
 
 }

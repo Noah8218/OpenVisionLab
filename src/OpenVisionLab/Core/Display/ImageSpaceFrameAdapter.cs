@@ -8,15 +8,15 @@ namespace OpenVisionLab.Core
 {
     internal static class ImageSpaceFrameAdapter
     {
-        public static ImageSpaceFrame FromBitmap(Bitmap image)
+        public static ImageSpaceFrame BorrowBitmap(Bitmap image)
         {
-            return ImageSpaceFrame.FromBitmap(image);
+            return ImageSpaceFrame.Borrow(image);
         }
 
         public static ImageSpaceFrame FromMat(Mat image)
         {
             if (image == null || image.Empty()) return null;
-            return ImageSpaceFrame.FromBitmap(BitmapImageConverter.ToBitmap(image));
+            return ImageSpaceFrame.TakeOwnership(BitmapImageConverter.ToBitmap(image));
         }
 
         public static Mat ToMat(ImageSpaceFrame frame)

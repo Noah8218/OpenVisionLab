@@ -46,6 +46,8 @@ namespace OpenVisionLab
 
         void StopPendingWorkspaceSave();
 
+        void ReleaseLayerViewerContents();
+
         void AttachDockLifecycle(IOpenVisionDockLifecycle lifecycle);
     }
 

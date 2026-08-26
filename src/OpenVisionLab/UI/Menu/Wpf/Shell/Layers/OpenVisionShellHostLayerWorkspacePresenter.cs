@@ -114,8 +114,7 @@ namespace OpenVisionLab
             }
 
             ShowWorkspaceForImageState(detail.HasImage);
-            workspacePreviewController.SetLayer(detail);
-            ApplyWorkspaceFallbackImage(detail);
+            workspacePreviewController.SetLayer(detail, image => ApplyWorkspaceFallbackImage(detail, image));
 
             if (workspaceCanvas != null)
             {
@@ -229,7 +228,7 @@ namespace OpenVisionLab
             workspacePixelText.Text = "GV - | RGB -";
         }
 
-        private void ApplyWorkspaceFallbackImage(OpenVisionShellHostLayerDetailState detail)
+        private void ApplyWorkspaceFallbackImage(OpenVisionShellHostLayerDetailState detail, System.Drawing.Bitmap image)
         {
             // Keep fallback data available for diagnostics, but do not cover the interactive OpenGL viewer.
             if (workspaceFallbackImage == null)
@@ -237,11 +236,11 @@ namespace OpenVisionLab
                 return;
             }
 
-            if (detail?.HasImage == true)
+            if (detail?.HasImage == true && image != null)
             {
-                workspaceFallbackImage.Source = OpenVisionBitmapImagePreviewFactory.Create(detail.Image);
+                workspaceFallbackImage.Source = OpenVisionBitmapImagePreviewFactory.Create(image);
                 workspaceFallbackImage.Visibility = Visibility.Visible;
-                fallbackZoomController.SetStatusBitmap(detail.Image);
+                fallbackZoomController.SetStatusBitmap(image);
                 fallbackZoomController.Reset();
                 return;
             }

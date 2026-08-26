@@ -40,8 +40,10 @@ namespace OpenVisionLab
                 return;
             }
 
-            Bitmap placeholder = CreatePlaceholderBitmap(width, height, title);
-            displayManager.CreateLayerDisplay(ImageSpaceFrame.FromBitmap(placeholder), title, true);
+            displayManager.CreateLayerDisplay(
+                ImageSpaceFrame.TakeOwnership(CreatePlaceholderBitmap(width, height, title)),
+                title,
+                true);
         }
 
         public void RestoreDisplayActivation(string layerName)

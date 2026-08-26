@@ -72,12 +72,19 @@ namespace OpenVisionLab
                 InitialDirectory = ResolveWorkspaceImageDirectory()
             };
 
-            if (dialog.ShowDialog(ownerProvider()) == true
-                && loadWorkspaceImage(dialog.FileName))
+            if (dialog.ShowDialog(ownerProvider()) != true)
             {
-                RecordWorkspaceImagePath(dialog.FileName);
-                manualWorkspaceImageLoaded?.Invoke();
+                return;
             }
+
+            if (!loadWorkspaceImage(dialog.FileName))
+            {
+                ShowWorkspaceImageLoadFailedMessage(dialog.FileName);
+                return;
+            }
+
+            RecordWorkspaceImagePath(dialog.FileName);
+            manualWorkspaceImageLoaded?.Invoke();
         }
 
         public void FitWorkspaceImage()
@@ -393,6 +400,20 @@ namespace OpenVisionLab
                     OpenVisionLanguageService.CurrentLanguage == OpenVisionLanguage.English
                         ? "Sample image could not be loaded: {0}"
                         : "샘플 이미지를 불러올 수 없습니다: {0}",
+                    path),
+                "OpenVisionLab",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+        }
+
+        private static void ShowWorkspaceImageLoadFailedMessage(string path)
+        {
+            MessageBox.Show(
+                string.Format(
+                    CultureInfo.CurrentCulture,
+                    OpenVisionLanguageService.CurrentLanguage == OpenVisionLanguage.English
+                        ? "Image could not be loaded. The file format or image dimensions may be unsupported:\n{0}"
+                        : "이미지를 불러올 수 없습니다. 파일 형식 또는 이미지 크기가 지원되지 않을 수 있습니다:\n{0}",
                     path),
                 "OpenVisionLab",
                 MessageBoxButton.OK,
