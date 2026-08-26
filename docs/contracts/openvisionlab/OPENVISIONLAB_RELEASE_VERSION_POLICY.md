@@ -40,9 +40,13 @@ Updated: 2026-08-05
 - Build the application: `dotnet build OpenVisionLab.sln -c Debug -p:Platform=x64`.
 - Run the vendored DLL check: `powershell -ExecutionPolicy Bypass -File tools\TestExternalReferences.ps1`.
 - Run the readiness gate: `dotnet run --project tools\OpenVisionReadinessCheck\OpenVisionReadinessCheck.csproj`.
-- Run the non-UI platform precheck: `powershell -ExecutionPolicy Bypass -File tools\RunVisionPlatformPrecheck.ps1 -SkipUi`.
-- Run the sample catalog after any catalog/pipeline change: `powershell -ExecutionPolicy Bypass -File tools\RunVisionSampleCatalog.ps1 -OutputDir <evidence-dir>`.
+- Run the non-UI platform precheck against the repository-portable public catalog: `powershell -ExecutionPolicy Bypass -File tools\RunVisionPlatformPrecheck.ps1 -SkipUi -CatalogPath docs\samples\OpenVisionLab.PublicSampleCatalog.csv`.
+- Run the public sample catalog after any catalog/pipeline change: `powershell -ExecutionPolicy Bypass -File tools\RunVisionSampleCatalog.ps1 -CatalogPath docs\samples\OpenVisionLab.PublicSampleCatalog.csv -OutputDir <evidence-dir>`.
 - Generate the release evidence JSON: `powershell -ExecutionPolicy Bypass -File tools\NewOpenVisionReleaseEvidence.ps1 -OutputDir <evidence-dir>`.
+
+The legacy `docs\samples\OpenVisionLab.SampleCatalog.csv` remains available for
+explicit local-only historical checks, but its ignored `Sample\...` inputs are
+not a release prerequisite and must not be used as public sample evidence.
 
 ## Commit Discipline
 

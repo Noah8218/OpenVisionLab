@@ -1,0 +1,159 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0012",
+    "aliases": [],
+    "type": "task",
+    "mode": "composite",
+    "title": "Align release platform precheck with the public sample catalog",
+    "risk": "medium"
+  },
+  "origin": {
+    "kind": "user request",
+    "summary": "The user approved proceeding with the recommended fix for the legacy platform precheck failure.",
+    "refs": [
+      "PL-0011"
+    ]
+  },
+  "state": {
+    "status": "doing",
+    "current_summary": "The Dev precheck now accepts an explicit catalog path, release policy selects the public catalog, and the Windows PowerShell tutorial-term encoding failure is corrected. The current Dev public precheck passed; a clean reviewed candidate remains to be prepared separately.",
+    "next_action": "Review the Dev diff, obtain separate commit authorization, then build and verify a clean candidate before any new tag or release action."
+  },
+  "objective": {
+    "summary": "Make the release platform precheck reproducibly validate the repository-portable public sample contract while retaining the legacy catalog for explicit local historical checks.",
+    "constraints": [
+      "Keep implementation and evidence in C:\\Git\\OpenVisionLab_Dev until original-repository promotion is explicitly authorized.",
+      "Do not reintroduce SDK or ignored Sample\\... assets into public paths.",
+      "Retain the legacy catalog as an explicit local-only option rather than silently removing its coverage.",
+      "Do not modify, force-move, or republish the existing v2.1.0-rc.2 tag or draft as part of this change.",
+      "Keep commit, tag, tag push, release publication, and deployment as separate authorization stages."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "RunVisionPlatformPrecheck.ps1 accepts and forwards CatalogPath, records the selected catalog in its evidence, and the release policy invokes the public catalog while documenting the legacy option.",
+      "evidence_refs": [
+        "E1"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "A current Dev non-UI platform precheck using OpenVisionLab.PublicSampleCatalog.csv produces a top-level summary with Status=OK, all 13 gates OK, and public sample rows 33/33 with zero failures or metadata/artifact issues.",
+      "evidence_refs": [
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "A clean reviewed candidate is rebuilt from the corrected source and passes the repository release gate before any new release tag or publication is considered.",
+      "evidence_refs": []
+    }
+  ],
+  "milestones": [
+    {
+      "id": "M1",
+      "summary": "Add explicit public/legacy catalog routing and Windows PowerShell-safe tutorial term checks.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M2",
+      "summary": "Run and retain a current Dev public-catalog platform precheck with complete top-level evidence.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C2"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M3",
+      "summary": "Prepare and verify a clean candidate under separate release-stage authorization.",
+      "status": "pending",
+      "required": true,
+      "criteria_refs": [
+        "C3"
+      ],
+      "issue_refs": [
+        "PL-0011"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0011"
+    }
+  ],
+  "context": [
+    {
+      "kind": "source",
+      "location": "tools\\RunVisionPlatformPrecheck.ps1"
+    },
+    {
+      "kind": "policy",
+      "location": "docs\\contracts\\openvisionlab\\OPENVISIONLAB_RELEASE_VERSION_POLICY.md"
+    },
+    {
+      "kind": "release-catalog",
+      "location": "docs\\samples\\OpenVisionLab.PublicSampleCatalog.csv"
+    },
+    {
+      "kind": "legacy-catalog",
+      "location": "docs\\samples\\OpenVisionLab.SampleCatalog.csv"
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "report",
+      "location": "docs\\reports\\OPENVISIONLAB_RELEASE_PRECHECK_PUBLIC_CATALOG_ALIGNMENT_20260826.md",
+      "summary": "Current Dev change and verification report for public-catalog precheck alignment."
+    },
+    {
+      "kind": "precheck-summary",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\rc2_public_platform_precheck_20260826_r2\\platform_precheck_summary.json",
+      "summary": "Top-level current Dev precheck summary with Status=OK and all 13 gates OK."
+    },
+    {
+      "kind": "precheck-report",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\rc2_public_platform_precheck_20260826_r2\\platform_precheck_report.md",
+      "summary": "Human-readable current Dev precheck report including public sample and tutorial gate details."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "test",
+      "location": "docs/reports/OPENVISIONLAB_RELEASE_PRECHECK_PUBLIC_CATALOG_ALIGNMENT_20260826.md",
+      "observation": "PowerShell parser and CatalogPath wiring checks passed after the Dev script and release-policy changes; the script contains no non-ASCII Korean literals that Windows PowerShell 5.1 can misread.",
+      "observed_at": "2026-08-26T17:38:49+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/rc2_public_platform_precheck_20260826_r2/platform_precheck_summary.json",
+      "observation": "Current Dev RunVisionPlatformPrecheck.ps1 -SkipUi with CatalogPath docs\\samples\\OpenVisionLab.PublicSampleCatalog.csv completed with Status=OK; all 13 gates were OK, public sample GateStatus=OK, RunnableRows=33, OKRows=33, NGRows=0, FailedSamples=0, MetadataIssueCount=0, and ArtifactIssueCount=0.",
+      "observed_at": "2026-08-26T17:37:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-08-26T17:38:49+09:00",
+      "summary": "Use the repository-portable public catalog for release platform precheck evidence, keep the legacy catalog available only by explicit local selection, and defer any new candidate tag or publication until a clean reviewed build exists.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    }
+  ],
+  "created_at": "2026-08-26T17:38:49+09:00",
+  "updated_at": "2026-08-26T17:38:49+09:00"
+}

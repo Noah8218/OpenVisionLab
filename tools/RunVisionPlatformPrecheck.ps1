@@ -1,6 +1,7 @@
 param(
     [string]$Configuration = "Debug",
     [string]$Platform = "Any CPU",
+    [string]$CatalogPath = "docs\samples\OpenVisionLab.SampleCatalog.csv",
     [string]$OutputDir = "C:\Users\Public\Documents\ESTsoft\CreatorTemp\openvisionlab_platform_precheck",
     [string]$UiTargets = "",
     [string]$WpgCustomSourceRoot = "",
@@ -101,6 +102,7 @@ $report.Add("# OpenVisionLab Platform Precheck") | Out-Null
 $report.Add("") | Out-Null
 $report.Add("- Time: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")") | Out-Null
 $report.Add("- Build: $Configuration / $Platform") | Out-Null
+$report.Add("- Sample catalog: ``$CatalogPath``") | Out-Null
 $report.Add("- UI precheck: $(if ($SkipUi) { 'skipped' } else { 'enabled' })") | Out-Null
 $report.Add("- WPF tools: $(if ($WpfTools) { 'enabled' } else { 'disabled' })") | Out-Null
 $report.Add("- Tool output flow: $(if ($ToolOutputFlow) { 'enabled' } else { 'disabled' })") | Out-Null
@@ -326,6 +328,8 @@ $sampleArgs = @(
     $Configuration,
     "-Platform",
     $Platform,
+    "-CatalogPath",
+    $CatalogPath,
     "-OutputDir",
     $sampleOutputDir
 )
@@ -649,7 +653,7 @@ if ($tutorialPortableIssues.Count -eq 0) {
     $sourceImageCount = [regex]::Matches($sourceHtml, "<img\b", [System.Text.RegularExpressions.RegexOptions]::IgnoreCase).Count
     $embeddedImageCount = [regex]::Matches($portableHtml, "data:image/", [System.Text.RegularExpressions.RegexOptions]::IgnoreCase).Count
     $requiredTutorialTerms = @(
-        "OpenVisionLab 처음 사용하기",
+        ("OpenVisionLab " + [string]::Concat([char]0xCC98, [char]0xC74C, [char]0x0020, [char]0xC0AC, [char]0xC6A9, [char]0xD558, [char]0xAE30)),
         "Blob",
         "Public_Blob_Particles_Good",
         "Parameter Guide",
@@ -657,8 +661,8 @@ if ($tutorialPortableIssues.Count -eq 0) {
         "Recipe",
         "Threshold_Preview",
         "Blob_Preview",
-        "검증 OK",
-        "결과 OK/NG",
+        ([string]::Concat([char]0xAC80, [char]0xC99D) + " OK"),
+        ([string]::Concat([char]0xACB0, [char]0xACFC) + " OK/NG"),
         "Run Review"
     )
     $requiredTutorialImages = @(
@@ -700,7 +704,7 @@ $tutorialPortableLines.Add("Source=$tutorialHtml") | Out-Null
 $tutorialPortableLines.Add("Portable=$portableTutorialHtml") | Out-Null
 $tutorialPortableLines.Add("SourceImageCount=$sourceImageCount") | Out-Null
 $tutorialPortableLines.Add("EmbeddedImageCount=$embeddedImageCount") | Out-Null
-$tutorialPortableLines.Add("RequiredTerms=OpenVisionLab 처음 사용하기,Blob,Public_Blob_Particles_Good,Parameter Guide,Preview,Recipe,Threshold_Preview,Blob_Preview,검증 OK,결과 OK/NG,Run Review") | Out-Null
+$tutorialPortableLines.Add("RequiredTerms=$($requiredTutorialTerms -join ',')") | Out-Null
 $tutorialPortableLines.Add("RequiredImages=current/public_blob_particles_good_result") | Out-Null
 if ($tutorialPortableIssues.Count -eq 0) {
     $tutorialPortableLines.Add("Gate=OK") | Out-Null
@@ -943,6 +947,7 @@ $summaryPayload = [ordered]@{
     Status = "OK"
     Configuration = $Configuration
     Platform = $Platform
+    SampleCatalogPath = $CatalogPath
     SkipUi = [bool]$SkipUi
     SkipSampleRunnerBuild = [bool]$SkipSampleRunnerBuild
     SkipWpfShellBuild = [bool]$SkipWpfShellBuild
