@@ -73,23 +73,22 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
   `PL-0003` is resolved with current localized signal-inspector, generated
   PropertyGrid, and stable evidence-state assertions. Its evidence is recorded
   in `docs/reports/OPENVISIONLAB_NATIVE_TOOL_FOCUSED_SMOKE_BASELINE_20260825.md`.
-- The broader uncommitted reliability bundle remains a dirty Dev worktree and
-  must not be treated as one promoted commit boundary. Do not mix a new
-  hardening fix into an unknown boundary.
-- `PL-0005` DLL license/provenance evidence remains the Release blocker. The
-  user-authorized Dev prune removed the unused `Vila.Core.dll` and optional
-  `opencv_ffmpeg400_64.dll`; the current build and sample gates still pass.
-  The user has now explicitly classified WPG-CUSTOM as user-created, so it is
-  no longer the external third-party evidence blocker. The 2026-08-26 bounded
-  package/hash sweep confirmed exact official NuGet binary matches for both
-  MaterialDesign DLLs. The user then authorized deletion of the seven first
-  candidates; they and the two MaterialDesign DLLs are now absent and
-  forbidden in the manifest. The current Debug build, external-reference gate,
-  readiness check, and public sample asset check all pass. PL-0005 now remains
-  open for complete NOTICE coverage of retained allowed dependencies and the
-  final clean Release distribution gate. Release remains blocked.
-  Recommended model: none until prerequisite evidence exists | Reasoning effort:
-  none until prerequisite evidence exists.
+- The previously broad reliability bundle is now separated into seven pushed
+  Dev commits, each with one responsibility group. The branch is clean at
+  `cb3ead00` and matches `origin/codex/public-sample-ux-docs`; the grouped
+  commit list and boundaries are recorded below.
+- `PL-0005` is resolved in Dev for the reviewed external-binary scope. The
+  user-authorized prune removed the unused `Vila.Core.dll`, optional
+  `opencv_ffmpeg400_64.dll`, seven first-candidate DLLs, and the two
+  MaterialDesign DLLs; WPG-CUSTOM remains under the explicit owner declaration.
+  Retained NOTICE coverage passes for all 10 present `allow*` manifest entries.
+  The clean Release candidate gate also passed at commit
+  `cb3ead002bf74a94db6af5776f2f365b2a64554f`: Debug/Release builds have zero
+  warnings/errors, readiness is 13/13, the public sample gate is 33/33, and
+  the copied win-x64 framework-dependent distribution contract passes. The
+  gate used `-SkipLaunch`, so EXE launch smoke remains a separate boundary;
+  product release, tag, publication, deployment, and original-repository
+  promotion remain unauthorized.
 - `PL-0006` BitmapImageConverter memory safety is complete in Dev. `PL-0007`
   Recipe/Pipeline storage path containment is also complete in Dev; its current
   path-boundary, lifecycle, sample/report, qualified-snapshot, and public-runtime
@@ -113,9 +112,10 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
   normal issue commits do not bump it. The next candidate identity is
   `v2.1.0-rc.2` only after the gate and separate original-repository, tag,
   draft-release, and publication authorizations.
-- Use `gpt-5.6-luna` for this train. The issue records contain exact acceptance
-  criteria and the recommended reasoning effort. No push is authorized unless
-  the user explicitly says `PUSH`.
+- Use `gpt-5.6-luna` for high-risk implementation in this train. The issue
+  records contain exact acceptance criteria and the recommended reasoning
+  effort. The user explicitly authorized the grouped Dev commit/push operation
+  recorded below; future pushes remain separate explicit boundaries.
 - Existing ImageSpace/viewer lifetime (`PL-0004`), Emgu removal, and OpenGL GPU/
   coordinate reliability evidence remain complete and are not reopened by the
   shared review.
@@ -386,6 +386,42 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
   so `VerifyReleaseCandidate.ps1` cannot admit this worktree as the exact clean
   candidate. No original-repository change, commit, push, tag, release, or
   deployment was performed; the canonical version remains `2.1.0`.
+
+### 2026-08-26 PL-0005 Clean Release Candidate Gate and Grouped Dev Push - Complete in Dev
+
+- After the user explicitly authorized grouped version-managed commits and
+  pushes, the reliability changes were committed by responsibility and pushed
+  sequentially to `origin/codex/public-sample-ux-docs`:
+  `84fd5852` resource/image/SDK ownership, `bf5ab066` ImageCanvas/OpenGL
+  cleanup and coordinate gates, `f9ed9080` BitmapImageConverter memory safety,
+  `8dab07a4` Recipe/Pipeline storage boundaries and execution provenance,
+  `63f022aa` smoke/operator walkthrough contracts, `f4cb0d12` forbidden DLL
+  removal and NOTICE enforcement, and `cb3ead00` documentation, handoff,
+  issue-ledger, and RC2 evidence.
+- The canonical product version remains `2.1.0`; these development commits do
+  not create or change `v2.1.0-rc.2`. No tag, GitHub release, deployment, or
+  original-repository promotion was performed.
+- From the now-clean worktree at
+  `cb3ead002bf74a94db6af5776f2f365b2a64554f`,
+  `VerifyReleaseCandidate.ps1 -SkipLaunch
+  -OutputDir artifacts\release_candidate_20260826_grouped_push` passed.
+  Locked restore, Debug/Release zero-warning/zero-error builds, readiness
+  13/13, external references, NOTICE coverage, public assets, all 33 public
+  sample rows, clean Release publish, copied distribution NOTICE, archive, and
+  checksum passed. The framework-dependent `win-x64` package contains 73
+  payload files and has SHA-256
+  `ED05307431B60B40511756333D3BA495C993E87BF3E7983BB5DC8C17367DE75C`.
+- Evidence is recorded in
+  `.proofline/issues/PL-0005.json` (`E16`/`D6`),
+  `docs/reports/OPENVISIONLAB_RETAINED_DEPENDENCY_NOTICE_COVERAGE_20260826.md`,
+  `C:\Git\OpenVisionLab_Dev\artifacts\release_candidate_20260826_grouped_push\release_candidate_summary.json`,
+  the clean runtime manifest, and the generated Release archive. `-SkipLaunch`
+  is explicit, so actual-EXE launch smoke remains unverified for this gate.
+- The generated pre-gate `dist\\OpenVisionLab` output was moved to the
+  recoverable D-drive backup
+  `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\pre_gate_backup_20260826`
+  before regeneration; source files and the original repository were not
+  changed.
 
 ### 2026-08-24 PL-0004 Display-Store/Viewer Lifetime - Complete In Dev
 
@@ -1088,17 +1124,17 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
 ## Current Priority And Activation Conditions
 
 - Immediate execution order:
-  1. obtain the missing `PL-0005` external license/provenance evidence |
-     Recommended model: none until prerequisite evidence exists | Reasoning
-     effort: none until prerequisite evidence exists;
-  2. obtain/coordinate the `PL-0010` Vision SDK one-pass candidate contract;
-     the C1 baseline is complete but implementation is blocked |
-     Recommended model: none until SDK prerequisite exists | Reasoning effort:
-     none until SDK prerequisite exists;
-  3. run `PL-0011` RC2 evidence gate only after PL-0005 is evidenced and
-     PL-0010 has an explicit include/defer decision; release mutations remain
-     separately authorized | Recommended model: gpt-5.6-luna | Reasoning effort:
-     high.
+  1. obtain/coordinate the `PL-0010` Vision SDK one-pass candidate contract or
+     maintain the explicit defer decision; the C1 baseline is complete but
+     implementation is blocked | Recommended model: none until SDK prerequisite
+     exists | Reasoning effort: none until SDK prerequisite exists;
+  2. run `PL-0011` RC2 evidence gate after the PL-0010 include/defer decision;
+     the exact Dev clean candidate gate is now available, but release mutations
+     remain separately authorized | Recommended model: gpt-5.6-luna |
+     Reasoning effort: high;
+  3. keep `CVR-00` deferred until three independent first-time participants
+     and their unedited observations exist | Recommended model: none until
+     observations exist | Reasoning effort: none until observations exist.
 
 - Original Artifact cleanup and the recurrence-prevention workflow policy are
   complete in Dev and original. No further repository storage correction is

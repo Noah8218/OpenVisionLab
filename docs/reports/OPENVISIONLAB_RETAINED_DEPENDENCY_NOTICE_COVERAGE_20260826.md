@@ -9,8 +9,9 @@ Issue: `PL-0005`
 This report covers every current `dll` manifest entry whose
 `repositoryState` is `present` and whose `releasePolicy` begins with `allow`.
 It separates third-party notices from the user-owned WPG-CUSTOM declaration.
-It does not approve an external release, tag, commit, push, publication, or
-deployment.
+It does not itself approve a product release, tag, publication, or deployment.
+The later user-authorized Dev commit/push boundary is recorded separately in
+the current handoff.
 
 The machine-readable file identity, length, SHA-256, reference observations,
 source evidence, and release policy remain owned by
@@ -56,9 +57,9 @@ again after publish.
 
 ```text
 Status: Complete
-Scope: Manifest-scoped retained dependency NOTICE coverage definition and implementation.
-Acceptance criteria: root NOTICE entries and manifest markers -> PASS for all 10 present allow* entries; the third-party groups and WPG-CUSTOM owner declaration are all covered.
-Verification: TestThirdPartyNoticeCoverage.ps1 -> PASS; Debug/Release TestExternalReferences.ps1 -> PASS; Release build -> 0 warnings/0 errors; readiness -> PASS; public assets -> PASS; documentation index -> PASS; ledger validation -> PASS.
-Evidence: this report; NOTICE; OPENVISIONLAB_EXTERNAL_BINARY_MANIFEST.json; D:\OpenVisionLab-TestData\OpenVisionLab_Dev\pl0005_notice_coverage_20260826\third_party_notice_coverage.txt; D:\OpenVisionLab-TestData\OpenVisionLab_Dev\pl0005_notice_coverage_20260826\external_references_debug.txt; D:\OpenVisionLab-TestData\OpenVisionLab_Dev\pl0005_notice_coverage_20260826\external_references_release.txt.
-Boundary / next dependency: run the complete clean Release candidate gate from an exact clean source snapshot. No commit, push, tag, release, or deployment is implied.
+Scope: PL-0005 retained-dependency NOTICE coverage plus the exact clean Release candidate distribution gate in Dev.
+Acceptance criteria: root NOTICE entries and manifest markers -> PASS for all 10 present allow* entries; the third-party groups and WPG-CUSTOM owner declaration are all covered; the clean Release candidate gate -> PASS at commit cb3ead002bf74a94db6af5776f2f365b2a64554f.
+Verification: TestThirdPartyNoticeCoverage.ps1 -> PASS; VerifyReleaseCandidate.ps1 -SkipLaunch -> PASS; locked restore; Debug/Release solution builds -> 0 warnings/0 errors; readiness 13/13 -> PASS; external references -> PASS; public sample asset policy -> PASS; 33-row public sample gate -> OK; clean win-x64 framework-dependent publish -> PASS; copied distribution NOTICE and archive/checksum contract -> PASS; PL-0005 ledger validation -> PASS.
+Evidence: this report; NOTICE; OPENVISIONLAB_EXTERNAL_BINARY_MANIFEST.json; D:\OpenVisionLab-TestData\OpenVisionLab_Dev\pl0005_notice_coverage_20260826\third_party_notice_coverage.txt; C:\Git\OpenVisionLab_Dev\artifacts\release_candidate_20260826_grouped_push\release_candidate_summary.json; C:\Git\OpenVisionLab_Dev\dist\OpenVisionLab\clean_runtime_manifest.json; C:\Git\OpenVisionLab_Dev\dist\OpenVisionLab-win-x64-framework-dependent.zip; archive SHA-256 ED05307431B60B40511756333D3BA495C993E87BF3E7983BB5DC8C17367DE75C.
+Boundary / next dependency: Launch smoke was explicitly skipped by the CI-equivalent command and remains separately unverified. This evidence does not authorize a tag, product release publication, deployment, or original-repository promotion; the canonical product version remains 2.1.0.
 ```

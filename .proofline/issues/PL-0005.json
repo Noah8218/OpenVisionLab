@@ -20,9 +20,8 @@
     ]
   },
   "state": {
-    "status": "open",
-    "current_summary": "The user-authorized MaterialDesign cleanup is complete in Dev: all nine previously repository-only candidate DLLs are absent and forbidden. Retained dependency NOTICE coverage is now implemented and verified for every present allow* manifest entry, including the separate WPG-CUSTOM owner declaration. Debug and Release builds and supporting gates pass. PL-0005 remains open only because the canonical clean Release distribution gate requires an exact clean source snapshot, and the current Dev worktree contains pre-existing tracked changes.",
-    "next_action": "Complete third-party NOTICE coverage for retained allowed dependencies, then create an exact clean candidate and run VerifyReleaseCandidate.ps1/TestReleaseDistribution.ps1 before closing PL-0005. No release, tag, publication, deployment, commit, or push is authorized by this evidence update."
+    "status": "resolved",
+    "current_summary": "PL-0005 is resolved in Dev for the reviewed external-binary scope: forbidden and user-authorized removable DLLs remain absent, retained allowlisted dependencies have NOTICE or owner-declaration coverage, and the exact clean Release candidate distribution gate passed at cb3ead002bf74a94db6af5776f2f365b2a64554f. The gate used -SkipLaunch, so EXE launch smoke remains a separate unverified boundary; no tag, release publication, deployment, or original-repository promotion was performed."
   },
   "problem": {
     "claims": [
@@ -66,7 +65,8 @@
         "E11",
         "E12",
         "E13",
-        "E14"
+        "E14",
+        "E16"
       ]
     },
     {
@@ -79,7 +79,8 @@
         "E8",
         "E12",
         "E13",
-        "E15"
+        "E15",
+        "E16"
       ]
     },
     {
@@ -209,6 +210,13 @@
       "location": "C:\\Git\\OpenVisionLab_Dev\\tools\\VerifyReleaseCandidate.ps1; artifacts/pl0005_final_release_gate_20260826; C:\\Git\\OpenVisionLab_Dev\\dist\\OpenVisionLab",
       "observation": "VerifyReleaseCandidate.ps1 was run with output directory artifacts\\pl0005_final_release_gate_20260826 and exited with code 1 before build or publish because the current Dev worktree has tracked changes. The evidence directory was not created and the pre-existing dist\\OpenVisionLab output was not changed. The final Release distribution gate therefore remains unverified until an exact clean source snapshot is authorized and available.",
       "observed_at": "2026-08-26T11:05:54+09:00"
+    },
+    {
+      "id": "E16",
+      "kind": "clean-release-candidate-gate",
+      "location": "C:\\Git\\OpenVisionLab_Dev\\artifacts\\release_candidate_20260826_grouped_push\\release_candidate_summary.json; C:\\Git\\OpenVisionLab_Dev\\dist\\OpenVisionLab\\clean_runtime_manifest.json; C:\\Git\\OpenVisionLab_Dev\\dist\\OpenVisionLab-win-x64-framework-dependent.zip; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pre_gate_backup_20260826\\OpenVisionLab",
+      "observation": "On 2026-08-26 VerifyReleaseCandidate.ps1 -SkipLaunch completed with ReleaseCandidateVerification=PASS at commit cb3ead002bf74a94db6af5776f2f365b2a64554f on codex/public-sample-ux-docs. Locked restore, Debug and Release solution builds, readiness 13/13, Release external-reference policy, retained-dependency NOTICE coverage, public sample asset policy, and the 33-row public sample gate passed. Clean Release publish and TestReleaseDistribution passed with a win-x64 framework-dependent package containing 73 payload files; archive SHA-256 is ED05307431B60B40511756333D3BA495C993E87BF3E7983BB5DC8C17367DE75C. LaunchSmoke=Skipped by explicit command option.",
+      "observed_at": "2026-08-26T11:53:38+09:00"
     }
   ],
   "events": [
@@ -258,8 +266,25 @@
       "evidence_refs": [
         "E13"
       ]
+    },
+    {
+      "id": "D6",
+      "kind": "decision",
+      "at": "2026-08-26T11:53:38+09:00",
+      "summary": "Close PL-0005 in Dev after the clean Release candidate gate passed for commit cb3ead002bf74a94db6af5776f2f365b2a64554f. Retain the explicit -SkipLaunch boundary; tag, release publication, deployment, and original-repository promotion remain separate authorizations.",
+      "evidence_refs": [
+        "E16"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-08-26T11:53:38+09:00",
+      "from": "open",
+      "to": "resolved",
+      "summary": "PL-0005 resolved in Dev after the exact clean Release candidate distribution gate passed at cb3ead002bf74a94db6af5776f2f365b2a64554f; the -SkipLaunch boundary remains explicit."
     }
   ],
   "created_at": "2026-08-25T11:56:04+09:00",
-  "updated_at": "2026-08-26T11:05:54+09:00"
+  "updated_at": "2026-08-26T11:53:38+09:00"
 }
