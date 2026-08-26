@@ -1,0 +1,158 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0004",
+    "aliases": [],
+    "type": "task",
+    "mode": "simple",
+    "title": "Coordinate display-store and viewer image lifetime",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "review",
+    "summary": "The 2026-08-23 4512 owner/copy census proved that display-store replacement or removal cannot safely dispose the prior Bitmap while central, docked, or popout presenters may still borrow it. Independent clone removal would create a use-after-dispose window.",
+    "refs": [
+      "docs/reports/OPENVISIONLAB_PROJECT_ANALYSIS_AND_RELIABILITY_PRIORITY_20260823.md",
+      "D:\\OpenVisionLab-TestData\\OpenVisionLab\\reliability-gates-20260823\\refresh-mipmap-final-verified\\wpf_shell_host_image_4512_reliability.reliability.txt",
+      "D:\\OpenVisionLab-TestData\\OpenVisionLab\\reliability-gates-20260823\\refresh-mipmap-final-verified-rerun\\wpf_shell_host_image_4512_reliability.reliability.txt"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "Display-store replacement, removal, reload, popout close, and shell disposal now share one lease/refcount retirement boundary. The final current-source five-cycle exact 4512 gate, direct lease retirement contract, focused regressions, solution build, readiness, dependency, sample, documentation, and diff gates pass without stale pixels, disposed access, Preview/Run or route side effects, or non-plateauing resources."
+  },
+  "objective": {
+    "summary": "Give display-store Bitmaps and every long-lived viewer consumer one coordinated lifetime boundary so replaced or removed images are reclaimed only after all borrowers have rebound or released them.",
+    "constraints": [
+      "Do not immediately dispose a replaced store Bitmap while any Canvas, zoom controller, docked viewer, or popout viewer can still reference it.",
+      "Do not remove a full-size clone unless the new owner contract proves equal image identity and no stale borrower.",
+      "Preserve explicit Preview/Run, layer create/delete/select, active-layer, command CanExecute, and Pipeline routing contracts.",
+      "Keep implementation and evidence in C:\\Git\\OpenVisionLab_Dev; original-repository promotion remains separately authorized."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "A source owner/borrower census names the display-store owner, every central/docked/popout borrower, the rebind/release point, and the single retirement point for replacement, deletion, reload, popout close, and shell disposal.",
+      "evidence_refs": [
+        "E1",
+        "E5"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "Repeated exact 4512 replace, delete, reload, dock, popout, close, and forced-GC cycles complete without ObjectDisposedException, stale pixels, leaked prior images, or non-plateauing process/handle/GDI/USER resources.",
+      "evidence_refs": [
+        "E2",
+        "E5",
+        "E7"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "The exact Main store hash, workspace and automatic-dock 4512 dimensions/texture creation, image-load quick actions, no-auto-Preview/Run behavior, active layer, and Pipeline routes remain unchanged after the lifetime correction.",
+      "evidence_refs": [
+        "E3",
+        "E6",
+        "E8"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "Before/after copy and process-resource evidence demonstrates that every removed clone or hidden allocation is actually gone, while the strengthened 4512 catastrophe ceilings still pass; unmeasured GPU and intra-SetMain peaks remain explicitly bounded rather than overclaimed.",
+      "evidence_refs": [
+        "E2",
+        "E4",
+        "E7"
+      ]
+    }
+  ],
+  "relations": [],
+  "context": [
+    {
+      "kind": "completed-prerequisite",
+      "location": "ImageSpaceFrame Borrow/TakeOwnership and synchronous DisplayManager frame consumption are complete."
+    },
+    {
+      "kind": "current-baseline",
+      "location": "Final-code exact 4512 runs retain 523.0/524.2 MB private growth and observe 526.1/524.2 MB maximum private growth under the current three-snapshot gate."
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source-contract",
+      "location": "docs/reports/OPENVISIONLAB_PROJECT_ANALYSIS_AND_RELIABILITY_PRIORITY_20260823.md#pl-0004-coordinated-display-store-and-viewer-lifetime",
+      "observation": "The owner/borrower census identifies ImageSpaceService/ImageSpaceImage as the store owner, the central workspace lease, docked and popout clone borrowers, each rebind/release point, and the single reference-count-zero retirement point for replacement, deletion, reload, close, and shell disposal.",
+      "observed_at": "2026-08-24T10:50:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "runtime-test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab\\pl-0004-display-lifetime-20260824\\after-timer-stop-5cycles\\wpf_shell_host_image_4512_lifetime.lifetime.txt",
+      "observation": "Five exact 4512 replace/dock/popout/close-delete/GC/reload cycles passed. Every store, docked, and popout replacement hash matched; live Layer Viewer count stayed at the baseline; private, working-set, managed, handle, GDI, and USER retained ranges were 15.0 MB, 5.4 MB, 0.1 MB, 24, 0, and 0.",
+      "observed_at": "2026-08-24T10:29:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "regression-test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab\\pl-0004-display-lifetime-20260824\\focused-regression-after-dispose-order",
+      "observation": "The existing 4512 reliability, workspace image load and quick actions, layer management and popout, large-image, owned-Mat load, and OpenGL template-editor targets all passed in one process after the lifetime correction.",
+      "observed_at": "2026-08-24T10:38:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "before-after-resource-test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab\\pl-0004-display-lifetime-20260824\\after-final-5cycles; D:\\OpenVisionLab-TestData\\OpenVisionLab\\pl-0004-display-lifetime-20260824\\after-timer-stop-5cycles",
+      "observation": "Before explicit SharpGL timer shutdown, retained USER objects rose 50,54,58,62,66,70 with range 16 and the gate failed. After shutdown, all five retained USER samples stayed at 50 with range 0 while exact hashes and viewer behavior remained unchanged.",
+      "observed_at": "2026-08-24T10:29:00+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "contract-test",
+      "location": "tools/HistoryContractCheck/Program.cs; command: dotnet run --project tools/HistoryContractCheck/HistoryContractCheck.csproj -c Debug",
+      "observation": "HistoryContract=OK, including replaced and removed ImageSpace images remaining readable through an active lease and being disposed only when the last lease releases.",
+      "observed_at": "2026-08-24T10:31:00+09:00"
+    },
+    {
+      "id": "E6",
+      "kind": "repository-gate",
+      "location": "C:\\Git\\OpenVisionLab_Dev",
+      "observation": "The Debug Any CPU solution build passed with zero warnings and errors; readiness 13/13, vendored dependency, and public sample asset contracts passed with 33 catalog rows, 229 assets, and 17 Pipelines.",
+      "observed_at": "2026-08-24T10:40:00+09:00"
+    },
+    {
+      "id": "E7",
+      "kind": "final-runtime-test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab\\pl-0004-display-lifetime-20260824\\final-directional-handle-gate-5cycles\\wpf_shell_host_image_4512_lifetime.lifetime.txt",
+      "observation": "The final current-source five-cycle exact 4512 gate passed after the central rebind exception-path correction. Every replacement hash matched; live viewer count stayed one; private, working-set, managed, handle-range, positive-handle-growth, GDI, and USER values were 16.8 MB, 4.3 MB, 0.1 MB, 21, 2, 0, and 0; total elapsed was 70.311 seconds.",
+      "observed_at": "2026-08-24T11:00:00+09:00",
+      "supersedes": [
+        "E2"
+      ]
+    },
+    {
+      "id": "E8",
+      "kind": "final-regression-test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab\\pl-0004-display-lifetime-20260824\\final-focused-regression",
+      "observation": "The final current-source existing 4512 reliability, workspace image load and quick actions, layer management and popout, large-image, owned-Mat load, and OpenGL template-editor targets passed in one process; HistoryContractCheck also passed.",
+      "observed_at": "2026-08-24T11:03:00+09:00",
+      "supersedes": [
+        "E3"
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-08-24T10:50:00+09:00",
+      "from": "open",
+      "to": "resolved",
+      "summary": "PL-0004 resolved: the coordinated display-store/viewer retirement boundary and all four acceptance criteria passed in Dev; GPU VRAM, intra-operation peaks, OpenGL exception coverage, and actual-EXE qualification remain separate work."
+    }
+  ],
+  "created_at": "2026-08-23T22:37:34+09:00",
+  "updated_at": "2026-08-24T11:05:00+09:00"
+}

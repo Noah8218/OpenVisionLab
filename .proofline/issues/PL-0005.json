@@ -1,0 +1,265 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0005",
+    "aliases": [
+      "P0-EXTERNAL-BINARY-AND-LICENSE-AUDIT"
+    ],
+    "type": "research",
+    "mode": "simple",
+    "title": "Audit tracked third-party binaries and redistribution evidence",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "request and shared GPT Pro review",
+    "summary": "The user asked to reconcile the shared GPT Pro repository analysis with current Dev and to turn accepted findings into a versioned development backlog. The review identified an unresolved public-source binary and redistribution boundary.",
+    "refs": [
+      "https://chatgpt.com/share/6a8d010b-b510-83ee-876d-3ad1c35714c8",
+      "docs/reports/OPENVISIONLAB_SHARED_GPT_PRO_ANALYSIS_RECONCILIATION_20260825.md",
+      "docs/contracts/openvisionlab/OPENVISIONLAB_EXTERNAL_REFERENCE_POLICY.md"
+    ]
+  },
+  "state": {
+    "status": "open",
+    "current_summary": "The user-authorized MaterialDesign cleanup is complete in Dev: all nine previously repository-only candidate DLLs are absent and forbidden. Retained dependency NOTICE coverage is now implemented and verified for every present allow* manifest entry, including the separate WPG-CUSTOM owner declaration. Debug and Release builds and supporting gates pass. PL-0005 remains open only because the canonical clean Release distribution gate requires an exact clean source snapshot, and the current Dev worktree contains pre-existing tracked changes.",
+    "next_action": "Complete third-party NOTICE coverage for retained allowed dependencies, then create an exact clean candidate and run VerifyReleaseCandidate.ps1/TestReleaseDistribution.ps1 before closing PL-0005. No release, tag, publication, deployment, commit, or push is authorized by this evidence update."
+  },
+  "problem": {
+    "claims": [
+      {
+        "id": "P1",
+        "state": "confirmed",
+        "text": "The current external-reference policy and gate do not classify every binary tracked under dll or require per-file redistribution evidence.",
+        "evidence_refs": [
+          "E1"
+        ]
+      },
+      {
+        "id": "P2",
+        "state": "reported",
+        "text": "Some tracked legacy or commercial binaries may be unused or lack confirmed redistribution permission.",
+        "evidence_refs": []
+      }
+    ],
+    "impact": "Unclassified public binaries create source-distribution, legal, trust, repository-size, and maintenance risk even when they are not included in the application publish output."
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "Every tracked dll file has path, length, SHA-256, direct reference, dynamic reference, build requirement, publish requirement, redistribution status, license evidence, classification, and recommended action.",
+      "evidence_refs": [
+        "E2",
+        "E5",
+        "E11",
+        "E12",
+        "E13"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "A reviewed allowlist and third-party notice or manifest cover every retained binary, and license-unknown files remain blocked rather than being silently approved.",
+      "evidence_refs": [
+        "E2",
+        "E4",
+        "E9",
+        "E10",
+        "E11",
+        "E12",
+        "E13",
+        "E14"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Only binaries proven unused and approved for removal are deleted; clean build and publish checks prove no required runtime file was lost, and no Git history rewrite occurs.",
+      "evidence_refs": [
+        "E3",
+        "E4",
+        "E7",
+        "E8",
+        "E12",
+        "E13",
+        "E15"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "The repository gate fails when a new unallowlisted binary is added under dll.",
+      "evidence_refs": [
+        "E3",
+        "E5",
+        "E6"
+      ]
+    }
+  ],
+  "relations": [],
+  "context": [
+    {
+      "kind": "recommended-execution",
+      "location": "Recommended model: gpt-5.6-luna | Reasoning effort: high"
+    },
+    {
+      "kind": "boundary",
+      "location": "Keep the audit and any deletion in C:\\Git\\OpenVisionLab_Dev. Original-repository promotion, history rewriting, commit, push, tag, and release remain separate authorization boundaries."
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source-inventory",
+      "location": "C:\\Git\\OpenVisionLab_Dev\\dll; tools/TestExternalReferences.ps1; docs/contracts/openvisionlab/OPENVISIONLAB_EXTERNAL_REFERENCE_POLICY.md",
+      "observation": "On 2026-08-25 the working tree contained 25 dll-tree files totaling 93,581,810 bytes. The policy documents the SDK/OpenCvSharp/PropertyGrid core and the gate verifies that core plus a short forbidden-name list, but tracked files such as Matrox, EzBasicAxl, Cyotek, MaterialDesign, CircularProgressBar, TabControl, and WinFormAnimation have no per-file classification or redistribution evidence in that gate.",
+      "observed_at": "2026-08-25T11:56:04+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "inventory-and-classification",
+      "location": "C:\\Git\\OpenVisionLab_Dev\\docs\\contracts\\openvisionlab\\OPENVISIONLAB_EXTERNAL_BINARY_MANIFEST.json; C:\\Git\\OpenVisionLab_Dev\\docs\\reports\\OPENVISIONLAB_EXTERNAL_BINARY_AUDIT_20260825.md",
+      "observation": "The current Dev worktree inventory records all 24 tracked DLL paths: 21 present files with physical length/SHA-256 and 3 Emgu legacy paths deleted in the worktree. Each entry records direct/dynamic reference evidence, build/publish observation, license evidence, classification, release policy, and action. WPG-CUSTOM, Vila.Core, FFmpeg, proprietary, and provenance-incomplete items are explicit blocked entries.",
+      "observed_at": "2026-08-25T13:30:33+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "gate-and-build",
+      "location": "C:\\Git\\OpenVisionLab_Dev\\artifacts\\pl0005_binary_audit_20260825\\clean_runtime\\clean_runtime_manifest.json; C:\\Git\\OpenVisionLab_Dev\\artifacts\\pl0005_binary_audit_20260825\\external_references.txt",
+      "observation": "BuildCleanRuntime Dev passed with zero warnings and zero errors. TestExternalReferences passed SDK/WPG hashes, the new manifest registration and hash checks, the forbidden legacy check, and the unallowlisted physical/tracked DLL checks. Known blocked entries are reported without silently becoming release-approved.",
+      "observed_at": "2026-08-25T13:30:33+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "release-publish-observation",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0005_binary_audit_20260825\\release_publish",
+      "observation": "A fresh framework-dependent win-x64 Release publish produced 72 files and OpenVisionLab.exe with no forbidden legacy payload. The publish still contains Vila.Core.dll and opencv_ffmpeg400_64.dll, so it is not release-candidate approval; no tag, commit, push, or publication was performed.",
+      "observed_at": "2026-08-25T13:30:33+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "deleted-head-hash",
+      "location": "C:\\Git\\OpenVisionLab_Dev\\docs\\contracts\\openvisionlab\\OPENVISIONLAB_EXTERNAL_BINARY_MANIFEST.json",
+      "observation": "The three Emgu DLL entries deleted in the current worktree have HEAD-blob lengths and SHA-256 values recorded separately from their Git blob SHA-1 identifiers. The external reference gate keeps them absent and fails if a forbidden path is reintroduced.",
+      "observed_at": "2026-08-25T13:32:49+09:00"
+    },
+    {
+      "id": "E6",
+      "kind": "unallowlisted-mutation-gate",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0005_gate_unallowlisted_20260825_v2\\unallowlisted_gate_result.txt",
+      "observation": "A D: staging tree containing the current classified DLL set plus dll/Unexpected.dll caused TestExternalReferences.ps1 to exit with code 1. The only core gate failure was the unallowlisted DLL path, while the known manifest entries passed their identity checks.",
+      "observed_at": "2026-08-25T13:34:27+09:00"
+    },
+    {
+      "id": "E7",
+      "kind": "removal-and-build",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0005_binary_prune_20260825_r1\\before_inventory.json; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0005_binary_prune_20260825_r1\\external_references_after_manifest.txt; docs/reports/OPENVISIONLAB_OPTIONAL_BINARY_PRUNE_20260825.md",
+      "observation": "The before inventory records both exact tracked DLL paths with length and SHA-256. After the explicit source/reference removal, both files are absent, the Vila.Core project reference and optional ImageCanvas FFmpeg copy entry are absent, the Debug solution build exited 0 with zero warnings and zero errors, and the final external-reference gate passed with both paths reported ABSENT | forbidden.",
+      "observed_at": "2026-08-25T20:20:19+09:00"
+    },
+    {
+      "id": "E8",
+      "kind": "runtime-gate",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0005_binary_prune_20260825_r1\\readiness.txt; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0005_binary_prune_20260825_r1\\public_sample_assets.txt; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0005_binary_prune_20260825_r1\\public_sample_catalog\\sample_catalog_summary.json",
+      "observation": "OpenVisionLab readiness passed. PublicSampleAssetCheck passed with CatalogRows=33, ManifestAssets=229, and Pipelines=17. The public sample catalog reported GateStatus=OK with 33 runnable rows, 17 required rows, 16 expected-failure rows, 33 OK rows, 0 NG rows, no failed samples, and no artifact or metadata issues.",
+      "observed_at": "2026-08-25T20:15:49+09:00"
+    },
+    {
+      "id": "E9",
+      "kind": "user-provided-provenance-and-source-inspection",
+      "location": "docs/reports/OPENVISIONLAB_OPTIONAL_BINARY_PRUNE_20260825.md; docs/contracts/openvisionlab/OPENVISIONLAB_EXTERNAL_BINARY_MANIFEST.json; dll/System.Windows.Controls.WpfPropertyGrid.dll; dll/System.Windows.Controls.WpfPropertyGrid.xml",
+      "observation": "The user stated in the current task that WPG-CUSTOM was created by the user. Repository inspection found no independent WPG source project or completed binary license/NOTICE record in the Dev tree. The statement is recorded as provenance input, while the manifest continues to classify WPG-CUSTOM as blocked until its terms and matching XML provenance are recorded.",
+      "observed_at": "2026-08-25T20:20:19+09:00"
+    },
+    {
+      "id": "E10",
+      "kind": "owner-declaration-and-manifest-reclassification",
+      "location": "docs/reports/OPENVISIONLAB_WPG_CUSTOM_OWNER_CLASSIFICATION_20260826.md; docs/contracts/openvisionlab/OPENVISIONLAB_EXTERNAL_BINARY_MANIFEST.json; docs/contracts/openvisionlab/OPENVISIONLAB_EXTERNAL_REFERENCE_POLICY.md",
+      "observation": "On 2026-08-26 the user explicitly selected option 1: retain the WPG-CUSTOM runtime and PropertyGrid references while excluding WPG-CUSTOM from the PL-0005 third-party license blocker. The manifest now records user-created-owner-declaration and allow-with-user-ownership-declaration; the WPG DLL/XML and project references are unchanged. Other blocked/provenance-incomplete entries remain explicit.",
+      "observed_at": "2026-08-26T07:05:31+09:00"
+    },
+    {
+      "id": "E11",
+      "kind": "official-package-hash-comparison",
+      "location": "docs/reports/OPENVISIONLAB_REMAINING_BINARY_EVIDENCE_SWEEP_20260826.md; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0005_remaining_binary_evidence_20260826_r1; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0005_remaining_binary_evidence_20260826_r2",
+      "observation": "The exact-version NuGet comparison matched dll/MaterialDesign/MaterialDesignColors.dll SHA-256 F06826845732D945421C341C8D1ABB337AB9A2E757D90A763AC618AA445BF63E to MaterialDesignColors 3.0.0 lib/net462 and matched dll/MaterialDesign/MaterialDesignThemes.Wpf.dll SHA-256 F8144C2D063144A98E6FAA4E4D6F11CB3D08D20313E196CDD03ADDB8186CA6FD to MaterialDesignThemes 5.0.0 lib/net462; both package nuspecs declare MIT. A broader 28-candidate stable package sweep found no exact hash match for the repository Cyotek.Windows.Forms.ImageBox.dll or SharpGL.SceneGraph.dll. The unknown/vendor entries were not changed.",
+      "observed_at": "2026-08-26T08:52:53+09:00"
+    },
+    {
+      "id": "E12",
+      "kind": "explicit-removal-and-post-delete-gate",
+      "location": "docs/reports/OPENVISIONLAB_FIRST_CANDIDATE_DLL_PRUNE_20260826.md; docs/contracts/openvisionlab/OPENVISIONLAB_EXTERNAL_BINARY_MANIFEST.json; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0005_first_candidate_prune_20260826",
+      "observation": "Exactly seven user-authorized repository-only DLL paths were copied to the D: backup with matching pre-delete SHA-256 values, deleted from the Dev worktree, and verified absent. The Debug solution build completed with zero warnings and zero errors. TestExternalReferences passed with all seven paths reported ABSENT | forbidden and all retained runtime DLLs OK; OpenVisionReadinessCheck passed; TestPublicSampleAssets passed with CatalogRows=33, ManifestAssets=229, and Pipelines=17. The two conditional MaterialDesign DLLs were not changed.",
+      "observed_at": "2026-08-26T10:05:57+09:00"
+    },
+    {
+      "id": "E13",
+      "kind": "explicit-materialdesign-removal-and-post-delete-gate",
+      "location": "docs/reports/OPENVISIONLAB_MATERIALDESIGN_DLL_PRUNE_20260826.md; docs/contracts/openvisionlab/OPENVISIONLAB_EXTERNAL_BINARY_MANIFEST.json; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0005_materialdesign_prune_20260826",
+      "observation": "Both user-authorized MaterialDesign DLLs were copied to the D: backup with matching pre-delete SHA-256 values, deleted from the Dev worktree, and verified absent. The Debug solution build completed with zero warnings and zero errors. TestExternalReferences passed with both MaterialDesign paths reported ABSENT | forbidden and all retained runtime DLLs OK; OpenVisionReadinessCheck passed; TestPublicSampleAssets passed with CatalogRows=33, ManifestAssets=229, and Pipelines=17. The excluded BooleanToEyeIconConverter .cs source file was not changed.",
+      "observed_at": "2026-08-26T10:23:20+09:00"
+    },
+    {
+      "id": "E14",
+      "kind": "retained-notice-coverage-and-build-gate",
+      "location": "C:\\Git\\OpenVisionLab_Dev\\NOTICE; C:\\Git\\OpenVisionLab_Dev\\tools\\TestThirdPartyNoticeCoverage.ps1; docs/reports/OPENVISIONLAB_RETAINED_DEPENDENCY_NOTICE_COVERAGE_20260826.md; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0005_notice_coverage_20260826",
+      "observation": "On 2026-08-26 root NOTICE and the external binary manifest were updated with stable notice markers for all 10 present allow* entries: nine retained third-party/runtime groups plus the WPG-CUSTOM owner declaration. TestThirdPartyNoticeCoverage.ps1 exited 0. Debug and Release solution builds completed with zero warnings and zero errors; Debug and Release external-reference gates, Release readiness, public sample assets, documentation index, and PL-0005 ledger validation passed.",
+      "observed_at": "2026-08-26T11:05:54+09:00"
+    },
+    {
+      "id": "E15",
+      "kind": "release-gate-clean-tree-precondition",
+      "location": "C:\\Git\\OpenVisionLab_Dev\\tools\\VerifyReleaseCandidate.ps1; artifacts/pl0005_final_release_gate_20260826; C:\\Git\\OpenVisionLab_Dev\\dist\\OpenVisionLab",
+      "observation": "VerifyReleaseCandidate.ps1 was run with output directory artifacts\\pl0005_final_release_gate_20260826 and exited with code 1 before build or publish because the current Dev worktree has tracked changes. The evidence directory was not created and the pre-existing dist\\OpenVisionLab output was not changed. The final Release distribution gate therefore remains unverified until an exact clean source snapshot is authorized and available.",
+      "observed_at": "2026-08-26T11:05:54+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-08-25T20:20:19+09:00",
+      "summary": "Accept the explicitly requested Dev-only removal of dll/Vila.Core.dll and dll/OpenCVSharp/opencv_ffmpeg400_64.dll. Keep both paths absent and forbidden in the external binary manifest. Retain WPG-CUSTOM because it is a current PropertyGrid contract; record the user's self-created provenance statement as input but do not treat it as independent license or NOTICE evidence. Keep PL-0005 open and do not admit Release.",
+      "evidence_refs": [
+        "E7",
+        "E8",
+        "E9"
+      ]
+    },
+    {
+      "id": "D2",
+      "kind": "decision",
+      "at": "2026-08-26T07:05:31+09:00",
+      "summary": "Apply the user's selected option 1: retain WPG-CUSTOM DLL/XML and all PropertyGrid project/runtime references, but classify WPG-CUSTOM as user-created by owner declaration and remove it from the PL-0005 third-party license blocker. Keep the remaining blocked/provenance-incomplete binaries and NOTICE coverage open; do not admit Release.",
+      "evidence_refs": [
+        "E10"
+      ]
+    },
+    {
+      "id": "D3",
+      "kind": "decision",
+      "at": "2026-08-26T08:52:53+09:00",
+      "summary": "Accept the bounded external-evidence sweep: reclassify MaterialDesignColors 3.0.0 and MaterialDesignThemes 5.0.0 as exact official NuGet net462 binary matches with MIT license evidence and allow-with-third-party-notice; keep Cyotek ImageBox and SharpGL.SceneGraph blocked because no tested official stable package DLL matches the repository hash; keep unknown/vendor entries and NOTICE coverage open; do not delete, release, commit, or push.",
+      "evidence_refs": [
+        "E11"
+      ]
+    },
+    {
+      "id": "D4",
+      "kind": "decision",
+      "at": "2026-08-26T10:05:57+09:00",
+      "summary": "Accept the user's first-candidate deletion request for exactly CircularProgressBar.dll, Cyotek.Windows.Forms.ImageBox.dll, EzBasicAxl.dll, Matrox.MatroxImagingLibrary.dll, SharpGL.SceneGraph.dll, TabControl.dll, and WinFormAnimation.dll. Preserve the conditional MaterialDesign pair, keep required SharpGL runtime siblings and WPG-CUSTOM, record deleted paths as forbidden, and require post-delete build/gate evidence before considering the prune complete.",
+      "evidence_refs": [
+        "E12"
+      ]
+    },
+    {
+      "id": "D5",
+      "kind": "decision",
+      "at": "2026-08-26T10:23:20+09:00",
+      "summary": "Accept the user's explicit deletion request for dll/MaterialDesign/MaterialDesignColors.dll and dll/MaterialDesign/MaterialDesignThemes.Wpf.dll. Preserve their pre-delete D: backup and HEAD identities, keep the excluded BooleanToEyeIconConverter .cs source untouched, mark both manifest entries deleted-in-worktree/forbidden, and retain the PL-0005 NOTICE and final distribution-gate boundary.",
+      "evidence_refs": [
+        "E13"
+      ]
+    }
+  ],
+  "created_at": "2026-08-25T11:56:04+09:00",
+  "updated_at": "2026-08-26T11:05:54+09:00"
+}

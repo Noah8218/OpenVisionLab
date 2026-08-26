@@ -1,0 +1,159 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0007",
+    "aliases": [
+      "P0-WORKSPACE-PATH-BOUNDARY"
+    ],
+    "type": "bug",
+    "mode": "simple",
+    "title": "Enforce recipe and pipeline storage path boundaries",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "shared GPT Pro review confirmed by source inspection",
+    "summary": "The shared review reported that Pipeline, run, sample-set, and batch names can normalize outside their intended storage directory. Current Dev contains duplicated sanitizers, raw path segments, and no common post-combine containment gate.",
+    "refs": [
+      "https://chatgpt.com/share/6a8d010b-b510-83ee-876d-3ad1c35714c8",
+      "src/OpenVisionLab/Core/Recipe/RecipeWorkspaceService.cs",
+      "src/OpenVisionLab/Core/Pipeline/Storage/VisionPipelineStorage.cs",
+      "docs/reports/OPENVISIONLAB_SHARED_GPT_PRO_ANALYSIS_RECONCILIATION_20260825.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "PL-0007 implemented and verified: RecipeWorkspaceService now owns strict Recipe/Pipeline storage-segment validation, canonicalization, and containment before mutation; lifecycle, sample-set, Run Report, Batch Summary, qualified snapshot, public runtime, build, readiness, reference, and public-sample checks passed. PL-0005 DLL license/provenance remains a separate Release blocker."
+  },
+  "problem": {
+    "claims": [
+      {
+        "id": "P1",
+        "state": "confirmed",
+        "text": "Pipeline run, sample-set, and batch directory builders can retain dot segments and do not verify the final full path remains under the intended root.",
+        "evidence_refs": [
+          "E1"
+        ]
+      },
+      {
+        "id": "P2",
+        "state": "confirmed",
+        "text": "Recipe and pipeline path validation is duplicated and does not consistently reject Windows reserved names, trailing dots or spaces, control characters, or raw child segments.",
+        "evidence_refs": [
+          "E2"
+        ]
+      }
+    ],
+    "impact": "Untrusted or malformed names can escape an expected subdirectory, collide after Windows normalization, overwrite unrelated recipe artifacts, or leave active pointers and stored evidence inconsistent."
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "One domain-owned policy validates all new recipe, pipeline, run, sample-set, batch, config, and artifact path segments with explicit operator-facing failure messages.",
+      "evidence_refs": [
+        "E3",
+        "E4"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "Every storage path is canonicalized with Path.GetFullPath and proven to be the intended root or child before file-system mutation; dot segments, reserved devices, separators, control characters, trailing dots/spaces, and case collisions are covered.",
+      "evidence_refs": [
+        "E3",
+        "E4"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Existing valid Korean/English/number/underscore names remain unchanged, and any legacy read compatibility or migration is explicit and does not weaken new-write validation.",
+      "evidence_refs": [
+        "E3",
+        "E4"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "Focused path and lifecycle checks prove no out-of-root file or directory is created and normal Recipe/Pipeline CRUD, samples, reports, snapshots, and clean runtime behavior still pass.",
+      "evidence_refs": [
+        "E4",
+        "E5",
+        "E6",
+        "E7"
+      ]
+    }
+  ],
+  "relations": [],
+  "context": [
+    {
+      "kind": "recommended-execution",
+      "location": "Recommended model: gpt-5.6-luna | Reasoning effort: high"
+    },
+    {
+      "kind": "design-boundary",
+      "location": "Create a shared path policy only because multiple current storage owners duplicate the same security and data-integrity rule; do not introduce a general filesystem framework."
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source-inspection",
+      "location": "src/OpenVisionLab/Core/Recipe/RecipeWorkspaceService.cs:307",
+      "observation": "GetVisionPipelineRunDirectory, sample-set, and batch builders call SanitizePathSegment and then Directory.CreateDirectory. SanitizePathSegment replaces invalid filename characters only, so '.' and '..' remain, and no final child-root containment check runs for these paths.",
+      "observed_at": "2026-08-25T11:56:04+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "source-inspection",
+      "location": "src/OpenVisionLab/Core/Recipe/RecipeWorkspaceService.cs; src/OpenVisionLab/Core/Pipeline/Storage/VisionPipelineStorage.cs; src/OpenVisionLab/UI/Menu/Wpf/Recipe/OpenVisionRecipePipelineLifecycleUseCase.cs",
+      "observation": "Recipe validation rejects only empty/dot/invalid-character names, several path builders use raw recipe or pipeline segments, and at least three independent SanitizePathSegment or NormalizePipelineName implementations remain in active storage and UI lifecycle paths.",
+      "observed_at": "2026-08-25T11:56:04+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "implementation",
+      "location": "src/OpenVisionLab/Core/Recipe/RecipeWorkspaceService.cs; src/OpenVisionLab/Core/Pipeline/Storage; src/OpenVisionLab/UI/Menu/Wpf/Recipe; docs/reports/OPENVISIONLAB_RECIPE_PIPELINE_STORAGE_PATH_BOUNDARY_20260825.md",
+      "observation": "The implementation centralizes strict storage-segment validation, Path.GetFullPath root/child containment, and contained relative-artifact resolution in RecipeWorkspaceService. Pipeline storage, lifecycle/exchange, sample-set, Run Report, Batch Summary, validation, dependency-copy, template-capture, and qualified working-copy callers route through the shared policy; invalid segments are checked before the corresponding filesystem mutation.",
+      "observed_at": "2026-08-25T15:11:32+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "test",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/pl0007_current_20260825_r4/recipe_storage_path_contract.txt",
+      "observation": "The current-source PL-0007 contract passed. It recorded contained pipeline/image/run/sample-set/batch/config/data/recipe paths, case-collision canonicalization, Recipe/Pipeline CRUD, sample-set save/load/context/delete, Run Report save/list, Batch Summary save/list, Recipe duplicate/rename/delete, rejected traversal/reserved-device/trailing-space/control-character inputs, and no rejected outside/reserved directory mutation.",
+      "observed_at": "2026-08-25T15:11:32+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "test",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/pl0007_qualified_snapshot_20260825_r2/SMOKE_RESULT.txt",
+      "observation": "Qualified Recipe snapshot smoke passed with payload and runtime verification, idempotent reuse, revision/lifecycle transitions, tamper rejection, runtime-mismatch separation, interrupted-creation exclusion, failed-creation rollback, and source-Recipe deletion followed by successful verification.",
+      "observed_at": "2026-08-25T15:11:32+09:00"
+    },
+    {
+      "id": "E6",
+      "kind": "runtime-test",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/pl0007_public_recipe_smoke_20260825_r2/matching_result.png; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/pl0007_public_recipe_smoke_20260825_r2/matching_overlay.png",
+      "observation": "The current public Matching Recipe/Pipeline replay passed with Matching_Preview, a 572x420 result image, ResultCount=3, 19 metrics, and 3 runtime overlays.",
+      "observed_at": "2026-08-25T15:11:32+09:00"
+    },
+    {
+      "id": "E7",
+      "kind": "gate",
+      "location": "docs/reports/OPENVISIONLAB_RECIPE_PIPELINE_STORAGE_PATH_BOUNDARY_20260825.md",
+      "observation": "The Debug solution build passed with 0 warnings and 0 errors; OpenVisionLab readiness passed; TestExternalReferences.ps1 passed its technical check with exit 0; and TestPublicSampleAssets.ps1 passed with CatalogRows=33, ManifestAssets=229, Pipelines=17. The external-reference BLOCKED license/provenance rows remain assigned to PL-0005 and are not treated as release approval.",
+      "observed_at": "2026-08-25T15:11:32+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-08-25T15:11:32+09:00",
+      "from": "open",
+      "to": "resolved",
+      "summary": "Cause: duplicated and incomplete Recipe/Pipeline storage path validation. Goal/result: one domain-owned policy now validates and contains new writes before mutation, while legacy read compatibility remains explicit; current focused, lifecycle, snapshot, runtime, build, readiness, reference, and public-sample evidence satisfies C1-C4."
+    }
+  ],
+  "created_at": "2026-08-25T11:56:04+09:00",
+  "updated_at": "2026-08-25T15:11:32+09:00"
+}

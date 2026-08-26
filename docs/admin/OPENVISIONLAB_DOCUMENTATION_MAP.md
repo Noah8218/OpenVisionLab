@@ -1,6 +1,6 @@
 # OpenVisionLab Documentation Map
 
-Updated: 2026-08-12 KST
+Updated: 2026-08-25 KST
 
 This map prevents a new chat from treating large historical records or old readiness estimates as the current plan.
 
@@ -45,6 +45,10 @@ If documents conflict, do not smooth over the conflict. Follow the higher-ranked
 
 | Document | Use it for | Freshness note |
 | --- | --- | --- |
+| `reports/OPENVISIONLAB_SHARED_GPT_PRO_ANALYSIS_RECONCILIATION_20260825.md` | Current-source reconciliation of the user-supplied GPT Pro repository analysis, accepted/rejected findings, `PL-0005` through `PL-0011`, Luna-first priority order, RC2 gates, version/commit/push boundaries, and paste-ready continuation. | Current authority for the active `2.1.0` hardening train. It records planning and source-confirmed gaps; it does not claim the open issues are fixed or authorize commit, push, original-repository mutation, tag, release, or deployment. |
+| `reports/OPENVISIONLAB_OPENGL_GPU_COORDINATE_RELIABILITY_20260824.md` | Current-source OpenGL exceptional-cleanup, per-process GPU allocation, and Viewer coordinate/pixel/region completion evidence. | Current completion authority for the bounded OpenGL/GPU/coordinate slice; reopen only when its source/build/contract/evidence identity changes or a regression is reproduced. |
+| `roadmap/OPENVISIONLAB_OPENGL_GPU_COORDINATE_RELIABILITY_PLAN_20260824.md` | Original work contract for OpenGL exceptional cleanup, per-process GPU/driver allocation evidence, Viewer pixel/region edge correctness, Luna-first checkpoints, and verification. | Completed planning provenance. Use the completion report and current handoff for status; it no longer activates new work. |
+| `reports/OPENVISIONLAB_PROJECT_ANALYSIS_AND_RELIABILITY_PRIORITY_20260823.md` | Current source/evidence analysis across product, architecture, image ownership, algorithms, Recipe/Pipeline, performance, tests, positioning, and the ordered reliability roadmap; includes Pipeline/native-UI Tool lifetime, ImageSpaceFrame transfer, owned Canvas load/Emgu removal, exact 4512, frozen 1,000-run, and duplicate-refresh/mipmap proofs. | Current authority for the 2026-08-23 analysis-driven Dev reliability checkpoints. Display-store/viewer leases, hidden/full-image presentation copies, OpenGL exceptional/GPU and coordinate proof, actual-EXE theme/DPI/monitor qualification, commercial GA, and field use remain unverified. |
 | `reports/OPENVISIONLAB_PORTFOLIO_STAGE_SHOWCASE_20260812.md` | Current Filter/Threshold/Morphology/Blob/Contour/Edge/Line stage captures, public recipe parameters, actual-EXE Korean/English evidence, hashes, and README asset boundary. | Current authority for this bounded Dev portfolio/public-sample workflow only; it is not production calibration or field robustness evidence. |
 | `reports/OPENVISIONLAB_PORTFOLIO_PATTERN_CAPTURE_20260812.md` | Current card-pattern Matching scores, runtime overlays, six-pane portfolio capture, Pipeline Review drawing correction, layer-name edit, exact hashes, and no-Computer-Use capture boundary. | Current authority for this bounded Dev portfolio workflow only; it is not release, physical-part robustness, calibrated metrology, camera, lighting, or PLC/I/O qualification. |
 | `reports/OPENVISIONLAB_2_1_0_RC1_PUBLICATION_20260805.md` | `v2.1.0-rc.1` tag/source identity, full local gate, hosted CI, GitHub pre-release, five asset digests, and public-download round-trip evidence. | Current authority for the first published 2.1.0 RC; it is unsigned portable framework-dependent evidence, not stable/GA, installer, signing, update, self-contained, multi-PC, hardware, or field qualification. |

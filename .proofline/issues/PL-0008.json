@@ -1,0 +1,149 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0008",
+    "aliases": [
+      "P0-IMMUTABLE-PIPELINE-EXECUTION-PLAN"
+    ],
+    "type": "bug",
+    "mode": "simple",
+    "title": "Preserve original pipelines and report effective execution identity",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "shared GPT Pro review confirmed by source inspection",
+    "summary": "The shared review reported that runtime normalization mutates the saved/caller Pipeline and is invoked twice. Current Dev source confirms both mutations and the absence of original/effective hashes in saved run reports.",
+    "refs": [
+      "https://chatgpt.com/share/6a8d010b-b510-83ee-876d-3ad1c35714c8",
+      "src/OpenVisionLab/Core/Pipeline/Definition/VisionPipelineNormalizer.cs",
+      "src/OpenVisionLab/Core/Pipeline/Execution/VisionRecipeRunner.cs",
+      "src/OpenVisionLab/Core/Pipeline/Execution/VisionPipelineExecutionService.cs",
+      "src/OpenVisionLab/Core/Pipeline/Storage/VisionPipelineRunReportStorage.cs",
+      "docs/reports/OPENVISIONLAB_SHARED_GPT_PRO_ANALYSIS_RECONCILIATION_20260825.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "PL-0008 is implemented in Dev: execution normalizes one serializable effective Pipeline copy, preserves caller/source XML, records original/effective provenance, and passes focused, qualified-snapshot, build, readiness, external-reference, and public-sample checks."
+  },
+  "problem": {
+    "claims": [
+      {
+        "id": "P1",
+        "state": "confirmed",
+        "text": "Running a Pipeline can mutate the caller's Step input routes and preprocessing parameters even when the operator did not apply or save those changes.",
+        "evidence_refs": [
+          "E1"
+        ]
+      },
+      {
+        "id": "P2",
+        "state": "confirmed",
+        "text": "Normalization is invoked by both VisionRecipeRunner and VisionPipelineExecutionService, while run reports do not distinguish original and effective Pipeline identity.",
+        "evidence_refs": [
+          "E2"
+        ]
+      }
+    ],
+    "impact": "An explicit Run can make a Recipe dirty or later persist an automatic correction as if it were operator-authored, and the report cannot fully prove which definition actually executed."
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "Serialized original Pipeline content is identical before and after direct Runner, Pipeline Review, sample validation, batch, and repeated execution paths.",
+      "evidence_refs": [
+        "E3"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "Normalization executes exactly once on an effective copy and preserves current routing, preprocessing, disabled-step, branch, result, metric, and drawing behavior.",
+      "evidence_refs": [
+        "E3",
+        "E6"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Saved run evidence records a schema version, original and effective Pipeline snapshots or hashes, structured normalization changes, application identity, and SDK/manifest identity without auto-saving the original Recipe.",
+      "evidence_refs": [
+        "E4"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "Old run reports remain readable, new reports round-trip, and no Preview/Run, layer, active-layer, or routing side effect is introduced outside the explicit execution action.",
+      "evidence_refs": [
+        "E5"
+      ]
+    }
+  ],
+  "relations": [],
+  "context": [
+    {
+      "kind": "recommended-execution",
+      "location": "Recommended model: gpt-5.6-luna | Reasoning effort: high"
+    },
+    {
+      "kind": "scope-control",
+      "location": "Do not add an operator-facing Apply-normalization UI unless current behavior requires it after the immutable execution core and report evidence pass."
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source-inspection",
+      "location": "src/OpenVisionLab/Core/Pipeline/Definition/VisionPipelineNormalizer.cs:69",
+      "observation": "NormalizeLikelySequentialLink assigns step.InputLayer and NormalizeChainedInspectionPreprocessing writes USE_THRESHOLD, USE_ADAPTIVE_THRESHOLD, and USE_BITWISENOT directly into the supplied VisionPipelineStep.",
+      "observed_at": "2026-08-25T11:56:04+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "source-inspection",
+      "location": "src/OpenVisionLab/Core/Pipeline/Execution/VisionRecipeRunner.cs:92; src/OpenVisionLab/Core/Pipeline/Execution/VisionPipelineExecutionService.cs:44; src/OpenVisionLab/Core/Pipeline/Storage/VisionPipelineRunReportStorage.cs:16",
+      "observation": "VisionRecipeRunner normalizes the supplied Pipeline and then calls VisionPipelineExecutionService, which normalizes the same object again. VisionPipelineRunReport stores a single PipelineSnapshotFile and source hash but no report schema, original/effective hashes, structured change list, application commit, or SDK manifest identity.",
+      "observed_at": "2026-08-25T11:56:04+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "focused-contract",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/pl0008_current_20260825_r3/pipeline_provenance_contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/pl0008_current_20260825_r3/completion.txt",
+      "observation": "The current-source PL-0008 contract passed direct Runner, repeated Runner, file Runner, Pipeline Review, sample validation, legacy report loading, and Batch Summary round-trip. It recorded unchanged caller/source content, unchanged Pipeline Review display selection, and the four expected property-level normalization changes.",
+      "observed_at": "2026-08-25T15:57:58+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "saved-report-inspection",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/pl0008_current_20260825_r3/data/RECIPE/PL0008_Provenance/VISION/PipelineRuns/PL0008 Provenance Pipeline/20260825_155609657/report.xml; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/pl0008_current_20260825_r3/data/RECIPE/PL0008_Provenance/VISION/PipelineBatchRuns/PL0008 Provenance Pipeline/20260825_155616827/summary.xml",
+      "observation": "The saved Run Report round-tripped schema version 1, separate pipeline.original.xml and pipeline.xml snapshots, distinct original/effective SHA-256 values, four structured normalization entries, application identity, Vision SDK identity, and SDK manifest identity/hash. The Batch Summary retained the original/effective hashes and change set.",
+      "observed_at": "2026-08-25T15:57:58+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "compatibility-smoke",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/pl0008_current_20260825_r3/legacy-report.xml; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/pl0008_qualified_snapshot_20260825_r1/SMOKE_RESULT.txt",
+      "observation": "A Run Report with the new SchemaVersion and ExecutionProvenance nodes removed remained readable. The qualified snapshot lifecycle smoke passed after preflight was changed to bind the original Pipeline identity while verifying the effective snapshot hash separately.",
+      "observed_at": "2026-08-25T15:57:58+09:00"
+    },
+    {
+      "id": "E6",
+      "kind": "source-inspection",
+      "location": "src/OpenVisionLab/Core/Pipeline/Execution/VisionPipelineExecutionPlan.cs:93; src/OpenVisionLab/Core/Pipeline/Execution/VisionPipelineExecutionService.cs:49; src/OpenVisionLab/UI/Menu/Wpf/PipelineReview/Execution/OpenVisionPipelineReviewExecutionController.cs:100",
+      "observation": "NormalizeForRun has one production call in VisionPipelineExecutionPlan.Create. RunPreparedAsync consumes the supplied normalized copy and change list without normalizing again; Runner and Pipeline Review call the prepared path directly.",
+      "observed_at": "2026-08-25T15:57:58+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-08-25T15:57:58+09:00",
+      "from": "open",
+      "to": "resolved",
+      "summary": "Resolved PL-0008 after current-source contract, saved-evidence inspection, legacy compatibility, qualified snapshot smoke, build, readiness, external-reference, and public-sample checks passed."
+    }
+  ],
+  "created_at": "2026-08-25T11:56:04+09:00",
+  "updated_at": "2026-08-25T15:57:58+09:00"
+}

@@ -1,0 +1,153 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0003",
+    "aliases": [],
+    "type": "bug",
+    "mode": "simple",
+    "title": "Stabilize stale Native Tool focused WPF smoke assertions",
+    "risk": "low"
+  },
+  "origin": {
+    "kind": "test",
+    "summary": "The 2026-08-23 direct UI SDK Tool lifetime verification reproduced three focused-smoke assertion failures after the underlying Preview and Auto MPoint actions had completed.",
+    "refs": [
+      "D:\\OpenVisionLab-TestData\\OpenVisionLab\\ui-tool-lifetime-20260823\\before\\focused-smoke-before.txt",
+      "D:\\OpenVisionLab-TestData\\OpenVisionLab\\ui-tool-lifetime-20260823\\after\\threshold-basic-clean-temp-after.txt"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "Resolved: the focused Native Tool smoke failures were stale test contracts. Range now checks the localized signal-inspector view while retaining marker/value/Preview assertions; EdgeBasedMatching restores the advanced PropertyGrid rows and checks the current Korean generated labels without Preview; Basic no longer requires a transient cue lifetime. Current-build isolated and combined runs pass."
+  },
+  "problem": {
+    "claims": [
+      {
+        "id": "P1",
+        "state": "confirmed",
+        "text": "wpf_shell_host_threshold_tool expects English Lower/Upper overlay text while the current Korean Tool state does not expose those tokens through the asserted visual root.",
+        "evidence_refs": [
+          "E1"
+        ]
+      },
+      {
+        "id": "P2",
+        "state": "confirmed",
+        "text": "wpf_shell_host_edge_based_matching_auto_mpoint completes candidate analysis/application but then searches for Korean unique-match PropertyGrid labels while the current generated rows use English display names.",
+        "evidence_refs": [
+          "E2"
+        ]
+      },
+      {
+        "id": "P3",
+        "state": "confirmed",
+        "text": "wpf_shell_host_threshold_basic_tool can pass in a combined process and fail in an isolated process because it asserts visibility of a transient signal-evidence cue.",
+        "evidence_refs": [
+          "E3"
+        ]
+      }
+    ],
+    "impact": "These assertion mismatches can block or confuse otherwise valid current-source UI verification and make the result depend on language, process order, or transient timing."
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "wpf_shell_host_threshold_tool verifies current localized signal-inspector evidence and passes without weakening marker/value/Preview assertions.",
+      "evidence_refs": [
+        "E4",
+        "E5"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "wpf_shell_host_edge_based_matching_auto_mpoint verifies the current generated PropertyGrid labels and still proves analysis/application caused no Preview, layer, active-layer, or routing side effect.",
+      "evidence_refs": [
+        "E4",
+        "E7"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "wpf_shell_host_threshold_basic_tool passes repeatably in both isolated and combined execution without relying on a transient cue lifetime.",
+      "evidence_refs": [
+        "E4",
+        "E6"
+      ]
+    }
+  ],
+  "relations": [],
+  "context": [
+    {
+      "kind": "scope",
+      "location": "Test maintenance only; the SDK Tool lifetime task did not admit a product UI behavior change."
+    },
+    {
+      "kind": "passing-control",
+      "location": "wpf_direct_multi_tool_inspection, wpf_preprocess_output_preview_flow, wpf_algorithm_output_preview_flow, and wpf_shell_host_edge_based_matching_tool"
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab\\ui-tool-lifetime-20260823\\before\\focused-smoke-before.txt",
+      "observation": "wpf_shell_host_threshold_tool failed only at the expected Lower text assertion after reporting Preview OK and Threshold_Preview 512x384.",
+      "observed_at": "2026-08-23T21:13:55+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab\\ui-tool-lifetime-20260823\\before\\focused-smoke-before.txt",
+      "observation": "wpf_shell_host_edge_based_matching_auto_mpoint reached a selected BEST candidate, exported its report, and created the Pipeline step before failing on expected Korean unique-match row text.",
+      "observed_at": "2026-08-23T21:13:55+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab\\ui-tool-lifetime-20260823\\after\\threshold-basic-clean-temp-after.txt",
+      "observation": "The isolated target failed at transient signal-cue visibility after the same target had passed in the six-target after run; wpf_direct_multi_tool_inspection then passed the Threshold Preview path.",
+      "observed_at": "2026-08-23T21:20:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0003_current_20260825_r3\\ui_precheck_summary.json",
+      "observation": "The current-build combined run reported Status=OK with OK=3, WARN=0, NG=0 for wpf_shell_host_threshold_basic_tool, wpf_shell_host_threshold_tool, and wpf_shell_host_edge_based_matching_auto_mpoint.",
+      "observed_at": "2026-08-25T16:31:41+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0003_current_20260825_threshold_iso1\\ui_precheck_summary.json; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0003_current_20260825_threshold_iso2\\ui_precheck_summary.json",
+      "observation": "The current-build isolated wpf_shell_host_threshold_tool run passed twice with Status=OK, preserving the localized signal-inspector evidence check and its marker/value/Preview assertions.",
+      "observed_at": "2026-08-25T16:30:57+09:00"
+    },
+    {
+      "id": "E6",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0003_current_20260825_basic_iso1\\ui_precheck_summary.json; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0003_current_20260825_basic_iso2\\ui_precheck_summary.json",
+      "observation": "The current-build isolated wpf_shell_host_threshold_basic_tool run passed twice with Status=OK after the assertion stopped depending on transient signal-evidence cue visibility.",
+      "observed_at": "2026-08-25T16:30:04+09:00"
+    },
+    {
+      "id": "E7",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0003_current_20260825_edge_r2\\ui_precheck_summary.json",
+      "observation": "The current-build isolated EdgeBasedMatching Auto MPoint target passed with Status=OK after restoring advanced PropertyGrid visibility, checking the current Korean generated labels, and confirming the label inspection caused no Preview.",
+      "observed_at": "2026-08-25T16:28:12+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-08-25T16:31:41+09:00",
+      "from": "open",
+      "to": "resolved",
+      "summary": "PL-0003 resolved: all three stale focused-smoke contracts were corrected and current-build isolated/combined evidence passed C1-C3."
+    }
+  ],
+  "created_at": "2026-08-23T21:24:30+09:00",
+  "updated_at": "2026-08-25T16:31:41+09:00"
+}

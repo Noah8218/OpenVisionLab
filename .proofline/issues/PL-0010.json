@@ -1,0 +1,135 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0010",
+    "aliases": [
+      "P1-OBJECT-EVIDENCE-SINGLE-EXECUTION"
+    ],
+    "type": "research",
+    "mode": "simple",
+    "title": "Eliminate duplicate Blob and Contour execution for reject evidence",
+    "risk": "medium"
+  },
+  "origin": {
+    "kind": "shared GPT Pro review confirmed by source inspection",
+    "summary": "The shared review reported that Blob and Contour execute a second audit Tool to reconstruct rejected candidates. Current Dev confirms the extra execution and silent fallback when it fails.",
+    "refs": [
+      "https://chatgpt.com/share/6a8d010b-b510-83ee-876d-3ad1c35714c8",
+      "src/OpenVisionLab/Core/Pipeline/Execution/VisionPipelineObjectResults.cs",
+      "docs/reports/OPENVISIONLAB_SHARED_GPT_PRO_ANALYSIS_RECONCILIATION_20260825.md"
+    ]
+  },
+  "state": {
+    "status": "blocked",
+    "current_summary": "PL-0010 C1 baseline is complete: the current Blob/Contour path measured a primary and a relaxed audit execution, retained five representative object rows with one accepted and four rejected candidates, and source-confirmed the accepted-only fallback when audit capture fails. One-pass removal is blocked because the vendored SDK 3.0.0 result contract does not expose applied limits, accepted state, or reject reasons.",
+    "next_action": "Obtain or explicitly coordinate an updated Vision SDK result contract and manifest, then rerun C2/C4 parity for candidate identity, measurements, limits, acceptance, reject reasons, drawings, metrics, reports, timing, and selection before changing OpenVisionLab.",
+    "blocker": "The vendored OpenVisionLab Vision SDK 3.0.0 and its current manifest do not provide the one-pass fields required by the existing object-review contract, and no updated SDK package or coordinated release-order change is available.",
+    "unblock_condition": "A documented SDK release with stable per-candidate identity, raw measurements, applied limits, accepted state, reject reason, and required geometry is supplied with an updated manifest; focused app parity evidence then passes before audit removal."
+  },
+  "problem": {
+    "claims": [
+      {
+        "id": "P1",
+        "state": "confirmed",
+        "text": "Blob and Contour object evidence can execute a second Tool with modified limits after the primary Step execution.",
+        "evidence_refs": [
+          "E1"
+        ]
+      },
+      {
+        "id": "P2",
+        "state": "confirmed",
+        "text": "A second-run failure is swallowed and represented as accepted-only evidence rather than a visible evidence-capture failure.",
+        "evidence_refs": [
+          "E1"
+        ]
+      }
+    ],
+    "impact": "Duplicate execution adds hidden cost and can make accepted/rejected evidence disagree with the exact Tool run whose timing, result image, and acceptance decision are reported."
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "A measured baseline records primary and audit execution cost and the exact failure/evidence behavior for representative Blob and Contour cases.",
+      "evidence_refs": [
+        "E2"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "One SDK Tool execution returns stable candidate IDs, measured values, applied limits, accepted state, and exact reject reasons needed by current review and reports.",
+      "evidence_refs": [
+        "E3"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "OpenVisionLab removes the audit rerun and silent catch only after the vendored SDK identity and manifest are updated through their normal release order.",
+      "evidence_refs": [
+        "E3"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "Object rows, drawings, selection highlighting, reject reasons, metrics, acceptance, run reports, timing, and public samples remain equivalent or any approved contract change is explicit.",
+      "evidence_refs": []
+    }
+  ],
+  "relations": [],
+  "context": [
+    {
+      "kind": "recommended-execution",
+      "location": "Recommended model: gpt-5.6-luna | Reasoning effort: high"
+    },
+    {
+      "kind": "prerequisite",
+      "location": "Requires an explicitly coordinated OpenVisionLab Vision SDK change and manifest update; it is not the first RC2 hardening task."
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source-inspection",
+      "location": "src/OpenVisionLab/Core/Pipeline/Execution/VisionPipelineObjectResults.cs:84",
+      "observation": "After the executed Tool is filtered, TryCaptureUnfiltered clones the Step with relaxed MIN_AREA/MAX_AREA, creates another Tool, clones the input, executes it, and returns CaptureAll. Any exception returns an empty list, after which Capture falls back to CaptureAccepted.",
+      "observed_at": "2026-08-25T11:56:04+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0010_baseline_20260825_r4\\audit_baseline.tsv",
+      "observation": "After one warm-up per path, the focused contract measured primary/audit wall time and SDK elapsed time for representative Blob and Contour cases. Both paths succeeded, exposed candidate IDs 1..5, and the current Runner retained five object rows with one accepted, four rejected, and one accepted overlay for each tool.",
+      "observed_at": "2026-08-25T18:19:31+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "runtime-introspection",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0010_baseline_20260825_r4\\observations.txt",
+      "observation": "Runtime reflection against SDK assembly 3.0.0.0 found BlobResult properties Angle, Area, Bounding, Center, Index, UseDefect and ContourResult properties Angle, Area, Bounding, Center, Contours, Index. AppliedLimits, AcceptedState, and RejectReason are absent from both result types.",
+      "observed_at": "2026-08-25T18:19:31+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-08-25T18:19:31+09:00",
+      "summary": "Defer removal of the Blob/Contour audit execution until a coordinated Vision SDK result contract and manifest update prove one-pass evidence parity.",
+      "evidence_refs": [
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-08-25T18:19:31+09:00",
+      "from": "open",
+      "to": "blocked",
+      "summary": "C1 baseline evidence is now recorded; implementation is blocked at the external SDK contract boundary and current stable audit behavior remains unchanged."
+    }
+  ],
+  "created_at": "2026-08-25T11:56:04+09:00",
+  "updated_at": "2026-08-25T18:19:31+09:00"
+}

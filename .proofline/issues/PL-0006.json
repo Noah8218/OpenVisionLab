@@ -1,0 +1,131 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0006",
+    "aliases": [
+      "P0-BITMAP-CONVERTER-STRIDE-SAFETY"
+    ],
+    "type": "bug",
+    "mode": "simple",
+    "title": "Make BitmapImageConverter row copies memory-safe",
+    "risk": "critical"
+  },
+  "origin": {
+    "kind": "shared GPT Pro review confirmed by source inspection",
+    "summary": "The shared review reported an 8bpp odd-width stride overwrite risk. Current Dev source inspection confirmed that the non-contiguous path writes the Bitmap stride length into a Mat row and exposed adjacent negative-stride, submatrix, and failure-cleanup gaps in the same converter boundary.",
+    "refs": [
+      "https://chatgpt.com/share/6a8d010b-b510-83ee-876d-3ad1c35714c8",
+      "src/OpenVisionLab/Common/BitmapImageConverter.cs",
+      "docs/reports/OPENVISIONLAB_SHARED_GPT_PRO_ANALYSIS_RECONCILIATION_20260825.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "PL-0006 is resolved for the supported Bitmap/Mat conversion contract. The converter now enforces visible row-byte and signed-stride boundaries, supports the verified submatrix and palette cases, rejects unsupported combinations with precise NotSupportedException messages, and disposes allocating outputs on conversion failure. Current focused, runtime, public-sample, report-evidence, readiness, and external-reference checks pass."
+  },
+  "problem": {
+    "claims": [
+      {
+        "id": "P1",
+        "state": "confirmed",
+        "text": "Format8bppIndexed.Ch1 can write source padding beyond the destination Mat row for odd image widths.",
+        "evidence_refs": [
+          "E1"
+        ]
+      },
+      {
+        "id": "P2",
+        "state": "confirmed",
+        "text": "The converter does not consistently handle negative stride, submatrix row capacity, unsupported formats, or disposal of newly allocated outputs after a conversion exception.",
+        "evidence_refs": [
+          "E2"
+        ]
+      }
+    ],
+    "impact": "The confirmed 8bpp path can corrupt adjacent native memory; related row-copy assumptions can read or write outside the intended row or leak native image resources after failure."
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "1bpp, 8bpp, 24bpp, and 32bpp conversions copy only actual pixel bytes and use the real signed source and destination row advances without crossing either row capacity.",
+      "evidence_refs": [
+        "E3"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "Focused checks cover odd widths, multiple heights, gray and custom palettes, positive and negative Bitmap stride, continuous and submatrix Mats, guard-row integrity, and pixel round trips.",
+      "evidence_refs": [
+        "E3"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Unsupported combinations fail with a precise NotSupportedException, and outputs allocated by ToMat or ToBitmap are disposed when a later conversion step throws.",
+      "evidence_refs": [
+        "E3"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "Current Preview, layer, report, public-sample, and runtime-stability checks retain image dimensions, channels, pixels, and explicit execution behavior.",
+      "evidence_refs": [
+        "E4"
+      ]
+    }
+  ],
+  "relations": [],
+  "context": [
+    {
+      "kind": "recommended-execution",
+      "location": "Recommended model: gpt-5.6-luna | Reasoning effort: high"
+    },
+    {
+      "kind": "owner",
+      "location": "src/OpenVisionLab/Common/BitmapImageConverter.cs is the documented OpenVisionLab owner; do not reintroduce OpenCvSharp.Extensions.dll."
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source-inspection",
+      "location": "src/OpenVisionLab/Common/BitmapImageConverter.cs:150",
+      "observation": "The non-contiguous 8bpp path creates byte[srcStep], reads that full source row including padding, applies the palette to the full buffer, and writes buffer.Length bytes to the destination row before advancing by dstStep. Width 13 commonly yields source stride 16 and destination step 13.",
+      "observed_at": "2026-08-25T11:56:04+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "source-inspection",
+      "location": "src/OpenVisionLab/Common/BitmapImageConverter.cs:21",
+      "observation": "The public allocating overloads return newly allocated Mat or Bitmap values without a catch-dispose path, 1bpp and 8bpp use signed Bitmap stride as a positive length/advance, and 24/32bpp non-contiguous copies use destination step rather than the actual pixel-byte width.",
+      "observed_at": "2026-08-25T11:56:04+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "focused-test-and-source-inspection",
+      "location": "C:\\Git\\OpenVisionLab_Dev\\docs\\reports\\OPENVISIONLAB_BITMAP_CONVERTER_MEMORY_SAFETY_20260825.md; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0006_current_20260825\\bitmap_converter_r2\\bitmap_converter_contract.txt",
+      "observation": "The current-build PL-0006 focused contract passed indexed odd-width guard-row protection, positive and negative Bitmap stride, custom indexed palettes, 24/32bpp source formats, destination submatrices, 1/8/24/32 round trips, and unsupported-format NotSupportedException checks. Source inspection of the same current converter records visible row-byte bounds and catch-dispose paths for allocating ToMat/ToBitmap overloads.",
+      "observed_at": "2026-08-25T14:20:07+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "workflow-regression-test",
+      "location": "C:\\Git\\OpenVisionLab_Dev\\docs\\reports\\OPENVISIONLAB_BITMAP_CONVERTER_MEMORY_SAFETY_20260825.md; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0006_current_20260825\\batch_evidence\\",
+      "observation": "After the converter change, the Debug solution build passed with 0 warnings and 0 errors; runtime-stability and HistoryContractCheck passed; the current public Matching sample reported Preview OK, final layer Matching_Preview, a 572x420 3-channel result, 19 metrics, and 3 overlays; batch evidence completed 1/1 row and wrote source/result/report evidence; readiness 13/13 and public sample assets 33 rows/229 assets/17 pipelines passed.",
+      "observed_at": "2026-08-25T14:20:07+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-08-25T14:20:07.1083024+09:00",
+      "from": "open",
+      "to": "resolved",
+      "summary": "Resolved PL-0006 after current-build focused memory-safety and workflow regression evidence satisfied C1-C4."
+    }
+  ],
+  "created_at": "2026-08-25T11:56:04+09:00",
+  "updated_at": "2026-08-25T14:20:07.1083024+09:00"
+}

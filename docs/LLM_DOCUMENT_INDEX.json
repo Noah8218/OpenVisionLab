@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0",
-  "updated": "2026-08-13",
+  "updated": "2026-08-25",
   "purpose": "Curated, machine-readable routing index for OpenVisionLab documentation. It is intentionally smaller than the full documentation registry.",
   "entrypoint": "docs/README.md",
   "detailedRegistry": "docs/admin/OPENVISIONLAB_DOCUMENTATION_MAP.md",
@@ -29,13 +29,13 @@
       "id": "status_and_next_priority",
       "intent": "Assess current product status, maturity, completeness, or next work.",
       "keywords": ["status", "maturity", "completeness", "priority", "what next"],
-      "read": ["docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md", "docs/admin/OPENVISIONLAB_DOCUMENTATION_MAP.md", "docs/roadmap/OPENVISIONLAB_PRODUCT_TARGET_AND_MAIN_VIEWS.md", "docs/reports/OPENVISIONLAB_DOCUMENT_CONTROL_PLANE_CLEANUP_20260805.md", "docs/reports/OPENVISIONLAB_LLM_DOCUMENT_DISCOVERY_20260731.md"]
+      "read": ["docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md", "docs/admin/OPENVISIONLAB_DOCUMENTATION_MAP.md", "docs/roadmap/OPENVISIONLAB_PRODUCT_TARGET_AND_MAIN_VIEWS.md", "docs/reports/OPENVISIONLAB_SHARED_GPT_PRO_ANALYSIS_RECONCILIATION_20260825.md", "docs/reports/OPENVISIONLAB_DOCUMENT_CONTROL_PLANE_CLEANUP_20260805.md", "docs/reports/OPENVISIONLAB_LLM_DOCUMENT_DISCOVERY_20260731.md", "docs/reports/OPENVISIONLAB_P256_FOUR_STEP_ROUTE_CLARITY_20260824.md", "docs/reports/OPENVISIONLAB_DESKTOP_TIFF_LOAD_20260824.md"]
     },
     {
       "id": "ui_and_operator_workflow",
       "intent": "Change visible UI, navigation, workflow, settings persistence, or operator behavior.",
       "keywords": ["UI", "UX", "workflow", "PropertyGrid", "Preview", "Run", "screen"],
-      "read": ["docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md", "docs/reports/OPENVISIONLAB_USER_CENTERED_WORKFLOW_DIRECTION_20260729.md", "docs/reports/OPENVISIONLAB_PIPELINE_REVIEW_ENTRY_AND_COMPACT_LAYOUT_20260812.md", "docs/runbooks/UI_SCREENSHOT_SMOKE.md"]
+      "read": ["docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md", "docs/reports/OPENVISIONLAB_USER_CENTERED_WORKFLOW_DIRECTION_20260729.md", "docs/reports/OPENVISIONLAB_PIPELINE_REVIEW_ENTRY_AND_COMPACT_LAYOUT_20260812.md", "docs/reports/OPENVISIONLAB_NATIVE_TOOL_FOCUSED_SMOKE_BASELINE_20260825.md", "docs/runbooks/UI_SCREENSHOT_SMOKE.md"]
     },
     {
       "id": "beginner_tutorial_and_learn",
@@ -47,13 +47,13 @@
       "id": "recipe_pipeline_and_tool_contracts",
       "intent": "Change recipe, Pipeline, Tool View, parameter mapping, result, or XML behavior.",
       "keywords": ["recipe", "pipeline", "tool", "parameter", "result", "XML"],
-      "read": ["docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md", "docs/contracts/vision/VISION_TOOL_CONTRACT.md", "docs/contracts/vision/VISION_TOOL_RESULT_CONTRACT.md", "docs/contracts/vision/VISION_TOOL_PROPERTY_GRID_POLICY.md", "docs/contracts/vision/VISION_TOOL_NATIVE_WPF_EXTENSION_GUIDE.md"]
+      "read": ["docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md", "docs/contracts/vision/VISION_TOOL_CONTRACT.md", "docs/contracts/vision/VISION_TOOL_RESULT_CONTRACT.md", "docs/contracts/vision/VISION_TOOL_PROPERTY_GRID_POLICY.md", "docs/contracts/vision/VISION_TOOL_NATIVE_WPF_EXTENSION_GUIDE.md", "docs/reports/OPENVISIONLAB_PIPELINE_EXECUTION_PROVENANCE_20260825.md", "docs/reports/OPENVISIONLAB_PIPELINE_PERSISTENCE_RECOVERY_20260825.md", "docs/reports/OPENVISIONLAB_BLOB_CONTOUR_AUDIT_BASELINE_20260825.md"]
     },
     {
       "id": "runtime_stability_and_resource_ownership",
-      "intent": "Investigate or change Pipeline timeout, cancellation, exception policy, native resource ownership, logging cleanup, or sample-check async behavior.",
-      "keywords": ["timeout", "cancellation", "exception", "resource", "Mat", "OpenGL", "logging", "async", "stability"],
-      "read": ["docs/reports/OPENVISIONLAB_SHARED_ANALYSIS_STABILITY_REVIEW_20260806.md", "docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md", "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md"]
+      "intent": "Investigate or change Pipeline timeout, cancellation, exception policy, native or Bitmap/Mat/ImageSpace/Canvas ownership, owned file loading, large-image/soak gates, logging cleanup, or sample-check async behavior.",
+      "keywords": ["timeout", "cancellation", "exception", "resource", "Bitmap", "Mat", "ImageSpace", "Canvas", "Emgu", "DataPointer", "ownership", "OpenGL", "mipmap", "4512", "soak", "logging", "async", "stability"],
+      "read": ["docs/reports/OPENVISIONLAB_SHARED_GPT_PRO_ANALYSIS_RECONCILIATION_20260825.md", "docs/roadmap/OPENVISIONLAB_OPENGL_GPU_COORDINATE_RELIABILITY_PLAN_20260824.md", "docs/reports/OPENVISIONLAB_OPENGL_GPU_COORDINATE_RELIABILITY_20260824.md", "docs/reports/OPENVISIONLAB_P256_FOUR_STEP_ROUTE_CLARITY_20260824.md", "docs/reports/OPENVISIONLAB_DESKTOP_TIFF_LOAD_20260824.md", "docs/reports/OPENVISIONLAB_PROJECT_ANALYSIS_AND_RELIABILITY_PRIORITY_20260823.md", "docs/reports/OPENVISIONLAB_SHARED_ANALYSIS_STABILITY_REVIEW_20260806.md", "docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md", "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md"]
     },
     {
       "id": "llm_xml_maintenance",
@@ -65,13 +65,13 @@
       "id": "samples_validation_and_external_assets",
       "intent": "Work with public samples, validation evidence, DLLs, or external references.",
       "keywords": ["sample", "validation", "asset", "DLL", "external reference", "evidence"],
-      "read": ["docs/contracts/openvisionlab/OPENVISIONLAB_PUBLIC_SAMPLE_ASSET_POLICY.md", "docs/contracts/openvisionlab/OPENVISIONLAB_EXTERNAL_REFERENCE_POLICY.md", "docs/reports/OPENVISIONLAB_PORTFOLIO_PATTERN_CAPTURE_20260812.md", "docs/reports/OPENVISIONLAB_PORTFOLIO_STAGE_SHOWCASE_20260812.md", "docs/reports/OPENVISIONLAB_VISION_SDK_3_MIGRATION_20260805.md", "docs/reports/OPENVISIONLAB_COMPLETED_TRACKER.md"]
+      "read": ["docs/contracts/openvisionlab/OPENVISIONLAB_PUBLIC_SAMPLE_ASSET_POLICY.md", "docs/contracts/openvisionlab/OPENVISIONLAB_EXTERNAL_REFERENCE_POLICY.md", "docs/reports/OPENVISIONLAB_SHARED_GPT_PRO_ANALYSIS_RECONCILIATION_20260825.md", "docs/reports/OPENVISIONLAB_OPTIONAL_BINARY_PRUNE_20260825.md", "docs/reports/OPENVISIONLAB_WPG_CUSTOM_OWNER_CLASSIFICATION_20260826.md", "docs/reports/OPENVISIONLAB_REMAINING_BINARY_EVIDENCE_SWEEP_20260826.md", "docs/reports/OPENVISIONLAB_FIRST_CANDIDATE_DLL_PRUNE_20260826.md", "docs/reports/OPENVISIONLAB_MATERIALDESIGN_DLL_PRUNE_20260826.md", "docs/reports/OPENVISIONLAB_RETAINED_DEPENDENCY_NOTICE_COVERAGE_20260826.md", "docs/reports/OPENVISIONLAB_PORTFOLIO_PATTERN_CAPTURE_20260812.md", "docs/reports/OPENVISIONLAB_PORTFOLIO_STAGE_SHOWCASE_20260812.md", "docs/reports/OPENVISIONLAB_VISION_SDK_3_MIGRATION_20260805.md", "docs/reports/OPENVISIONLAB_COMPLETED_TRACKER.md"]
     },
     {
       "id": "source_build_release_and_runtime_data",
       "intent": "Change or verify source build, release, publish, deployment, or writable runtime data ownership.",
       "keywords": ["build", "release", "publish", "deployment", "runtime data", "GitHub clone"],
-      "read": ["docs/contracts/openvisionlab/OPENVISIONLAB_RELEASE_VERSION_POLICY.md", "docs/reports/OPENVISIONLAB_2_1_0_RC1_PUBLICATION_20260805.md", "docs/reports/OPENVISIONLAB_VISION_SDK_3_MIGRATION_20260805.md", "docs/reports/OPENVISIONLAB_GITHUB_CI_UTF8_SOURCE_REPAIR_20260805.md", "docs/reports/OPENVISIONLAB_VISUAL_STUDIO_2022_SOURCE_BUILD_20260805.md", "docs/reports/OPENVISIONLAB_GITHUB_CLONE_RELEASE_VERIFICATION_20260803.md", "docs/reports/OPENVISIONLAB_GITHUB_SOURCE_BUILD_EXPERIENCE_20260731.md", "docs/contracts/openvisionlab/OPENVISIONLAB_RUNTIME_DATA_ROOT_V1_CONTRACT.md", "docs/reports/OPENVISIONLAB_RUNTIME_DATA_ROOT_V1_20260730.md", "docs/reports/OPENVISIONLAB_PRODUCTION_RELEASE_GATE_20260730.md"]
+      "read": ["docs/contracts/openvisionlab/OPENVISIONLAB_RELEASE_VERSION_POLICY.md", "docs/reports/OPENVISIONLAB_SHARED_GPT_PRO_ANALYSIS_RECONCILIATION_20260825.md", "docs/reports/OPENVISIONLAB_RC2_PREFLIGHT_20260825.md", "docs/reports/OPENVISIONLAB_WPG_CUSTOM_OWNER_CLASSIFICATION_20260826.md", "docs/reports/OPENVISIONLAB_REMAINING_BINARY_EVIDENCE_SWEEP_20260826.md", "docs/reports/OPENVISIONLAB_FIRST_CANDIDATE_DLL_PRUNE_20260826.md", "docs/reports/OPENVISIONLAB_MATERIALDESIGN_DLL_PRUNE_20260826.md", "docs/reports/OPENVISIONLAB_RETAINED_DEPENDENCY_NOTICE_COVERAGE_20260826.md", "docs/reports/OPENVISIONLAB_2_1_0_RC1_PUBLICATION_20260805.md", "docs/reports/OPENVISIONLAB_VISION_SDK_3_MIGRATION_20260805.md", "docs/reports/OPENVISIONLAB_GITHUB_CI_UTF8_SOURCE_REPAIR_20260805.md", "docs/reports/OPENVISIONLAB_VISUAL_STUDIO_2022_SOURCE_BUILD_20260805.md", "docs/reports/OPENVISIONLAB_GITHUB_CLONE_RELEASE_VERIFICATION_20260803.md", "docs/reports/OPENVISIONLAB_GITHUB_SOURCE_BUILD_EXPERIENCE_20260731.md", "docs/contracts/openvisionlab/OPENVISIONLAB_RUNTIME_DATA_ROOT_V1_CONTRACT.md", "docs/reports/OPENVISIONLAB_RUNTIME_DATA_ROOT_V1_20260730.md", "docs/reports/OPENVISIONLAB_PRODUCTION_RELEASE_GATE_20260730.md"]
     },
     {
       "id": "source_structure_and_ownership",

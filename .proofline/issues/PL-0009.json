@@ -1,0 +1,180 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0009",
+    "aliases": [
+      "P1-PIPELINE-PERSISTENCE-ATOMICITY"
+    ],
+    "type": "bug",
+    "mode": "simple",
+    "title": "Make pipeline rename delete and active-pointer updates recoverable",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "shared GPT Pro review confirmed by source inspection",
+    "summary": "The shared review reported non-atomic Pipeline rename/delete and active-pointer persistence. Current Dev serializes XML atomically but sequences lifecycle file mutations without rollback or recovery and writes the active name directly.",
+    "refs": [
+      "https://chatgpt.com/share/6a8d010b-b510-83ee-876d-3ad1c35714c8",
+      "src/OpenVisionLab/Core/Pipeline/Storage/VisionPipelineStorage.cs",
+      "docs/reports/OPENVISIONLAB_SHARED_GPT_PRO_ANALYSIS_RECONCILIATION_20260825.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "The final current-source combined WPF smoke passed all four applicable lifecycle targets, including the rendered recovery-status target after the test-harness cleanup change."
+  },
+  "problem": {
+    "claims": [
+      {
+        "id": "P1",
+        "state": "confirmed",
+        "text": "Pipeline rename and delete can leave XML files and the active Pipeline pointer inconsistent when an intermediate file operation fails.",
+        "evidence_refs": [
+          "E1"
+        ]
+      },
+      {
+        "id": "P2",
+        "state": "confirmed",
+        "text": "The active Pipeline name is written directly rather than through the repository's atomic temporary-file replacement pattern.",
+        "evidence_refs": [
+          "E2"
+        ]
+      }
+    ],
+    "impact": "A storage or process failure can make the selected Recipe reopen with a stale or missing Pipeline identity and require manual recovery."
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "Active Pipeline pointer writes are atomic and validated against existing Pipeline inventory.",
+      "evidence_refs": [
+        "E3",
+        "E5"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "Rename and delete either complete all intended file/pointer changes or recover to one valid prior state after every injected intermediate failure.",
+      "evidence_refs": [
+        "E3",
+        "E4"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Startup detects and repairs or explains any retained incomplete lifecycle state without deleting an operator Pipeline silently.",
+      "evidence_refs": [
+        "E3",
+        "E4",
+        "E8",
+        "E9"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "Normal duplicate, rename, delete, active selection, Recipe reopen, and clean-runtime checks pass with no Preview/Run, layer, or routing side effects.",
+      "evidence_refs": [
+        "E5",
+        "E6",
+        "E7",
+        "E8",
+        "E9"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0007"
+    }
+  ],
+  "context": [
+    {
+      "kind": "recommended-execution",
+      "location": "Recommended model: gpt-5.6-luna | Reasoning effort: medium"
+    },
+    {
+      "kind": "simplicity",
+      "location": "Prefer atomic files plus rollback or a tiny journal; do not add a database for this desktop file store."
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source-inspection",
+      "location": "src/OpenVisionLab/Core/Pipeline/Storage/VisionPipelineStorage.cs:231",
+      "observation": "TryRenamePipeline calls Save for the new name, File.Delete for the old name, and SaveActivePipelineName last; TryDeletePipeline deletes the XML before updating an active pointer that may reference it. Neither path has rollback or recovery state.",
+      "observed_at": "2026-08-25T11:56:04+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "source-inspection",
+      "location": "src/OpenVisionLab/Core/Pipeline/Storage/VisionPipelineStorage.cs:318",
+      "observation": "SaveActivePipelineName creates the directory and calls File.WriteAllText directly, while SerializeHelper.SaveXmlFile already demonstrates the repository's temporary-file replace pattern for XML.",
+      "observed_at": "2026-08-25T11:56:04+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "implementation",
+      "location": "src/OpenVisionLab/Core/Pipeline/Storage/VisionPipelineStorage.cs; src/OpenVisionLab/Core/Pipeline/Storage/VisionPipelinePersistenceState.cs; src/OpenVisionLab/UI/Menu/Wpf/Recipe/Review/OpenVisionRecipePersistenceStatusPresenter.cs",
+      "observation": "Pipeline rename/delete now persist a lifecycle journal and validated rollback backup, recover or adopt only a proven valid state, write the active pointer through atomic temporary-file replacement, reject pointer names outside the current valid Pipeline inventory, and expose LifecycleRecoveryRequired/LifecycleRecovered states without silently deleting uncertain files.",
+      "observed_at": "2026-08-25T17:45:36+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "test",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/pl0009_current_20260825_r2/pipeline_persistence_recovery_contract.txt",
+      "observation": "The current focused contract injected six rename stages and five applicable delete stages, cleared runtime persistence state, re-entered through LoadActivePipelineName, and passed every case with either byte-identical prior-state rollback or proven completed-state adoption; no lifecycle journal, backup, or atomic temporary file remained.",
+      "observed_at": "2026-08-25T17:42:00+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "test",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/pl0009_current_20260825_r2/pipeline_persistence_recovery_contract.txt",
+      "observation": "The same current contract passed atomic active-pointer replacement, rejected a missing inventory target while preserving the existing pointer, and passed duplicate/rename/delete/active-selection/Recipe-reopen round trip on a storage-only path with no Preview/Run, layer, or route mutation.",
+      "observed_at": "2026-08-25T17:42:00+09:00"
+    },
+    {
+      "id": "E6",
+      "kind": "ui-test",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/pl0009_current_20260825_r2/ui_smoke",
+      "observation": "After the current solution build, recipe change-safety, recipe context-switch, and direct-teaching Pipeline-persistence WPF targets all passed current-source quiet offscreen rendering and their no-side-effect assertions.",
+      "observed_at": "2026-08-25T17:44:00+09:00"
+    },
+    {
+      "id": "E7",
+      "kind": "verification-gate",
+      "location": "OpenVisionLab.sln; tools/OpenVisionReadinessCheck; tools/TestExternalReferences.ps1; tools/TestPublicSampleAssets.ps1; tools/TestDocumentationIndex.ps1",
+      "observation": "The final Debug solution build passed with zero warnings/errors; readiness, documentation index, and public sample checks passed. The external-reference technical check exited 0 while retaining the known PL-0005 BLOCKED DLL license/provenance rows.",
+      "observed_at": "2026-08-25T17:44:00+09:00"
+    },
+    {
+      "id": "E8",
+      "kind": "ui-test",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/pl0009_current_20260825_r5/ui_lifecycle/wpf_shell_host_pipeline_lifecycle_recovery.png",
+      "observation": "The current WPF target injected an interrupted rename, reopened Recipe Manager, visibly rendered the localized 'Pipeline 변경 복구 완료' status, verified the clean prior Pipeline/journal state, and confirmed no Preview/Run, layer, document, or route mutation.",
+      "observed_at": "2026-08-25T17:55:24+09:00"
+    },
+    {
+      "id": "E9",
+      "kind": "ui-test",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/pl0009_current_20260825_r8/ui_smoke",
+      "observation": "The final combined current-source WPF smoke passed recipe change safety, recipe context switch, direct-teaching Pipeline persistence, and Pipeline lifecycle recovery; each produced a 1600x900 current image with check=OK, and the lifecycle image visibly contains the localized recovered-state banner.",
+      "observed_at": "2026-08-25T18:00:43+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-08-25T17:45:36+09:00",
+      "from": "open",
+      "to": "resolved",
+      "summary": "Resolved after implementation and current-build evidence passed all four acceptance criteria."
+    }
+  ],
+  "created_at": "2026-08-25T11:56:04+09:00",
+  "updated_at": "2026-08-25T09:01:02.220Z"
+}

@@ -1,6 +1,6 @@
 # OpenVisionLab Current Project Handoff
 
-Updated: 2026-08-21 KST
+Updated: 2026-08-26 KST
 
 This is the compact live-status source for a new OpenVisionLab task. Read
 `AGENTS.md`, `docs/README.md`, and `docs/LLM_DOCUMENT_INDEX.json` first. Stable
@@ -48,10 +48,501 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
   framework-dependent GitHub pre-release. Its full local gate, hosted CI,
   copied launch, five uploaded assets, and public-download SHA-256 round trip
   pass.
+- A fresh 2026-08-23 Dev analysis passed Debug build, readiness 13/13,
+  external-reference hashes, 33-row/229-asset/17-Pipeline public samples,
+  focused runtime/object-audit/MultiMatchMean contracts, and a public
+  LineDistance run. The production Pipeline and direct native UI Preview/
+  Auto MPoint SDK Tool lifetime slices are now creator-owned and verified in
+  Dev. ImageSpaceFrame Borrow/TakeOwnership, owned OpenCvSharp Canvas file
+  loading with Emgu removal, exact 4512 store/viewer/texture process-resource
+  gates, one frozen-Recipe 1,000-run plateau, coordinated display-store/
+  central/docked/popout viewer lease retirement, native OpenGL readback, and
+  a per-process GPU allocation plateau are also complete in Dev. This evidence
+  still excludes every possible OpenGL fault injection, current actual-EXE
+  theme/DPI/monitor, multi-PC, arbitrary-duration, and field qualification.
 - This is not commercial GA, installer/signing/update evidence, multi-PC or
   hardware qualification, calibrated metrology, or field robustness.
 
+## Active 2.1.0 RC2 Hardening Direction
+
+- The user-authorized 2026-08-25 shared GPT Pro review has been reconciled
+  against current Dev rather than adopted from its older public-main baseline.
+  The decision record and paste-ready Luna restart are in
+  `docs/reports/OPENVISIONLAB_SHARED_GPT_PRO_ANALYSIS_RECONCILIATION_20260825.md`.
+- The focused Native Tool smoke slice is now a known current-build baseline;
+  `PL-0003` is resolved with current localized signal-inspector, generated
+  PropertyGrid, and stable evidence-state assertions. Its evidence is recorded
+  in `docs/reports/OPENVISIONLAB_NATIVE_TOOL_FOCUSED_SMOKE_BASELINE_20260825.md`.
+- The broader uncommitted reliability bundle remains a dirty Dev worktree and
+  must not be treated as one promoted commit boundary. Do not mix a new
+  hardening fix into an unknown boundary.
+- `PL-0005` DLL license/provenance evidence remains the Release blocker. The
+  user-authorized Dev prune removed the unused `Vila.Core.dll` and optional
+  `opencv_ffmpeg400_64.dll`; the current build and sample gates still pass.
+  The user has now explicitly classified WPG-CUSTOM as user-created, so it is
+  no longer the external third-party evidence blocker. The 2026-08-26 bounded
+  package/hash sweep confirmed exact official NuGet binary matches for both
+  MaterialDesign DLLs. The user then authorized deletion of the seven first
+  candidates; they and the two MaterialDesign DLLs are now absent and
+  forbidden in the manifest. The current Debug build, external-reference gate,
+  readiness check, and public sample asset check all pass. PL-0005 now remains
+  open for complete NOTICE coverage of retained allowed dependencies and the
+  final clean Release distribution gate. Release remains blocked.
+  Recommended model: none until prerequisite evidence exists | Reasoning effort:
+  none until prerequisite evidence exists.
+- `PL-0006` BitmapImageConverter memory safety is complete in Dev. `PL-0007`
+  Recipe/Pipeline storage path containment is also complete in Dev; its current
+  path-boundary, lifecycle, sample/report, qualified-snapshot, and public-runtime
+  evidence is recorded in
+  `docs/reports/OPENVISIONLAB_RECIPE_PIPELINE_STORAGE_PATH_BOUNDARY_20260825.md`.
+- `PL-0008` immutable original/effective Pipeline provenance is complete in Dev;
+  the execution-copy boundary, single normalization pass, report/batch identity,
+  legacy report compatibility, and qualified-snapshot compatibility evidence is
+  recorded in
+  `docs/reports/OPENVISIONLAB_PIPELINE_EXECUTION_PROVENANCE_20260825.md`.
+- `PL-0009` recoverable Pipeline persistence is complete in Dev. Journal-backed
+  rename/delete recovery, atomic active-pointer replacement with inventory
+  validation, fail-closed recovery state, and normal lifecycle/reopen evidence
+  are recorded in
+  `docs/reports/OPENVISIONLAB_PIPELINE_PERSISTENCE_RECOVERY_20260825.md`.
+- With `PL-0009` resolved, `PL-0010` was measured at its external SDK boundary.
+  Its C1 baseline is complete, but one-pass Blob/Contour evidence is blocked
+  until the vendored SDK exposes the required candidate contract. `PL-0008`
+  and `PL-0009` are no longer open implementation priorities.
+- `PL-0011` coordinates the exact RC2 gate. Source version remains `2.1.0`;
+  normal issue commits do not bump it. The next candidate identity is
+  `v2.1.0-rc.2` only after the gate and separate original-repository, tag,
+  draft-release, and publication authorizations.
+- Use `gpt-5.6-luna` for this train. The issue records contain exact acceptance
+  criteria and the recommended reasoning effort. No push is authorized unless
+  the user explicitly says `PUSH`.
+- Existing ImageSpace/viewer lifetime (`PL-0004`), Emgu removal, and OpenGL GPU/
+  coordinate reliability evidence remain complete and are not reopened by the
+  shared review.
+- The pre-existing remaining product priority is still `CVR-00`, externally
+  deferred until three independent first-time participants and their unedited
+  observations exist. The RC2 hardening train does not convert agent-operated
+  recordings into novice evidence.
+
 ## Latest Completed Work
+
+### 2026-08-25 PL-0003 Native Tool Focused Smoke Baseline - Complete In Dev
+
+- `tools/PipelineViewerScreenshotSmoke/Program.cs` now checks the current
+  localized `VisionToolSignalInspectorView` text surface for Range evidence,
+  keeps the marker/value/Preview and no-side-effect assertions, removes the
+  Basic Threshold dependency on the transient evidence-cue lifetime, and
+  checks the current Korean generated EdgeBasedMatching PropertyGrid labels
+  after restoring advanced-row visibility without triggering Preview.
+- No product UI behavior or Tool runtime code changed; this was test-contract
+  maintenance only.
+- Current-build focused WPF smoke passed in two combined runs, two isolated
+  Basic Threshold runs, two isolated Range Threshold runs, and one isolated
+  EdgeBasedMatching Auto MPoint run. The durable issue record is
+  `.proofline/issues/PL-0003.json`.
+- Evidence and runtime boundary are recorded in
+  `docs/reports/OPENVISIONLAB_NATIVE_TOOL_FOCUSED_SMOKE_BASELINE_20260825.md`.
+
+### 2026-08-25 PL-0007 Recipe/Pipeline Storage Path Boundaries - Complete In Dev
+
+- `RecipeWorkspaceService` now owns strict storage-segment validation and
+  `Path.GetFullPath` root/child containment before Recipe/Pipeline filesystem
+  mutation. Traversal, reserved Windows device names, separators, control
+  characters, trailing spaces/periods, and case collisions are covered.
+- Pipeline XML, active/config/data files, image/run/sample/batch artifacts,
+  validation records, dependency copies, template captures, report evidence,
+  and qualified working-copy paths use the shared policy. Legacy absolute
+  evidence paths remain read-compatible only where required; new artifacts are
+  relative and contained.
+- The current contract passed Recipe/Pipeline CRUD, sample-set
+  save/load/context/delete, Run Report and Batch Summary save/list, qualified
+  snapshot lifecycle/tamper/runtime checks, and public Matching replay.
+- Evidence: `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\pl0007_current_20260825_r4\recipe_storage_path_contract.txt`,
+  `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\pl0007_qualified_snapshot_20260825_r2\SMOKE_RESULT.txt`,
+  and the report above. The durable issue record is `.proofline/issues/PL-0007.json`.
+
+### 2026-08-25 PL-0008 Pipeline Execution Provenance - Complete In Dev
+
+- `VisionPipelineExecutionPlan` now creates a serializable effective copy,
+  normalizes that copy exactly once, and keeps the caller/object or source XML
+  bytes unchanged. `VisionRecipeRunner`, Pipeline Review, sample validation, and
+  the compatibility execution entry point all use the prepared copy.
+- Run Reports retain schema version, `pipeline.original.xml`, effective
+  `pipeline.xml`, original/effective SHA-256, structured property-level
+  normalization changes, application identity, Vision SDK identity, and SDK
+  manifest identity/hash. Batch summaries carry the same identity/change set.
+- Qualified snapshot preflight now binds the qualification definition to the
+  original snapshot and separately verifies the effective snapshot hash. Legacy
+  reports without the new fields remain readable.
+- Current evidence: `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\pl0008_current_20260825_r3\pipeline_provenance_contract.txt`,
+  `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\pl0008_current_20260825_r3\completion.txt`,
+  and `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\pl0008_qualified_snapshot_20260825_r1\SMOKE_RESULT.txt`.
+- Boundary: this preserves/report execution identity but does not obtain the
+  external DLL license/provenance evidence required by `PL-0005`, and it does
+  not authorize release, original-repository promotion, commit, or push.
+
+### 2026-08-25 PL-0009 Recoverable Pipeline Persistence - Complete In Dev
+
+- `VisionPipelineStorage` now journals Pipeline rename/delete lifecycle stages,
+  preserves a validated rollback copy, and adopts a completed state only when
+  the source/target/fallback/pointer inventory is proven valid.
+- Active Pipeline pointer writes use a temporary-file replacement and reject a
+  name outside the current valid Pipeline inventory. New Recipe creation now
+  creates/loads the default Pipeline before writing that pointer.
+- The current focused contract injected six rename failures and five applicable
+  delete failures, then cleared runtime state and reopened the storage path.
+  Every case rolled back byte-identically or adopted a proven completed state;
+  no journal, backup, or temporary artifact remained.
+- A dedicated current-source WPF target also rendered the localized recovered
+  lifecycle state in Recipe Manager and verified no Preview/Run, layer,
+  document, or route mutation. The separate Recipe Manager Review target still
+  has an existing explicit-review assertion failure and is not used here.
+- Evidence: `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\pl0009_current_20260825_r2\pipeline_persistence_recovery_contract.txt`,
+  `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\pl0009_current_20260825_r8\ui_smoke\wpf_shell_host_pipeline_lifecycle_recovery.png`,
+  and
+  `docs/reports/OPENVISIONLAB_PIPELINE_PERSISTENCE_RECOVERY_20260825.md`.
+- Boundary: the restart check is a same-process reopen simulation, not
+  multi-process crash/power-loss, installer, multi-PC, or field qualification.
+  The separate Recipe Manager Review target remains an existing UI smoke
+  failure and is not used as PL-0009 evidence.
+
+### 2026-08-25 PL-0010 Blob/Contour Audit Baseline - Blocked at SDK Boundary
+
+- The focused current-source contract warmed and measured the primary and
+  relaxed audit Tool calls for representative Blob and Contour cases. Both
+  cases returned candidate IDs `1..5`; current review evidence retained five
+  rows, one accepted row, four exact reject reasons, and one accepted overlay.
+- Source inspection confirms the current audit failure behavior: an audit
+  exception or unsuccessful result becomes an empty audit list and the caller
+  falls back to accepted-only evidence. The product audit path was not
+  changed.
+- The vendored SDK `3.0.0` result types expose geometry/measurement fields and
+  `Index`, but not applied limits, accepted state, or reject reason. The
+  one-pass replacement therefore remains blocked until an updated SDK result
+  contract and manifest are supplied and app parity is proven.
+- Evidence: `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\pl0010_baseline_20260825_r4\audit_baseline.tsv`,
+  `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\pl0010_baseline_20260825_r4\observations.txt`,
+  and `docs/reports/OPENVISIONLAB_BLOB_CONTOUR_AUDIT_BASELINE_20260825.md`.
+- Boundary: no SDK DLL, manifest, stable object-review behavior, or release
+  state was changed; no one-pass parity, SDK release, or production-corpus
+  performance qualification is claimed.
+
+### 2026-08-25 PL-0011 RC2 Read-Only Preflight - Blocked
+
+- The canonical application version remains `2.1.0`; the intended candidate
+  identity remains `v2.1.0-rc.2`. At the preflight capture Dev was at
+  `827a22e92eba94445e98d1143b94e8d3ea4619b7` on
+  `codex/public-sample-ux-docs`, with 101 tracked changes and 26 untracked
+  files. It is not an exact release-candidate commit boundary.
+- The read-only `VerifyReleaseCandidate.ps1` probe stopped before restore or
+  package generation with `Release candidate verification requires a clean
+  tracked working tree.` No release output was produced by the probe. Existing
+  `dist` and `artifacts` roots are also present and must not be reused as RC2
+  evidence.
+- PL-0005 remains the external DLL license/provenance release blocker.
+  PL-0010 remains blocked at the SDK result-contract boundary with an explicit
+  defer decision. PL-0006 through PL-0009 are resolved in Dev but are not by
+  themselves an approved release commit.
+- Evidence is recorded in
+  `docs/reports/OPENVISIONLAB_RC2_PREFLIGHT_20260825.md` and
+  `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\pl0011_rc2_preflight_20260825_r1`.
+- Boundary: no version edit, original-repository change, commit, push, tag,
+  draft, publication, deployment, cleanup, or reset was performed. RC2 gate
+  execution resumes only after PL-0005 evidence, the explicit PL-0010
+  include/defer decision, an exact clean candidate, and separate release-stage
+  authorization are present.
+
+### 2026-08-25 PL-0005 Optional Binary Prune - Complete in Dev; Release Still Blocked
+
+- Per the user's explicit request, `dll/Vila.Core.dll` and
+  `dll/OpenCVSharp/opencv_ffmpeg400_64.dll` were removed from the Dev
+  worktree. The unused `Vila.Core` project reference and optional ImageCanvas
+  FFmpeg content-copy entry were removed as well.
+- The external binary manifest keeps both exact paths as
+  `deleted-in-worktree`/`forbidden` with their HEAD length and SHA-256 so a
+  later reintroduction fails the gate. WPG-CUSTOM remains present and its
+  PropertyGrid contract is unchanged.
+- Current Dev verification passed: zero-warning/zero-error Debug solution
+  build, external-reference gate, readiness contract, public sample asset
+  gate, and the 33-row public sample catalog (17 required, 16 expected
+  failures, 33 OK, 0 NG).
+- The user stated that WPG-CUSTOM was created by the user and selected the
+  owner-declaration classification. The manifest now excludes WPG-CUSTOM from
+  the third-party license blocker while retaining its DLL/XML, SHA-256, and
+  PropertyGrid runtime references. PL-0005 remains open for the other retained
+  blocked/provenance-incomplete binaries and NOTICE coverage.
+- Evidence is recorded in
+  `docs/reports/OPENVISIONLAB_OPTIONAL_BINARY_PRUNE_20260825.md` and
+  `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\pl0005_binary_prune_20260825_r1`.
+- Boundary: no original-repository change, commit, push, release publish, or
+  RC2 approval was performed.
+
+### 2026-08-26 WPG-CUSTOM Owner Classification - Complete in Dev; PL-0005 Still Open
+
+- The user selected option 1: keep the WPG-CUSTOM runtime and PropertyGrid
+  project references, but remove WPG-CUSTOM from the PL-0005 external
+  third-party license blocker.
+- The manifest now records `user-created-owner-declaration` and
+  `allow-with-user-ownership-declaration`. No WPG DLL/XML or project reference
+  was deleted or changed.
+- PL-0005 still covers the other retained blocked/provenance-incomplete DLLs:
+  remaining third-party NOTICE coverage and the conditional MaterialDesign
+  retention/removal decision. The seven first-candidate DLLs were removed by a
+  later user-authorized Dev prune.
+- The Dev branch remains `codex/public-sample-ux-docs` at `827a22e9`, matching
+  `origin/codex/public-sample-ux-docs`. This classification and the prior
+  binary-prune changes are not committed or pushed. The canonical version is
+  still `2.1.0`; `v2.1.0-rc.2` has not been created.
+- Evidence is recorded in
+  `docs/reports/OPENVISIONLAB_WPG_CUSTOM_OWNER_CLASSIFICATION_20260826.md`.
+
+### 2026-08-26 PL-0005 Remaining Binary Evidence Sweep - Partial
+
+- `dll/MaterialDesign/MaterialDesignColors.dll` exactly matches the
+  `MaterialDesignColors 3.0.0` official NuGet `net462` DLL, and
+  `dll/MaterialDesign/MaterialDesignThemes.Wpf.dll` exactly matches the
+  `MaterialDesignThemes 5.0.0` official NuGet `net462` DLL. Both manifest
+  entries now record MIT, exact-package binary provenance, and
+  `allow-with-third-party-notice`.
+- Cyotek ImageBox and SharpGL.SceneGraph were compared against their official
+  NuGet package candidates. No candidate matched the repository SHA-256, so
+  both remain blocked rather than being approved from upstream license pages
+  alone. CircularProgressBar, EzBasicAxl, Matrox, TabControl, and
+  WinFormAnimation remain unresolved as well.
+- Evidence is recorded in
+  `docs/reports/OPENVISIONLAB_REMAINING_BINARY_EVIDENCE_SWEEP_20260826.md`,
+  `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\pl0005_remaining_binary_evidence_20260826_r1`,
+  and
+  `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\pl0005_remaining_binary_evidence_20260826_r2`.
+- PL-0005 is still `Incomplete`; no original-repository change, commit, push,
+  tag, release, or deployment was performed. The canonical version remains
+  `2.1.0`, and `v2.1.0-rc.2` has not been created.
+
+### 2026-08-26 PL-0005 First-Candidate DLL Prune - Complete in Dev; Release Still Blocked
+
+- The user authorized removal of exactly seven repository-only DLLs:
+  CircularProgressBar, Cyotek ImageBox, EzBasicAxl, Matrox, SharpGL.SceneGraph,
+  TabControl, and WinFormAnimation. Each was backed up to D: with its length,
+  SHA-256, and HEAD blob SHA-1 before deletion.
+- The manifest now records those seven paths as
+  `deleted-in-worktree`/`forbidden`. The required `SharpGL.dll` and
+  `SharpGL.WinForms.dll` remain; the conditional MaterialDesign pair also
+  remains untouched.
+- Current verification passed: zero-warning/zero-error Debug solution build,
+  external-reference gate with all seven paths `ABSENT | forbidden`, readiness
+  contract, and public sample asset check (`CatalogRows=33`,
+  `ManifestAssets=229`, `Pipelines=17`). No deletion error occurred.
+- Evidence is recorded in
+  `docs/reports/OPENVISIONLAB_FIRST_CANDIDATE_DLL_PRUNE_20260826.md` and
+  `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\pl0005_first_candidate_prune_20260826`.
+- The deletion slice is complete in Dev. PL-0005 remains open for the
+  MaterialDesign NOTICE/retention decision and the final distribution gate.
+  No original-repository change, commit, push, tag, release, or deployment was
+  performed; the canonical version remains `2.1.0`.
+
+### 2026-08-26 PL-0005 MaterialDesign DLL Prune - Complete in Dev; NOTICE/Distribution Gate Remains
+
+- The user authorized deletion of `dll/MaterialDesign/MaterialDesignColors.dll`
+  and `dll/MaterialDesign/MaterialDesignThemes.Wpf.dll`. Both were backed up
+  with length, SHA-256, and HEAD blob identity before deletion. The excluded
+  `BooleanToEyeIconConverter .cs` source file was not changed.
+- The manifest records both paths as `deleted-in-worktree`/`forbidden`. All
+  nine previously repository-only candidate DLLs are now absent; required
+  runtime DLLs, including WPG-CUSTOM and the two required SharpGL runtime
+  siblings, remain present and hash-verified.
+- Current verification passed: zero-warning/zero-error Debug solution build,
+  external-reference gate, readiness contract, and public sample asset check
+  (`CatalogRows=33`, `ManifestAssets=229`, `Pipelines=17`). No deletion or
+  validation error occurred.
+- Evidence is recorded in
+  `docs/reports/OPENVISIONLAB_MATERIALDESIGN_DLL_PRUNE_20260826.md` and
+  `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\pl0005_materialdesign_prune_20260826`.
+- PL-0005 remains `Incomplete` only for retained-dependency NOTICE coverage
+  and the final clean Release distribution gate. No original-repository change,
+  commit, push, tag, release, or deployment was performed; the canonical
+  version remains `2.1.0`.
+
+### 2026-08-26 PL-0005 Retained Dependency NOTICE Coverage - Complete in Dev; Clean Release Gate Remains
+
+- Root `NOTICE` now covers every present manifest entry whose release policy is
+  `allow*`: FontAwesome.Sharp and its embedded Font Awesome Free 5.15.1 fonts,
+  OpenCvSharp managed/native runtime, OpenVisionLab Vision SDK 3.0, SharpGL,
+  and the separate WPG-CUSTOM owner declaration.
+- `tools/TestThirdPartyNoticeCoverage.ps1` requires a `noticeMarker` for every
+  present allowlisted manifest entry and fails when the marker is absent from
+  the selected NOTICE file. `VerifyReleaseCandidate.ps1` checks the repository
+  NOTICE before publish, and `TestReleaseDistribution.ps1` checks the copied
+  distribution NOTICE after publish.
+- Current verification passed: NOTICE coverage for all 10 present `allow*`
+  entries, Debug/Release external references, Debug/Release solution builds
+  with zero warnings/errors, Release readiness, public sample assets, document
+  index, and PL-0005 ledger validation.
+- Evidence is recorded in
+  `docs/reports/OPENVISIONLAB_RETAINED_DEPENDENCY_NOTICE_COVERAGE_20260826.md`
+  and
+  `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\pl0005_notice_coverage_20260826`.
+- PL-0005 remains `Incomplete` only for the final clean Release distribution
+  gate. The current Dev worktree still contains pre-existing tracked changes,
+  so `VerifyReleaseCandidate.ps1` cannot admit this worktree as the exact clean
+  candidate. No original-repository change, commit, push, tag, release, or
+  deployment was performed; the canonical version remains `2.1.0`.
+
+### 2026-08-24 PL-0004 Display-Store/Viewer Lifetime - Complete In Dev
+
+- `ImageSpaceService` now owns each stored Bitmap through a reference-counted
+  image owner. Replacement, deletion, reload, and service disposal release the
+  store reference; the image retires only after every active lease releases.
+- The central workspace holds a lease while its Canvas/fallback presenters
+  borrow the image. Docked and popout viewers clone under a short lease and
+  dispose viewer-owned images on refresh, close, deletion, or Shell shutdown.
+- Shell shutdown detaches command/visual bindings before disposing its display
+  store. Canvas shutdown cancels queued refreshes, disposes child/host state,
+  and stops SharpGL 3.1.1's unowned drawing timer before OpenGL teardown.
+- The exact five-cycle 4512 lifetime gate passed: all replacement hashes
+  matched store/dock/popout, active layer returned to Main, Preview/Run and
+  routes were unchanged, live viewer count stayed one, and retained ranges
+  were private 16.8 MB, working set 4.3 MB, managed 0.1 MB, handle range 21
+  with positive growth 2, GDI 0, USER 0, and 70.311 seconds.
+- `HistoryContractCheck`, eight focused same-process WPF regressions, the
+  zero-warning solution build, readiness 13/13, vendored references, and
+  33-row/229-asset/17-Pipeline public sample checks passed.
+- Evidence:
+  `docs/reports/OPENVISIONLAB_PROJECT_ANALYSIS_AND_RELIABILITY_PRIORITY_20260823.md`,
+  `D:\OpenVisionLab-TestData\OpenVisionLab\pl-0004-display-lifetime-20260824\after-timer-stop-5cycles`,
+  `D:\OpenVisionLab-TestData\OpenVisionLab\pl-0004-display-lifetime-20260824\final-directional-handle-gate-5cycles`,
+  and
+  `D:\OpenVisionLab-TestData\OpenVisionLab\pl-0004-display-lifetime-20260824\final-focused-regression`.
+- Boundary: GPU VRAM, intra-operation peaks, native framebuffer readback,
+  every OpenGL exception path, actual-EXE theme/DPI/monitor, arbitrary
+  duration, multi-PC, original-repo promotion, commit, and push remain
+  separate.
+
+### 2026-08-24 OpenGL/GPU/Viewer Coordinate Reliability - Complete In Dev
+
+- CP0/CP1 froze the current Dev baseline, traced the OpenGL callers, and
+  recorded the Texture/FBO/RBO/PBO/display-list/Bitmap-lock/context/timer
+  owner and failure matrix.
+- CP2 added local allocation-ID/flag `try/finally` cleanup for FBO/RBO/PBO,
+  Bitmap locks, texture conversion, overlay texture/display-list failures,
+  neutral bindings, and primary-exception preservation. The forced callback
+  exception was followed by a successful render in the same context.
+- CP3 passed the predeclared per-process GPU dedicated/shared plateau gate for
+  the exact 4512 x 4512 workflow. CP4 passed native four-corner/edge/1x1/full/
+  region/bounds identity and exact half-open region restore.
+- CP5 passed the current-source ten-target focused suite, solution build,
+  HistoryContract, readiness, external-reference, public-sample, and
+  documentation-index gates. The dated completion record is
+  `docs/reports/OPENVISIONLAB_OPENGL_GPU_COORDINATE_RELIABILITY_20260824.md`.
+- Evidence is under
+  `D:\OpenVisionLab-TestData\OpenVisionLab\opengl-gpu-coordinate-20260824-114354`.
+- Boundary: one invalid Windows GPU performance-counter sample was retained
+  in the log; valid late samples still passed both plateau checks. Native
+  bitmap/readback is the pixel proof because hosted OpenGL may not appear in
+  `RenderTargetBitmap`. No actual desktop EXE, multi-monitor/DPI/theme, or
+  multi-PC qualification is claimed. An older composite smoke ordering with
+  `reliability` before `lifetime` still reproduced a lifetime
+  `NullReferenceException`; the final current-source suite uses lifetime-first
+  ordering and all ten targets pass. This is a smoke-order precondition, not
+  an all-order guarantee.
+
+### 2026-08-23 Image Ownership And Reliability Gates - Complete In Dev
+
+- `ImageSpaceFrame` now exposes explicit `Borrow(Bitmap)` and
+  `TakeOwnership(Bitmap)` creation. DisplayManager synchronously consumes every
+  frame after creating one independent store clone; borrowed caller Bitmaps and
+  source Mats remain caller-owned.
+- `CanvasImageLoader` now returns an owned OpenCvSharp Mat through
+  `Cv2.ImRead(..., AnyColor)`. ImageCanvas no longer references/copies Emgu and
+  the three inactive Emgu managed/native DLLs were removed after verified
+  D-drive backup.
+- The frozen Mean Recipe soak passed 1,000/1,000 runs with zero failure,
+  metric/image drift, or Recipe/source mutation. p95 was 42.665 ms, max
+  313.284 ms, maximum private growth 1.141 MB, and every late plateau range was
+  zero.
+- The exact 4512 x 4512 8bpp current-source WPF gate verifies source/store raw
+  identity, workspace/automatic-dock dimensions and texture creation, and the
+  maximum of AfterSet, RenderedBeforeGc, and retained process-resource
+  snapshots. It does not claim native pixel readback, intra-SetMain peak, or
+  GPU VRAM.
+- One central selected-layer refresh, one trailing dock refresh, and two
+  unsampled base-image mipmap generations were removed. Command CanExecute
+  re-evaluation remains explicit. Two independent final-code runs retained
+  exact identity/dimensions and reduced retained private growth from the prior
+  624.1 MB baseline to 523.0/524.2 MB; SetMain was 1,589/1,319 ms versus the
+  prior 3,572 ms.
+- Focused workspace image-load, quick-action command, layer management,
+  popout, 5200 large-image, owned-Mat, and template-editor smokes passed from
+  the current `Any CPU` build.
+- Evidence:
+  `D:\OpenVisionLab-TestData\OpenVisionLab\imagespace-frame-ownership-20260823`,
+  `D:\OpenVisionLab-TestData\OpenVisionLab\emgu-owned-loader-20260823`,
+  `D:\OpenVisionLab-TestData\OpenVisionLab\reliability-gates-20260823\soak-rerun`,
+  `D:\OpenVisionLab-TestData\OpenVisionLab\reliability-gates-20260823\refresh-mipmap-final-verified`,
+  `D:\OpenVisionLab-TestData\OpenVisionLab\reliability-gates-20260823\refresh-mipmap-final-verified-rerun`,
+  `D:\OpenVisionLab-TestData\OpenVisionLab\reliability-gates-20260823\final-current-build`,
+  and
+  `D:\OpenVisionLab-TestData\OpenVisionLab\reliability-gates-20260823\refresh-command-final-regressions`.
+- Boundary at that checkpoint: PL-0004 above now closes coordinated store/
+  viewer retirement. Further clone removal, hidden presentation allocations,
+  OpenGL exceptional/GPU cleanup, actual-EXE DPI/theme/monitor,
+  original-repo promotion, commit, and push remain separate.
+
+### 2026-08-23 Native UI Preview/Teaching SDK Tool Lifetime - Complete In Dev
+
+- All 15 active direct SDK Tool construction sites across native Tool Preview
+  and Auto MPoint teaching now have a creator-side disposal owner. Thirteen use
+  lexical `using`; Filter and Morphology use the shared custom executor's
+  `finally` and clean up if `SetProperty` fails.
+- The Preview controller now disposes the complete `VisionToolResult`. Auto
+  MPoint uses the SDK Tool/result disposal contract rather than manually
+  disposing three Tool-owned Mats, and the unused `Func<IVisionTool>` document
+  constructor that bypassed ownership was removed.
+- The Debug solution build passed with zero warnings/errors. The 15-site source
+  contract, six focused current-source WPF Preview/teaching captures,
+  `VisionUiContractCheck`, runtime stability, readiness 13/13, vendored
+  references, and 33-row/229-asset/17-Pipeline public samples passed.
+- No visible control, parameter, algorithm, result, layer, active-layer,
+  routing, Recipe, Pipeline, or explicit Preview behavior changed. This is
+  current-source WPF view evidence, not an actual `OpenVisionLab.exe`
+  theme/DPI matrix.
+- Three stale/transient focused-smoke assertions found during verification are
+  separated as `PL-0003`; alternate passing targets cover the same product
+  paths without misclassifying the text/timing failures as product failures.
+- Evidence:
+  `docs/reports/OPENVISIONLAB_PROJECT_ANALYSIS_AND_RELIABILITY_PRIORITY_20260823.md`
+  and
+  `D:\OpenVisionLab-TestData\OpenVisionLab\ui-tool-lifetime-20260823`.
+- Boundary at that checkpoint: the latest entry above now closes the
+  ImageSpaceFrame, Emgu loader, 4512, and 1,000-run slices. End-to-end
+  store/viewer leases and actual-EXE theme/DPI qualification remain. Original
+  was not touched.
+
+### 2026-08-23 Project Analysis And Pipeline Tool Lifetime - Complete In Dev
+
+- The requested repository/product analysis is recorded in the required
+  39-section structure, with source, current-run, historical, and unverified
+  findings kept separate. It selects reliability ownership before new
+  algorithms or platform expansion.
+- SDK 3.0 reflection found 14 concrete IVisionTool implementations and all are
+  disposable. Runtime probes proved that Threshold and Mean returned result
+  images and metrics remain valid after Tool disposal; no defensive result
+  clone is required.
+- All three production `VisionPipelineAppToolFactory.Create` consumers now
+  dispose disposable Tools. A capture failure disposes the unreturned result;
+  Blob/Contour audit, MultiMatchMean, NormalizeImage, and composite
+  LineDistance/LineIntersection temporaries now have explicit local owners.
+- Debug solution build passed with zero warnings/errors. Runtime stability,
+  object-dimension audit, CVR-10 MultiMatchMean, and public LineDistance runtime
+  checks passed without changing metrics, overlays, rejection reasons, or
+  Pipeline routing. Readiness 13/13, external references, and public samples
+  also passed.
+- Evidence:
+  `docs/reports/OPENVISIONLAB_PROJECT_ANALYSIS_AND_RELIABILITY_PRIORITY_20260823.md`
+  and `D:\OpenVisionLab-TestData\OpenVisionLab\tool-lifetime-20260823`.
+- Boundary at that checkpoint: direct native UI Tool lifetime and the later
+  ImageSpaceFrame, Emgu loader, 4512, and 1,000-run slices are now closed by the
+  entries above. Store/viewer lease ownership remains. No WPF UI was changed by
+  the Pipeline slice; original was not touched.
 
 ### 2026-08-21 GitHub Actions Artifact Storage Cleanup - Complete In Dev And Original
 
@@ -596,6 +1087,19 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
 
 ## Current Priority And Activation Conditions
 
+- Immediate execution order:
+  1. obtain the missing `PL-0005` external license/provenance evidence |
+     Recommended model: none until prerequisite evidence exists | Reasoning
+     effort: none until prerequisite evidence exists;
+  2. obtain/coordinate the `PL-0010` Vision SDK one-pass candidate contract;
+     the C1 baseline is complete but implementation is blocked |
+     Recommended model: none until SDK prerequisite exists | Reasoning effort:
+     none until SDK prerequisite exists;
+  3. run `PL-0011` RC2 evidence gate only after PL-0005 is evidenced and
+     PL-0010 has an explicit include/defer decision; release mutations remain
+     separately authorized | Recommended model: gpt-5.6-luna | Reasoning effort:
+     high.
+
 - Original Artifact cleanup and the recurrence-prevention workflow policy are
   complete in Dev and original. No further repository storage correction is
   active without new current-usage evidence.
@@ -623,16 +1127,50 @@ behavior belongs to `docs/contracts`; detailed completion evidence belongs to
 - P290 is complete and verified in Dev. Promotion to the original repository
   remains a separate explicitly authorized task.
 - P286 and P287 are published in Dev and original and their hosted GitHub
-  Actions runs pass. No repository reliability correction is active without a
-  new verified regression.
+  Actions runs pass.
 - P289 remains complete in Dev and original, and its Vision SDK 3.0 result is
   included in the published `v2.1.0-rc.1` pre-release. The release tag, five
   assets, full local gate, hosted CI, and public-download hash round trip pass.
 - Stable/GA promotion is not active. It requires explicit user acceptance of
   RC feedback and a separate distribution decision for any installer,
   signing, update, rollback, uninstall, or self-contained scope.
-- No product feature is active without a named operator blocker or a verified
-  current-build regression.
+- The user authorized the 2026-08-23 analysis-driven reliability program. Its
+  production Pipeline and direct native UI Preview/Auto MPoint SDK Tool-
+  lifetime slices, ImageSpaceFrame transfer, owned Canvas loader/Emgu removal,
+  exact 4512 process-resource gate, frozen-Recipe 1,000-run soak, and first
+  duplicate-refresh/mipmap reduction are complete in Dev.
+- `PL-0004` coordinated display-store/viewer lifetime is complete in Dev. Do
+  not reopen it or remove more full-image clones without changed evidence.
+- The OpenGL exceptional-cleanup/GPU-allocation/viewer-coordinate slice is
+  complete in Dev. Its current-source completion record is
+  `docs/reports/OPENVISIONLAB_OPENGL_GPU_COORDINATE_RELIABILITY_20260824.md`.
+- P256 is complete in Dev. The current-source walkthrough closed the bounded
+  four-Step `Filter -> Threshold -> Morphology -> Blob -> restart -> explicit
+  Run Review` route with all four routes preserved and the explicit review
+  returning `4 OK / 0 NG / 0 WAIT` in `24.3 ms`. Its completion record is
+  `docs/reports/OPENVISIONLAB_P256_FOUR_STEP_ROUTE_CLARITY_20260824.md`.
+- P256 is a frozen acceptance for its recorded source/build/fixture/recipe
+  hashes and monitor bounds. Do not rerun the same walkthrough or focused
+  smoke merely to reconfirm it. Reopen only for a source/build, contract,
+  fixture/recipe, runtime/monitor, evidence-validity, harness/measurement, or
+  reproduced-regression change; the completion report is the confirmation for
+  the unchanged condition.
+- The 2026-08-24 desktop TIFF retry is recorded in
+  `docs/reports/OPENVISIONLAB_DESKTOP_TIFF_LOAD_20260824.md`. The current Dev
+  EXE now fails closed on the observed `System.Drawing.Bitmap` overflow and
+  preserves the empty Main-layer/routing state, but the original
+  `31,800 x 96,800` TIFF is not loaded for inspection. Do not repeat the same
+  retry when its input/source/build/loader/monitor/evidence identity is
+  unchanged; reopen only after one of those identities changes or a regression
+  is reproduced.
+- After the active source-hardening train, the remaining project priority is
+  CVR-00, deferred until three independent first-time participants and their
+  unedited observations exist. Agent-run recordings are not participant
+  evidence. Recommended model: none until observations exist | Reasoning
+  effort: none until observations exist.
+- Execute the actual-EXE theme, Wide/Compact, DPI, resize, and monitor matrix
+  only when the next visible UI slice is admitted. Recommended model:
+  gpt-5.6-sol | Reasoning effort: high.
 - CVR-00 remains deferred until three independent first-time participants and
   their unedited observations exist. Agent-operated recordings are not novice
   evidence.

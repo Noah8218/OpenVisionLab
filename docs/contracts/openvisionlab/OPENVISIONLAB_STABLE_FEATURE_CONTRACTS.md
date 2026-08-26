@@ -91,6 +91,51 @@ When a feature below is marked stable, do not refactor, simplify, replace, or re
 - Bitmap conversion must dispose temporary native Mats. OpenGL font rendering
   must reserve the full glyph display-list range, reject creation failure, and
   delete cached lists with the owning canvas.
+- `ImageSpaceFrame.Borrow(Bitmap)` never owns the caller Bitmap;
+  `TakeOwnership(Bitmap)` transfers Bitmap disposal to the frame. A
+  DisplayManager call synchronously consumes and disposes the frame on every
+  exit after the presenter creates its independent store clone. `FromMat`
+  creates an owned frame Bitmap and never disposes the caller Mat.
+- `ImageSpaceService` owns each stored Bitmap through one reference-counted
+  image owner. Replacement, removal, and service disposal release only the
+  store reference; the Bitmap retires after every active `ImageSpaceImageLease`
+  releases. Long-lived central Canvas/fallback borrowers hold a lease until
+  rebind or disposal. Docked and popout viewers acquire a short lease while
+  cloning into viewer-owned state, then dispose that clone on refresh/close.
+  Do not return to an uncoordinated borrowed store reference or dispose a
+  replaced image while a presenter can still use it.
+- Shell disposal must close popouts and dock content, release the central
+  preview lease, detach command/visual bindings, and only then dispose its
+  display store. ImageCanvas disposal must stop SharpGL 3.1.1's drawing timer
+  before destroying/disposing the OpenGL child so transient viewers do not
+  accumulate USER resources.
+- `CanvasImageLoader.LoadMatFromFile` returns an independently owned
+  OpenCvSharp Mat that the caller disposes. Do not reintroduce an Emgu
+  DataPointer alias, `Emgu.CV.UI.dll`, `Emgu.CV.World.dll`, or `cvextern.dll`.
+- Main image application must not perform the same selected-detail or docked
+  viewer image refresh more than once through one refresh chain. Removing a
+  visual refresh must preserve Workspace/Layer command CanExecute
+  re-evaluation. Base-image texture paths configured with plain `GL_LINEAR`
+  minification must not generate an unused mipmap chain.
+- `wpf_shell_host_image_4512_reliability` starts from an empty shown shell
+  after initial layout/OpenGL initialization. It verifies exact source/store
+  raw identity, 4512 workspace/automatic-dock viewer dimensions, texture
+  creation, and catastrophe ceilings over the maximum of AfterSet,
+  RenderedBeforeGc, and retained process snapshots. It does not prove native
+  pixel readback, intra-SetMain peak, GPU VRAM, actual-EXE DPI/theme, repeated
+  reload cleanup, or field duration.
+- `wpf_shell_host_image_4512_lifetime` performs five exact 4512 replacement,
+  dock, popout, close/delete, forced-GC, and reload cycles. It requires exact
+  store/dock/popout replacement hashes, stable active layer and routes, no
+  Preview/Run side effect, no disposed viewer retained after collection, and
+  bounded private/working-set/managed/handle/GDI/USER plateau. It does not
+  claim GPU VRAM, intra-operation peaks, native pixel readback, actual-EXE UI
+  qualification, arbitrary duration, or field use.
+- `VisionRecipeRunnerSmoke --reliability-soak-contract` uses one frozen parsed
+  Pipeline and one in-memory source, performs 20 warmups and exactly 1,000
+  measured sequential runs, and fails on execution/result drift, source or
+  Recipe mutation, threshold breach, or a non-plateauing late resource sample.
+  It proves only that frozen Recipe/corpus and does not authorize parallelism.
 - Background maintenance failures such as log retention cleanup must leave an
   observable trace. Do not create recursive or speculative logging layers.
 
