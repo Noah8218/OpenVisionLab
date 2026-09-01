@@ -5,6 +5,25 @@ OpenVisionLab is an **OpenCvSharp 4 rule-based machine vision workbench**.
 It lets users build inspection sequences, adjust tool parameters, and review
 the images and measurements behind each OK/NG decision.
 
+## Version
+
+Current version: `v2.2.0-dev`
+
+This project is maintained using explicit version numbers.
+
+### Recent version history
+
+#### `v2.2.0-dev` (2026-09-01)
+
+- Adds authenticated TCP exchange for immutable 2D integration transactions.
+- Keeps acknowledgement, inspection execution, and result publication
+  explicit; receiving bytes never runs an inspection automatically.
+
+#### `v2.1.0-rc.3` (2026-08-26)
+
+- Public release-candidate baseline for the deterministic 2D inspection
+  workbench and its explicit Preview/Run workflow.
+
 ## Quick Overview
 
 OpenVisionLab is a Windows desktop application for building and validating

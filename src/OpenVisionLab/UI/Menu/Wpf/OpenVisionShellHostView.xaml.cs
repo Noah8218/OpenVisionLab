@@ -117,6 +117,7 @@ namespace OpenVisionLab
         private readonly OpenVisionShellHostSessionState sessionState = new OpenVisionShellHostSessionState();
         private readonly OpenVisionShellHostSessionController sessionController;
         private readonly OpenVisionRecipeLlmBrowserAssistController llmBrowserAssistController = new OpenVisionRecipeLlmBrowserAssistController();
+        private readonly OpenVisionTcpIntegrationController tcpIntegrationController;
         private readonly Queue<OpenVisionRecipePendingEditDecision> pendingRecipeEditDecisionsForTest =
             new Queue<OpenVisionRecipePendingEditDecision>();
         private VisionToolPropertyGridHost recipeStepPropertyGridHostController;
@@ -160,6 +161,7 @@ namespace OpenVisionLab
                 () => Window.GetWindow(this));
 
             InitializeComponent();
+            tcpIntegrationController = new OpenVisionTcpIntegrationController(Dispatcher);
             recipeContextPresenter = new OpenVisionShellHostRecipeContextPresenter(
                 txtHostRecipeContextLabel,
                 txtHostRecipeContext,
@@ -481,7 +483,8 @@ namespace OpenVisionLab
                 commandController,
                 toolWindowLifecycleController,
                 toolWindowController,
-                OpenGuidedSetupForTool);
+                OpenGuidedSetupForTool,
+                () => tcpIntegrationController.Show(Window.GetWindow(this)));
             sessionController = new OpenVisionShellHostSessionController(
                 sessionState,
                 dockedLayerWorkspaceComposition.Session,
@@ -663,6 +666,7 @@ namespace OpenVisionLab
             lifecycle.Track(
                 () => OpenVisionNativeToolSettingsStore.SettingsSaved += OnNativeToolSettingsSaved,
                 () => OpenVisionNativeToolSettingsStore.SettingsSaved -= OnNativeToolSettingsSaved);
+            lifecycle.Track(null, tcpIntegrationController.Dispose);
         }
 
         public bool IsToolRailCompact

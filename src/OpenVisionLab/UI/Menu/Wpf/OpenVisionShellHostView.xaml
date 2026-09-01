@@ -989,6 +989,13 @@
                         ToolTip="{Binding GuideToolTipText}"
                         Cursor="Hand"
                         Command="{Binding ChromeCommands.OpenTutorialCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}" />
+                <Button Style="{StaticResource TopNavButtonStyle}"
+                        AutomationProperties.AutomationId="HostTcpIntegrationButton"
+                        AutomationProperties.Name="TCP Integration"
+                        Content="TCP"
+                        ToolTip="TCP Integration"
+                        Cursor="Hand"
+                        Command="{Binding ChromeCommands.OpenTcpIntegrationCommand, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}" />
             </StackPanel>
 
             <DockPanel Grid.Column="1" LastChildFill="False" Margin="10,0">

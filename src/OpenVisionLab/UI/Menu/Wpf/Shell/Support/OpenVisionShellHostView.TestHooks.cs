@@ -12,6 +12,11 @@ namespace OpenVisionLab
 {
     public sealed partial class OpenVisionShellHostView
     {
+        internal OpenVisionTcpIntegrationController TcpIntegrationControllerForTest => tcpIntegrationController;
+
+        internal void OpenTcpIntegrationForTest() =>
+            tcpIntegrationController.Show(System.Windows.Window.GetWindow(this));
+
         internal Func<string, string, string, bool>
             QualifiedSnapshotLifecycleConfirmationForTest { get; set; }
 

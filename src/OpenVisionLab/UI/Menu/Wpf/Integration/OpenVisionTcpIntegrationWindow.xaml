@@ -1,0 +1,344 @@
+<Window x:Class="OpenVisionLab.OpenVisionTcpIntegrationWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+        xmlns:local="clr-namespace:OpenVisionLab"
+        Title="{Binding WindowTitle}"
+        Width="1180"
+        Height="760"
+        MinWidth="960"
+        MinHeight="640"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        AutomationProperties.AutomationId="OpenVisionTcpIntegrationWindow">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <local:SharedResourceDictionary Source="../../../VisionTest/Wpf/Tooling/Presentation/VisionToolWpfTheme.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid Background="{StaticResource VisionTool.SurfaceBrush}" Margin="14">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="10" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="10" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0"
+                Padding="14,10"
+                Background="{StaticResource VisionTool.HeaderBrush}"
+                BorderBrush="{StaticResource VisionTool.HeaderBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="7">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="{Binding WindowTitle}"
+                               FontSize="18"
+                               FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding ScopeText}"
+                               Margin="0,4,14,0"
+                               Foreground="{StaticResource VisionTool.SecondaryTextBrush}"
+                               TextWrapping="Wrap"
+                               TextTrimming="None" />
+                </StackPanel>
+                <Border Grid.Column="1"
+                        Padding="10,6"
+                        VerticalAlignment="Center"
+                        Background="{StaticResource VisionTool.PanelBrush}"
+                        BorderBrush="{StaticResource VisionTool.AccentBrush}"
+                        BorderThickness="1"
+                        CornerRadius="5">
+                    <TextBlock AutomationProperties.AutomationId="TcpIntegrationSessionStatus"
+                               Text="{Binding SessionStatusText}"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource VisionTool.ActionTextBrush}" />
+                </Border>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="390" />
+                <ColumnDefinition Width="10" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <ScrollViewer Grid.Column="0"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled">
+                <StackPanel>
+                    <GroupBox Header="{Binding SetupTitleText}" Padding="10">
+                        <StackPanel>
+                            <TextBlock x:Name="localRootLabel" Text="{Binding LocalRootLabelText}" Style="{StaticResource SectionTitleStyle}" />
+                            <TextBox AutomationProperties.AutomationId="TcpIntegrationLocalRoot"
+                                     AutomationProperties.LabeledBy="{Binding ElementName=localRootLabel}"
+                                     Text="{Binding LocalExchangeRoot, UpdateSourceTrigger=PropertyChanged}"
+                                     IsEnabled="{Binding CanEditSettings}"
+                                     HorizontalContentAlignment="Left" />
+
+                            <Grid Margin="0,10,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="10" />
+                                    <ColumnDefinition Width="112" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock x:Name="listenAddressLabel" Text="{Binding ListenAddressLabelText}" Style="{StaticResource SectionTitleStyle}" />
+                                    <TextBox AutomationProperties.AutomationId="TcpIntegrationListenAddress"
+                                             AutomationProperties.LabeledBy="{Binding ElementName=listenAddressLabel}"
+                                             Text="{Binding ListenAddress, UpdateSourceTrigger=PropertyChanged}"
+                                             IsEnabled="{Binding CanEditSettings}"
+                                             HorizontalContentAlignment="Left" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock x:Name="listenPortLabel" Text="{Binding ListenPortLabelText}" Style="{StaticResource SectionTitleStyle}" />
+                                    <TextBox AutomationProperties.AutomationId="TcpIntegrationListenPort"
+                                             AutomationProperties.LabeledBy="{Binding ElementName=listenPortLabel}"
+                                             Text="{Binding ListenPortText, UpdateSourceTrigger=PropertyChanged}"
+                                             IsEnabled="{Binding CanEditSettings}" />
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid Margin="0,10,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="10" />
+                                    <ColumnDefinition Width="112" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock x:Name="peerHostLabel" Text="{Binding PeerHostLabelText}" Style="{StaticResource SectionTitleStyle}" />
+                                    <TextBox AutomationProperties.AutomationId="TcpIntegrationPeerHost"
+                                             AutomationProperties.LabeledBy="{Binding ElementName=peerHostLabel}"
+                                             Text="{Binding PeerHost, UpdateSourceTrigger=PropertyChanged}"
+                                             IsEnabled="{Binding CanEditSettings}"
+                                             HorizontalContentAlignment="Left" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock x:Name="peerPortLabel" Text="{Binding PeerPortLabelText}" Style="{StaticResource SectionTitleStyle}" />
+                                    <TextBox AutomationProperties.AutomationId="TcpIntegrationPeerPort"
+                                             AutomationProperties.LabeledBy="{Binding ElementName=peerPortLabel}"
+                                             Text="{Binding PeerPortText, UpdateSourceTrigger=PropertyChanged}"
+                                             IsEnabled="{Binding CanEditSettings}" />
+                                </StackPanel>
+                            </Grid>
+
+                            <TextBlock x:Name="sharedKeyLabel"
+                                       Margin="0,10,0,0"
+                                       Text="{Binding SharedKeyLabelText}"
+                                       Style="{StaticResource SectionTitleStyle}" />
+                            <PasswordBox x:Name="sessionSharedKeyInput"
+                                         Height="29"
+                                         Padding="8,3"
+                                         AutomationProperties.AutomationId="TcpIntegrationSessionSharedKey"
+                                         AutomationProperties.LabeledBy="{Binding ElementName=sharedKeyLabel}"
+                                         IsEnabled="{Binding CanEditSettings}"
+                                         PasswordChanged="OnSessionSharedKeyPasswordChanged" />
+                            <TextBlock Margin="0,4,0,0"
+                                       Text="{Binding SharedKeySourceText}"
+                                       Foreground="{StaticResource VisionTool.SecondaryTextBrush}"
+                                       TextWrapping="Wrap"
+                                       TextTrimming="None" />
+                            <TextBlock Margin="0,3,0,0"
+                                       AutomationProperties.AutomationId="TcpIntegrationKeyStatus"
+                                       Text="{Binding KeyStatusText}"
+                                       Foreground="{StaticResource VisionTool.ActionTextBrush}"
+                                       TextWrapping="Wrap"
+                                       TextTrimming="None" />
+                            <TextBlock Margin="0,4,0,0"
+                                       AutomationProperties.AutomationId="TcpIntegrationValidationMessage"
+                                       Text="{Binding ValidationMessageText}"
+                                       Foreground="{StaticResource VisionTool.StatusErrorBrush}"
+                                       TextWrapping="Wrap"
+                                       TextTrimming="None" />
+
+                            <WrapPanel Margin="0,12,0,0">
+                                <Button AutomationProperties.AutomationId="TcpIntegrationSaveSettingsButton"
+                                        Command="{Binding SaveSettingsCommand}"
+                                        Padding="10,6"
+                                        Margin="0,0,6,6"
+                                        Content="{Binding SaveText}" />
+                                <Button AutomationProperties.AutomationId="TcpIntegrationResetSettingsButton"
+                                        Command="{Binding ResetSettingsCommand}"
+                                        Padding="10,6"
+                                        Margin="0,0,6,6"
+                                        Content="{Binding ResetText}" />
+                                <Button AutomationProperties.AutomationId="TcpIntegrationReloadKeyButton"
+                                        Command="{Binding ReloadKeyCommand}"
+                                        Padding="10,6"
+                                        Margin="0,0,0,6"
+                                        Content="{Binding ReloadKeyText}" />
+                            </WrapPanel>
+                        </StackPanel>
+                    </GroupBox>
+
+                    <GroupBox Margin="0,10,0,0" Header="TCP Session" Padding="10">
+                        <WrapPanel>
+                            <Button AutomationProperties.AutomationId="TcpIntegrationStartButton"
+                                    AutomationProperties.Name="{Binding StartText}"
+                                    Command="{Binding StartCommand}"
+                                    Style="{StaticResource VisionTool.PrimaryActionButtonStyle}"
+                                    Padding="11,6"
+                                    Margin="0,0,6,6">
+                                <StackPanel Orientation="Horizontal">
+                                    <iconPacks:PackIconMaterial Kind="LanConnect" Width="16" Height="16" Margin="0,0,6,0" />
+                                    <TextBlock Text="{Binding StartText}" Foreground="White" FontWeight="SemiBold" />
+                                </StackPanel>
+                            </Button>
+                            <Button AutomationProperties.AutomationId="TcpIntegrationStopButton"
+                                    AutomationProperties.Name="{Binding StopText}"
+                                    Command="{Binding StopCommand}"
+                                    Padding="11,6"
+                                    Margin="0,0,6,6">
+                                <StackPanel Orientation="Horizontal">
+                                    <iconPacks:PackIconMaterial Kind="Stop" Width="16" Height="16" Margin="0,0,6,0" />
+                                    <TextBlock Text="{Binding StopText}" />
+                                </StackPanel>
+                            </Button>
+                            <Button AutomationProperties.AutomationId="TcpIntegrationPingButton"
+                                    Command="{Binding PingCommand}"
+                                    Padding="11,6"
+                                    Margin="0,0,0,6"
+                                    Content="{Binding PingText}" />
+                        </WrapPanel>
+                    </GroupBox>
+                </StackPanel>
+            </ScrollViewer>
+
+            <Grid Grid.Column="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="10" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <GroupBox Header="{Binding InboxTitleText}" Padding="10">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="8" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <WrapPanel>
+                            <Button AutomationProperties.AutomationId="TcpIntegrationRefreshButton"
+                                    Command="{Binding RefreshCommand}"
+                                    Padding="10,6"
+                                    Margin="0,0,6,6"
+                                    Content="{Binding RefreshText}" />
+                            <Button AutomationProperties.AutomationId="TcpIntegrationAcknowledgeButton"
+                                    Command="{Binding AcknowledgeCommand}"
+                                    Padding="10,6"
+                                    Margin="0,0,6,6"
+                                    Content="{Binding AcknowledgeText}" />
+                            <Button AutomationProperties.AutomationId="TcpIntegrationRunButton"
+                                    Command="{Binding RunCommand}"
+                                    Style="{StaticResource VisionTool.PrimaryActionButtonStyle}"
+                                    Padding="10,6"
+                                    Margin="0,0,6,6"
+                                    Content="{Binding RunText}" />
+                            <Button AutomationProperties.AutomationId="TcpIntegrationPushButton"
+                                    Command="{Binding PushCommand}"
+                                    Padding="10,6"
+                                    Margin="0,0,6,6"
+                                    Content="{Binding PushText}" />
+                            <Button AutomationProperties.AutomationId="TcpIntegrationPullButton"
+                                    Command="{Binding PullCommand}"
+                                    Padding="10,6"
+                                    Margin="0,0,0,6"
+                                    Content="{Binding PullText}" />
+                        </WrapPanel>
+                        <DataGrid Grid.Row="2"
+                                  AutomationProperties.AutomationId="TcpIntegrationTransactions"
+                                  ItemsSource="{Binding Transactions}"
+                                  SelectedItem="{Binding SelectedTransaction, Mode=TwoWay}"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  CanUserAddRows="False"
+                                  CanUserDeleteRows="False"
+                                  SelectionMode="Single"
+                                  SelectionUnit="FullRow"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="Horizontal">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Binding="{Binding TransactionIdText}" Width="2*">
+                                    <DataGridTextColumn.Header><TextBlock Text="{Binding DataContext.TransactionHeaderText, RelativeSource={RelativeSource AncestorType=DataGrid}}" /></DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Binding="{Binding CreatedAtText}" Width="1.1*">
+                                    <DataGridTextColumn.Header><TextBlock Text="{Binding DataContext.CreatedHeaderText, RelativeSource={RelativeSource AncestorType=DataGrid}}" /></DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Binding="{Binding ProducerText}" Width="1.4*">
+                                    <DataGridTextColumn.Header><TextBlock Text="{Binding DataContext.ProducerHeaderText, RelativeSource={RelativeSource AncestorType=DataGrid}}" /></DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Binding="{Binding TargetText}" Width="1.4*">
+                                    <DataGridTextColumn.Header><TextBlock Text="{Binding DataContext.TargetHeaderText, RelativeSource={RelativeSource AncestorType=DataGrid}}" /></DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="ACK" Binding="{Binding AcknowledgementText}" Width="55" />
+                                <DataGridTextColumn Binding="{Binding ResultText}" Width="62">
+                                    <DataGridTextColumn.Header><TextBlock Text="{Binding DataContext.ResultHeaderText, RelativeSource={RelativeSource AncestorType=DataGrid}}" /></DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </GroupBox>
+
+                <GroupBox Grid.Row="2" Header="{Binding ResultTitleText}" Padding="10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="10" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="18" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="10" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="6" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="6" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="ACK" FontWeight="SemiBold" />
+                        <TextBlock Grid.Column="2" AutomationProperties.AutomationId="TcpIntegrationAckStatus" Text="{Binding AcknowledgementStatusText}" />
+                        <TextBlock Grid.Column="4" Text="Status" FontWeight="SemiBold" />
+                        <TextBlock Grid.Column="6" AutomationProperties.AutomationId="TcpIntegrationResultStatus" Text="{Binding ResultStatusText}" />
+                        <TextBlock Grid.Row="2" Text="Outcome" FontWeight="SemiBold" />
+                        <TextBlock Grid.Row="2" Grid.Column="2" AutomationProperties.AutomationId="TcpIntegrationResultOutcome" Text="{Binding ResultOutcomeText}" />
+                        <TextBlock Grid.Row="2" Grid.Column="4" Text="Run ID" FontWeight="SemiBold" />
+                        <TextBlock Grid.Row="2" Grid.Column="6" AutomationProperties.AutomationId="TcpIntegrationResultRunId" Text="{Binding ResultRunIdText}" TextWrapping="Wrap" TextTrimming="None" />
+                        <TextBlock Grid.Row="4" Text="Error" FontWeight="SemiBold" />
+                        <TextBlock Grid.Row="4" Grid.Column="2" Grid.ColumnSpan="5" AutomationProperties.AutomationId="TcpIntegrationResultError" Text="{Binding ResultErrorText}" TextWrapping="Wrap" TextTrimming="None" />
+                    </Grid>
+                </GroupBox>
+            </Grid>
+        </Grid>
+
+        <Border Grid.Row="4"
+                Padding="10,7"
+                Background="{StaticResource VisionTool.PanelBrush}"
+                BorderBrush="{StaticResource VisionTool.HeaderBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="5">
+            <StackPanel>
+                <TextBlock AutomationProperties.AutomationId="TcpIntegrationOperationStatus"
+                           AutomationProperties.LiveSetting="Polite"
+                           Text="{Binding OperationStatusText}"
+                           TextWrapping="Wrap"
+                           TextTrimming="None" />
+                <TextBlock Margin="0,3,0,0"
+                           AutomationProperties.AutomationId="TcpIntegrationLastTransfer"
+                           Text="{Binding LastTransferText}"
+                           Foreground="{StaticResource VisionTool.SecondaryTextBrush}"
+                           TextWrapping="Wrap"
+                           TextTrimming="None" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

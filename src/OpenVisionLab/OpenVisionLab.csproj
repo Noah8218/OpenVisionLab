@@ -2,9 +2,9 @@
   <PropertyGroup>
     <TargetFramework>net8.0-windows7.0</TargetFramework>
     <OutputType>WinExe</OutputType>
-    <Version>2.1.0</Version>
-    <AssemblyVersion>2.1.0.0</AssemblyVersion>
-    <FileVersion>2.1.0.0</FileVersion>
+    <Version>2.2.0-dev</Version>
+    <AssemblyVersion>2.2.0.0</AssemblyVersion>
+    <FileVersion>2.2.0.0</FileVersion>
     <Deterministic>true</Deterministic>
     <UseWindowsForms>false</UseWindowsForms>
     <UseWPF>true</UseWPF>
@@ -62,6 +62,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <OpenVisionLabEnableEmbeddedSmokeRunner Condition="'$(OpenVisionLabEnableEmbeddedSmokeRunner)' == ''">false</OpenVisionLabEnableEmbeddedSmokeRunner>
+    <OpenVisionIntegrationApplicationId>OpenVisionLab.2DStudio</OpenVisionIntegrationApplicationId>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(OpenVisionLabEnableEmbeddedSmokeRunner)' == 'true' ">
     <DefineConstants>$(DefineConstants);OPENVISIONLAB_EMBEDDED_SMOKE</DefineConstants>
@@ -104,6 +105,8 @@
     <PackageReference Include="WPF-UI" Version="4.3.0" />
     <PackageReference Include="System.Drawing.Common" Version="8.0.27" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.8" />
+    <PackageReference Include="OpenVisionLab.Integration.Contracts" Version="[0.2.0-alpha.2]" />
+    <PackageReference Include="OpenVisionLab.Integration.Transport.Tcp" Version="[0.1.0-alpha.2]" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Libraries\PropertyGrid.Abstractions\PropertyGrid.Abstractions.csproj" />
@@ -186,6 +189,77 @@
     </ItemGroup>
 
     <Copy SourceFiles="@(WpgRuntimeArtifacts)" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true" />
+  </Target>
+
+  <Target Name="ResolveOpenVisionIntegrationRuntimeBuildIdentity"
+          BeforeTargets="GetAssemblyAttributes"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <Exec Command="git -C &quot;$(MSBuildProjectDirectory)\..\..&quot; rev-parse --verify HEAD"
+          ConsoleToMSBuild="true"
+          StandardOutputImportance="Low">
+      <Output TaskParameter="ConsoleOutput" ItemName="_OpenVisionSourceCommitOutput" />
+    </Exec>
+    <Exec Command="git -C &quot;$(MSBuildProjectDirectory)\..\..&quot; status --porcelain=v1 --untracked-files=normal --ignore-submodules=none"
+          ConsoleToMSBuild="true"
+          StandardOutputImportance="Low">
+      <Output TaskParameter="ConsoleOutput" ItemName="_OpenVisionSourceStatusOutput" />
+    </Exec>
+
+    <PropertyGroup>
+      <_OpenVisionSourceCommit>@(_OpenVisionSourceCommitOutput-&gt;'%(Identity)','')</_OpenVisionSourceCommit>
+      <_OpenVisionSourceState Condition="'@(_OpenVisionSourceStatusOutput)' == ''">clean</_OpenVisionSourceState>
+      <_OpenVisionSourceState Condition="'@(_OpenVisionSourceStatusOutput)' != ''">dirty</_OpenVisionSourceState>
+    </PropertyGroup>
+    <Error Condition="$([System.String]::Copy('$(_OpenVisionSourceCommit)').Length) != 40"
+           Text="OpenVisionLab integration build identity requires a 40-character Git source commit." />
+
+    <ItemGroup>
+      <AssemblyMetadata Remove="OpenVisionIntegrationApplicationId;OpenVisionApplicationVersion;OpenVisionSourceCommit;OpenVisionSourceState" />
+      <AssemblyMetadata Include="OpenVisionIntegrationApplicationId" Value="$(OpenVisionIntegrationApplicationId)" />
+      <AssemblyMetadata Include="OpenVisionApplicationVersion" Value="$(Version)" />
+      <AssemblyMetadata Include="OpenVisionSourceCommit" Value="$(_OpenVisionSourceCommit)" />
+      <AssemblyMetadata Include="OpenVisionSourceState" Value="$(_OpenVisionSourceState)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="WriteOpenVisionIntegrationRuntimeBuildManifest"
+          AfterTargets="Build"
+          DependsOnTargets="ResolveOpenVisionIntegrationRuntimeBuildIdentity"
+          Condition="'$(DesignTimeBuild)' != 'true' and Exists('$(TargetPath)')">
+    <ItemGroup>
+      <_OpenVisionRuntimeEntryAssembly Include="$(TargetPath)" />
+    </ItemGroup>
+    <GetFileHash Files="@(_OpenVisionRuntimeEntryAssembly)" Algorithm="SHA256" HashEncoding="hex">
+      <Output TaskParameter="Items" ItemName="_OpenVisionRuntimeEntryAssemblyWithHash" />
+    </GetFileHash>
+    <Exec Command="powershell -NoProfile -NonInteractive -Command &quot;(Get-Item -LiteralPath &apos;$(TargetPath)&apos;).Length&quot;"
+          ConsoleToMSBuild="true"
+          StandardOutputImportance="Low">
+      <Output TaskParameter="ConsoleOutput" ItemName="_OpenVisionRuntimeEntryAssemblyLengthOutput" />
+    </Exec>
+
+    <PropertyGroup>
+      <_OpenVisionRuntimeEntryAssemblyHash>@(_OpenVisionRuntimeEntryAssemblyWithHash-&gt;'%(FileHash)','')</_OpenVisionRuntimeEntryAssemblyHash>
+      <_OpenVisionRuntimeEntryAssemblyLength>@(_OpenVisionRuntimeEntryAssemblyLengthOutput-&gt;'%(Identity)','')</_OpenVisionRuntimeEntryAssemblyLength>
+      <_OpenVisionRuntimeManifestPath>$(TargetDir)openvisionlab.runtime.json</_OpenVisionRuntimeManifestPath>
+      <_OpenVisionRuntimeManifestJson>{&quot;schemaVersion&quot;:&quot;1.0&quot;,&quot;identity&quot;:{&quot;applicationId&quot;:&quot;$(OpenVisionIntegrationApplicationId)&quot;,&quot;applicationVersion&quot;:&quot;$(Version)&quot;,&quot;sourceCommit&quot;:&quot;$(_OpenVisionSourceCommit)&quot;,&quot;sourceState&quot;:&quot;$(_OpenVisionSourceState)&quot;},&quot;entryAssembly&quot;:{&quot;relativePath&quot;:&quot;$(TargetFileName)&quot;,&quot;byteLength&quot;:$(_OpenVisionRuntimeEntryAssemblyLength),&quot;sha256&quot;:&quot;$(_OpenVisionRuntimeEntryAssemblyHash)&quot;}}</_OpenVisionRuntimeManifestJson>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(_OpenVisionRuntimeManifestPath)"
+                      Lines="$(_OpenVisionRuntimeManifestJson)"
+                      Overwrite="true"
+                      WriteOnlyWhenDifferent="true"
+                      Encoding="ASCII" />
+    <ItemGroup>
+      <FileWrites Include="$(_OpenVisionRuntimeManifestPath)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="CopyOpenVisionIntegrationRuntimeBuildManifestToPublish"
+          AfterTargets="Publish"
+          Condition="'$(DesignTimeBuild)' != 'true' and '$(PublishDir)' != '' and Exists('$(TargetDir)openvisionlab.runtime.json')">
+    <Copy SourceFiles="$(TargetDir)openvisionlab.runtime.json"
+          DestinationFiles="$(PublishDir)openvisionlab.runtime.json"
+          SkipUnchangedFiles="true" />
   </Target>
 
 </Project>

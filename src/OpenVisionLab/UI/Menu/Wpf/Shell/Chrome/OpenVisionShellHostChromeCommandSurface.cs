@@ -12,19 +12,22 @@ namespace OpenVisionLab
         private readonly OpenVisionShellHostToolWindowLifecycleController toolWindowLifecycleController;
         private readonly OpenVisionShellHostToolWindowController toolWindowController;
         private readonly Action<VISION_MENU> openGuidedSetupForTool;
+        private readonly Action openTcpIntegration;
 
         internal OpenVisionShellHostChromeCommandSurface(
             Action toggleToolRail,
             OpenVisionShellHostCommandController commandController,
             OpenVisionShellHostToolWindowLifecycleController toolWindowLifecycleController,
             OpenVisionShellHostToolWindowController toolWindowController,
-            Action<VISION_MENU> openGuidedSetupForTool)
+            Action<VISION_MENU> openGuidedSetupForTool,
+            Action openTcpIntegration)
         {
             this.toggleToolRail = toggleToolRail ?? throw new ArgumentNullException(nameof(toggleToolRail));
             this.commandController = commandController ?? throw new ArgumentNullException(nameof(commandController));
             this.toolWindowLifecycleController = toolWindowLifecycleController ?? throw new ArgumentNullException(nameof(toolWindowLifecycleController));
             this.toolWindowController = toolWindowController ?? throw new ArgumentNullException(nameof(toolWindowController));
             this.openGuidedSetupForTool = openGuidedSetupForTool ?? throw new ArgumentNullException(nameof(openGuidedSetupForTool));
+            this.openTcpIntegration = openTcpIntegration ?? throw new ArgumentNullException(nameof(openTcpIntegration));
 
             ToggleToolRailCommand = new RelayCommand(this.toggleToolRail);
             OpenLearnCommand = new RelayCommand(this.commandController.OpenLearn);
@@ -50,6 +53,7 @@ namespace OpenVisionLab
                 }
             });
             OpenTutorialCommand = new RelayCommand(this.commandController.OpenTutorial);
+            OpenTcpIntegrationCommand = new RelayCommand(this.openTcpIntegration);
             FloatDockedToolCommand = new RelayCommand(FloatDockedTool);
             CloseDockedToolCommand = new RelayCommand(CloseDockedTool);
         }
@@ -65,6 +69,8 @@ namespace OpenVisionLab
         public ICommand OpenToolGuidedSetupCommand { get; }
 
         public ICommand OpenTutorialCommand { get; }
+
+        public ICommand OpenTcpIntegrationCommand { get; }
 
         public ICommand FloatDockedToolCommand { get; }
 

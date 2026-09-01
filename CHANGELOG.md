@@ -5,6 +5,20 @@ OpenVisionLab의 사용자-visible 변경과 release evidence를 짧게 추적�
 
 ## Unreleased
 
+## 2.2.0-dev - 2026-09-01
+
+### Added
+
+- Added authenticated TCP exchange for immutable 2D integration
+  transactions, with explicit acknowledgement and gated result publication.
+- Added runtime build identity and shell controls for the cross-process
+  integration workflow.
+
+### Compatibility
+
+- This is a development candidate; the fixed local packages are not a public
+  release and two-PC qualification remains pending.
+
 - No user-visible changes after the `2.1.0-rc.1` candidate.
 
 ## 2.1.0-rc.1 - 2026-08-05
