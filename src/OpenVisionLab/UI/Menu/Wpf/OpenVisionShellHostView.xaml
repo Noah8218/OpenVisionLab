@@ -154,12 +154,26 @@
                     <DataTrigger Binding="{Binding RecipeCommands.SelectedLlmToolTemplate}" Value="Locator-aligned Gap (NormalizeImage)">
                         <Setter Property="Visibility" Value="Visible" />
                     </DataTrigger>
+                    <DataTrigger Binding="{Binding RecipeCommands.SelectedLlmToolTemplate}" Value="Locator-relative Blob (Evidence constrained)">
+                        <Setter Property="Visibility" Value="Visible" />
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+            <Style x:Key="ShellHost.LocatorEvidenceVisibilityStyle" TargetType="{x:Type FrameworkElement}">
+                <Setter Property="Visibility" Value="Collapsed" />
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding RecipeCommands.SelectedLlmToolTemplate}" Value="Locator-relative Blob (Evidence constrained)">
+                        <Setter Property="Visibility" Value="Visible" />
+                    </DataTrigger>
                 </Style.Triggers>
             </Style>
             <Style x:Key="ShellHost.BlobCountIntentVisibilityStyle" TargetType="{x:Type FrameworkElement}">
                 <Setter Property="Visibility" Value="Collapsed" />
                 <Style.Triggers>
                     <DataTrigger Binding="{Binding RecipeCommands.SelectedLlmToolTemplate}" Value="Threshold + Blob">
+                        <Setter Property="Visibility" Value="Visible" />
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding RecipeCommands.SelectedLlmToolTemplate}" Value="Locator-relative Blob (Evidence constrained)">
                         <Setter Property="Visibility" Value="Visible" />
                     </DataTrigger>
                 </Style.Triggers>
@@ -3845,6 +3859,217 @@
                                         </Border>
                                         <Border Margin="0,6,0,0"
                                                 Padding="8"
+                                                 Style="{StaticResource ShellHost.LocatorEvidenceVisibilityStyle}"
+                                                 AutomationProperties.AutomationId="HostRecipeGuidedSetupLocatorEvidencePacketPanel"
+                                                 Background="#10252B"
+                                                 BorderBrush="#4C8790"
+                                                 BorderThickness="1">
+                                             <Grid>
+                                                 <Grid.RowDefinitions>
+                                                     <RowDefinition Height="Auto" />
+                                                     <RowDefinition Height="Auto" />
+                                                     <RowDefinition Height="Auto" />
+                                                     <RowDefinition Height="Auto" />
+                                                     <RowDefinition Height="Auto" />
+                                                     <RowDefinition Height="Auto" />
+                                                     <RowDefinition Height="Auto" />
+                                                     <RowDefinition Height="Auto" />
+                                                     <RowDefinition Height="Auto" />
+                                                 </Grid.RowDefinitions>
+                                                 <Grid>
+                                                     <Grid.ColumnDefinitions>
+                                                         <ColumnDefinition Width="118" />
+                                                         <ColumnDefinition Width="*" />
+                                                         <ColumnDefinition Width="Auto" />
+                                                         <ColumnDefinition Width="Auto" />
+                                                     </Grid.ColumnDefinitions>
+                                                     <TextBlock Text="{Binding RecipeCommands.LocatorEvidencePacketLabelText}"
+                                                                Foreground="#D7FFF4"
+                                                                FontSize="11"
+                                                                FontWeight="SemiBold"
+                                                                VerticalAlignment="Center" />
+                                                     <TextBox Grid.Column="1"
+                                                              Height="24"
+                                                              Padding="5,1"
+                                                              AutomationProperties.AutomationId="HostRecipeGuidedSetupLocatorEvidencePacketPath"
+                                                              Text="{Binding RecipeCommands.LocatorEvidencePacketPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                              ToolTip="Hash-verified *.packet.json file" />
+                                                     <Button Grid.Column="2"
+                                                             Height="26"
+                                                             Margin="7,0,0,0"
+                                                             Padding="10,2"
+                                                             AutomationProperties.AutomationId="HostRecipeGuidedSetupLoadLocatorEvidencePacketButton"
+                                                             Command="{Binding RecipeCommands.LoadLocatorEvidencePacketCommand}"
+                                                             Content="{Binding RecipeCommands.LocatorEvidenceLoadText}" />
+                                                     <Button Grid.Column="3"
+                                                             Height="26"
+                                                             Margin="7,0,0,0"
+                                                             Padding="10,2"
+                                                             AutomationProperties.AutomationId="HostRecipeGuidedSetupCompileLocatorEvidenceButton"
+                                                             Command="{Binding RecipeCommands.CompileLocatorEvidencePacketCommand}"
+                                                             Content="{Binding RecipeCommands.LocatorEvidenceCompileText}" />
+                                                 </Grid>
+                                                 <TextBlock Grid.Row="1"
+                                                            Margin="118,6,0,0"
+                                                            Text="{Binding RecipeCommands.LocatorEvidencePacketStatusText}"
+                                                            Foreground="#F3D79B"
+                                                            FontSize="10"
+                                                            TextWrapping="Wrap" />
+                                                 <Grid Grid.Row="2" Margin="0,7,0,0">
+                                                     <Grid.ColumnDefinitions>
+                                                         <ColumnDefinition Width="118" />
+                                                         <ColumnDefinition Width="*" />
+                                                         <ColumnDefinition Width="Auto" />
+                                                     </Grid.ColumnDefinitions>
+                                                     <TextBlock Text="{Binding RecipeCommands.LocatorEvidenceReviewDecisionLabelText}"
+                                                                Foreground="#D7FFF4"
+                                                                FontSize="11"
+                                                                FontWeight="SemiBold"
+                                                                VerticalAlignment="Center" />
+                                                     <TextBox Grid.Column="1"
+                                                              Height="24"
+                                                              Padding="5,1"
+                                                              AutomationProperties.AutomationId="HostRecipeGuidedSetupLocatorEvidenceReviewDecisionPath"
+                                                              Text="{Binding RecipeCommands.LocatorEvidenceReviewDecisionPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                              ToolTip="Hash- and Plan-bound review decision JSON" />
+                                                     <Button Grid.Column="2"
+                                                             Height="26"
+                                                             Margin="7,0,0,0"
+                                                             Padding="10,2"
+                                                             AutomationProperties.AutomationId="HostRecipeGuidedSetupLoadLocatorEvidenceReviewDecisionButton"
+                                                             Command="{Binding RecipeCommands.LoadLocatorEvidenceReviewDecisionCommand}"
+                                                             Content="{Binding RecipeCommands.LocatorEvidenceReviewDecisionLoadText}" />
+                                                 </Grid>
+                                                 <Grid Grid.Row="3" Margin="0,6,0,0">
+                                                     <Grid.ColumnDefinitions>
+                                                         <ColumnDefinition Width="118" />
+                                                         <ColumnDefinition Width="140" />
+                                                         <ColumnDefinition Width="Auto" />
+                                                         <ColumnDefinition Width="*" />
+                                                     </Grid.ColumnDefinitions>
+                                                     <TextBlock Text="{Binding RecipeCommands.LocatorEvidenceVisualCorrespondenceLabelText}"
+                                                                Foreground="#A8CBD1"
+                                                                FontSize="10"
+                                                                VerticalAlignment="Center" />
+                                                     <ComboBox Grid.Column="1"
+                                                               Height="24"
+                                                               Padding="5,1"
+                                                               AutomationProperties.AutomationId="HostRecipeGuidedSetupLocatorEvidenceVisualCorrespondence"
+                                                               SelectedValuePath="Content"
+                                                               SelectedValue="{Binding RecipeCommands.LocatorEvidenceVisualCorrespondence, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                               ToolTip="PASS is required before approval; FAIL records a rejected visual correspondence.">
+                                                         <ComboBoxItem Content="NOT_REVIEWED" />
+                                                         <ComboBoxItem Content="PASS" />
+                                                         <ComboBoxItem Content="FAIL" />
+                                                     </ComboBox>
+                                                     <TextBlock Grid.Column="2"
+                                                                Margin="12,0,6,0"
+                                                                Text="{Binding RecipeCommands.LocatorEvidenceReviewerLabelText}"
+                                                                Foreground="#A8CBD1"
+                                                                FontSize="10"
+                                                                VerticalAlignment="Center" />
+                                                     <TextBox Grid.Column="3"
+                                                              Height="24"
+                                                              Padding="5,1"
+                                                              AutomationProperties.AutomationId="HostRecipeGuidedSetupLocatorEvidenceReviewer"
+                                                              Text="{Binding RecipeCommands.LocatorEvidenceReviewer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                 </Grid>
+                                                 <Grid Grid.Row="4" Margin="0,6,0,0">
+                                                     <Grid.ColumnDefinitions>
+                                                         <ColumnDefinition Width="118" />
+                                                         <ColumnDefinition Width="*" />
+                                                     </Grid.ColumnDefinitions>
+                                                     <TextBlock Text="{Binding RecipeCommands.LocatorEvidenceReviewNotesLabelText}"
+                                                                Foreground="#A8CBD1"
+                                                                FontSize="10"
+                                                                VerticalAlignment="Top"
+                                                                Margin="0,5,0,0" />
+                                                     <TextBox Grid.Column="1"
+                                                              MinHeight="42"
+                                                              Padding="5"
+                                                              AutomationProperties.AutomationId="HostRecipeGuidedSetupLocatorEvidenceReviewNotes"
+                                                              Text="{Binding RecipeCommands.LocatorEvidenceReviewNotes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                              TextWrapping="Wrap"
+                                                              AcceptsReturn="True"
+                                                              VerticalScrollBarVisibility="Auto"
+                                                              ToolTip="Required for every recorded decision." />
+                                                 </Grid>
+                                                 <TextBlock Grid.Row="5"
+                                                            Margin="118,6,0,0"
+                                                            AutomationProperties.AutomationId="HostRecipeGuidedSetupLocatorEvidenceReviewDecisionStatus"
+                                                            Text="{Binding RecipeCommands.LocatorEvidenceReviewDecisionStatusText}"
+                                                            Foreground="#F3D79B"
+                                                            FontSize="10"
+                                                            TextWrapping="Wrap" />
+                                                 <Grid Grid.Row="6" Margin="0,7,0,0">
+                                                     <Grid.ColumnDefinitions>
+                                                         <ColumnDefinition Width="2*" />
+                                                         <ColumnDefinition Width="14" />
+                                                         <ColumnDefinition Width="*" />
+                                                     </Grid.ColumnDefinitions>
+                                                     <TextBox AutomationProperties.AutomationId="HostRecipeGuidedSetupLocatorEvidenceReview"
+                                                              IsReadOnly="True"
+                                                              MinHeight="132"
+                                                              MaxHeight="210"
+                                                              Padding="5"
+                                                              Text="{Binding RecipeCommands.LocatorEvidenceReviewText, Mode=OneWay}"
+                                                              TextWrapping="Wrap"
+                                                              VerticalScrollBarVisibility="Auto"
+                                                              HorizontalScrollBarVisibility="Disabled"
+                                                              Foreground="{StaticResource ShellHost.FieldTextBrush}"
+                                                              BorderBrush="#38535C"
+                                                              Background="#0B1519" />
+                                                     <StackPanel Grid.Column="2">
+                                                         <TextBlock Text="{Binding RecipeCommands.LocatorEvidenceOverlayLabelText}"
+                                                                    Foreground="#A8CBD1"
+                                                                    FontSize="10"
+                                                                    Margin="0,0,0,4" />
+                                                         <Border BorderBrush="#38535C"
+                                                                 BorderThickness="1"
+                                                                 Background="#0B1519"
+                                                                 MinHeight="132"
+                                                                 MaxHeight="210"
+                                                                 Padding="4">
+                                                             <Image AutomationProperties.AutomationId="HostRecipeGuidedSetupLocatorEvidenceOverlay"
+                                                                    Source="{Binding RecipeCommands.LocatorEvidenceOverlayImage}"
+                                                                    MaxWidth="360"
+                                                                    MaxHeight="200"
+                                                                    Stretch="Uniform"
+                                                                    HorizontalAlignment="Center"
+                                                                    VerticalAlignment="Center" />
+                                                         </Border>
+                                                         </StackPanel>
+                                                     </Grid>
+                                                 <WrapPanel Grid.Row="7" Margin="118,7,0,0">
+                                                     <Button Height="26"
+                                                             Margin="0,0,7,0"
+                                                             Padding="10,2"
+                                                             AutomationProperties.AutomationId="HostRecipeGuidedSetupApproveLocatorEvidenceButton"
+                                                             Command="{Binding RecipeCommands.ApproveLocatorEvidenceReviewDecisionCommand}"
+                                                             Content="{Binding RecipeCommands.LocatorEvidenceApproveText}" />
+                                                     <Button Height="26"
+                                                             Margin="0,0,7,0"
+                                                             Padding="10,2"
+                                                             AutomationProperties.AutomationId="HostRecipeGuidedSetupRejectLocatorEvidenceButton"
+                                                             Command="{Binding RecipeCommands.RejectLocatorEvidenceReviewDecisionCommand}"
+                                                             Content="{Binding RecipeCommands.LocatorEvidenceRejectText}" />
+                                                     <Button Height="26"
+                                                             Padding="10,2"
+                                                             AutomationProperties.AutomationId="HostRecipeGuidedSetupRequestLocatorEvidenceReplacementButton"
+                                                             Command="{Binding RecipeCommands.RequestLocatorEvidenceReplacementCommand}"
+                                                             Content="{Binding RecipeCommands.LocatorEvidenceReplacementText}" />
+                                                 </WrapPanel>
+                                                 <TextBlock Grid.Row="8"
+                                                            Margin="0,7,0,0"
+                                                            AutomationProperties.AutomationId="HostRecipeGuidedSetupLocatorEvidenceBoundary"
+                                                            Text="{Binding RecipeCommands.LocatorEvidenceBoundaryText}"
+                                                            Foreground="#9FD9FF"
+                                                            FontSize="10"
+                                                            TextWrapping="Wrap" />
+                                             </Grid>
+                                        </Border>
+                                        <Border Margin="0,6,0,0"
+                                                Padding="8"
                                                 Style="{StaticResource ShellHost.ContourCountIntentVisibilityStyle}"
                                                 AutomationProperties.AutomationId="HostRecipeGuidedSetupContourInputs"
                                                 Background="#101A1F"
@@ -5397,466 +5622,8 @@
                                              <ScrollViewer VerticalScrollBarVisibility="Auto"
                                                            HorizontalScrollBarVisibility="Disabled">
                                                  <StackPanel>
-                                        <TextBlock Text="{Binding RecipeCommands.ValidationSuiteText}"
-                                                   Foreground="#A8CBD1"
-                                                   FontSize="11"
-                                                   FontWeight="SemiBold" />
-                                         <Border Margin="0,4,0,10"
-                                                 Padding="8,6"
-                                                 AutomationProperties.AutomationId="HostRecipeValidationSuitePanel"
-                                                Background="#102329"
-                                                BorderBrush="#4C8790"
-                                                BorderThickness="1">
-                                             <Grid>
-                                                 <Grid.RowDefinitions>
-                                                     <RowDefinition Height="Auto" />
-                                                     <RowDefinition Height="Auto" />
-                                                     <RowDefinition Height="Auto" />
-                                                     <RowDefinition Height="Auto" />
-                                                     <RowDefinition Height="Auto" />
-                                                 </Grid.RowDefinitions>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto" />
-                                                    <ColumnDefinition Width="220" />
-                                                    <ColumnDefinition Width="Auto" />
-                                                    <ColumnDefinition Width="*" />
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Text="{Binding RecipeCommands.ValidationSuiteScopeLabelText}"
-                                                           VerticalAlignment="Center"
-                                                           Foreground="#A8CBD1"
-                                                           FontSize="10"
-                                                           FontWeight="SemiBold" />
-                                                <ComboBox Grid.Column="1"
-                                                          Height="24"
-                                                          Margin="8,0,0,0"
-                                                          AutomationProperties.AutomationId="HostRecipeValidationSuiteScopeCombo"
-                                                          AutomationProperties.Name="{Binding RecipeCommands.ValidationSuiteScopeLabelText}"
-                                                          DisplayMemberPath="DisplayText"
-                                                          ItemsSource="{Binding RecipeCommands.ValidationSuiteScopeOptions}"
-                                                          SelectedItem="{Binding RecipeCommands.SelectedValidationSuiteScopeOption, Mode=TwoWay}" />
-                                                <StackPanel Grid.Column="2"
-                                                            Margin="8,0,0,0"
-                                                            Orientation="Horizontal">
-                                                    <Button MinWidth="104"
-                                                            Height="24"
-                                                            AutomationProperties.AutomationId="HostRecipeRunValidationSuiteButton"
-                                                            Command="{Binding RecipeCommands.RunValidationSuiteCommand}">
-                                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                            <iconPacks:PackIconMaterial Kind="PlayCircleOutline" Width="12" Height="12" Margin="0,1,4,0" />
-                                                            <TextBlock Text="{Binding RecipeCommands.RunValidationSuiteText}" FontSize="10" />
-                                                        </StackPanel>
-                                                    </Button>
-                                                    <Button MinWidth="76"
-                                                            Height="24"
-                                                            Margin="6,0,0,0"
-                                                            AutomationProperties.AutomationId="HostRecipeStopValidationSuiteButton"
-                                                            AutomationProperties.Name="{Binding RecipeCommands.StopValidationSuiteText}"
-                                                            ToolTip="현재 이미지 완료 후 중지하고 부분 결과를 저장합니다."
-                                                            Visibility="{Binding RecipeCommands.IsLocalValidationSetRunning, Converter={StaticResource ShellHost.BooleanToVisibilityConverter}}"
-                                                            Command="{Binding RecipeCommands.StopValidationSuiteCommand}">
-                                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                            <iconPacks:PackIconMaterial Kind="StopCircleOutline" Width="12" Height="12" Margin="0,1,4,0" />
-                                                            <TextBlock Text="{Binding RecipeCommands.StopValidationSuiteText}" FontSize="10" />
-                                                        </StackPanel>
-                                                    </Button>
-                                                </StackPanel>
-                                                 <TextBlock Grid.Column="3"
-                                                            Margin="8,0,0,0"
-                                                            AutomationProperties.AutomationId="HostRecipeValidationSuiteStatus"
-                                                           Text="{Binding RecipeCommands.ValidationSuiteStatusText, Mode=OneWay}"
-                                                           ToolTip="{Binding RecipeCommands.ValidationSuiteStatusText, Mode=OneWay}"
-                                                           Foreground="#95D6B8"
-                                                           FontSize="10"
-                                                            VerticalAlignment="Center"
-                                                            TextTrimming="CharacterEllipsis" />
-                                                 <Border Grid.Row="1"
-                                                         Grid.ColumnSpan="4"
-                                                         Margin="0,7,0,0"
-                                                         Padding="8,6"
-                                                         AutomationProperties.AutomationId="HostRecipeValidationSetEvidenceBoard"
-                                                         Background="#0C1D22"
-                                                         BorderBrush="#356A73"
-                                                         BorderThickness="1"
-                                                         Visibility="{Binding RecipeCommands.IsLocalValidationSetSelected, Converter={StaticResource ShellHost.BooleanToVisibilityConverter}}">
-                                                     <Grid>
-                                                         <Grid.RowDefinitions>
-                                                             <RowDefinition Height="Auto" />
-                                                             <RowDefinition Height="Auto" />
-                                                         </Grid.RowDefinitions>
-                                                         <Grid.ColumnDefinitions>
-                                                             <ColumnDefinition Width="90" />
-                                                             <ColumnDefinition Width="*" />
-                                                             <ColumnDefinition Width="84" />
-                                                             <ColumnDefinition Width="*" />
-                                                         </Grid.ColumnDefinitions>
-                                                         <TextBlock Text="{Binding RecipeCommands.ValidationSetExpectedLabelText}"
-                                                                    Foreground="#89E0E5"
-                                                                    FontSize="10"
-                                                                    FontWeight="SemiBold" />
-                                                         <TextBlock Grid.Column="1"
-                                                                    AutomationProperties.AutomationId="HostRecipeValidationSetExpectedEvidence"
-                                                                    Text="{Binding RecipeCommands.ValidationSetExpectedText, Mode=OneWay}"
-                                                                    Foreground="#EAFBFC"
-                                                                    FontSize="10"
-                                                                    TextWrapping="Wrap" />
-                                                         <TextBlock Grid.Column="2"
-                                                                    Text="{Binding RecipeCommands.ValidationSetAcceptanceLabelText}"
-                                                                    Foreground="#89E0E5"
-                                                                    FontSize="10"
-                                                                    FontWeight="SemiBold" />
-                                                         <TextBlock Grid.Column="3"
-                                                                    AutomationProperties.AutomationId="HostRecipeValidationSetAcceptanceEvidence"
-                                                                    Text="{Binding RecipeCommands.ValidationSetAcceptanceText, Mode=OneWay}"
-                                                                    Foreground="#EAFBFC"
-                                                                    FontSize="10"
-                                                                    TextWrapping="Wrap" />
-                                                         <TextBlock Grid.Row="1"
-                                                                    Margin="0,5,0,0"
-                                                                    Text="{Binding RecipeCommands.ValidationSetCalibrationLabelText}"
-                                                                    Foreground="#89E0E5"
-                                                                    FontSize="10"
-                                                                    FontWeight="SemiBold" />
-                                                         <TextBlock Grid.Row="1"
-                                                                    Grid.Column="1"
-                                                                    Margin="0,5,0,0"
-                                                                    AutomationProperties.AutomationId="HostRecipeValidationSetCalibrationEvidence"
-                                                                    Text="{Binding RecipeCommands.ValidationSetCalibrationText, Mode=OneWay}"
-                                                                    Foreground="#D7FFF4"
-                                                                    FontSize="10"
-                                                                    TextWrapping="Wrap" />
-                                                         <TextBlock Grid.Row="1"
-                                                                    Grid.Column="2"
-                                                                    Margin="0,5,0,0"
-                                                                    Text="{Binding RecipeCommands.ValidationSetNextActionLabelText}"
-                                                                    Foreground="#89E0E5"
-                                                                    FontSize="10"
-                                                                    FontWeight="SemiBold" />
-                                                         <TextBlock Grid.Row="1"
-                                                                    Grid.Column="3"
-                                                                    Margin="0,5,0,0"
-                                                                    AutomationProperties.AutomationId="HostRecipeValidationSetNextActionEvidence"
-                                                                    Text="{Binding RecipeCommands.ValidationSetNextActionText, Mode=OneWay}"
-                                                                    Foreground="#FFF1AF"
-                                                                    FontSize="10"
-                                                                    FontWeight="SemiBold"
-                                                                    TextWrapping="Wrap" />
-                                                     </Grid>
-                                                 </Border>
-                                                 <Grid Grid.Row="2"
-                                                       Grid.ColumnSpan="4"
-                                                       Margin="0,7,0,0"
-                                                      AutomationProperties.AutomationId="HostRecipeLocalValidationSetEditor"
-                                                      Visibility="{Binding RecipeCommands.IsLocalValidationSetSelected, Converter={StaticResource ShellHost.BooleanToVisibilityConverter}}">
-                                                    <Grid.RowDefinitions>
-                                                        <RowDefinition Height="Auto" />
-                                                        <RowDefinition Height="Auto" />
-                                                        <RowDefinition Height="Auto" />
-                                                        <RowDefinition Height="Auto" />
-                                                    </Grid.RowDefinitions>
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="Auto" />
-                                                        <ColumnDefinition Width="190" />
-                                                        <ColumnDefinition Width="Auto" />
-                                                        <ColumnDefinition Width="150" />
-                                                        <ColumnDefinition Width="Auto" />
-                                                        <ColumnDefinition Width="Auto" />
-                                                        <ColumnDefinition Width="*" />
-                                                    </Grid.ColumnDefinitions>
-                                                    <TextBlock Text="{Binding RecipeCommands.ValidationSetSelectionLabelText}"
-                                                               VerticalAlignment="Center"
-                                                               Foreground="#A8CBD1"
-                                                               FontSize="10"
-                                                               FontWeight="SemiBold" />
-                                                    <ComboBox Grid.Column="1"
-                                                              Height="24"
-                                                              Margin="8,0,0,0"
-                                                              AutomationProperties.AutomationId="HostRecipeValidationSetCombo"
-                                                              AutomationProperties.Name="{Binding RecipeCommands.ValidationSetSelectionLabelText}"
-                                                              DisplayMemberPath="DisplayText"
-                                                              ItemsSource="{Binding RecipeCommands.ValidationSetOptions}"
-                                                              SelectedItem="{Binding RecipeCommands.SelectedValidationSetOption, Mode=TwoWay}" />
-                                                    <TextBlock Grid.Column="2"
-                                                               Margin="10,0,0,0"
-                                                               Text="{Binding RecipeCommands.NewValidationSetNameLabelText}"
-                                                               VerticalAlignment="Center"
-                                                               Foreground="#A8CBD1"
-                                                               FontSize="10"
-                                                               FontWeight="SemiBold" />
-                                                    <TextBox Grid.Column="3"
-                                                             Height="24"
-                                                             Margin="8,0,0,0"
-                                                             Padding="5,2"
-                                                             AutomationProperties.AutomationId="HostRecipeNewValidationSetNameTextBox"
-                                                             Text="{Binding RecipeCommands.NewValidationSetName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                                    <Button Grid.Column="4"
-                                                            MinWidth="68"
-                                                            Height="24"
-                                                            Margin="8,0,0,0"
-                                                            AutomationProperties.AutomationId="HostRecipeCreateValidationSetButton"
-                                                            Command="{Binding RecipeCommands.CreateValidationSetCommand}">
-                                                        <StackPanel Orientation="Horizontal">
-                                                            <iconPacks:PackIconMaterial Kind="Plus" Width="12" Height="12" Margin="0,1,4,0" />
-                                                            <TextBlock Text="{Binding RecipeCommands.CreateValidationSetText}" FontSize="10" />
-                                                        </StackPanel>
-                                                    </Button>
-                                                    <Button Grid.Column="5"
-                                                            MinWidth="78"
-                                                            Height="24"
-                                                            Margin="6,0,0,0"
-                                                            AutomationProperties.AutomationId="HostRecipeDeleteValidationSetButton"
-                                                            Command="{Binding RecipeCommands.DeleteValidationSetCommand}">
-                                                        <StackPanel Orientation="Horizontal">
-                                                            <iconPacks:PackIconMaterial Kind="DeleteOutline" Width="12" Height="12" Margin="0,1,4,0" />
-                                                            <TextBlock Text="{Binding RecipeCommands.DeleteValidationSetText}" FontSize="10" />
-                                                        </StackPanel>
-                                                    </Button>
-                                                    <TextBlock Grid.Row="1"
-                                                               Text="{Binding RecipeCommands.ValidationSetPendingNotesLabelText}"
-                                                               VerticalAlignment="Center"
-                                                               Foreground="#A8CBD1"
-                                                               FontSize="10"
-                                                               FontWeight="SemiBold" />
-                                                    <TextBox Grid.Row="1"
-                                                             Grid.Column="1"
-                                                             Grid.ColumnSpan="2"
-                                                             Height="24"
-                                                             Margin="8,5,0,0"
-                                                             Padding="5,2"
-                                                             AutomationProperties.AutomationId="HostRecipeValidationSetNotesTextBox"
-                                                             Text="{Binding RecipeCommands.ValidationSetPendingNotes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                                    <Button Grid.Row="1"
-                                                            Grid.Column="3"
-                                                            MinWidth="112"
-                                                            Height="24"
-                                                            Margin="8,5,0,0"
-                                                            AutomationProperties.AutomationId="HostRecipeAddValidationSetOkImagesButton"
-                                                            Command="{Binding RecipeCommands.AddValidationSetOkImagesCommand}">
-                                                        <StackPanel Orientation="Horizontal">
-                                                            <iconPacks:PackIconMaterial Kind="ImagePlus" Width="12" Height="12" Margin="0,1,4,0" />
-                                                            <TextBlock Text="{Binding RecipeCommands.AddValidationSetOkImagesText}" FontSize="10" />
-                                                        </StackPanel>
-                                                    </Button>
-                                                    <Button Grid.Row="1"
-                                                            Grid.Column="4"
-                                                            Grid.ColumnSpan="2"
-                                                            MinWidth="112"
-                                                            Height="24"
-                                                            Margin="6,5,0,0"
-                                                            HorizontalAlignment="Left"
-                                                            AutomationProperties.AutomationId="HostRecipeAddValidationSetNgImagesButton"
-                                                            Command="{Binding RecipeCommands.AddValidationSetNgImagesCommand}">
-                                                        <StackPanel Orientation="Horizontal">
-                                                            <iconPacks:PackIconMaterial Kind="ImagePlus" Width="12" Height="12" Margin="0,1,4,0" />
-                                                            <TextBlock Text="{Binding RecipeCommands.AddValidationSetNgImagesText}" FontSize="10" />
-                                                        </StackPanel>
-                                                    </Button>
-                                                    <Button Grid.Row="1"
-                                                            Grid.Column="6"
-                                                            MinWidth="94"
-                                                            Height="24"
-                                                            Margin="6,5,0,0"
-                                                            HorizontalAlignment="Left"
-                                                            AutomationProperties.AutomationId="HostRecipeRemoveValidationSetImageButton"
-                                                            Command="{Binding RecipeCommands.RemoveValidationSetImageCommand}">
-                                                        <StackPanel Orientation="Horizontal">
-                                                            <iconPacks:PackIconMaterial Kind="MinusCircleOutline" Width="12" Height="12" Margin="0,1,4,0" />
-                                                            <TextBlock Text="{Binding RecipeCommands.RemoveValidationSetImageText}" FontSize="10" />
-                                                        </StackPanel>
-                                                    </Button>
-                                                    <TextBlock Grid.Row="2"
-                                                               Text="{Binding RecipeCommands.ValidationSetFolderBatchLabelText}"
-                                                               VerticalAlignment="Center"
-                                                               Foreground="#A8CBD1"
-                                                               FontSize="10"
-                                                               FontWeight="SemiBold" />
-                                                    <Button Grid.Row="2"
-                                                            Grid.Column="1"
-                                                            MinWidth="112"
-                                                            Height="24"
-                                                            Margin="8,5,0,0"
-                                                            HorizontalAlignment="Left"
-                                                            ToolTip="{Binding RecipeCommands.AddValidationSetFolderToolTipText}"
-                                                            AutomationProperties.AutomationId="HostRecipeAddValidationSetOkFolderButton"
-                                                            Command="{Binding RecipeCommands.AddValidationSetOkFolderCommand}">
-                                                        <StackPanel Orientation="Horizontal">
-                                                            <iconPacks:PackIconMaterial Kind="FolderOutline" Width="12" Height="12" Margin="0,1,4,0" />
-                                                            <TextBlock Text="{Binding RecipeCommands.AddValidationSetOkFolderText}" FontSize="10" />
-                                                        </StackPanel>
-                                                    </Button>
-                                                    <Button Grid.Row="2"
-                                                            Grid.Column="3"
-                                                            MinWidth="112"
-                                                            Height="24"
-                                                            Margin="8,5,0,0"
-                                                            HorizontalAlignment="Left"
-                                                            ToolTip="{Binding RecipeCommands.AddValidationSetFolderToolTipText}"
-                                                            AutomationProperties.AutomationId="HostRecipeAddValidationSetNgFolderButton"
-                                                            Command="{Binding RecipeCommands.AddValidationSetNgFolderCommand}">
-                                                        <StackPanel Orientation="Horizontal">
-                                                            <iconPacks:PackIconMaterial Kind="FolderOutline" Width="12" Height="12" Margin="0,1,4,0" />
-                                                            <TextBlock Text="{Binding RecipeCommands.AddValidationSetNgFolderText}" FontSize="10" />
-                                                        </StackPanel>
-                                                    </Button>
-                                                    <Button Grid.Row="2"
-                                                            Grid.Column="4"
-                                                            Grid.ColumnSpan="2"
-                                                            MinWidth="118"
-                                                            Height="24"
-                                                            Margin="6,5,0,0"
-                                                            HorizontalAlignment="Left"
-                                                            ToolTip="{Binding RecipeCommands.RepairValidationSetImagePathToolTipText}"
-                                                            AutomationProperties.AutomationId="HostRecipeRepairValidationSetImagePathButton"
-                                                            Command="{Binding RecipeCommands.RepairValidationSetImagePathCommand}">
-                                                        <StackPanel Orientation="Horizontal">
-                                                            <iconPacks:PackIconMaterial Kind="FolderOpenOutline" Width="12" Height="12" Margin="0,1,4,0" />
-                                                            <TextBlock Text="{Binding RecipeCommands.RepairValidationSetImagePathText}" FontSize="10" />
-                                                        </StackPanel>
-                                                    </Button>
-                                                    <Grid Grid.Row="3"
-                                                          Grid.ColumnSpan="7"
-                                                          Margin="0,5,0,0"
-                                                          ToolTip="{Binding RecipeCommands.ValidationSetVariantContractToolTipText}">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="Auto" />
-                                                            <ColumnDefinition Width="150" />
-                                                            <ColumnDefinition Width="Auto" />
-                                                            <ColumnDefinition Width="150" />
-                                                            <ColumnDefinition Width="Auto" />
-                                                            <ColumnDefinition Width="72" />
-                                                            <ColumnDefinition Width="Auto" />
-                                                            <ColumnDefinition Width="72" />
-                                                            <ColumnDefinition Width="Auto" />
-                                                            <ColumnDefinition Width="Auto" />
-                                                        </Grid.ColumnDefinitions>
-                                                        <TextBlock VerticalAlignment="Center"
-                                                                   Text="{Binding RecipeCommands.ValidationSetVariantIdLabelText}"
-                                                                   Foreground="#A8CBD1"
-                                                                   FontSize="10"
-                                                                   FontWeight="SemiBold" />
-                                                        <TextBox Grid.Column="1"
-                                                                 Height="24"
-                                                                 Margin="8,0,0,0"
-                                                                 Padding="5,2"
-                                                                 AutomationProperties.AutomationId="HostRecipeValidationVariantIdTextBox"
-                                                                 Text="{Binding RecipeCommands.ValidationSetPendingVariantId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                                        <TextBlock Grid.Column="2"
-                                                                   Margin="10,0,0,0"
-                                                                   VerticalAlignment="Center"
-                                                                   Text="{Binding RecipeCommands.ValidationSetMetricNameLabelText}"
-                                                                   Foreground="#A8CBD1"
-                                                                   FontSize="10"
-                                                                   FontWeight="SemiBold" />
-                                                        <TextBox Grid.Column="3"
-                                                                 Height="24"
-                                                                 Margin="8,0,0,0"
-                                                                 Padding="5,2"
-                                                                 AutomationProperties.AutomationId="HostRecipeValidationMetricNameTextBox"
-                                                                 Text="{Binding RecipeCommands.ValidationSetPendingMetricName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                                        <TextBlock Grid.Column="4"
-                                                                   Margin="10,0,0,0"
-                                                                   VerticalAlignment="Center"
-                                                                   Text="{Binding RecipeCommands.ValidationSetMetricMinimumLabelText}"
-                                                                   Foreground="#A8CBD1"
-                                                                   FontSize="10" />
-                                                        <TextBox Grid.Column="5"
-                                                                 Height="24"
-                                                                 Margin="5,0,0,0"
-                                                                 Padding="5,2"
-                                                                 AutomationProperties.AutomationId="HostRecipeValidationMetricMinimumTextBox"
-                                                                 Text="{Binding RecipeCommands.ValidationSetPendingMetricMinimum, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                                        <TextBlock Grid.Column="6"
-                                                                   Margin="8,0,0,0"
-                                                                   VerticalAlignment="Center"
-                                                                   Text="{Binding RecipeCommands.ValidationSetMetricMaximumLabelText}"
-                                                                   Foreground="#A8CBD1"
-                                                                   FontSize="10" />
-                                                        <TextBox Grid.Column="7"
-                                                                 Height="24"
-                                                                 Margin="5,0,0,0"
-                                                                 Padding="5,2"
-                                                                 AutomationProperties.AutomationId="HostRecipeValidationMetricMaximumTextBox"
-                                                                 Text="{Binding RecipeCommands.ValidationSetPendingMetricMaximum, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                                        <Button Grid.Column="8"
-                                                                Height="24"
-                                                                MinWidth="88"
-                                                                Margin="8,0,0,0"
-                                                                AutomationProperties.AutomationId="HostRecipeApplyValidationVariantButton"
-                                                                Command="{Binding RecipeCommands.ApplyValidationSetVariantContractCommand}"
-                                                                Content="{Binding RecipeCommands.ApplyValidationSetVariantContractText}"
-                                                                FontSize="10" />
-                                                        <Button Grid.Column="9"
-                                                                Height="24"
-                                                                MinWidth="58"
-                                                                Margin="6,0,0,0"
-                                                                AutomationProperties.AutomationId="HostRecipeResetValidationVariantButton"
-                                                                Command="{Binding RecipeCommands.ResetValidationSetVariantContractCommand}"
-                                                                Content="{Binding RecipeCommands.ResetValidationSetVariantContractText}"
-                                                                FontSize="10" />
-                                                    </Grid>
-                                                </Grid>
-                                                 <ListBox Grid.Row="3"
-                                                          Grid.ColumnSpan="4"
-                                                         MaxHeight="168"
-                                                         Margin="0,6,0,0"
-                                                         AutomationProperties.AutomationId="HostRecipeValidationSetImageList"
-                                                         ItemsSource="{Binding RecipeCommands.ValidationSetImageRows}"
-                                                         SelectedItem="{Binding RecipeCommands.SelectedValidationSetImageRow, Mode=TwoWay}"
-                                                         ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                                         VirtualizingPanel.IsVirtualizing="True"
-                                                         VirtualizingPanel.VirtualizationMode="Recycling"
-                                                         Visibility="{Binding RecipeCommands.IsLocalValidationSetSelected, Converter={StaticResource ShellHost.BooleanToVisibilityConverter}}">
-                                                    <ListBox.ItemTemplate>
-                                                        <DataTemplate>
-                                                            <Grid Margin="2,1">
-                                                                <Grid.ColumnDefinitions>
-                                                                    <ColumnDefinition Width="42" />
-                                                                    <ColumnDefinition Width="56" />
-                                                                    <ColumnDefinition Width="160" />
-                                                                    <ColumnDefinition Width="140" />
-                                                                    <ColumnDefinition Width="*" />
-                                                                </Grid.ColumnDefinitions>
-                                                                <TextBlock Text="{Binding Expected}"
-                                                                           Foreground="#95D6B8"
-                                                                           FontSize="10"
-                                                                           FontWeight="SemiBold" />
-                                                                <TextBlock Grid.Column="1"
-                                                                           Text="{Binding StateText}"
-                                                                           Foreground="#A8CBD1"
-                                                                           FontSize="10" />
-                                                                <TextBlock Grid.Column="2"
-                                                                           Text="{Binding FileName}"
-                                                                           ToolTip="{Binding Path}"
-                                                                           Foreground="#EAFBFC"
-                                                                           FontSize="10"
-                                                                           TextTrimming="CharacterEllipsis" />
-                                                                <TextBlock Grid.Column="3"
-                                                                           Text="{Binding VariantId}"
-                                                                           ToolTip="{Binding ExpectedMetricText}"
-                                                                           Foreground="#FFF1AF"
-                                                                           FontSize="10"
-                                                                           TextTrimming="CharacterEllipsis" />
-                                                                <TextBlock Grid.Column="4"
-                                                                           Text="{Binding Notes}"
-                                                                           ToolTip="{Binding Notes}"
-                                                                           Foreground="#D7FFF4"
-                                                                           FontSize="10"
-                                                                           TextTrimming="CharacterEllipsis" />
-                                                            </Grid>
-                                                        </DataTemplate>
-                                                    </ListBox.ItemTemplate>
-                                                </ListBox>
-                                                 <TextBlock Grid.Row="4"
-                                                           Grid.ColumnSpan="4"
-                                                           Margin="0,6,0,0"
-                                                           AutomationProperties.AutomationId="HostRecipeValidationSuiteSummary"
-                                                           Text="{Binding RecipeCommands.ValidationSuiteSummaryText, Mode=OneWay}"
-                                                           ToolTip="{Binding RecipeCommands.ValidationSuiteSummaryText, Mode=OneWay}"
-                                                           Foreground="#EAFBFC"
-                                                           FontSize="10"
-                                                           TextWrapping="Wrap" />
-                                            </Grid>
-                                        </Border>
-                                        <TextBlock Text="{Binding RecipeCommands.QualifiedRecipeSnapshotText}"
+                                        <local:OpenVisionRecipeValidationSuiteView x:Name="recipeValidationSuiteView" />
+                                         <TextBlock Text="{Binding RecipeCommands.QualifiedRecipeSnapshotText}"
                                                    Foreground="#A8CBD1"
                                                    FontSize="11"
                                                    FontWeight="SemiBold" />
@@ -8516,9 +8283,9 @@
                 <Grid Grid.Row="2"
                       Margin="0,12,0,0"
                       AutomationProperties.AutomationId="HostRecipeManagerNameStrip">
-                    <Grid x:Name="recipeBasicLifecyclePanel">
-                        <Grid.Style>
-                            <Style TargetType="{x:Type Grid}">
+                    <local:OpenVisionRecipeBasicLifecycleView x:Name="recipeBasicLifecyclePanel">
+                        <local:OpenVisionRecipeBasicLifecycleView.Style>
+                            <Style TargetType="{x:Type local:OpenVisionRecipeBasicLifecycleView}">
                                 <Setter Property="Visibility" Value="Visible" />
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsChecked, ElementName=recipeAdvancedReviewToggle}" Value="True">
@@ -8526,92 +8293,8 @@
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
-                        </Grid.Style>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="90" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="{Binding RecipeCommands.EditRecipeNameLabelText}"
-                                   Foreground="#A8CBD1"
-                                   VerticalAlignment="Center" />
-                        <TextBox Grid.Column="1"
-                                 Height="26"
-                                 Padding="7,2"
-                                 VerticalContentAlignment="Center"
-                                 AutomationProperties.AutomationId="HostRecipeNameEditor"
-                                 Foreground="{StaticResource ShellHost.FieldTextBrush}"
-                                 CaretBrush="#8FE8F0"
-                                 BorderBrush="{StaticResource ShellHost.FieldBorderBrush}"
-                                 Background="{StaticResource ShellHost.FieldBrush}"
-                                 Text="{Binding RecipeCommands.EditRecipeName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                        <WrapPanel Grid.Column="2"
-                                   Margin="12,0,0,0"
-                                   HorizontalAlignment="Right"
-                                   AutomationProperties.AutomationId="HostRecipeManagerCommandStrip">
-                            <Button MinWidth="86"
-                                    Height="28"
-                                    Margin="0,0,6,0"
-                                    AutomationProperties.AutomationId="HostRecipeCreateNamedButton"
-                                    Command="{Binding RecipeCommands.CreateNamedRecipeCommand}">
-                                <StackPanel Orientation="Horizontal">
-                                    <iconPacks:PackIconMaterial Kind="Plus" Width="13" Height="13" Margin="0,1,5,0" />
-                                    <TextBlock Text="{Binding RecipeCommands.CreateNamedRecipeText}" />
-                                </StackPanel>
-                            </Button>
-                            <Button MinWidth="74"
-                                    Height="28"
-                                    Margin="0,0,6,0"
-                                    AutomationProperties.AutomationId="HostRecipeDuplicateButton"
-                                    Command="{Binding RecipeCommands.DuplicateRecipeCommand}">
-                                <StackPanel Orientation="Horizontal">
-                                    <iconPacks:PackIconMaterial Kind="ImageMultipleOutline" Width="13" Height="13" Margin="0,1,5,0" />
-                                    <TextBlock Text="{Binding RecipeCommands.DuplicateRecipeText}" />
-                                </StackPanel>
-                            </Button>
-                            <Button MinWidth="86"
-                                    Height="28"
-                                    Margin="0,0,6,0"
-                                    AutomationProperties.AutomationId="HostRecipeRenameButton"
-                                    Command="{Binding RecipeCommands.RenameRecipeCommand}">
-                                <StackPanel Orientation="Horizontal">
-                                    <iconPacks:PackIconMaterial Kind="PencilOutline" Width="13" Height="13" Margin="0,1,5,0" />
-                                    <TextBlock Text="{Binding RecipeCommands.RenameRecipeText}" />
-                                </StackPanel>
-                            </Button>
-                            <Button MinWidth="72"
-                                    Height="28"
-                                    AutomationProperties.AutomationId="HostRecipeDeleteButton"
-                                    Command="{Binding RecipeCommands.DeleteRecipeCommand}">
-                                <StackPanel Orientation="Horizontal">
-                                    <iconPacks:PackIconMaterial Kind="LayersOffOutline" Width="13" Height="13" Margin="0,1,5,0" />
-                                    <TextBlock Text="{Binding RecipeCommands.DeleteRecipeText}" />
-                                </StackPanel>
-                            </Button>
-                        </WrapPanel>
-                        <TextBlock Grid.Row="1"
-                                   Grid.Column="1"
-                                   Grid.ColumnSpan="2"
-                                   Margin="0,4,0,0"
-                                   AutomationProperties.AutomationId="HostRecipeEditValidation"
-                                   Foreground="#A8CBD1"
-                                   FontSize="10"
-                                   Text="{Binding RecipeCommands.RecipeEditValidationText}"
-                                   TextWrapping="Wrap"
-                                   TextTrimming="CharacterEllipsis" />
-                        <TextBlock Grid.Row="2"
-                                   Grid.ColumnSpan="3"
-                                   Margin="0,5,0,0"
-                                   Foreground="#8AD7DA"
-                                   FontSize="10"
-                                   Text="{Binding RecipeCommands.StatusText}"
-                                   TextWrapping="Wrap" />
-                    </Grid>
+                        </local:OpenVisionRecipeBasicLifecycleView.Style>
+                    </local:OpenVisionRecipeBasicLifecycleView>
                     <WrapPanel HorizontalAlignment="Right"
                                Visibility="{Binding IsChecked, ElementName=recipeAdvancedReviewToggle, Converter={StaticResource ShellHost.BooleanToVisibilityConverter}}"
                                AutomationProperties.AutomationId="HostRecipeAdvancedTransferCommands">

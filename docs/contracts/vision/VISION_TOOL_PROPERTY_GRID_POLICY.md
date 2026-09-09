@@ -9,6 +9,7 @@ OpenVisionLab의 알고리즘 검사 툴은 **Property 모델 우선** 구조를
 - 알고리즘 검사 툴마다 별도 WPF 입력 패널을 직접 만드는 방식은 기본 방향이 아니다.
 - ViewModel은 PropertyGrid를 대체하지 않는다. ViewModel은 실행 전 정규화, 요약, 템플릿 상태, 레이어/프리뷰 보조 상태처럼 화면 주변 로직을 분리하는 용도로만 사용한다.
 - PropertyGrid editor, visibility rule, range/threshold editor, ROI/mask/template editor는 공통 bridge/editor 계층에서 고친다. 개별 알고리즘 View가 같은 editor를 복제하지 않는다.
+- 공용 `WpfPropertyGridBridge`는 OpenVisionLab Tool 속성명을 직접 분류하지 않는다. Tool별 child-row 표시 정책은 앱의 `PropertyGridToolPolicy`가 만들고 `PropertyGridDisplayOptions.ChildParameterPredicate`로 전달한다. bridge는 전달된 판정 결과를 시각 표현에만 적용한다.
 - PropertyGrid가 편집하는 원본 Property 객체가 파라미터의 source of truth이다. 컨트롤 값을 따로 읽어서 임시 상태로 저장하거나, View 재생성 시 기본 생성자 값으로 되돌리면 안 된다.
 - RangeEditor는 `MIN_AREA`/`MAX_AREA`, `FIND_ANGLE_MIN`/`FIND_ANGLE_MAX`처럼 두 모델 값을 하나의 UI 행에서 편집하는 공통 editor이다. Max 보조 속성은 XML 저장/실행 모델에는 남기되 PropertyGrid에 별도 행으로 중복 노출하지 않는다.
 - RangeEditor의 Max 보조 속성 descriptor는 TypeDescriptor/원본 WPG PropertyItem 경로에서 제거하지 않는다. WPG RangeEditor는 `FIND_ANGLE_MAX`, `MAX_AREA`, `CANNY_HIGH` 같은 companion descriptor를 통해 Max endpoint를 읽고 쓰므로, 중복 행은 visual row만 숨기고 descriptor/model property는 유지한다.

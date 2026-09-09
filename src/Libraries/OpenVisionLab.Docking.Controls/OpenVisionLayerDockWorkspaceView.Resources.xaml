@@ -23,6 +23,55 @@
     <SolidColorBrush x:Key="DockedLayer.SubtleTextBrush" Color="#9DB9BE" />
     <SolidColorBrush x:Key="DockedLayer.AccentBrush" Color="#70D7DE" />
 
+    <Style x:Key="DockedLayerCloseButtonStyle" TargetType="{x:Type Button}">
+        <Setter Property="Width" Value="22" />
+        <Setter Property="Height" Value="22" />
+        <Setter Property="Padding" Value="3" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Foreground" Value="{StaticResource DockedLayer.SubtleTextBrush}" />
+        <Setter Property="Cursor" Value="Arrow" />
+        <Setter Property="Focusable" Value="True" />
+        <Setter Property="ToolTip" Value="Close docked view." />
+        <Setter Property="AutomationProperties.AutomationId" Value="DockedLayerCloseButton" />
+        <Setter Property="AutomationProperties.Name" Value="Close docked view" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Button}">
+                    <Border x:Name="buttonChrome"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="2"
+                            Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter HorizontalAlignment="Center"
+                                          VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="buttonChrome" Property="Background" Value="{StaticResource DockedLayer.TabHoverBrush}" />
+                            <Setter TargetName="buttonChrome" Property="BorderBrush" Value="{StaticResource DockedLayer.PaneHeaderBorderBrush}" />
+                            <Setter Property="Foreground" Value="{StaticResource DockedLayer.TextBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="buttonChrome" Property="Background" Value="{StaticResource DockedLayer.TabSelectedBrush}" />
+                            <Setter TargetName="buttonChrome" Property="BorderBrush" Value="{StaticResource DockedLayer.AccentBrush}" />
+                            <Setter Property="Foreground" Value="#FFFFFF" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="buttonChrome" Property="BorderBrush" Value="{StaticResource DockedLayer.AccentBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.38" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <DataTemplate x:Key="DockedLayerTabHeaderTemplate">
         <Grid AutomationProperties.AutomationId="DockedLayerTabHeader"
               MinWidth="128"
@@ -43,6 +92,8 @@
                     <ColumnDefinition Width="6" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="8" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="6" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                  <iconPacks:PackIconMaterial Grid.Column="0"
@@ -83,6 +134,15 @@
                         </MultiBinding>
                     </TextBlock.Text>
                 </TextBlock>
+                <Button Grid.Column="6"
+                        Style="{StaticResource DockedLayerCloseButtonStyle}"
+                        Command="{Binding LayoutItem.CloseCommand, RelativeSource={RelativeSource AncestorType=avalonDockControls:LayoutAnchorableTabItem}}">
+                    <iconPacks:PackIconMaterial Kind="Close"
+                                                Width="13"
+                                                Height="13"
+                                                IsHitTestVisible="False"
+                                                Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                </Button>
             </Grid>
         </Grid>
         <DataTemplate.Triggers>
@@ -182,22 +242,12 @@
                                 Grid.RowSpan="3"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}" />
-                        <Border Grid.Row="0"
-                                AutomationProperties.AutomationId="DockedLayerPaneHeader"
-                                Background="{StaticResource DockedLayer.PaneHeaderBrush}"
-                                BorderBrush="{StaticResource DockedLayer.PaneHeaderBorderBrush}"
-                                BorderThickness="0,0,0,1"
-                                Cursor="SizeAll"
-                                HorizontalAlignment="Stretch"
-                                MinHeight="30"
-                                MinWidth="112"
-                                Padding="10,0"
-                                SnapsToDevicePixels="True"
-                                ToolTip="Drag title to dock or rearrange."
-                                Visibility="{Binding Model.ChildrenCount,
-                                                     RelativeSource={RelativeSource TemplatedParent},
-                                                     Converter={StaticResource DockedLayerSingleDocumentVisibilityConverter}}">
-                            <Border.DataContext>
+                        <avalonDockControls:AnchorablePaneTitle Grid.Row="0"
+                                                               AutomationProperties.AutomationId="DockedLayerPaneHeader"
+                                                               Visibility="{Binding Model.ChildrenCount,
+                                                                            RelativeSource={RelativeSource TemplatedParent},
+                                                                            Converter={StaticResource DockedLayerSingleDocumentVisibilityConverter}}">
+                            <avalonDockControls:AnchorablePaneTitle.Model>
                                 <MultiBinding Converter="{StaticResource DockedLayerSelectedDocumentConverter}">
                                     <Binding Path="Model.SelectedContent"
                                              RelativeSource="{RelativeSource TemplatedParent}" />
@@ -206,52 +256,8 @@
                                     <Binding Path="Model.ChildrenCount"
                                              RelativeSource="{RelativeSource TemplatedParent}" />
                                 </MultiBinding>
-                            </Border.DataContext>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="6" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="8" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                 <iconPacks:PackIconMaterial Grid.Column="0"
-                                                             Kind="DragHorizontalVariant"
-                                                             Width="12"
-                                                             Height="12"
-                                                             Foreground="{StaticResource DockedLayer.SubtleTextBrush}"
-                                                             Opacity="0.80"
-                                                             VerticalAlignment="Center" />
-                                 <TextBlock Grid.Column="2"
-                                            Foreground="{StaticResource DockedLayer.TextBrush}"
-                                            FontSize="11"
-                                            FontWeight="SemiBold"
-                                           TextTrimming="CharacterEllipsis"
-                                           VerticalAlignment="Center">
-                                    <TextBlock.Text>
-                                        <PriorityBinding>
-                                            <Binding Path="Title" />
-                                            <Binding Path="ContentId" />
-                                            <Binding />
-                                        </PriorityBinding>
-                                    </TextBlock.Text>
-                                </TextBlock>
-                                 <TextBlock Grid.Column="4"
-                                            Foreground="{StaticResource DockedLayer.SubtleTextBrush}"
-                                            FontSize="9"
-                                            FontWeight="SemiBold"
-                                           Opacity="0.82"
-                                           TextAlignment="Right"
-                                           VerticalAlignment="Center">
-                                    <TextBlock.Text>
-                                        <MultiBinding StringFormat="{}{0}x{1}">
-                                            <Binding Path="Content.ImagePixelWidth" />
-                                            <Binding Path="Content.ImagePixelHeight" />
-                                        </MultiBinding>
-                                    </TextBlock.Text>
-                                </TextBlock>
-                            </Grid>
-                        </Border>
+                            </avalonDockControls:AnchorablePaneTitle.Model>
+                        </avalonDockControls:AnchorablePaneTitle>
                         <Border x:Name="TabStripHost"
                                 Grid.Row="1"
                                 Background="{StaticResource DockedLayer.TabStripBrush}"
@@ -412,6 +418,8 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="8" />
                                 <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="6" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                              <iconPacks:PackIconMaterial Grid.Column="0"
                                                          Kind="DragHorizontalVariant"
@@ -453,6 +461,15 @@
                                     </MultiBinding>
                                 </TextBlock.Text>
                             </TextBlock>
+                            <Button Grid.Column="6"
+                                    Style="{StaticResource DockedLayerCloseButtonStyle}"
+                                    Command="{Binding LayoutItem.CloseCommand, RelativeSource={RelativeSource TemplatedParent}}">
+                                <iconPacks:PackIconMaterial Kind="Close"
+                                                            Width="13"
+                                                            Height="13"
+                                                            IsHitTestVisible="False"
+                                                            Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                            </Button>
                         </Grid>
                     </Border>
                 </ControlTemplate>

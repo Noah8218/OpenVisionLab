@@ -75,6 +75,16 @@ namespace OpenVisionLab
         public string HybridScaleRatioMaximumText { get; set; }
 
         public string HybridMinimumValidPixelRatioText { get; set; }
+
+        public string BlobCountThresholdText { get; set; }
+
+        public string BlobCountMinCountText { get; set; }
+
+        public string BlobCountMaxCountText { get; set; }
+
+        public string BlobCountMinAreaText { get; set; }
+
+        public string BlobCountMaxAreaText { get; set; }
     }
 
     internal static class OpenVisionRecipeLlmPromptBuilder
@@ -171,6 +181,45 @@ namespace OpenVisionLab
                 });
             }
 
+            if (OpenVisionRecipeLlmIntent.IsLocatorRelativeBlobTemplate(template))
+            {
+                string expectedCount = string.Empty;
+                if (OpenVisionRecipeBlobCountIntentSkill.TryParseNonNegativeInt(request.BlobCountMinCountText, out int minimumCount)
+                    && OpenVisionRecipeBlobCountIntentSkill.TryParseNonNegativeInt(request.BlobCountMaxCountText, out int maximumCount)
+                    && minimumCount == maximumCount)
+                {
+                    expectedCount = minimumCount.ToString(CultureInfo.InvariantCulture);
+                }
+
+                string countContract = string.IsNullOrWhiteSpace(expectedCount)
+                    ? "Mode: MEASURE ONLY / NOT JUDGED. Omit Blob UseAcceptance and all ResultCount bounds."
+                    : "Mode: operator-owned count gate. Use exact ResultCount=" + expectedCount + " only when the operator has explicitly supplied that value; never infer or tune it per image.";
+                return string.Join(Environment.NewLine, new[]
+                {
+                    "This is a self-contained GPT task packet for OpenVisionLab locator-relative Blob v1.",
+                    "Hard evidence rule: NO EVIDENCE, NO COORDINATE. The model may select a CandidateId only from a hash-verified manual evidence packet; it must never emit locator coordinates, per-image ROI values, or invented tolerances.",
+                    "Use exactly five enabled Steps in this order: Matching NUM_MATCH=2 ambiguity gate; Matching NUM_MATCH=1 fixture publisher with FIXTURE_FRAME_NAME=LocatorFrame; RotateScale with USE_FIXTURE_FRAME=true and FIXTURE_APPLY_MODE=NormalizeImage; Threshold on DeviceAligned; Blob on AlignedInspectionBinary.",
+                    "Cropped locator template path: " + FirstNonEmpty(request.ReferenceImagePath, "MISSING; do not invent a path"),
+                    "Matching search ROI in reference-image coordinates: " + FirstNonEmpty(request.HybridSearchRoiText, "MISSING; do not invent coordinates"),
+                    "Reviewed reference pose x,y,angle,scale,imageWidth,imageHeight: " + FirstNonEmpty(request.HybridReferencePoseText, "MISSING; do not invent pose values"),
+                    "Fixed reference-coordinate Blob ROI: " + FirstNonEmpty(request.HybridRelativeRoiText, "MISSING; do not invent coordinates"),
+                    "Locator gates: SCORE_MIN=" + FirstNonEmpty(request.HybridScoreMinimumText, OpenVisionRecipeLocatorRelativeBlobIntentSkill.DefaultScoreMinimum.ToString(CultureInfo.InvariantCulture))
+                        + ", ScoreMargin=" + FirstNonEmpty(request.HybridScoreMarginText, OpenVisionRecipeLocatorRelativeBlobIntentSkill.DefaultScoreMargin.ToString(CultureInfo.InvariantCulture))
+                        + ", angle=" + FirstNonEmpty(request.HybridAngleMinimumText, OpenVisionRecipeLocatorRelativeBlobIntentSkill.DefaultAngleMinimum.ToString(CultureInfo.InvariantCulture))
+                        + ".." + FirstNonEmpty(request.HybridAngleMaximumText, OpenVisionRecipeLocatorRelativeBlobIntentSkill.DefaultAngleMaximum.ToString(CultureInfo.InvariantCulture))
+                        + ", scale ratio=" + FirstNonEmpty(request.HybridScaleRatioMinimumText, OpenVisionRecipeLocatorRelativeBlobIntentSkill.DefaultScaleRatioMinimum.ToString(CultureInfo.InvariantCulture))
+                        + ".." + FirstNonEmpty(request.HybridScaleRatioMaximumText, OpenVisionRecipeLocatorRelativeBlobIntentSkill.DefaultScaleRatioMaximum.ToString(CultureInfo.InvariantCulture)),
+                    "NormalizeImage minimum valid-pixel ratio: " + FirstNonEmpty(request.HybridMinimumValidPixelRatioText, OpenVisionRecipeLocatorRelativeBlobIntentSkill.DefaultMinimumValidPixelRatio.ToString(CultureInfo.InvariantCulture)),
+                    "Threshold=" + FirstNonEmpty(request.BlobCountThresholdText, OpenVisionRecipeLocatorRelativeBlobIntentSkill.DefaultThreshold.ToString(CultureInfo.InvariantCulture))
+                        + "; Blob area px=" + FirstNonEmpty(request.BlobCountMinAreaText, OpenVisionRecipeLocatorRelativeBlobIntentSkill.DefaultMinimumArea.ToString(CultureInfo.InvariantCulture))
+                        + ".." + FirstNonEmpty(request.BlobCountMaxAreaText, OpenVisionRecipeLocatorRelativeBlobIntentSkill.DefaultMaximumArea.ToString(CultureInfo.InvariantCulture)),
+                    countContract,
+                    "The deterministic compiler obtains coordinates only from the selected evidence CandidateId and the reviewed plan. Manual evidence packet export/import is the v1 provider boundary; do not call a provider, browser, or per-image correction loop.",
+                    "Required review drawings: locator candidates and selected pose, normalized valid bounds/reference axes, fixed reference ROI, threshold layer, Blob candidates, and named PASS/REJECT evidence after explicit Run.",
+                    "Response format: return XML only. No markdown fence, no prose, no explanation before or after the XML."
+                });
+            }
+
             if (OpenVisionRecipeLlmIntent.IsHybridRelativeRoiGapTemplate(template))
             {
                 return string.Join(Environment.NewLine, new[]
@@ -260,6 +309,11 @@ namespace OpenVisionLab
 
         internal static string BuildLlmIntentContractText(string template)
         {
+            if (IsLocatorRelativeBlobTemplate(template))
+            {
+                return "Use exactly Matching(2 candidates) -> Matching(1 fixture pose) -> RotateScale NormalizeImage -> Threshold -> Blob. The LLM may select only a Candidate ID from a hash-verified evidence packet; it must not invent coordinates, move the ROI per image, tune tolerance per image, or replace the reviewed locator. Keep the fixed reference-coordinate Blob ROI in LocatorFrame, use px-only area/count metrics, and leave ResultCount measurement-only unless an operator-owned exact count gate is present. Missing, stale, ambiguous, unknown-ID, wrong-frame, or hash-mismatched evidence fails closed before compilation.";
+            }
+
             if (IsHybridRelativeRoiGapTemplate(template))
             {
                 return "Use exactly Matching(2 candidates) -> Matching(1 fixture pose) -> RotateScale NormalizeImage -> LineDistance Gap edge pair. The locator establishes deterministic pose; the LLM does not detect production images. Keep one reviewed search ROI, one reviewed reference pose, and one fixed reference-coordinate measurement ROI. Fail closed before measurement on weak, ambiguous, out-of-angle, out-of-scale, or low-coverage location evidence. Keep the Gap result px-only and measurement-only until operator tolerance and calibration evidence exist.";
@@ -315,6 +369,11 @@ namespace OpenVisionLab
 
         internal static string ResolveIntentSummary(string template)
         {
+            if (IsLocatorRelativeBlobTemplate(template))
+            {
+                return "Evidence candidate ID + NormalizeImage + relative-ROI Threshold/Blob";
+            }
+
             if (IsHybridRelativeRoiGapTemplate(template))
             {
                 return "Matching fixture + NormalizeImage + relative-ROI LineDistance Gap";
@@ -406,6 +465,14 @@ namespace OpenVisionLab
                 StringComparison.OrdinalIgnoreCase);
         }
 
+        internal static bool IsLocatorRelativeBlobTemplate(string template)
+        {
+            return string.Equals(
+                (template ?? string.Empty).Trim(),
+                OpenVisionGuidedSetupCatalog.LocatorRelativeBlobTemplate,
+                StringComparison.OrdinalIgnoreCase);
+        }
+
         internal static bool IsContourTemplate(string template)
         {
             string value = template ?? string.Empty;
@@ -459,6 +526,11 @@ namespace OpenVisionLab
 
         internal static string ResolveTemplateGuidance(string template)
         {
+            if (IsLocatorRelativeBlobTemplate(template))
+            {
+                return "Use the reviewed locator evidence packet to select one candidate ID, publish the pose, normalize the complete source into reference coordinates, and run the unchanged fixed Blob ROI. Keep the packet source/template/overlay hashes and LocatorFrame visible. Manual packet import is the v1 provider boundary; no API, browser automation, or autonomous tuning is allowed.";
+            }
+
             if (IsHybridRelativeRoiGapTemplate(template))
             {
                 return "Use the reviewed locator to publish center/angle/scale, normalize the complete source into reference coordinates, and run the unchanged dark-band Gap ROI on DeviceAligned. Keep ambiguity, pose, scale, and valid-coverage gates fail-closed. Do not move coordinates per image or add Gap acceptance without operator truth.";

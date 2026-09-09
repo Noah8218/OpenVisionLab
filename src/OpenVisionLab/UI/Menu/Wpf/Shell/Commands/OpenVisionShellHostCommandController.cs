@@ -11,8 +11,6 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Windows;
-using static OpenVisionLab.DEFINE;
-
 namespace OpenVisionLab
 {
     internal sealed class OpenVisionShellHostCommandController
@@ -23,15 +21,12 @@ namespace OpenVisionLab
         private readonly OpenVisionZoomableImageController workspaceFallbackZoomController;
         private readonly Func<string> workspaceLayerTitleProvider;
         private readonly Func<OpenVisionRecipeContext> recipeContextProvider;
-        private readonly Action<VISION_MENU> selectToolMenu;
         private readonly Func<string, string, bool> prepareSampleWorkspaceContext;
         private readonly Action<string, string> sampleWorkspaceLoaded;
         private readonly Action manualWorkspaceImageLoaded;
         private readonly Action<string> rememberWorkspaceImagePath;
         private readonly bool hasRunnableSample;
         private string lastWorkspaceImageDirectory;
-        private OpenVisionLearnWindow learnWindow;
-
         public OpenVisionShellHostCommandController(
             Func<Window> ownerProvider,
             Func<string, bool> loadWorkspaceImage,
@@ -39,7 +34,6 @@ namespace OpenVisionLab
             OpenVisionZoomableImageController workspaceFallbackZoomController,
             Func<string> workspaceLayerTitleProvider,
             Func<OpenVisionRecipeContext> recipeContextProvider,
-            Action<VISION_MENU> selectToolMenu,
             Func<string, string, bool> prepareSampleWorkspaceContext = null,
             Action<string, string> sampleWorkspaceLoaded = null,
             Action manualWorkspaceImageLoaded = null,
@@ -52,7 +46,6 @@ namespace OpenVisionLab
             this.workspaceFallbackZoomController = workspaceFallbackZoomController ?? throw new ArgumentNullException(nameof(workspaceFallbackZoomController));
             this.workspaceLayerTitleProvider = workspaceLayerTitleProvider ?? throw new ArgumentNullException(nameof(workspaceLayerTitleProvider));
             this.recipeContextProvider = recipeContextProvider ?? throw new ArgumentNullException(nameof(recipeContextProvider));
-            this.selectToolMenu = selectToolMenu ?? throw new ArgumentNullException(nameof(selectToolMenu));
             this.prepareSampleWorkspaceContext = prepareSampleWorkspaceContext;
             this.sampleWorkspaceLoaded = sampleWorkspaceLoaded;
             this.manualWorkspaceImageLoaded = manualWorkspaceImageLoaded;
@@ -169,58 +162,6 @@ namespace OpenVisionLab
             }
         }
 
-        public void OpenLearn()
-        {
-            OpenLearn(null);
-        }
-
-        public void OpenLearnForTool(VISION_MENU menu)
-        {
-            if (OpenVisionLearnTopicCatalog.TryResolveForTool(menu, out OpenVisionLearnTopicIndex topicIndex))
-            {
-                OpenLearn(topicIndex);
-            }
-        }
-
-        public void OpenLearnForToolType(string toolType)
-        {
-            if (OpenVisionLearnTopicCatalog.TryResolveForToolType(toolType, out OpenVisionLearnTopicIndex topicIndex))
-            {
-                OpenLearn(topicIndex);
-            }
-        }
-
-        public void OpenSamplesForTool(VISION_MENU menu)
-        {
-            if (OpenVisionLearnTopicCatalog.TryResolveForTool(menu, out OpenVisionLearnTopicIndex topicIndex))
-            {
-                PromptAndOpenRunnableSample(OpenVisionLearnTopicCatalog.Resolve(topicIndex).PracticePathId);
-            }
-        }
-
-        private void OpenLearn(OpenVisionLearnTopicIndex? topicIndex)
-        {
-            if (learnWindow != null)
-            {
-                if (topicIndex.HasValue)
-                {
-                    learnWindow.SelectTopic(topicIndex.Value);
-                }
-
-                learnWindow.Activate();
-                return;
-            }
-
-            learnWindow = topicIndex.HasValue
-                ? new OpenVisionLearnWindow(127, 255, false, (int)topicIndex.Value)
-                : new OpenVisionLearnWindow();
-            learnWindow.Owner = ownerProvider();
-            learnWindow.SetOpenPracticeSamplesAction(PromptAndOpenRunnableSample);
-            learnWindow.SetOpenRelatedToolAction(selectToolMenu);
-            learnWindow.Closed += LearnWindow_Closed;
-            learnWindow.Show();
-        }
-
         public bool HasRunnableSample()
         {
             return hasRunnableSample;
@@ -290,6 +231,7 @@ namespace OpenVisionLab
                 return false;
             }
 
+            sample.ResolvePipelineDependencyPaths(pipeline);
             pipeline.Name = CreateSamplePipelineName(sample.SampleName);
             if (prepareSampleWorkspaceContext?.Invoke(sample.SampleName, pipeline.Name) == false)
             {
@@ -426,15 +368,6 @@ namespace OpenVisionLab
             char[] invalidChars = Path.GetInvalidFileNameChars();
             string safeName = new string(rawName.Select(ch => invalidChars.Contains(ch) ? '_' : ch).ToArray());
             return "Sample_" + (string.IsNullOrWhiteSpace(safeName) ? "Pipeline" : safeName);
-        }
-
-        private void LearnWindow_Closed(object sender, EventArgs e)
-        {
-            if (learnWindow != null)
-            {
-                learnWindow.Closed -= LearnWindow_Closed;
-                learnWindow = null;
-            }
         }
 
         internal static bool TryResolveUserManualPath(out string manualPath, out string failureDetail)

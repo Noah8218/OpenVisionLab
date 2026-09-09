@@ -1,7 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-
 namespace OpenVisionLab
 {
     public sealed partial class OpenVisionShellHostRecipeCommandSurface
@@ -11,11 +8,9 @@ namespace OpenVisionLab
             string recipeName = NormalizeRecipeName(selectedRecipeName);
             string pipelineName = selectedPipelineOption?.PipelineName ?? string.Empty;
             string previousSummaryPath = SelectedRecentBatchRunOption?.SummaryPath ?? string.Empty;
-            OpenVisionRecipeRunHistorySelection selection = OpenVisionRecipeRunHistoryPresenter.BuildRecentRunSelection(
-                VisionPipelineBatchRunSummaryStorage
-                .List(recipeName, pipelineName)
-                .Select(OpenVisionRecipeBatchRunOption.Create)
-                .ToList(),
+            OpenVisionRecipeRunHistorySelection selection = runHistoryOrchestrationOwner.BuildRecentRunSelection(
+                recipeName,
+                pipelineName,
                 previousSummaryPath);
             RecentBatchRunOptions = selection.Options;
             SelectedRecentBatchRunOption = selection.SelectedOption;
@@ -24,7 +19,7 @@ namespace OpenVisionLab
         private void RefreshBenchmarkBaselineRunOptions()
         {
             string previousBaselinePath = selectedBenchmarkBaselineRunOption?.SummaryPath ?? string.Empty;
-            OpenVisionRecipeRunHistorySelection selection = OpenVisionRecipeRunHistoryPresenter.BuildBaselineRunSelection(
+            OpenVisionRecipeRunHistorySelection selection = runHistoryOrchestrationOwner.BuildBaselineRunSelection(
                 SelectedRecentBatchRunOption,
                 RecentBatchRunOptions,
                 previousBaselinePath);

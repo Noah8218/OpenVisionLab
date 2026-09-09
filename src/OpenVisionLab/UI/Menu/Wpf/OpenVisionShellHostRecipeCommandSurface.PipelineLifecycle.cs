@@ -24,8 +24,11 @@ namespace OpenVisionLab
 
             string recipeName = NormalizeRecipeName(selectedRecipeName);
             OpenVisionRecipePipelineLifecycleResult result = pipelineLifecycleUseCase.Activate(recipeName, option.PipelineName);
-            StatusText = string.Format(CultureInfo.CurrentCulture, LocalText("활성 파이프라인: {0}", "Active pipeline: {0}"), option.PipelineName);
-            RefreshPipelineOptions(result.PipelineName);
+            OpenVisionRecipePipelineLifecycleProjection projection = pipelineLifecycleProjectionOwner.Project(
+                OpenVisionRecipePipelineLifecycleOperation.Activate,
+                result);
+            StatusText = projection.StatusText;
+            RefreshPipelineOptions(projection.PipelineName);
             refreshAfterSwitch();
         }
 
@@ -51,15 +54,18 @@ namespace OpenVisionLab
                 recipeName,
                 option.PipelineName,
                 requestedName);
-            if (!result.Succeeded)
+            OpenVisionRecipePipelineLifecycleProjection projection = pipelineLifecycleProjectionOwner.Project(
+                OpenVisionRecipePipelineLifecycleOperation.Duplicate,
+                result);
+            if (!projection.Succeeded)
             {
-                StatusText = result.Detail;
+                StatusText = projection.StatusText;
                 RefreshPipelineOptions(option.PipelineName);
                 return;
             }
 
-            StatusText = result.Detail;
-            RefreshPipelineOptions(result.PipelineName);
+            StatusText = projection.StatusText;
+            RefreshPipelineOptions(projection.PipelineName);
             refreshAfterSwitch();
         }
 
@@ -86,15 +92,18 @@ namespace OpenVisionLab
                 recipeName,
                 option.PipelineName,
                 targetName);
-            if (!result.Succeeded)
+            OpenVisionRecipePipelineLifecycleProjection projection = pipelineLifecycleProjectionOwner.Project(
+                OpenVisionRecipePipelineLifecycleOperation.Rename,
+                result);
+            if (!projection.Succeeded)
             {
-                StatusText = result.Detail;
+                StatusText = projection.StatusText;
                 RefreshPipelineOptions(option.PipelineName);
                 return;
             }
 
-            StatusText = result.Detail;
-            RefreshPipelineOptions(result.PipelineName);
+            StatusText = projection.StatusText;
+            RefreshPipelineOptions(projection.PipelineName);
             if (wasActive)
             {
                 refreshAfterSwitch();
@@ -126,15 +135,18 @@ namespace OpenVisionLab
 
             bool wasActive = option.IsActive;
             OpenVisionRecipePipelineLifecycleResult result = pipelineLifecycleUseCase.Delete(recipeName, option.PipelineName);
-            if (!result.Succeeded)
+            OpenVisionRecipePipelineLifecycleProjection projection = pipelineLifecycleProjectionOwner.Project(
+                OpenVisionRecipePipelineLifecycleOperation.Delete,
+                result);
+            if (!projection.Succeeded)
             {
-                StatusText = result.Detail;
+                StatusText = projection.StatusText;
                 RefreshPipelineOptions(option.PipelineName);
                 return;
             }
 
-            StatusText = result.Detail;
-            RefreshPipelineOptions(result.PipelineName);
+            StatusText = projection.StatusText;
+            RefreshPipelineOptions(projection.PipelineName);
             if (wasActive)
             {
                 refreshAfterSwitch();
@@ -178,19 +190,18 @@ namespace OpenVisionLab
                 recipeName,
                 sampleOption.PipelinePath,
                 sampleOption.SampleName);
-            string message = result.Detail;
-            if (!result.Succeeded)
+            OpenVisionRecipePipelineLifecycleProjection projection = pipelineLifecycleProjectionOwner.Project(
+                OpenVisionRecipePipelineLifecycleOperation.DuplicateFromSample,
+                result);
+            if (!projection.Succeeded)
             {
-                StatusText = LocalText("샘플 파이프라인 로드 실패: ", "Sample pipeline load failed: ") + message;
+                StatusText = projection.StatusText;
                 UpdateSelectedRecipeSummary();
                 return false;
             }
 
-            RefreshPipelineOptions(result.PipelineName);
-            StatusText = string.Format(
-                CultureInfo.CurrentCulture,
-                LocalText("샘플 파이프라인 복제됨: {0}", "Duplicated sample pipeline: {0}"),
-                result.PipelineName);
+            RefreshPipelineOptions(projection.PipelineName);
+            StatusText = projection.StatusText;
             RefreshOptions();
             refreshAfterSwitch();
             return true;

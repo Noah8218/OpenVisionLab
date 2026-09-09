@@ -6528,8 +6528,15 @@ namespace OpenVisionLab
             string repoRoot = FindRepositoryRoot();
             string matchingImagePath = Path.Combine(repoRoot, "docs", "samples", "public", "Matching_DiePad_Synthetic_OK.png");
             string matchingTemplatePath = Path.Combine(repoRoot, "docs", "samples", "public", "templates", "Matching_DiePad_Synthetic_Template.png");
+            string matchingPipelinePath = Path.Combine(repoRoot, "docs", "samples", "public", "Public_Matching_DiePad.pipeline.xml");
             EnsureFileExists(matchingImagePath, "Direct EXE Matching sample image");
             EnsureFileExists(matchingTemplatePath, "Direct EXE Matching template image");
+            EnsureFileExists(matchingPipelinePath, "Direct EXE Matching pipeline");
+            string registrationManifestPath = CreateSyntheticMatchingRegistrationEvidence(
+                matchingImagePath,
+                matchingTemplatePath,
+                matchingPipelinePath,
+                outputDirectory);
 
             string recipeName = "Smoke_LayerMatching_" + Guid.NewGuid().ToString("N").Substring(0, 12);
             Application app = Application.Current ?? new Application();
@@ -6551,6 +6558,7 @@ namespace OpenVisionLab
 
                 app.MainWindow = window;
                 window.Show();
+                string monitorEvidence = PlaceWindowOnLeftmostMonitor(window);
                 window.Activate();
                 Pump(36);
 
@@ -6640,7 +6648,20 @@ namespace OpenVisionLab
                 string matchingStatus = shellHost.ActiveNativeStatusText;
                 string matchingReview = shellHost.ActiveNativeResultReviewText;
                 int runsAfterMatchingPreview = shellHost.NativePreviewRunCount;
-                if (!shellHost.HasNativePreviewResult
+                if (!TryParseMatchingC9Review(
+                        matchingReview,
+                        out int matchingCount,
+                        out double matchingScore,
+                        out double matchingCenterX,
+                        out double matchingCenterY,
+                        out double matchingBoxWidth,
+                        out double matchingBoxHeight,
+                        out double matchingAngle,
+                        out double matchingScale,
+                        out double matchingTactMs)
+                    || matchingCount != 3
+                    || matchingScore < 60D
+                    || !shellHost.HasNativePreviewResult
                     || runsAfterMatchingPreview <= runsBeforeMatchingPreview
                     || !string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, "Main", StringComparison.OrdinalIgnoreCase)
                     || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, "Matching_Preview", StringComparison.OrdinalIgnoreCase)
@@ -6654,6 +6675,22 @@ namespace OpenVisionLab
                         + $"Output={shellHost.ActiveNativeRouteOutputLayerNameForTest}, Active={shellHost.ActiveHostLayerTitle}, Workspace={shellHost.WorkspaceLayerTitle}, "
                         + $"RunsBefore={runsBeforeMatchingPreview}, RunsAfter={runsAfterMatchingPreview}");
                 }
+
+                CreateSyntheticMatchingRuntimeEvidence(
+                    matchingImagePath,
+                    matchingTemplatePath,
+                    outputDirectory,
+                    matchingCount,
+                    matchingScore,
+                    matchingCenterX,
+                    matchingCenterY,
+                    matchingBoxWidth,
+                    matchingBoxHeight,
+                    matchingAngle,
+                    matchingScale,
+                    matchingTactMs,
+                    matchingStatus,
+                    matchingReview);
 
                 using (Bitmap matchingPreview = shellHost.GetLayerImageCloneForTest("Matching_Preview"))
                 {
@@ -6692,6 +6729,29 @@ namespace OpenVisionLab
                     + "PreviewRunsBeforeMatching: " + runsBeforeMatchingPreview.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
                     + "PreviewRunsAfterMatching: " + runsAfterMatchingPreview.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
                     + "WorkspaceAfterMatching: " + shellHost.WorkspaceLayerTitle + Environment.NewLine
+                    + "RegistrationManifest: " + registrationManifestPath + Environment.NewLine
+                    + "SourceImage: " + matchingImagePath + Environment.NewLine
+                    + "SourceImageSha256: " + ComputeC9FileSha256(matchingImagePath) + Environment.NewLine
+                    + "Template: " + matchingTemplatePath + Environment.NewLine
+                    + "TemplateSha256: " + ComputeC9FileSha256(matchingTemplatePath) + Environment.NewLine
+                    + "Pipeline: " + matchingPipelinePath + Environment.NewLine
+                    + "PipelineSha256: " + ComputeC9FileSha256(matchingPipelinePath) + Environment.NewLine
+                    + "Executable: " + (Environment.ProcessPath ?? Assembly.GetExecutingAssembly().Location) + Environment.NewLine
+                    + "ExecutableSha256: " + ComputeC9FileSha256(Environment.ProcessPath ?? Assembly.GetExecutingAssembly().Location) + Environment.NewLine
+                    + "ManagedAssemblySha256: " + ComputeC9FileSha256(typeof(OpenVisionLabDirectSmokeRunner).Assembly.Location) + Environment.NewLine
+                    + monitorEvidence + Environment.NewLine
+                    + "TeachingMode: REGISTRATION_PREVIEW followed by explicit Preview" + Environment.NewLine
+                    + "TemplateRoiSourceFrame: x=300, y=226, width=90, height=75" + Environment.NewLine
+                    + "Parameters: MATCH_MODE=CCoeffNormed; SCORE_MIN=0.60; NUM_MATCH=3; MAGNIFIATION=1.0; ANGLE=-20..7 step 0.5; SCALE=off; AUTO_PREVIEW=false" + Environment.NewLine
+                    + "ResultCount: " + matchingCount.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "ScoreMax: " + matchingScore.ToString("0.###", CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "ReportedCenter: " + matchingCenterX.ToString("0.###", CultureInfo.InvariantCulture) + "," + matchingCenterY.ToString("0.###", CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "ReportedBox: " + matchingBoxWidth.ToString("0.###", CultureInfo.InvariantCulture) + "x" + matchingBoxHeight.ToString("0.###", CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "ReportedAngle: " + matchingAngle.ToString("0.###", CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "ReportedScale: " + matchingScale.ToString("0.###", CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "TactMs: " + matchingTactMs.ToString("0.###", CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "Ambiguity: three retained results; no numeric score-margin claim" + Environment.NewLine
+                    + "Qualification: false (synthetic single-image workflow evidence only)" + Environment.NewLine
                     + "Status: " + matchingStatus + Environment.NewLine
                     + "Review: " + matchingReview,
                     Encoding.UTF8);
@@ -6706,6 +6766,284 @@ namespace OpenVisionLab
                 app.Shutdown();
                 RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
             }
+        }
+
+        private static string CreateSyntheticMatchingRegistrationEvidence(
+            string sourcePath,
+            string templatePath,
+            string pipelinePath,
+            string outputDirectory)
+        {
+            const int roiX = 300;
+            const int roiY = 226;
+            const int roiWidth = 90;
+            const int roiHeight = 75;
+            string registrationDirectory = Path.Combine(outputDirectory, "registration");
+            Directory.CreateDirectory(registrationDirectory);
+            string copiedSourcePath = Path.Combine(registrationDirectory, "source.png");
+            string copiedTemplatePath = Path.Combine(registrationDirectory, "taught_template.png");
+            string copiedPipelinePath = Path.Combine(registrationDirectory, "pipeline.xml");
+            string reproducedTemplatePath = Path.Combine(registrationDirectory, "reproduced_template.png");
+            string overlayPath = Path.Combine(registrationDirectory, "source_roi_overlay.png");
+            File.Copy(sourcePath, copiedSourcePath, true);
+            File.Copy(templatePath, copiedTemplatePath, true);
+            File.Copy(pipelinePath, copiedPipelinePath, true);
+
+            using (Bitmap source = new Bitmap(sourcePath))
+            {
+                System.Drawing.Rectangle roi = new System.Drawing.Rectangle(roiX, roiY, roiWidth, roiHeight);
+                if (roi.Right > source.Width || roi.Bottom > source.Height)
+                {
+                    throw new InvalidOperationException("Synthetic Matching registration ROI is outside the source image.");
+                }
+
+                using (Bitmap reproducedTemplate = source.Clone(roi, source.PixelFormat))
+                {
+                    reproducedTemplate.Save(reproducedTemplatePath, System.Drawing.Imaging.ImageFormat.Png);
+                }
+
+                using Bitmap overlay = new Bitmap(source);
+                using Graphics graphics = Graphics.FromImage(overlay);
+                using System.Drawing.Pen roiPen = new System.Drawing.Pen(System.Drawing.Color.Yellow, 3F);
+                using System.Drawing.Brush headerBrush = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(190, 0, 0, 0));
+                using System.Drawing.Brush textBrush = new System.Drawing.SolidBrush(System.Drawing.Color.White);
+                using System.Drawing.Font font = new System.Drawing.Font(System.Drawing.FontFamily.GenericSansSerif, 11F, System.Drawing.FontStyle.Bold);
+                graphics.DrawRectangle(roiPen, roi);
+                graphics.FillRectangle(headerBrush, 0F, 0F, overlay.Width, 34F);
+                graphics.DrawString("YELLOW locked teaching ROI (SourceFrame 300,226,90,75)", font, textBrush, 6F, 6F);
+                overlay.Save(overlayPath, System.Drawing.Imaging.ImageFormat.Png);
+            }
+
+            string templateSha256 = ComputeC9FileSha256(copiedTemplatePath);
+            string reproducedTemplateSha256 = ComputeC9FileSha256(reproducedTemplatePath);
+            using (Bitmap expectedTemplate = new Bitmap(copiedTemplatePath))
+            using (Bitmap reproducedTemplate = new Bitmap(reproducedTemplatePath))
+            {
+                bool pixelsMatch = expectedTemplate.Width == reproducedTemplate.Width
+                    && expectedTemplate.Height == reproducedTemplate.Height;
+                for (int y = 0; pixelsMatch && y < expectedTemplate.Height; y++)
+                {
+                    for (int x = 0; x < expectedTemplate.Width; x++)
+                    {
+                        if (expectedTemplate.GetPixel(x, y).ToArgb() != reproducedTemplate.GetPixel(x, y).ToArgb())
+                        {
+                            pixelsMatch = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (!pixelsMatch)
+                {
+                    throw new InvalidOperationException(
+                        "Synthetic Matching template pixels could not be reproduced from the locked source ROI. "
+                        + $"ExpectedSha256={templateSha256}, ReproducedSha256={reproducedTemplateSha256}");
+                }
+            }
+
+            string sourceSha256 = ComputeC9FileSha256(copiedSourcePath);
+            const string coordinateFrame = "SourceFrame -> 0-degree axis-aligned TemplateFrame";
+            object manifest = new
+            {
+                candidateId = "public-synthetic-die-pad-a-v1",
+                selectionMode = "REGISTRATION_PREVIEW",
+                referenceSource = copiedSourcePath,
+                referenceSourceSha256 = sourceSha256,
+                selectedRoi = new { x = roiX, y = roiY, width = roiWidth, height = roiHeight },
+                referenceLock = new
+                {
+                    sourcePath = copiedSourcePath,
+                    sourceSha256,
+                    sourceSize = new { width = 572, height = 420 },
+                    roi = new { x = roiX, y = roiY, width = roiWidth, height = roiHeight },
+                    requiredPhysicalFeatures = new[]
+                    {
+                        "mid-gray rectangular pad body with bright outline",
+                        "bright inner rectangle with dark outline",
+                        "asymmetric dark center ellipse and inner mid-gray mark"
+                    },
+                    extentRule = "MATERIAL_ONLY",
+                    outerBoundaryRequired = false,
+                    orientationState = "OBSERVED",
+                    quarterTurnPermitted = false,
+                    smallGlobalDeskewPermitted = false
+                },
+                registration = new
+                {
+                    rotationAppliedBeforeCrop = true,
+                    postCropRotationApplied = false,
+                    teachingRotationDegrees = 0.0D,
+                    coordinateFrame
+                },
+                materialScope = new
+                {
+                    variant = "A",
+                    classification = "MATERIAL_ONLY",
+                    uniformBackgroundAllowed = false
+                },
+                templatePath = copiedTemplatePath,
+                templateSha256,
+                reproducedTemplatePath,
+                reproducedTemplateSha256,
+                reproduction = "PIXEL_EXACT; PNG container SHA may differ across encoders",
+                pipelinePath = copiedPipelinePath,
+                pipelineSha256 = ComputeC9FileSha256(copiedPipelinePath),
+                coordinateFrame,
+                perImageOverrides = Array.Empty<object>(),
+                status = "PROPOSED",
+                qualification = false,
+                evidence = new[] { overlayPath, copiedTemplatePath, reproducedTemplatePath }
+            };
+            string manifestPath = Path.Combine(registrationDirectory, "registration-manifest.json");
+            File.WriteAllText(
+                manifestPath,
+                System.Text.Json.JsonSerializer.Serialize(
+                    manifest,
+                    new System.Text.Json.JsonSerializerOptions { WriteIndented = true }),
+                new UTF8Encoding(false));
+            return manifestPath;
+        }
+
+        private static void CreateSyntheticMatchingRuntimeEvidence(
+            string sourcePath,
+            string templatePath,
+            string outputDirectory,
+            int resultCount,
+            double score,
+            double centerX,
+            double centerY,
+            double boxWidth,
+            double boxHeight,
+            double angle,
+            double scale,
+            double tactMs,
+            string status,
+            string review)
+        {
+            if (!double.IsFinite(centerX)
+                || !double.IsFinite(centerY)
+                || !double.IsFinite(boxWidth)
+                || !double.IsFinite(boxHeight)
+                || !double.IsFinite(angle)
+                || Math.Abs(angle) > 0.51D)
+            {
+                throw new InvalidOperationException(
+                    "Synthetic Matching correspondence requires the reported zero-degree candidate pose. "
+                    + $"Center={centerX:0.###},{centerY:0.###}, Box={boxWidth:0.###}x{boxHeight:0.###}, Angle={angle:0.###}");
+            }
+
+            string runtimeDirectory = Path.Combine(outputDirectory, "runtime-correspondence");
+            Directory.CreateDirectory(runtimeDirectory);
+            string candidatePath = Path.Combine(runtimeDirectory, "reported_candidate_patch.png");
+            string comparisonPath = Path.Combine(runtimeDirectory, "template_candidate_blend.png");
+            string overlayPath = Path.Combine(runtimeDirectory, "reported_candidate_overlay.png");
+            using Bitmap source = new Bitmap(sourcePath);
+            using Bitmap template = new Bitmap(templatePath);
+            int detectedWidth = (int)Math.Round(boxWidth);
+            int detectedHeight = (int)Math.Round(boxHeight);
+            if (Math.Abs(detectedWidth - template.Width) > 1 || Math.Abs(detectedHeight - template.Height) > 1)
+            {
+                throw new InvalidOperationException(
+                    "Synthetic Matching reported footprint differs from the locked template extent. "
+                    + $"Template={template.Width}x{template.Height}, Reported={detectedWidth}x{detectedHeight}");
+            }
+
+            System.Drawing.Rectangle candidateRoi = new System.Drawing.Rectangle(
+                (int)Math.Round(centerX - (detectedWidth / 2D)),
+                (int)Math.Round(centerY - (detectedHeight / 2D)),
+                detectedWidth,
+                detectedHeight);
+            if (candidateRoi.Left < 0
+                || candidateRoi.Top < 0
+                || candidateRoi.Right > source.Width
+                || candidateRoi.Bottom > source.Height)
+            {
+                throw new InvalidOperationException("Synthetic Matching reported candidate footprint is outside the source image.");
+            }
+
+            using Bitmap candidate = source.Clone(candidateRoi, source.PixelFormat);
+            candidate.Save(candidatePath, System.Drawing.Imaging.ImageFormat.Png);
+            int comparisonWidth = Math.Min(template.Width, candidate.Width);
+            int comparisonHeight = Math.Min(template.Height, candidate.Height);
+            using (Bitmap comparison = new Bitmap(comparisonWidth * 3, comparisonHeight + 28, System.Drawing.Imaging.PixelFormat.Format24bppRgb))
+            using (Graphics graphics = Graphics.FromImage(comparison))
+            using (System.Drawing.Brush backgroundBrush = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(32, 32, 32)))
+            using (System.Drawing.Brush textBrush = new System.Drawing.SolidBrush(System.Drawing.Color.White))
+            using (System.Drawing.Font font = new System.Drawing.Font(System.Drawing.FontFamily.GenericSansSerif, 9F, System.Drawing.FontStyle.Bold))
+            using (Bitmap blend = new Bitmap(comparisonWidth, comparisonHeight, System.Drawing.Imaging.PixelFormat.Format24bppRgb))
+            {
+                for (int y = 0; y < comparisonHeight; y++)
+                {
+                    for (int x = 0; x < comparisonWidth; x++)
+                    {
+                        System.Drawing.Color left = template.GetPixel(x, y);
+                        System.Drawing.Color right = candidate.GetPixel(x, y);
+                        blend.SetPixel(
+                            x,
+                            y,
+                            System.Drawing.Color.FromArgb(
+                                (left.R + right.R) / 2,
+                                (left.G + right.G) / 2,
+                                (left.B + right.B) / 2));
+                    }
+                }
+
+                graphics.FillRectangle(backgroundBrush, 0, 0, comparison.Width, comparison.Height);
+                System.Drawing.Rectangle panel = new System.Drawing.Rectangle(0, 0, comparisonWidth, comparisonHeight);
+                graphics.DrawImage(template, panel, panel, GraphicsUnit.Pixel);
+                panel.X = comparisonWidth;
+                graphics.DrawImage(candidate, panel, new System.Drawing.Rectangle(0, 0, comparisonWidth, comparisonHeight), GraphicsUnit.Pixel);
+                graphics.DrawImageUnscaled(blend, comparisonWidth * 2, 0);
+                graphics.DrawString("TEMPLATE", font, textBrush, 4F, comparisonHeight + 6F);
+                graphics.DrawString("REPORTED PATCH", font, textBrush, comparisonWidth + 4F, comparisonHeight + 6F);
+                graphics.DrawString("50% BLEND", font, textBrush, (comparisonWidth * 2) + 4F, comparisonHeight + 6F);
+                comparison.Save(comparisonPath, System.Drawing.Imaging.ImageFormat.Png);
+            }
+
+            using (Bitmap overlay = new Bitmap(source))
+            using (Graphics graphics = Graphics.FromImage(overlay))
+            using (System.Drawing.Pen candidatePen = new System.Drawing.Pen(System.Drawing.Color.Lime, 3F))
+            using (System.Drawing.Brush headerBrush = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(190, 0, 0, 0)))
+            using (System.Drawing.Brush textBrush = new System.Drawing.SolidBrush(System.Drawing.Color.White))
+            using (System.Drawing.Font font = new System.Drawing.Font(System.Drawing.FontFamily.GenericSansSerif, 10F, System.Drawing.FontStyle.Bold))
+            {
+                graphics.DrawRectangle(candidatePen, candidateRoi);
+                graphics.FillRectangle(headerBrush, 0F, 0F, overlay.Width, 38F);
+                graphics.DrawString(
+                    $"Reported candidate: center {centerX:0.###},{centerY:0.###} | angle {angle:0.###} | score {score:0.###}",
+                    font,
+                    textBrush,
+                    6F,
+                    7F);
+                overlay.Save(overlayPath, System.Drawing.Imaging.ImageFormat.Png);
+            }
+
+            object runtimeEvidence = new
+            {
+                resultCount,
+                scoreMax = score,
+                reportedPose = new { centerX, centerY, boxWidth, boxHeight, angle, scale },
+                tactMs,
+                sourcePath,
+                sourceSha256 = ComputeC9FileSha256(sourcePath),
+                templatePath,
+                templateSha256 = ComputeC9FileSha256(templatePath),
+                candidatePatch = candidatePath,
+                candidatePatchSha256 = ComputeC9FileSha256(candidatePath),
+                fullOverlay = overlayPath,
+                templateCandidateBlend = comparisonPath,
+                ambiguity = "Three retained results; no numeric score-margin claim.",
+                visualCorrespondence = "REVIEW_REQUIRED",
+                qualification = false,
+                status,
+                review
+            };
+            File.WriteAllText(
+                Path.Combine(runtimeDirectory, "runtime-evidence.json"),
+                System.Text.Json.JsonSerializer.Serialize(
+                    runtimeEvidence,
+                    new System.Text.Json.JsonSerializerOptions { WriteIndented = true }),
+                new UTF8Encoding(false));
         }
 
         private static void RunWorkspaceStartupEmpty(string outputDirectory)
@@ -12906,6 +13244,8 @@ namespace OpenVisionLab
                     app.MainWindow = window;
                     window.Show();
                     Pump(24);
+                    report.AppendLine(PlaceWindowOnLeftmostMonitor(window));
+                    Pump(12);
 
                     OpenVisionShellHostView shellHost = window.ShellHostForSmoke
                         ?? throw new InvalidOperationException("OpenVision shell host was not created.");
@@ -12997,6 +13337,8 @@ namespace OpenVisionLab
                     app.MainWindow = window;
                     window.Show();
                     Pump(24);
+                    report.AppendLine(PlaceWindowOnLeftmostMonitor(window));
+                    Pump(12);
 
                     OpenVisionShellHostView shellHost = window.ShellHostForSmoke
                         ?? throw new InvalidOperationException("OpenVision shell host was not created.");
@@ -13073,6 +13415,10 @@ namespace OpenVisionLab
                     AssertDockingVerificationStageAfterMouseDrag(shellHost, window, report, "10_mouse_drag_local_bottom", 3, 3, "Horizontal", 3, dragLocalBottom);
                     AssertPaneLocalBottomSemantics(shellHost, window, "Dock_MouseLocalBottom", "Main", "HSV_Preview");
                     SaveWindowScreenshot(window, Path.Combine(outputDirectory, "10_mouse_drag_local_bottom.png"));
+                    if (!shellHost.DeleteLayerForTest("Dock_MouseLocalBottom"))
+                    {
+                        throw new InvalidOperationException("Mouse-drag smoke could not remove the completed local-bottom test layer.");
+                    }
 
                     EnsureDockingVerificationLayer(shellHost, "Dock_MouseLocalLeft", "ML", 72);
                     SetupPaneLocalSideVerification(shellHost, "Dock_MouseLocalLeft");
@@ -13092,6 +13438,10 @@ namespace OpenVisionLab
                     AssertDockingVerificationStageAfterMouseDrag(shellHost, window, report, "12_mouse_drag_local_left", 3, 3, "Horizontal", 3, dragLocalLeft);
                     AssertPaneLocalSideSemantics(shellHost, window, "Dock_MouseLocalLeft", "Main", "HSV_Preview", "Left");
                     SaveWindowScreenshot(window, Path.Combine(outputDirectory, "12_mouse_drag_local_left.png"));
+                    if (!shellHost.DeleteLayerForTest("Dock_MouseLocalLeft"))
+                    {
+                        throw new InvalidOperationException("Mouse-drag smoke could not remove the completed local-left test layer.");
+                    }
 
                     EnsureDockingVerificationLayer(shellHost, "Dock_MouseLocalRight", "MR", 73);
                     SetupPaneLocalSideVerification(shellHost, "Dock_MouseLocalRight");
@@ -13111,6 +13461,10 @@ namespace OpenVisionLab
                     AssertDockingVerificationStageAfterMouseDrag(shellHost, window, report, "14_mouse_drag_local_right", 3, 3, "Horizontal", 3, dragLocalRight);
                     AssertPaneLocalSideSemantics(shellHost, window, "Dock_MouseLocalRight", "Main", "HSV_Preview", "Right");
                     SaveWindowScreenshot(window, Path.Combine(outputDirectory, "14_mouse_drag_local_right.png"));
+                    if (!shellHost.DeleteLayerForTest("Dock_MouseLocalRight"))
+                    {
+                        throw new InvalidOperationException("Mouse-drag smoke could not remove the completed local-right test layer.");
+                    }
 
                     EnsureDockingVerificationLayer(shellHost, "Dock_MouseLocalTop", "MT", 74);
                     SetupPaneLocalSideVerification(shellHost, "Dock_MouseLocalTop");
@@ -13184,6 +13538,8 @@ namespace OpenVisionLab
                     app.MainWindow = window;
                     window.Show();
                     Pump(24);
+                    report.AppendLine(PlaceWindowOnLeftmostMonitor(window));
+                    Pump(12);
 
                     OpenVisionShellHostView shellHost = window.ShellHostForSmoke
                         ?? throw new InvalidOperationException("OpenVision shell host was not created.");
@@ -13197,6 +13553,7 @@ namespace OpenVisionLab
                     ClickDockedLayerHeaderWithoutDrag(shellHost, report, "02_click_hsv_tab_no_guide", "HSV_Preview");
                     ClickDockedLayerHeaderWithoutDrag(shellHost, report, "03_click_extra_tab_no_guide", "Matching_Preview_002");
                     SaveWindowScreenshot(window, Path.Combine(outputDirectory, "02_after_tab_clicks_no_guide.png"));
+                    RunDockedLayerCloseAffordanceWorkflow(shellHost, window, report, outputDirectory);
 
                     File.WriteAllText(
                         Path.Combine(outputDirectory, "report.txt"),
@@ -13251,6 +13608,8 @@ namespace OpenVisionLab
                     app.MainWindow = window;
                     window.Show();
                     Pump(24);
+                    report.AppendLine(PlaceWindowOnLeftmostMonitor(window));
+                    Pump(12);
 
                     OpenVisionShellHostView shellHost = window.ShellHostForSmoke
                         ?? throw new InvalidOperationException("OpenVision shell host was not created.");
@@ -16687,6 +17046,8 @@ namespace OpenVisionLab
                     + $"HeaderCount={shellHost.DockedLayerTabHeaderCount}, Titles={shellHost.DockedLayerTitles}, Headers={shellHost.DockedLayerTabHeaderDiagnosticsForTest}");
             }
 
+            AssertDockedLayerCloseButtons(shellHost, report, stage, expectedLayerCount);
+
             OpenVisionDockingVisualSnapshot snapshot = shellHost.DockedLayerVisualSnapshotForTest;
             AssertDockingVisualSnapshot(snapshot, stage, minimumPaneCount, minimumTopHeaderCount);
             AssertVisibleLayerViewerBounds(
@@ -16708,6 +17069,308 @@ namespace OpenVisionLab
                 + shellHost.DockedLayerTitles);
             report.Append(snapshot.ToReport());
             report.AppendLine();
+        }
+
+        private static void RunDockedLayerCloseAffordanceWorkflow(
+            OpenVisionShellHostView shellHost,
+            Window window,
+            StringBuilder report,
+            string outputDirectory)
+        {
+            const string targetLayer = "Matching_Preview_002";
+            if (!shellHost.ActivateDockedLayerForTest(targetLayer))
+            {
+                throw new InvalidOperationException("Close-affordance smoke could not activate the target tab.");
+            }
+
+            Pump(16);
+            ClickDockedLayerCloseButtonAndAssertPreserved(
+                shellHost,
+                window,
+                report,
+                outputDirectory,
+                "04_tab_close",
+                targetLayer,
+                2);
+            AssertDockingVerificationStage(shellHost, window, report, "05_tab_close_result", 2, 1, null, 2);
+            SaveWindowScreenshot(window, Path.Combine(outputDirectory, "05_tab_close_result.png"));
+
+            if (!shellHost.DockLayerForTest(targetLayer))
+            {
+                throw new InvalidOperationException("Closed tab could not be redocked.");
+            }
+
+            Pump(20);
+            AssertDockingVerificationStage(shellHost, window, report, "06_tab_redocked", 3, 1, null, 3);
+            if (!shellHost.DockLayerToGuideZoneForTest(targetLayer, "GlobalRight"))
+            {
+                throw new InvalidOperationException("Redocked layer could not be split for the single-pane header check.");
+            }
+
+            Pump(24);
+            AssertDockingVerificationStage(shellHost, window, report, "07_single_pane_close_ready", 3, 2, "Horizontal", 3);
+            SaveWindowScreenshot(window, Path.Combine(outputDirectory, "07_single_pane_close_ready.png"));
+            if (!shellHost.ActivateDockedLayerForTest(targetLayer))
+            {
+                throw new InvalidOperationException("Close-affordance smoke could not activate the single-pane target.");
+            }
+
+            Pump(16);
+            ClickDockedLayerCloseButtonAndAssertPreserved(
+                shellHost,
+                window,
+                report,
+                outputDirectory,
+                "08_single_pane_close",
+                targetLayer,
+                2);
+            AssertDockingVerificationStage(shellHost, window, report, "09_single_pane_close_result", 2, 1, null, 2);
+
+            ClickDockedLayerCloseButtonAndAssertPreserved(
+                shellHost,
+                window,
+                report,
+                outputDirectory,
+                "10_close_to_last_document",
+                "HSV_Preview",
+                1);
+            AssertDockingVerificationStage(shellHost, window, report, "11_last_document_close_ready", 1, 1, null, 1);
+            SaveWindowScreenshot(window, Path.Combine(outputDirectory, "11_last_document_close_ready.png"));
+            ClickDockedLayerCloseButtonAndAssertPreserved(
+                shellHost,
+                window,
+                report,
+                outputDirectory,
+                "12_last_document_close",
+                "Main",
+                0);
+            if (shellHost.DockedLayerCount != 0 || !shellHost.HasMainLayer)
+            {
+                throw new InvalidOperationException(
+                    "Closing the last docked view did not leave an empty dock workspace with the Main data layer intact.");
+            }
+
+            ResetDockingVerificationDocuments(shellHost, "Main", "HSV_Preview", targetLayer);
+
+            window.Width = 1280D;
+            window.Height = 760D;
+            window.UpdateLayout();
+            Pump(32);
+            AssertDockingVerificationStage(shellHost, window, report, "13_compact_redocked", 3, 1, null, 3);
+            SaveWindowScreenshot(window, Path.Combine(outputDirectory, "13_compact_redocked.png"));
+        }
+
+        private static void ClickDockedLayerCloseButtonAndAssertPreserved(
+            OpenVisionShellHostView shellHost,
+            Window window,
+            StringBuilder report,
+            string outputDirectory,
+            string stage,
+            string layerTitle,
+            int expectedDockedLayerCount)
+        {
+            int layerDocumentCount = shellHost.LayerDocumentCount;
+            int hostLayerRowCount = shellHost.HostLayerRowCount;
+            int nativePreviewRunCount = shellHost.NativePreviewRunCount;
+            string activeLayerTitle = shellHost.ActiveHostLayerTitle;
+            string selectedLayerTitle = shellHost.SelectedHostLayerTitle;
+            string workspaceLayerTitle = shellHost.WorkspaceLayerTitle;
+            string routeInput = shellHost.ActiveNativeRouteInputLayerNameForTest;
+            string routeInputB = shellHost.ActiveNativeRouteInputLayerBNameForTest;
+            string routeOutput = shellHost.ActiveNativeRouteOutputLayerNameForTest;
+            Button closeButton = FindDockedLayerCloseButton(shellHost, layerTitle, stage);
+
+            closeButton.Focus();
+            Keyboard.Focus(closeButton);
+            Pump(12);
+            if (!closeButton.IsKeyboardFocused)
+            {
+                throw new InvalidOperationException(stage + " close button did not accept keyboard focus.");
+            }
+
+            SaveWindowScreenScreenshot(window, Path.Combine(outputDirectory, stage + "_focused.png"));
+            System.Windows.Point center = closeButton.PointToScreen(
+                new System.Windows.Point(closeButton.ActualWidth * 0.5D, closeButton.ActualHeight * 0.5D));
+            System.Windows.Point dragProbe = closeButton.PointToScreen(
+                new System.Windows.Point(closeButton.ActualWidth + 6D, closeButton.ActualHeight * 0.5D));
+
+            mouse_event(MouseEventLeftUp, 0U, 0U, 0U, UIntPtr.Zero);
+            for (int attempt = 0; attempt < 3 && !closeButton.IsMouseOver; attempt++)
+            {
+                window.Activate();
+                SetCursorPosOrThrow(RoundToScreenPixel(center.X), RoundToScreenPixel(center.Y));
+                Pump(12);
+            }
+
+            if (!closeButton.IsMouseOver)
+            {
+                throw new InvalidOperationException(stage + " close button hover hit region did not match its visible bounds.");
+            }
+
+            SaveWindowScreenScreenshot(window, Path.Combine(outputDirectory, stage + "_hover.png"));
+            for (int attempt = 0; attempt < 3 && closeButton.IsMouseOver; attempt++)
+            {
+                MoveCursorInsideWindow(window, 24D, 24D);
+                Pump(10);
+            }
+
+            if (closeButton.IsMouseOver)
+            {
+                throw new InvalidOperationException(stage + " close button did not recover after mouse leave.");
+            }
+
+            SetCursorPosOrThrow(RoundToScreenPixel(center.X), RoundToScreenPixel(center.Y));
+            Pump(12);
+            try
+            {
+                mouse_event(MouseEventLeftDown, 0U, 0U, 0U, UIntPtr.Zero);
+                Pump(12);
+                if (!closeButton.IsPressed)
+                {
+                    throw new InvalidOperationException(stage + " close button did not render its pointer-down state.");
+                }
+
+                SaveWindowScreenScreenshot(window, Path.Combine(outputDirectory, stage + "_pressed.png"));
+                SetCursorPosOrThrow(RoundToScreenPixel(dragProbe.X), RoundToScreenPixel(dragProbe.Y));
+                Pump(14);
+                if (shellHost.IsDockingGuideOverlayVisibleForTest)
+                {
+                    throw new InvalidOperationException(stage + " close-button pointer movement incorrectly started docking.");
+                }
+
+            }
+            finally
+            {
+                mouse_event(MouseEventLeftUp, 0U, 0U, 0U, UIntPtr.Zero);
+            }
+
+            Pump(12);
+            if (shellHost.DockedLayerCount == expectedDockedLayerCount + 1)
+            {
+                closeButton = FindDockedLayerCloseButton(shellHost, layerTitle, stage + "_click");
+                center = closeButton.PointToScreen(
+                    new System.Windows.Point(closeButton.ActualWidth * 0.5D, closeButton.ActualHeight * 0.5D));
+                SetCursorPosOrThrow(RoundToScreenPixel(center.X), RoundToScreenPixel(center.Y));
+                Pump(10);
+                mouse_event(MouseEventLeftDown, 0U, 0U, 0U, UIntPtr.Zero);
+                Pump(8);
+                mouse_event(MouseEventLeftUp, 0U, 0U, 0U, UIntPtr.Zero);
+            }
+            Pump(36);
+            bool statePreserved = shellHost.DockedLayerCount == expectedDockedLayerCount
+                && shellHost.HasLayerForTest(layerTitle)
+                && shellHost.LayerDocumentCount == layerDocumentCount
+                && shellHost.HostLayerRowCount == hostLayerRowCount
+                && shellHost.NativePreviewRunCount == nativePreviewRunCount
+                && string.Equals(shellHost.ActiveHostLayerTitle, activeLayerTitle, StringComparison.Ordinal)
+                && string.Equals(shellHost.SelectedHostLayerTitle, selectedLayerTitle, StringComparison.Ordinal)
+                && string.Equals(shellHost.WorkspaceLayerTitle, workspaceLayerTitle, StringComparison.Ordinal)
+                && string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, routeInput, StringComparison.Ordinal)
+                && string.Equals(shellHost.ActiveNativeRouteInputLayerBNameForTest, routeInputB, StringComparison.Ordinal)
+                && string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, routeOutput, StringComparison.Ordinal)
+                && !shellHost.IsDockingGuideOverlayVisibleForTest;
+            report.AppendLine("[" + stage + "]");
+            report.AppendLine("ClosedDockedView=" + layerTitle);
+            report.AppendLine("DockedLayers=" + shellHost.DockedLayerCount.ToString(CultureInfo.InvariantCulture));
+            report.AppendLine("LayerDataPreserved=" + shellHost.HasLayerForTest(layerTitle));
+            report.AppendLine("ActiveLayerPreserved=" + string.Equals(shellHost.ActiveHostLayerTitle, activeLayerTitle, StringComparison.Ordinal));
+            report.AppendLine("SelectedLayerPreserved=" + string.Equals(shellHost.SelectedHostLayerTitle, selectedLayerTitle, StringComparison.Ordinal));
+            report.AppendLine("WorkspaceLayerPreserved=" + string.Equals(shellHost.WorkspaceLayerTitle, workspaceLayerTitle, StringComparison.Ordinal));
+            report.AppendLine("PipelineRoutesPreserved="
+                + (string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, routeInput, StringComparison.Ordinal)
+                    && string.Equals(shellHost.ActiveNativeRouteInputLayerBNameForTest, routeInputB, StringComparison.Ordinal)
+                    && string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, routeOutput, StringComparison.Ordinal)));
+            report.AppendLine("PreviewRunCountPreserved=" + (shellHost.NativePreviewRunCount == nativePreviewRunCount));
+            report.AppendLine("DockingGuideSuppressed=" + !shellHost.IsDockingGuideOverlayVisibleForTest);
+            report.AppendLine();
+            if (!statePreserved)
+            {
+                throw new InvalidOperationException(stage + " changed layer, selection, Preview/Run, or Pipeline route state while closing a docked view.");
+            }
+        }
+
+        private static void AssertDockedLayerCloseButtons(
+            OpenVisionShellHostView shellHost,
+            StringBuilder report,
+            string stage,
+            int expectedCount)
+        {
+            shellHost.UpdateLayout();
+            List<Button> buttons = FindVisualChildren<Button>(shellHost)
+                .Where(IsVisibleDockedLayerCloseButton)
+                .ToList();
+            List<string> titles = buttons.Select(ResolveDockedLayerCloseButtonTitle).ToList();
+            bool ready = buttons.Count == expectedCount
+                && titles.All(title => !string.IsNullOrWhiteSpace(title))
+                && titles.Distinct(StringComparer.OrdinalIgnoreCase).Count() == expectedCount
+                && buttons.All(button =>
+                    button.ActualWidth >= 20D
+                    && button.ActualHeight >= 20D
+                    && button.IsEnabled
+                    && button.Focusable
+                    && button.Cursor == Cursors.Arrow
+                    && button.Command != null
+                    && button.Command.CanExecute(button.CommandParameter)
+                    && button.ToolTip != null
+                    && !string.IsNullOrWhiteSpace(System.Windows.Automation.AutomationProperties.GetName(button))
+                    && FindVisualChildren<FrameworkElement>(button).Any(element =>
+                        string.Equals(element.GetType().Name, "PackIconMaterial", StringComparison.Ordinal)
+                        && string.Equals(ReadObjectProperty(element, "Kind")?.ToString(), "Close", StringComparison.Ordinal)));
+            report.AppendLine("[" + stage + "_close_buttons]");
+            report.AppendLine("Expected=" + expectedCount.ToString(CultureInfo.InvariantCulture)
+                + ", Visible=" + buttons.Count.ToString(CultureInfo.InvariantCulture)
+                + ", Ready=" + ready
+                + ", Titles=" + string.Join("|", titles));
+            if (!ready)
+            {
+                throw new InvalidOperationException(
+                    stage + " docked-layer close buttons are missing, disabled, inaccessible, or visually undersized. "
+                    + "Expected=" + expectedCount.ToString(CultureInfo.InvariantCulture)
+                    + ", Visible=" + buttons.Count.ToString(CultureInfo.InvariantCulture)
+                    + ", Titles=" + string.Join("|", titles));
+            }
+        }
+
+        private static Button FindDockedLayerCloseButton(
+            DependencyObject root,
+            string layerTitle,
+            string stage)
+        {
+            Button button = FindVisualChildren<Button>(root)
+                .Where(IsVisibleDockedLayerCloseButton)
+                .FirstOrDefault(candidate => string.Equals(
+                    ResolveDockedLayerCloseButtonTitle(candidate),
+                    layerTitle,
+                    StringComparison.OrdinalIgnoreCase));
+            return button ?? throw new InvalidOperationException(
+                stage + " could not find the close button for docked layer '" + layerTitle + "'.");
+        }
+
+        private static bool IsVisibleDockedLayerCloseButton(Button button)
+        {
+            return button?.IsVisible == true
+                && string.Equals(
+                    System.Windows.Automation.AutomationProperties.GetAutomationId(button),
+                    "DockedLayerCloseButton",
+                    StringComparison.Ordinal);
+        }
+
+        private static string ResolveDockedLayerCloseButtonTitle(Button button)
+        {
+            DependencyObject current = button;
+            while (current != null)
+            {
+                object model = ReadObjectProperty(current, "Model");
+                string contentId = ReadObjectProperty(model, "ContentId") as string;
+                if (!string.IsNullOrWhiteSpace(contentId))
+                {
+                    return contentId;
+                }
+
+                current = GetParent(current);
+            }
+
+            return string.Empty;
         }
 
         private static void AssertDockingVerificationStageAfterMouseDrag(

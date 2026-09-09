@@ -1,11 +1,15 @@
 using MahApps.Metro.IconPacks;
+using System;
 using System.Collections.Generic;
 using System.Windows;
+using System.Windows.Interop;
 
 namespace OpenVisionLab
 {
     internal partial class OpenVisionWorkspaceSamplePickerWindow : Window
     {
+        private HwndSource windowSource;
+
         public OpenVisionWorkspaceSamplePickerWindow(OpenVisionWorkspaceSamplePickerViewModel viewModel)
         {
             ViewModel = viewModel;
@@ -18,6 +22,20 @@ namespace OpenVisionLab
         public OpenVisionWorkspaceSamplePickerViewModel ViewModel { get; }
 
         public VisionPipelineSampleCatalogItem SelectedSample => ViewModel.SelectedSample;
+
+        protected override void OnSourceInitialized(EventArgs e)
+        {
+            base.OnSourceInitialized(e);
+            windowSource = HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);
+            windowSource?.AddHook(WindowProc);
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            windowSource?.RemoveHook(WindowProc);
+            windowSource = null;
+            base.OnClosed(e);
+        }
 
         public static bool TrySelectSample(
             Window owner,
@@ -86,6 +104,22 @@ namespace OpenVisionLab
 
             DialogResult = true;
             Close();
+        }
+
+        private static IntPtr WindowProc(
+            IntPtr hwnd,
+            int message,
+            IntPtr wParam,
+            IntPtr lParam,
+            ref bool handled)
+        {
+            if (message == OpenVisionWindowWorkArea.GetMinMaxInfoMessage)
+            {
+                OpenVisionWindowWorkArea.Apply(hwnd, lParam);
+                handled = true;
+            }
+
+            return IntPtr.Zero;
         }
     }
 }

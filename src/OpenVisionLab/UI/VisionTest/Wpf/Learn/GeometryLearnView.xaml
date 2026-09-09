@@ -1,0 +1,260 @@
+<UserControl x:Class="OpenVisionLab.GeometryLearnView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:OpenVisionLab"
+             Focusable="False">
+    <UserControl.Resources>
+        <local:SharedResourceDictionary Source="LearnResources.xaml" />
+    </UserControl.Resources>
+    <Grid>
+            <Border x:Name="geometryTopicPanel"
+                    Margin="0,10,8,0"
+                    Style="{StaticResource LearnPanelStyle}"
+                    Visibility="Collapsed">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="기하 변환은 픽셀과 좌표의 위치·크기·기울기를 바꿉니다."
+                                   FontWeight="SemiBold" />
+                        <TextBlock Margin="0,8,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="RotateScale은 검출 전에 영상 방향이나 크기를 정규화할 때 사용합니다. 변환 뒤에는 ROI, 측정 위치, Template 위치와 pixel/mm 기준을 새 좌표에 맞춰 확인하세요." />
+                        <TextBlock Margin="0,5,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="Rotate/Scale은 이미지를 회전하거나 확대·축소하고 새 좌표와 결과 크기를 만듭니다. Angle과 Scale을 정한 뒤 Preview에서 여백과 ROI 위치를 확인하세요." />
+                        <TextBlock Margin="0,5,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="AffineTransform은 서로 대응하는 Source/Destination 3점을 이용해 이동·회전·배율·기울기 변환을 한 번에 만듭니다. 세 점은 서로 일직선이 아니어야 하며, 같은 물리 특징 순서로 입력해야 합니다." />
+
+                        <Grid Margin="0,12,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock VerticalAlignment="Center"
+                                       Text="관련 Tool View"
+                                       FontWeight="SemiBold" />
+                            <Button x:Name="btnGeometryOpenTool"
+                                    Grid.Column="1"
+                                    MinWidth="158"
+                                    Height="30"
+                                    Padding="10,4"
+                                    Content="Rotate / Scale Tool 열기"
+                                    IsEnabled="False"
+                                    Tag="RotateAndScale"
+                                    ToolTip="Rotate/Scale Tool View의 Angle, Scale X, Scale Y 위치를 엽니다."
+                                    Click="OpenRelatedToolButton_Click"
+                                    AutomationProperties.AutomationId="OpenVisionLearnGeometryOpenToolButton" />
+                            <Button x:Name="btnGeometryOpenAffineTool"
+                                    Grid.Column="3"
+                                    MinWidth="158"
+                                    Height="30"
+                                    Padding="10,4"
+                                    Content="Affine Transform Tool 열기"
+                                    IsEnabled="False"
+                                    Tag="AffineTransform"
+                                    ToolTip="Affine Transform Tool View의 Source/Destination 3점과 coverage gate를 엽니다."
+                                    Click="OpenRelatedToolButton_Click"
+                                    AutomationProperties.AutomationId="OpenVisionLearnGeometryOpenAffineToolButton" />
+                        </Grid>
+                        <StackPanel x:Name="geometryToolLocationPanel"
+                                    Margin="0,8,0,0"
+                                    AutomationProperties.AutomationId="OpenVisionLearnGeometryToolLocationPanel">
+                            <Separator Margin="0,0,0,7" />
+                            <TextBlock x:Name="txtGeometryToolLocationTitle"
+                                       FontWeight="SemiBold"
+                                       Text="Rotate/Scale: Angle, Scale X/Y | Affine: Source/Destination 3점, Output, Validation Gates"
+                                       TextWrapping="Wrap"
+                                       AutomationProperties.AutomationId="OpenVisionLearnGeometryToolLocationTitle" />
+                            <TextBlock x:Name="txtGeometryToolLocationDetail"
+                                       Margin="0,4,0,0"
+                                       Style="{StaticResource LearnMutedTextStyle}"
+                                       Text="Preview를 명시적으로 실행한 뒤 OutputSize, Affine 2x3 행렬, destination triangle/frame 드로잉, AffineValidPixelRatio를 확인합니다."
+                                       TextWrapping="Wrap"
+                                       AutomationProperties.AutomationId="OpenVisionLearnGeometryToolLocationDetail" />
+                        </StackPanel>
+
+                        <Border Margin="0,10,0,0"
+                                Style="{StaticResource LearnPanelStyle}">
+                            <StackPanel>
+                                <TextBlock Text="Affine 3점 티칭 순서"
+                                           FontWeight="SemiBold" />
+                                <TextBlock Margin="0,5,0,0"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           Text="1) 넓게 떨어진 안정 특징 3개 선택 → 2) Source/Destination을 같은 순서로 입력 → 3) triangle area gate 확인 → 4) Preview → 5) 노란 destination triangle과 파란 transformed frame 확인 → 6) AffineValidPixelRatio 확인 후 downstream 고정 ROI를 티칭합니다." />
+                                <TextBlock Margin="0,5,0,0"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           Text="이 기능은 2D 픽셀 좌표 보정입니다. 원근/렌즈 보정, 자동 특징점 탐색, mm 교정은 포함하지 않습니다." />
+                            </StackPanel>
+                        </Border>
+
+                        <Grid Margin="0,12,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="14" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Button x:Name="btnGeometryPlay"
+                                    MinWidth="72"
+                                    Height="30"
+                                    Content="Play"
+                                    Click="GeometryPlayButton_Click"
+                                    ToolTip="회전, 스케일, 좌표 재검토 단계를 자동으로 보여줍니다."
+                                    AutomationProperties.AutomationId="OpenVisionLearnGeometryPlayButton" />
+                            <Button Grid.Column="2"
+                                    MinWidth="78"
+                                    Height="30"
+                                    Content="Step"
+                                    Click="GeometryStepButton_Click"
+                                    ToolTip="다음 Geometry Transform 단계를 보여줍니다."
+                                    AutomationProperties.AutomationId="OpenVisionLearnGeometryStepButton" />
+                            <Button Grid.Column="4"
+                                    MinWidth="72"
+                                    Height="30"
+                                    Content="Reset"
+                                    Click="GeometryResetButton_Click"
+                                    ToolTip="원본 ROI 확인 단계로 되돌립니다."
+                                    AutomationProperties.AutomationId="OpenVisionLearnGeometryResetButton" />
+                            <TextBlock x:Name="txtGeometryAnimationStatus"
+                                       Grid.Column="6"
+                                       VerticalAlignment="Center"
+                                       Style="{StaticResource LearnAnimationStatusStyle}"
+                                       AutomationProperties.Name="Geometry animation status"
+                                       AutomationProperties.AutomationId="OpenVisionLearnGeometryAnimationStatus" />
+                        </Grid>
+
+                        <Grid Margin="0,14,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="280" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="변환 전후 비교"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Margin="0,3,0,10"
+                                               Text="점선 상자는 원본 ROI이고 파란 상자는 회전·확대된 결과 영역입니다."
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <Canvas Width="250"
+                                            Height="112"
+                                            Background="#F8FAFC">
+                                        <Rectangle x:Name="geometrySourceBox"
+                                                   Width="92"
+                                                   Height="54"
+                                                   Canvas.Left="79"
+                                                   Canvas.Top="30"
+                                                   Stroke="#94A3B8"
+                                                   StrokeDashArray="4 3"
+                                                   StrokeThickness="2"
+                                                   Fill="#FFFFFF" />
+                                        <Border x:Name="geometryTargetBox"
+                                                Width="92"
+                                                Height="54"
+                                                Canvas.Left="79"
+                                                Canvas.Top="30"
+                                                Background="#2563EB"
+                                                Opacity="0.78"
+                                                CornerRadius="5"
+                                                RenderTransformOrigin="0.5,0.5">
+                                            <Border.RenderTransform>
+                                                <TransformGroup>
+                                                    <ScaleTransform x:Name="geometryScaleTransform" />
+                                                    <RotateTransform x:Name="geometryRotateTransform" />
+                                                </TransformGroup>
+                                            </Border.RenderTransform>
+                                            <TextBlock Text="ROI"
+                                                       Foreground="White"
+                                                       FontWeight="SemiBold"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center" />
+                                        </Border>
+                                    </Canvas>
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Column="2"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="좌표 다시 확인하기"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock x:Name="txtGeometryFormula"
+                                               Margin="0,6,0,0"
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <TextBlock x:Name="txtGeometryMeaning"
+                                               Margin="0,8,0,0"
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <TextBlock Margin="0,10,0,0"
+                                               Style="{StaticResource LearnMutedTextStyle}"
+                                               Text="확인 순서: 원본과 변환 결과를 나란히 비교하고 ROI, Template, edge 방향, pixel/mm 보정값과 판정 범위를 새 좌표에 맞춰 검토합니다." />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <Border Margin="0,12,0,0"
+                                Style="{StaticResource LearnPanelStyle}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="16" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Angle"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock x:Name="txtGeometryAngle"
+                                                   Grid.Column="1"
+                                                   Foreground="{StaticResource VisionTool.SecondaryTextBrush}" />
+                                    </Grid>
+                                    <Slider x:Name="geometryAngleSlider"
+                                            Margin="0,8,0,0"
+                                            Minimum="-45"
+                                            Maximum="45"
+                                            TickFrequency="5"
+                                            IsSnapToTickEnabled="True"
+                                            IsMoveToPointEnabled="True"
+                                            ValueChanged="GeometrySlider_ValueChanged"
+                                            AutomationProperties.Name="Rotation angle in degrees"
+                                            AutomationProperties.AutomationId="OpenVisionLearnGeometryAngleSlider" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Scale"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock x:Name="txtGeometryScale"
+                                                   Grid.Column="1"
+                                                   Foreground="{StaticResource VisionTool.SecondaryTextBrush}" />
+                                    </Grid>
+                                    <Slider x:Name="geometryScaleSlider"
+                                            Margin="0,8,0,0"
+                                            Minimum="50"
+                                            Maximum="150"
+                                            TickFrequency="10"
+                                            IsSnapToTickEnabled="True"
+                                            IsMoveToPointEnabled="True"
+                                            ValueChanged="GeometrySlider_ValueChanged"
+                                            AutomationProperties.Name="Scale percentage"
+                                            AutomationProperties.AutomationId="OpenVisionLearnGeometryScaleSlider" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+    </Grid>
+</UserControl>

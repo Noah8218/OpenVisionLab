@@ -263,8 +263,26 @@ namespace OpenVisionLab
 
         private static string ResolveRegion(VisionPipelineStep step)
         {
-            if (step?.Parameters != null
-                && step.Parameters.TryGetValue("USE_ROI", out string useRoi)
+            if (step?.Parameters == null)
+            {
+                return "Full image";
+            }
+
+            if (step.Parameters.TryGetValue("USE_MULTI_ROI", out string useMultiRoi)
+                && bool.TryParse(useMultiRoi, out bool multiRoiEnabled)
+                && multiRoiEnabled
+                && step.Parameters.TryGetValue("CvROIS", out string rois)
+                && !string.IsNullOrWhiteSpace(rois))
+            {
+                string[] regions = rois
+                    .Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                if (regions.Length > 0)
+                {
+                    return $"Multi ROI ({regions.Length}): {string.Join(" | ", regions)}";
+                }
+            }
+
+            if (step.Parameters.TryGetValue("USE_ROI", out string useRoi)
                 && bool.TryParse(useRoi, out bool enabled)
                 && enabled
                 && step.Parameters.TryGetValue("CvROI", out string roi)

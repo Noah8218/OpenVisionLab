@@ -1,0 +1,521 @@
+<UserControl x:Class="OpenVisionLab.FoundationLearnView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:OpenVisionLab"
+             Focusable="False">
+    <UserControl.Resources>
+        <local:SharedResourceDictionary Source="LearnResources.xaml" />
+    </UserControl.Resources>
+    <Grid>
+            <Border x:Name="pixelTopicPanel"
+                    Margin="0,10,8,0"
+                    Style="{StaticResource LearnPanelStyle}"
+                    Visibility="Collapsed">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <Border Style="{StaticResource LearnPanelStyle}"
+                                AutomationProperties.AutomationId="OpenVisionLearnFoundationTypeCards">
+                            <StackPanel>
+                                <TextBlock Text="영상 도구에서 자주 만나는 네 가지 값"
+                                           FontWeight="SemiBold" />
+                                <UniformGrid Margin="0,8,0,0"
+                                             Columns="2"
+                                             Rows="2">
+                                    <TextBlock Text="Point = X,Y → 중심점 / 에지점 / 특징점" />
+                                    <TextBlock Text="Rect ROI = X,Y,W,H → 검사 영역" />
+                                    <TextBlock Text="Size = W,H → Kernel / Template / 결과 크기" />
+                                    <TextBlock Text="Mat = 행 x 열 x 채널 → 이미지 데이터" />
+                                </UniformGrid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Margin="0,12,0,0"
+                                Style="{StaticResource LearnPanelStyle}"
+                                AutomationProperties.AutomationId="OpenVisionLearnMatChannelPanel">
+                            <StackPanel>
+                                <TextBlock Text="1. 픽셀과 채널: BGR 한 픽셀을 Gray GV로 변환"
+                                           FontWeight="SemiBold" />
+                                <TextBlock Margin="0,4,0,0"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           Text="예시 픽셀 B=220, G=110, R=40을 채널별로 나눈 뒤 OpenCV 가중식으로 Gray GV 102를 계산합니다." />
+                                <Grid Margin="0,8,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="8" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="8" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="14" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Button x:Name="btnMatChannelPlay"
+                                            MinWidth="72"
+                                            Height="30"
+                                            Content="자동 재생"
+                                            Click="MatChannelPlayButton_Click"
+                                            ToolTip="BGR 픽셀부터 Gray GV 계산까지 순서대로 보여줍니다."
+                                            AutomationProperties.AutomationId="OpenVisionLearnMatChannelPlayButton" />
+                                    <Button Grid.Column="2"
+                                            MinWidth="78"
+                                            Height="30"
+                                            Content="한 단계"
+                                            Click="MatChannelStepButton_Click"
+                                            ToolTip="다음 채널 변환 단계를 보여줍니다."
+                                            AutomationProperties.AutomationId="OpenVisionLearnMatChannelStepButton" />
+                                    <Button Grid.Column="4"
+                                            MinWidth="72"
+                                            Height="30"
+                                            Content="처음"
+                                            Click="MatChannelResetButton_Click"
+                                            ToolTip="BGR 원본 픽셀 단계로 돌아갑니다."
+                                            AutomationProperties.AutomationId="OpenVisionLearnMatChannelResetButton" />
+                                    <TextBlock x:Name="txtMatChannelAnimationStatus"
+                                               Grid.Column="6"
+                                               VerticalAlignment="Center"
+                                               Style="{StaticResource LearnAnimationStatusStyle}"
+                                               AutomationProperties.Name="Mat channel animation status"
+                                               AutomationProperties.AutomationId="OpenVisionLearnMatChannelAnimationStatus" />
+                                </Grid>
+                                <Grid Margin="0,10,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="150" />
+                                        <ColumnDefinition Width="24" />
+                                        <ColumnDefinition Width="270" />
+                                        <ColumnDefinition Width="24" />
+                                        <ColumnDefinition Width="150" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border x:Name="matChannelBgrCell"
+                                            MinHeight="92"
+                                            Padding="10"
+                                            Background="#286EDC"
+                                            BorderThickness="2"
+                                            CornerRadius="3">
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="BGR 원본 픽셀"
+                                                       Foreground="White"
+                                                       FontWeight="SemiBold"
+                                                       HorizontalAlignment="Center" />
+                                            <TextBlock Margin="0,4,0,0"
+                                                       Text="(B,G,R)"
+                                                       Foreground="White"
+                                                       HorizontalAlignment="Center" />
+                                            <TextBlock Text="220, 110, 40"
+                                                       Foreground="White"
+                                                       HorizontalAlignment="Center" />
+                                            <TextBlock x:Name="txtMatChannelBgrShape"
+                                                       Margin="0,4,0,0"
+                                              Text="행 x 열 x 3"
+                                                       Foreground="White"
+                                                       FontSize="11"
+                                                       HorizontalAlignment="Center" />
+                                        </StackPanel>
+                                    </Border>
+                                    <TextBlock Grid.Column="1"
+                                               Text=">"
+                                               FontSize="22"
+                                               FontWeight="SemiBold"
+                                               VerticalAlignment="Center"
+                                               HorizontalAlignment="Center" />
+                                    <UniformGrid Grid.Column="2"
+                                                 Columns="3"
+                                                 Rows="1">
+                                        <Border x:Name="matChannelBlueCell"
+                                                Margin="0,0,4,0"
+                                                Padding="6"
+                                                Background="#DCDCDC"
+                                                BorderThickness="2"
+                                                CornerRadius="3">
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="B 채널"
+                                                           Foreground="#1755B5"
+                                                           FontWeight="SemiBold"
+                                                           HorizontalAlignment="Center" />
+                                                <TextBlock Text="220"
+                                                           Foreground="Black"
+                                                           FontSize="18"
+                                                           FontWeight="SemiBold"
+                                                           HorizontalAlignment="Center" />
+                                            </StackPanel>
+                                        </Border>
+                                        <Border x:Name="matChannelGreenCell"
+                                                Margin="2,0"
+                                                Padding="6"
+                                                Background="#6E6E6E"
+                                                BorderThickness="2"
+                                                CornerRadius="3">
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="G 채널"
+                                                           Foreground="#BDF4C7"
+                                                           FontWeight="SemiBold"
+                                                           HorizontalAlignment="Center" />
+                                                <TextBlock Text="110"
+                                                           Foreground="White"
+                                                           FontSize="18"
+                                                           FontWeight="SemiBold"
+                                                           HorizontalAlignment="Center" />
+                                            </StackPanel>
+                                        </Border>
+                                        <Border x:Name="matChannelRedCell"
+                                                Margin="4,0,0,0"
+                                                Padding="6"
+                                                Background="#282828"
+                                                BorderThickness="2"
+                                                CornerRadius="3">
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="R 채널"
+                                                           Foreground="#FFB5B5"
+                                                           FontWeight="SemiBold"
+                                                           HorizontalAlignment="Center" />
+                                                <TextBlock Text="40"
+                                                           Foreground="White"
+                                                           FontSize="18"
+                                                           FontWeight="SemiBold"
+                                                           HorizontalAlignment="Center" />
+                                            </StackPanel>
+                                        </Border>
+                                    </UniformGrid>
+                                    <TextBlock Grid.Column="3"
+                                               Text=">"
+                                               FontSize="22"
+                                               FontWeight="SemiBold"
+                                               VerticalAlignment="Center"
+                                               HorizontalAlignment="Center" />
+                                    <Border x:Name="matChannelGrayCell"
+                                            Grid.Column="4"
+                                            MinHeight="92"
+                                            Padding="10"
+                                            Background="#666666"
+                                            BorderThickness="2"
+                                            CornerRadius="3">
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="Gray 밝기(GV)"
+                                                       Foreground="White"
+                                                       FontWeight="SemiBold"
+                                                       HorizontalAlignment="Center" />
+                                            <TextBlock Text="102"
+                                                       Foreground="White"
+                                                       FontSize="20"
+                                                       FontWeight="SemiBold"
+                                                       HorizontalAlignment="Center" />
+                                            <TextBlock x:Name="txtMatChannelGrayShape"
+                                                       Margin="0,4,0,0"
+                                              Text="행 x 열 x 1"
+                                                       Foreground="White"
+                                                       FontSize="11"
+                                                       HorizontalAlignment="Center" />
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                                <Grid x:Name="matChannelTypeGuidePanel"
+                                      Margin="0,8,0,0"
+                                      AutomationProperties.AutomationId="OpenVisionLearnMatChannelTypeGuidePanel">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="210" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock x:Name="txtMatChannelTypeTitle"
+                                               FontWeight="SemiBold"
+                                               Text="Mat 형식 = 픽셀 깊이 + 채널 수"
+                                               AutomationProperties.AutomationId="OpenVisionLearnMatChannelTypeTitle" />
+                                    <TextBlock x:Name="txtMatChannelTypeDetail"
+                                               Grid.Column="1"
+                                               Style="{StaticResource LearnMutedTextStyle}"
+                                               TextWrapping="Wrap"
+                                               Text="CV_8U = 0~255의 8비트 값 | C1/C3 = 채널 수 | Gray = CV_8UC1 | BGR = CV_8UC3"
+                                               AutomationProperties.AutomationId="OpenVisionLearnMatChannelTypeDetail" />
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock Margin="0,14,0,0"
+                                   Text="2. 좌표와 ROI: Point에서 Rect와 RotatedRect 만들기"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Margin="0,4,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="Point(2,1)과 Size(4,3)로 12픽셀 ROI를 만들고, 같은 중심과 크기에 25° 회전을 적용한 영역을 비교합니다." />
+                        <Grid Margin="0,8,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="14" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Button x:Name="btnFoundationPlay"
+                                    MinWidth="72"
+                                    Height="30"
+                                    Content="자동 재생"
+                                    Click="FoundationPlayButton_Click"
+                                    ToolTip="Point, Size, Rect, Mat ROI, RotatedRect 관계를 자동으로 보여줍니다."
+                                    AutomationProperties.AutomationId="OpenVisionLearnFoundationPlayButton" />
+                            <Button Grid.Column="2"
+                                    MinWidth="78"
+                                    Height="30"
+                                    Content="한 단계"
+                                    Click="FoundationStepButton_Click"
+                                    ToolTip="다음 OpenCvSharp 기초 타입 단계를 보여줍니다."
+                                    AutomationProperties.AutomationId="OpenVisionLearnFoundationStepButton" />
+                            <Button Grid.Column="4"
+                                    MinWidth="72"
+                                    Height="30"
+                                    Content="처음"
+                                    Click="FoundationResetButton_Click"
+                                    ToolTip="Point 확인 단계로 돌아갑니다."
+                                    AutomationProperties.AutomationId="OpenVisionLearnFoundationResetButton" />
+                            <TextBlock x:Name="txtFoundationAnimationStatus"
+                                       Grid.Column="6"
+                                       VerticalAlignment="Center"
+                                       Style="{StaticResource LearnAnimationStatusStyle}"
+                                       AutomationProperties.Name="Foundation animation status"
+                                       AutomationProperties.AutomationId="OpenVisionLearnFoundationAnimationStatus" />
+                        </Grid>
+
+                        <Border Margin="0,10,0,0"
+                                Style="{StaticResource LearnPanelStyle}"
+                                AutomationProperties.AutomationId="OpenVisionLearnFoundationGeometryPanel">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="340" />
+                                    <ColumnDefinition Width="14" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="6행 × 8열 Gray Mat 예시"
+                                               FontWeight="SemiBold" />
+                                    <Grid Width="320"
+                                          Height="192"
+                                          Margin="0,8,0,0">
+                                        <UniformGrid x:Name="foundationMatGrid"
+                                                     Columns="8"
+                                                     Rows="6" />
+                                        <Canvas IsHitTestVisible="False">
+                                            <Rectangle x:Name="foundationRotatedBoundsRect"
+                                                       Width="186"
+                                                       Height="155"
+                                                       Canvas.Left="67"
+                                                       Canvas.Top="3"
+                                                       StrokeThickness="2"
+                                                       StrokeDashArray="4 3"
+                                                       Visibility="Collapsed"
+                                                       AutomationProperties.AutomationId="OpenVisionLearnFoundationRotatedBoundsRect" />
+                                            <Rectangle x:Name="foundationRotatedRect"
+                                                       Width="160"
+                                                       Height="96"
+                                                       Canvas.Left="80"
+                                                       Canvas.Top="32"
+                                                       RenderTransformOrigin="0.5,0.5"
+                                                       StrokeThickness="3"
+                                                       Visibility="Collapsed"
+                                                       AutomationProperties.AutomationId="OpenVisionLearnFoundationRotatedRect">
+                                                <Rectangle.RenderTransform>
+                                                    <RotateTransform Angle="25" />
+                                                </Rectangle.RenderTransform>
+                                            </Rectangle>
+                                            <Ellipse x:Name="foundationRotatedCenterMarker"
+                                                     Width="14"
+                                                     Height="14"
+                                                     Canvas.Left="153"
+                                                     Canvas.Top="73"
+                                                     Stroke="White"
+                                                     StrokeThickness="2"
+                                                     Visibility="Collapsed"
+                                                     AutomationProperties.AutomationId="OpenVisionLearnFoundationRotatedCenterMarker" />
+                                            <Rectangle x:Name="foundationRoiRect"
+                                                       Width="160"
+                                                       Height="96"
+                                                       Canvas.Left="80"
+                                                       Canvas.Top="32"
+                                                       StrokeThickness="3"
+                                                       StrokeDashArray="5 3"
+                                                       Visibility="Collapsed" />
+                                            <Ellipse x:Name="foundationPointMarker"
+                                                     Width="14"
+                                                     Height="14"
+                                                     Canvas.Left="73"
+                                                     Canvas.Top="25"
+                                                     Stroke="White"
+                                                     StrokeThickness="2"
+                                                     Visibility="Collapsed" />
+                                        </Canvas>
+                                    </Grid>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="도구 파라미터에서 읽는 방법"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Margin="0,8,0,0"
+                                               Style="{StaticResource LearnMutedTextStyle}"
+                                               Text="Point (2,1): ROI의 시작 X/Y 위치" />
+                                    <TextBlock Margin="0,5,0,0"
+                                               Style="{StaticResource LearnMutedTextStyle}"
+                                               Text="Size (4,3): 폭 4, 높이 3" />
+                                    <TextBlock Margin="0,5,0,0"
+                                               Style="{StaticResource LearnMutedTextStyle}"
+                                               Text="Rect: 시작 위치와 크기를 합친 사각 영역" />
+                                    <TextBlock Margin="0,5,0,0"
+                                               Style="{StaticResource LearnMutedTextStyle}"
+                                               Text="CvROI = 2,1,4,3 (X,Y,Width,Height)" />
+                                    <TextBlock Margin="0,5,0,0"
+                                               Style="{StaticResource LearnMutedTextStyle}"
+                                               Text="Mat ROI: 원본 Mat에서 Rect 영역만 잘라낸 이미지" />
+                                    <TextBlock Margin="0,5,0,0"
+                                               Style="{StaticResource LearnMutedTextStyle}"
+                                               Text="RotatedRect: 중심점 + 크기 + 회전각" />
+                                    <TextBlock Margin="0,5,0,0"
+                                               Style="{StaticResource LearnMutedTextStyle}"
+                                               Text="BoundingRect: 회전 영역 전체를 감싸는 축 정렬 사각형" />
+                                    <TextBlock Margin="0,12,0,0"
+                                               Style="{StaticResource LearnMutedTextStyle}"
+                                               Text="이 예시의 CvROI 값은 Blob, Contour, Line 같은 도구의 ROI 입력 형식과 같습니다." />
+                                    <TextBlock Margin="0,12,0,0"
+                                               FontWeight="SemiBold"
+                                               Text="관련 도구에서 같은 값 찾기" />
+                                    <UniformGrid Margin="0,6,0,0"
+                                                 Columns="3"
+                                                 Rows="1">
+                                        <Button x:Name="btnFoundationOpenRoiTool"
+                                                MinHeight="40"
+                                                Margin="0,0,4,0"
+                                                Padding="6,4"
+                                                Content="Blob에서 ROI 보기"
+                                                IsEnabled="False"
+                                                Tag="Blob"
+                                                ToolTip="Blob PropertyGrid의 Use ROI와 ROI(CvROI) 위치를 엽니다."
+                                                Click="OpenRelatedToolButton_Click"
+                                                AutomationProperties.AutomationId="OpenVisionLearnFoundationOpenRoiToolButton" />
+                                        <Button x:Name="btnFoundationOpenKernelTool"
+                                                MinHeight="40"
+                                                Margin="2,0"
+                                                Padding="6,4"
+                                                Content="Filter에서 Kernel 보기"
+                                                IsEnabled="False"
+                                                Tag="Filter"
+                                                ToolTip="Filter Tool View의 Kernel Width와 Kernel Height 위치를 엽니다."
+                                                Click="OpenRelatedToolButton_Click"
+                                                AutomationProperties.AutomationId="OpenVisionLearnFoundationOpenKernelToolButton" />
+                                        <Button x:Name="btnFoundationOpenOutputSizeTool"
+                                                MinHeight="40"
+                                                Margin="4,0,0,0"
+                                                Padding="6,4"
+                                                Content="Rotate/Scale 보기"
+                                                IsEnabled="False"
+                                                Tag="RotateAndScale"
+                                                ToolTip="Rotate/Scale Tool View의 Angle, Scale X, Scale Y 위치를 엽니다."
+                                                Click="OpenRelatedToolButton_Click"
+                                                AutomationProperties.AutomationId="OpenVisionLearnFoundationOpenOutputSizeToolButton" />
+                                    </UniformGrid>
+                                    <StackPanel x:Name="foundationToolLocationPanel"
+                                                Margin="0,8,0,0"
+                                                AutomationProperties.AutomationId="OpenVisionLearnFoundationToolLocationPanel">
+                                        <Separator Margin="0,0,0,7" />
+                                        <TextBlock x:Name="txtFoundationToolLocationTitle"
+                                                   FontWeight="SemiBold"
+                                                   Text="도구 위치: Blob > ROI | Filter > Kernel | Rotate/Scale > Angle/Scale"
+                                                   TextWrapping="Wrap"
+                                                   AutomationProperties.AutomationId="OpenVisionLearnFoundationToolLocationTitle" />
+                                        <TextBlock x:Name="txtFoundationToolLocationDetail"
+                                                   Margin="0,4,0,0"
+                                                   Style="{StaticResource LearnMutedTextStyle}"
+                                                   Text="도구가 열리면 위 경로에서 같은 값을 찾고, Preview를 눌러 결과 이미지와 비교하세요."
+                                                   AutomationProperties.AutomationId="OpenVisionLearnFoundationToolLocationDetail" />
+                                    </StackPanel>
+                                    <TextBlock Margin="0,6,0,0"
+                                               Style="{StaticResource LearnMutedTextStyle}"
+                                               Text="OutputSize는 Angle과 Scale을 적용한 뒤 만들어지는 결과 이미지의 폭과 높이입니다." />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <TextBlock Margin="0,8,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="CvROI, Kernel 크기, 각도, Template 크기, Threshold 같은 값은 Point·Size·Rect·Mat 구조와 연결해서 보면 이해하기 쉽습니다." />
+                        <Border Margin="0,10,0,0"
+                                Style="{StaticResource LearnPanelStyle}"
+                                AutomationProperties.AutomationId="OpenVisionLearnBeginnerPathPanel">
+                            <StackPanel>
+                                <TextBlock Text="추천 순서: 영상 기초 → 밝기/GV → Threshold → Filter/Morphology → Blob/Contour/LineDistance"
+                                           FontWeight="SemiBold"
+                                           TextWrapping="Wrap" />
+                                <TextBlock Margin="0,5,0,0"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           Text="각 주제에서 개념을 본 뒤 공개 샘플을 열고, 관련 도구의 결과 이미지와 지표를 Good/Bad 기준으로 비교하세요." />
+                            </StackPanel>
+                        </Border>
+                        <TextBlock Text="전체 목차를 먼저 봅니다"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Margin="0,8,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="이 과정에서는 픽셀과 GV, ROI와 Layer, Point·Size·Rect·RotatedRect·Mat를 먼저 익힙니다. 이어서 전처리, 영역 검출, 측정, 매칭, Pipeline, Metric, Good/Bad 판정을 실제 OpenVisionLab 도구와 연결합니다." />
+                        <TextBlock Margin="0,8,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="세부 문서: Arithmetic, RotateScale, Color/HSV, EdgeDetection, Pipeline/Layer, Metrics/Acceptance." />
+                        <TextBlock Margin="0,14,0,0"
+                                   Text="핵심 키워드"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Margin="0,8,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="Pixel: 이미지의 가장 작은 칸입니다. 각 칸은 위치 X/Y와 밝기 또는 색상 값을 가집니다." />
+                        <TextBlock Margin="0,5,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="GV: Gray Value입니다. 흑백 영상에서 0은 검정, 255는 흰색에 가까운 밝기입니다." />
+                        <TextBlock Margin="0,5,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="ROI: 검사할 영역입니다. ROI를 좁히면 불필요한 배경을 줄이고 검출 안정성을 높일 수 있습니다." />
+                        <TextBlock Margin="0,5,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="Layer: 원본과 각 처리 결과를 이름으로 구분해 보관하는 이미지입니다. 다음 Step에서 사용할 결과 Layer를 InputLayer로 선택하면 처리 흐름이 이어집니다." />
+                        <TextBlock Margin="0,14,0,0"
+                                   Text="OpenCvSharp 기본 타입"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Margin="0,8,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="Point: X/Y 위치입니다. edge point, keypoint, match center, line endpoint를 읽을 때 필요합니다." />
+                        <TextBlock Margin="0,5,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="Size: 폭과 높이입니다. 이미지 크기, template 크기, kernel 크기, resize 결과를 이해할 때 씁니다." />
+                        <TextBlock Margin="0,5,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="Rect: x, y, width, height로 표현하는 사각 영역입니다. ROI, bounding box, template crop은 대부분 Rect로 생각하면 됩니다." />
+                        <TextBlock Margin="0,5,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="RotatedRect: 중심점, 폭/높이, 각도로 표현하는 회전 사각형입니다. 네 꼭짓점과 회전 영역을 감싸는 축 정렬 BoundingRect를 함께 확인합니다." />
+                        <TextBlock Margin="0,5,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="Mat: 이미지를 행렬처럼 담는 OpenCvSharp의 기본 이미지 객체입니다. row/column, channel, ROI slice를 이해하면 툴 파라미터가 더 명확해집니다." />
+                        <TextBlock Margin="0,5,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="행렬 연산: filter kernel, morphology kernel, affine/rotate/scale transform은 픽셀 주변값이나 좌표를 행렬식으로 바꾸는 작업입니다." />
+                        <TextBlock Margin="0,14,0,0"
+                                   Text="목차 구성"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Margin="0,8,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="아래 순서대로 보면 개념, 샘플, 툴, metric, Good/Bad 판정이 하나의 작업 흐름으로 이어집니다." />
+                        <Border Margin="0,14,0,0"
+                                Style="{StaticResource LearnPanelStyle}">
+                            <StackPanel>
+                                <TextBlock Text="추천 학습 경로"
+                                           FontWeight="SemiBold" />
+                                <TextBlock Margin="0,8,0,0"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           Text="0-4장: 영상, 픽셀, GV, Point/Size/Rect/RotatedRect/Mat, ROI, Layer의 기본 구조를 익힙니다." />
+                                <TextBlock Margin="0,5,0,0"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           Text="4-7장: 밝기/히스토그램, Threshold, Filter, Morphology로 입력을 정리합니다." />
+                                <TextBlock Margin="0,5,0,0"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           Text="8-11장: Blob, Contour, Edge, LineDistance로 후보와 치수를 검증합니다." />
+                                <TextBlock Margin="0,5,0,0"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           Text="12-14장: Matching, EdgeBasedMatching, FeatureMatching으로 템플릿/형상/특징을 비교합니다." />
+                                <TextBlock Margin="0,5,0,0"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           Text="15-20장: Pipeline route, metric gate, Good/Bad 검증, Recipe Manager, LLM XML correction loop를 연결합니다." />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+    </Grid>
+</UserControl>

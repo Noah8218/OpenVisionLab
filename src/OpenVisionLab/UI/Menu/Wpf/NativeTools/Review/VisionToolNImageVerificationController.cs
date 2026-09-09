@@ -126,6 +126,9 @@ namespace OpenVisionLab
         public string ReviewReasonHeaderText => LocalText("NG/오류 원인", "NG/error reason");
         public string SourceImageHeaderText => LocalText("검증 입력 이미지", "Verified source image");
         public string ResultImageHeaderText => LocalText("검증 결과 드로잉", "Verification result drawing");
+        public string ImageNavigationHintText => LocalText(
+            "휠 확대/축소 · 드래그 이동 · 더블클릭 맞춤",
+            "Wheel zoom · Drag pan · Double-click fit");
 
         public string StatusText
         {
@@ -649,6 +652,7 @@ namespace OpenVisionLab
                 nameof(StopText), nameof(StopToolTipText), nameof(ExportHtmlText), nameof(ExportHtmlToolTipText),
                 nameof(ImageListTitleText), nameof(FileHeaderText), nameof(StatusHeaderText), nameof(MetricHeaderText),
                 nameof(ReviewReasonHeaderText), nameof(SourceImageHeaderText), nameof(ResultImageHeaderText),
+                nameof(ImageNavigationHintText),
                 nameof(PromoteLocatorValidationText), nameof(PromoteLocatorValidationToolTipText),
                 nameof(PromotionConfirmationText)
             })

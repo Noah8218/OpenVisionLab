@@ -442,12 +442,12 @@ namespace OpenVisionLab
 
         public void FailNextRecipeStepSaveForTest()
         {
-            failNextRecipeStepSaveForTest = true;
+            RecipeCommands?.FailNextRecipeStepSaveForTest();
         }
 
         public void FailNextRecipeStepRoundTripValidationForTest()
         {
-            failNextRecipeStepRoundTripValidationForTest = true;
+            RecipeCommands?.FailNextRecipeStepRoundTripValidationForTest();
         }
 
         public void SetRecipeManagerOpenForTest(bool isOpen)

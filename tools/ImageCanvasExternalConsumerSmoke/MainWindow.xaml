@@ -1,0 +1,158 @@
+<Window
+    x:Class="ImageCanvasExternalConsumerSmoke.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="ImageCanvas External Consumer"
+    Width="1240"
+    Height="760"
+    MinWidth="980"
+    MinHeight="620"
+    Background="#171B22"
+    Foreground="#F4F7FA"
+    WindowStartupLocation="CenterScreen">
+    <Window.Resources>
+        <Style TargetType="Button">
+            <Setter Property="Background" Value="#2D3948" />
+            <Setter Property="Foreground" Value="#F4F7FA" />
+            <Setter Property="BorderBrush" Value="#536579" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="Margin" Value="0,4,0,0" />
+        </Style>
+        <Style TargetType="ListBox">
+            <Setter Property="Background" Value="#1E252F" />
+            <Setter Property="Foreground" Value="#F4F7FA" />
+            <Setter Property="BorderBrush" Value="#465567" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="4" />
+        </Style>
+        <Style TargetType="ListBoxItem">
+            <Setter Property="Padding" Value="8" />
+            <Setter Property="Margin" Value="0,0,0,4" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Background" Value="#242C37" />
+            <Setter Property="BorderBrush" Value="#3A4858" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border
+                            x:Name="ItemBorder"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            Padding="{TemplateBinding Padding}">
+                            <ContentPresenter />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ItemBorder" Property="Background" Value="#2C3948" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="ItemBorder" Property="Background" Value="#35485B" />
+                                <Setter TargetName="ItemBorder" Property="BorderBrush" Value="#F4D35E" />
+                                <Setter TargetName="ItemBorder" Property="BorderThickness" Value="2" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="14">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Row="0" Margin="0,0,0,12">
+            <TextBlock FontSize="22" FontWeight="SemiBold" Text="ImageCanvas 외부 소비자 검증" />
+            <TextBlock Margin="0,4,0,0" Foreground="#B7C4D2" Text="별도 .NET 8 WPF 소비자가 이미지 후보를 선택하고 Viewer 하이라이트를 유지하는 최소 계약" TextWrapping="Wrap" />
+        </StackPanel>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="310" />
+            </Grid.ColumnDefinitions>
+
+            <Border
+                Grid.Column="0"
+                Background="#0F1318"
+                BorderBrush="#465567"
+                BorderThickness="1"
+                CornerRadius="4"
+                Padding="4">
+                <ContentControl
+                    x:Name="viewerHost"
+                    HorizontalContentAlignment="Stretch"
+                    VerticalContentAlignment="Stretch" />
+            </Border>
+
+            <Grid Grid.Column="1" Margin="14,0,0,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0">
+                    <TextBlock FontSize="16" FontWeight="SemiBold" Text="Overlay 선택" />
+                    <TextBlock
+                        x:Name="projectionStatusText"
+                        Margin="0,5,0,0"
+                        Foreground="#75D7F5"
+                        Text="3D→2D marker 없음 / No 3D→2D markers"
+                        TextWrapping="Wrap" />
+                </StackPanel>
+                <ListBox
+                    x:Name="overlayList"
+                    Grid.Row="1"
+                    Margin="0,8,0,8"
+                    SelectionChanged="OverlayList_SelectionChanged">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel>
+                                <TextBlock FontWeight="SemiBold" Text="{Binding Id}" />
+                                <TextBlock Margin="0,3,0,0" Foreground="#D5DFE9" Text="{Binding StatusText}" />
+                                <TextBlock
+                                    Margin="0,2,0,0"
+                                    Foreground="#F4C7C3"
+                                    Text="{Binding RejectReason}"
+                                    TextWrapping="Wrap" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <Border
+                    Grid.Row="2"
+                    Padding="10"
+                    Background="#202934"
+                    BorderBrush="#465567"
+                    BorderThickness="1"
+                    CornerRadius="4">
+                    <StackPanel>
+                        <TextBlock FontWeight="SemiBold" Text="현재 선택" />
+                        <TextBlock x:Name="selectionText" Margin="0,4,0,0" Text="선택 없음" TextWrapping="Wrap" />
+                        <TextBlock x:Name="selectionReasonText" Margin="0,3,0,0" Foreground="#F4C7C3" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
+                <StackPanel Grid.Row="3" Margin="0,8,0,0">
+                    <Button Click="FitButton_Click" Content="Fit 이미지" />
+                    <Button Click="ClearSelectionButton_Click" Content="선택 해제" />
+                    <Button Click="CaptureViewButton_Click" Content="뷰 상태 저장" />
+                    <Button Click="RestoreViewButton_Click" Content="뷰 상태 복원" />
+                    <TextBlock
+                        x:Name="contractText"
+                        Margin="0,10,0,0"
+                        Foreground="#AFC4D8"
+                        Text="선택은 Preview/Run, Layer, Route를 변경하지 않습니다."
+                        TextWrapping="Wrap" />
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>

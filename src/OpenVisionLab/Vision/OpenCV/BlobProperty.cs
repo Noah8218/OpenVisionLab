@@ -9,7 +9,7 @@ namespace OpenVisionLab
 {
     [CategoryOrder("Blob Parameter", 6)]
     [System.Xml.Serialization.XmlRoot("CPropertyBlob")]
-    public class BlobProperty : OpenCvPropertyBase, IOpenCVPropertyBlob, IOpenCvConfigurableProperty<BlobProperty>
+    public class BlobProperty : OpenCvPropertyBase, IOpenCVPropertyBlob, IVisionObjectFilterProperty, IOpenCvConfigurableProperty<BlobProperty>
     {
         [PropertyOrder(1)]
         [Browsable(true)]

@@ -8,6 +8,7 @@ namespace OpenVisionLab
         internal const string PinArrayGapTemplate = "Pin row edge-gap consistency (PinArrayGap)";
         internal const string DarkBandGapTemplate = "Dark band thickness / Gap (LineDistance)";
         internal const string HybridRelativeRoiGapTemplate = "Locator-aligned Gap (NormalizeImage)";
+        internal const string LocatorRelativeBlobTemplate = "Locator-relative Blob (Evidence constrained)";
         internal const string MatchingTemplate = "Template Matching";
         internal const string FeatureMatchingTemplate = "Feature Matching";
         internal const string EdgeBasedMatchingTemplate = "Edge Based Matching";

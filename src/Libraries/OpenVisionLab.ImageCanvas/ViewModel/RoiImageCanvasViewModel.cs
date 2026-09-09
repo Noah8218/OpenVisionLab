@@ -5,9 +5,9 @@ using OpenVisionLab.ImageCanvas.Commands;
 using OpenVisionLab.ImageCanvas.Events;
 using OpenVisionLab.ImageCanvas.Canvas;
 using OpenVisionLab.ImageCanvas.CanvasShapes;
+using OpenVisionLab.ImageCanvas.Dialogs;
 using OpenVisionLab.ImageCanvas.Overlays;
 using OpenVisionLab.ImageCanvas.OpenGLRendering;
-using Microsoft.Win32;
 using OpenCvSharp;
 using SharpGL;
 using System;
@@ -15,7 +15,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
-using System.Windows.Controls;
 using System.Windows.Input;
 using Model = OpenVisionLab.ImageCanvas.Model;
 
@@ -55,6 +54,8 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 		private System.Drawing.Point _mouseDownCanvasPos = System.Drawing.Point.Empty;
 		private System.Drawing.Size _imageSize = new System.Drawing.Size();
 		private OpenVisionLab.ImageCanvas.Rendering.ImageCanvasControl _imageViewer = new OpenVisionLab.ImageCanvas.Rendering.ImageCanvasControl();
+		private readonly RoiImageCanvasKeyboardInputController _keyboardInputController;
+		private readonly RoiImageCanvasWpfKeyboardInputController _wpfKeyboardInputController;
 		private Mat _currentImageMat;
 		private string _currentImageName = "Image";
 		private Func<string, bool> _saveImageOverride;
@@ -65,6 +66,7 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 		public float[] AfData3D = new float[10];
 		private AddRoiArrayViewModel _addRoiArrayVm = new AddRoiArrayViewModel();
 		private System.Timers.Timer _refreshTimer;  // ?�?�머 객체
+		private readonly RoiImageCanvasMouseInputController _mouseInputController;
 		#endregion
 
 		#region Properties
@@ -73,7 +75,9 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 			get { return _imageViewer; }
 		}
 
-		public System.Windows.Controls.ContextMenu ContextMenu { get; set; }
+		internal IImageCanvasContextMenuHost ContextMenuHost { get; set; }
+
+		internal IImageCanvasDialogHost ImageDialogHost { get; set; }
 
 		public int GrayValue
 		{
@@ -270,7 +274,50 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 		#endregion
 		public RoiImageCanvasViewModel(string name)
 		{
+			_wpfKeyboardInputController = new RoiImageCanvasWpfKeyboardInputController(RemoveSelectedOverlay);
 			InitCommand();
+			_keyboardInputController = new RoiImageCanvasKeyboardInputController(
+				_imageViewer,
+				() => _selectedRect,
+				() => _copyRoiRect,
+				value => _copyRoiRect = value,
+				CaptureWindowRoiSnapshot,
+				RemoveSelectedOverlay,
+				PublishRoiSnapshotChanged,
+				() => UndoRequested(this, EventArgs.Empty),
+				() => RedoRequested(this, EventArgs.Empty),
+				OnRoiAdded,
+				OnRoiGrouped);
+			_mouseInputController = new RoiImageCanvasMouseInputController(
+				_imageViewer,
+				() => _selectedRect,
+				value => _selectedRect = value,
+				() => _drawingRect,
+				value => _drawingRect = value,
+				() => _measurement,
+				value => _measurement = value,
+				() => _mouseDownCanvasPos,
+				value => _mouseDownCanvasPos = value,
+				() => _isPanning,
+				value => _isPanning = value,
+				() => _panAnchorPoint,
+				value => _panAnchorPoint = value,
+				() => _imageSize,
+				() => IsAddRoiArrayMode,
+				value => IsAddRoiArrayMode = value,
+				() => IsTeachingMode,
+				() => ReplaceExistingRoiOnDraw,
+				() => UseGroupMoveMode,
+				_addRoiArrayVm,
+				BeginRoiInteractionSnapshot,
+				CompleteRoiInteractionSnapshot,
+				OnRoiMouseUp,
+				OnRoiEditingCompleted,
+				OnRoiAdded,
+				ReplaceWindowRoisForSingleDraw,
+				UpdatePixelProperty,
+				ExecuteRightClickCommand,
+				StartDrawingTimer);
 			InitEvent();
 			InitMenuItems();
 			_imageViewer.SetNameGL(name);
@@ -293,16 +340,7 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 		{
 			_imageViewer.Load += OnLoad;
 			_imageViewer.Resized += OnResized;
-			_imageViewer.MouseDoubleClicked += OnMouseDoubleClicked;
 			_imageViewer.Draw += OnDraw;
-			_imageViewer.KeyDown += OnKeyDown;
-			_imageViewer.KeyUp += OnKeyUp;
-			_imageViewer.MouseClicked += OnMouseClicked;
-			_imageViewer.MouseDown += OnMouseDown;
-			_imageViewer.MouseMove += OnMouseMove;
-			_imageViewer.MouseUp += OnMouseUp;
-			_imageViewer.MouseLeave += OnMouseLeave;
-			_imageViewer.MouseWheel += OnMouseWheel;
 
 			_refreshTimer = new System.Timers.Timer(1);  // 1초마???�벤??발생
 			_refreshTimer.Elapsed += _dataTimer_Elapsed;
@@ -318,16 +356,7 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 
 			_imageViewer.Load -= OnLoad;
 			_imageViewer.Resized -= OnResized;
-			_imageViewer.MouseDoubleClicked -= OnMouseDoubleClicked;
 			_imageViewer.Draw -= OnDraw;
-			_imageViewer.KeyDown -= OnKeyDown;
-			_imageViewer.KeyUp -= OnKeyUp;
-			_imageViewer.MouseClicked -= OnMouseClicked;
-			_imageViewer.MouseDown -= OnMouseDown;
-			_imageViewer.MouseMove -= OnMouseMove;
-			_imageViewer.MouseUp -= OnMouseUp;
-			_imageViewer.MouseLeave -= OnMouseLeave;
-			_imageViewer.MouseWheel -= OnMouseWheel;
 		}
 		private void InitMenuItems()
 		{
@@ -353,217 +382,6 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 			if (IsShowMeasure) { _imageViewer.DrawMeasurement(gl, _measurement, _measureFontOption); }
 		}
 
-		private void OnMouseDown(object sender, CanvasMouseEventArgs e)
-		{
-			OpenGLControl openGLControl = (OpenGLControl)sender;
-
-			switch (e.Button)
-			{
-				case System.Windows.Forms.MouseButtons.Left:
-					BeginRoiInteractionSnapshot();
-					_mouseDownCanvasPos = new System.Drawing.Point(e.X, e.Y);
-					RoiInteractionMouseDown.InitializeMouseDownState(ImageViewer, ref _selectedRect, openGLControl, e);
-					switch (_imageViewer.GetViewMode())
-					{
-						case CanvasInteractionMode.Drawing:
-							_drawingRect = new CanvasRect<float>();
-							_drawingRect.IsEditing = true;
-							break;
-						case CanvasInteractionMode.Edit:
-						case CanvasInteractionMode.Move:
-							_drawingRect = new CanvasRect<float>();
-							if (_selectedRect != null) { _selectedRect.IsEditing = true; }
-
-							break;
-						case CanvasInteractionMode.Drag:
-						case CanvasInteractionMode.Measure:
-							_drawingRect = new CanvasRect<float>();
-							if (_selectedRect != null) { _selectedRect.IsEditing = false; }
-							break;
-					}
-					break;
-				case System.Windows.Forms.MouseButtons.Right:
-					ClearSelection();
-					OnMouseRightClick(CanvasContextMenuMode.Default);
-					break;
-				case System.Windows.Forms.MouseButtons.Middle:
-					_isPanning = true;
-					_panAnchorPoint = _imageViewer.GetCurrentCanvasPositionF(e.X, e.Y);
-					openGLControl.Cursor = System.Windows.Forms.Cursors.Hand;
-					break;
-			}
-
-			StartDrawingTimer();
-		}
-
-		private void OnMouseMove(object sender, CanvasMouseEventArgs e)
-		{
-			OpenGLControl openGLControl = (OpenGLControl)sender;
-			if (_isPanning)
-			{
-				_imageViewer.PanToKeepPointAtMouse(_panAnchorPoint, new System.Drawing.Point(e.X, e.Y));
-				UpdatePixelProperty();
-				openGLControl.Cursor = System.Windows.Forms.Cursors.Hand;
-				return;
-			}
-
-			System.Drawing.PointF currentImagePos = _imageViewer.GetCurrentCanvasPosition(e.X, e.Y);
-			openGLControl.Cursor = RoiInteractionCursor.GetCursorFromType(GetCursorInteractionRect(currentImagePos), currentImagePos, _imageViewer.ZoomScale, _imageViewer.HandleSize);
-			_imageViewer.PostMousePos = currentImagePos;
-
-			switch (_imageViewer.GetViewMode())
-			{
-				case CanvasInteractionMode.Edit:
-					RoiInteractionMouseMove.ResizeRoiRect(_imageViewer, _selectedRect, currentImagePos, _imageSize, OnRoiEditingCompleted);
-					break;
-				case CanvasInteractionMode.Move:
-					RoiInteractionMouseMove.MoveOverlay(_imageViewer, _selectedRect, currentImagePos, _imageSize, true, OnRoiEditingCompleted, UseGroupMoveMode);
-					break;
-				case CanvasInteractionMode.Drawing:
-					RoiInteractionMouseMove.UpdateRectangleToOverlay(_imageViewer, _drawingRect);
-					break;
-				case CanvasInteractionMode.Measure:
-					RoiInteractionMouseMove.UpdateMeasurement(_imageViewer, ref _measurement);
-					break;
-			}
-
-			UpdatePixelProperty();
-		}
-
-		private void OnMouseUp(object sender, CanvasMouseEventArgs e)
-		{
-			if (e.Button == System.Windows.Forms.MouseButtons.Middle)
-			{
-				_isPanning = false;
-				return;
-			}
-
-			_imageViewer.PostMousePos = _imageViewer.GetCurrentCanvasPosition(e.X, e.Y);
-			CanvasRect<float> mouseUpRect = GetActiveInteractionRect();
-			if (_selectedRect != null) { _selectedRect.IsEditing = false; }
-			if (_drawingRect != null) { _drawingRect.IsEditing = false; }
-
-			bool hasValidLeftDrag = e.Button == System.Windows.Forms.MouseButtons.Left
-				&& HasValidMouseDrag(_mouseDownCanvasPos, new System.Drawing.Point(e.X, e.Y))
-				&& HasValidDrawingBounds(_imageViewer.PreMousePos, _imageViewer.PostMousePos);
-
-			if (e.Button == System.Windows.Forms.MouseButtons.Left && !hasValidLeftDrag && _imageViewer.GetViewMode() == CanvasInteractionMode.Drawing)
-			{
-				_drawingRect = new CanvasRect<float>();
-				mouseUpRect = _selectedRect;
-			}
-
-			if (hasValidLeftDrag)
-			{
-				if (IsAddRoiArrayMode)
-				{
-					RoiInteractionMouseUp.OpenAddRoiArrayView(_imageViewer, _addRoiArrayVm, OnRoiAdded);
-					// ?�성???�료?�면 ?�당 모드�?종료?�다.
-					IsAddRoiArrayMode = false;
-				}
-				else
-				{
-					if (_imageViewer.GetViewMode() == CanvasInteractionMode.Drawing && ReplaceExistingRoiOnDraw)
-					{
-						ReplaceWindowRoisForSingleDraw();
-					}
-
-					if (_imageViewer.GetViewMode() == CanvasInteractionMode.Drawing)
-					{
-						bool added = RoiInteractionMouseUp.AddRectangleToOverlay(_imageViewer, _imageViewer.PreMousePos, _imageViewer.PostMousePos, ref _drawingRect, OnRoiAdded);
-						if (added)
-						{
-							_selectedRect = _drawingRect;
-							mouseUpRect = _selectedRect;
-						}
-						_drawingRect = new CanvasRect<float>();
-					}
-				}
-			}
-			OnRoiMouseUp(mouseUpRect);
-			ResetViewMode();
-			CompleteRoiInteractionSnapshot("ROI Edit");
-		}
-
-		private void OnKeyDown(object sender, System.Windows.Forms.KeyEventArgs e)
-		{
-			if (e.Control)
-			{
-				if (e.KeyCode == System.Windows.Forms.Keys.Z && !e.Shift)
-				{
-					UndoRequested(this, EventArgs.Empty);
-					e.Handled = true;
-					e.SuppressKeyPress = true;
-					return;
-				}
-
-				if (e.KeyCode == System.Windows.Forms.Keys.Y || (e.KeyCode == System.Windows.Forms.Keys.Z && e.Shift))
-				{
-					RedoRequested(this, EventArgs.Empty);
-					e.Handled = true;
-					e.SuppressKeyPress = true;
-					return;
-				}
-			}
-
-			switch (e.KeyCode)
-			{
-				case System.Windows.Forms.Keys.ShiftKey:
-					break;
-				case System.Windows.Forms.Keys.ControlKey:
-
-					break;
-				case System.Windows.Forms.Keys.Enter:
-
-					break;
-				case System.Windows.Forms.Keys.Delete:
-					IReadOnlyList<Model.RoiSnapshotItem> beforeDelete = CaptureWindowRoiSnapshot();
-					RemoveSelectedOverlay();
-					PublishRoiSnapshotChanged("Delete ROI", beforeDelete, CaptureWindowRoiSnapshot());
-					break;
-			}
-
-			if (e.Modifiers == System.Windows.Forms.Keys.Control)
-			{
-				switch (e.KeyCode)
-				{
-					case System.Windows.Forms.Keys.C:
-						RoiInteractionKeyDown.CopyRectangle(_selectedRect, ref _copyRoiRect);
-						break;
-					case System.Windows.Forms.Keys.V:
-						IReadOnlyList<Model.RoiSnapshotItem> beforePaste = CaptureWindowRoiSnapshot();
-						RoiInteractionKeyDown.PasteRectangle(ImageViewer, ref _copyRoiRect, OnRoiAdded, OnRoiGrouped);
-						PublishRoiSnapshotChanged("Paste ROI", beforePaste, CaptureWindowRoiSnapshot());
-						break;
-				}
-			}
-		}
-		private void OnMouseWheel(object sender, CanvasMouseEventArgs e)
-		{
-			_imageViewer.AdjustOffsetForZoom(e.Location, _imageViewer.UpdateZoom(e.Delta));
-			_imageViewer.Reshape();
-		}
-
-		private void OnMouseLeave(object sender, EventArgs e)
-		{
-			_isPanning = false;
-		}
-
-		private void OnMouseClicked(object sender, EventArgs e)
-		{
-
-		}
-
-		private void OnKeyUp(object sender, System.Windows.Forms.KeyEventArgs e)
-		{
-
-		}
-
-		private void OnMouseDoubleClicked(object sender, EventArgs e)
-		{
-
-		}
-
 		private void OnResized(object sender, EventArgs e)
 		{
 			StartDrawingTimer();
@@ -572,11 +390,6 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 		private void OnLoad(object sender, EventArgs e)
 		{
 
-		}
-
-		private CanvasRect<float> GetActiveInteractionRect()
-		{
-			return _imageViewer.GetViewMode() == CanvasInteractionMode.Drawing ? _drawingRect : _selectedRect;
 		}
 
 		private CanvasRect<float> GetOverlayRect()
@@ -592,67 +405,6 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 			}
 
 			return null;
-		}
-
-		private CanvasRect<float> GetCursorInteractionRect(System.Drawing.PointF currentImagePos)
-		{
-			switch (_imageViewer.GetViewMode())
-			{
-				case CanvasInteractionMode.Edit:
-				case CanvasInteractionMode.Move:
-					return _selectedRect;
-				case CanvasInteractionMode.Drawing:
-					if (_drawingRect != null && _drawingRect.IsEditing)
-					{
-						return _drawingRect;
-					}
-					break;
-			}
-
-			var (hoverRect, _) = RoiInteractionMouseDown.FindOverlayAtPosition(_imageViewer, currentImagePos);
-			if (hoverRect != null)
-			{
-				return hoverRect;
-			}
-
-			return GetOverlayRect();
-		}
-
-		private void ClearSelection()
-		{
-			if (_selectedRect != null)
-			{
-				_selectedRect.IsEditing = false;
-				_selectedRect.IsChanged = true;
-			}
-
-			if (_drawingRect != null)
-			{
-				_drawingRect.IsEditing = false;
-				_drawingRect.IsChanged = true;
-			}
-
-			_selectedRect = new CanvasRect<float>();
-			_drawingRect = new CanvasRect<float>();
-		}
-
-		private void ResetViewMode()
-		{
-			if (_imageViewer.GetViewMode() == CanvasInteractionMode.Drag) { _imageViewer.SetViewMode(CanvasInteractionMode.None); }
-			if (_imageViewer.GetViewMode() == CanvasInteractionMode.Move) { _imageViewer.SetViewMode(CanvasInteractionMode.None); }
-			if (_imageViewer.GetViewMode() == CanvasInteractionMode.Edit) { _imageViewer.SetViewMode(CanvasInteractionMode.None); }
-			if (IsTeachingMode && _imageViewer.GetViewMode() == CanvasInteractionMode.None) { _imageViewer.SetViewMode(CanvasInteractionMode.Drawing); }
-		}
-
-		private static bool HasValidDrawingBounds(System.Drawing.PointF preMousePos, System.Drawing.PointF postMousePos)
-		{
-			return Math.Abs(postMousePos.X - preMousePos.X) > 0 && Math.Abs(postMousePos.Y - preMousePos.Y) > 0;
-		}
-
-		private static bool HasValidMouseDrag(System.Drawing.Point startPoint, System.Drawing.Point endPoint)
-		{
-			const int minimumDrawingPixels = 2;
-			return Math.Abs(endPoint.X - startPoint.X) >= minimumDrawingPixels && Math.Abs(endPoint.Y - startPoint.Y) >= minimumDrawingPixels;
 		}
 
 		private void RemoveSelectedOverlay()
@@ -843,42 +595,13 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 
 		public bool SaveCurrentImage(string path)
 		{
-			if (string.IsNullOrWhiteSpace(path))
-			{
-				return false;
-			}
-
-			string savePath = EnsureImageFileExtension(path);
-			string directory = System.IO.Path.GetDirectoryName(savePath);
-			if (!string.IsNullOrWhiteSpace(directory))
-			{
-				System.IO.Directory.CreateDirectory(directory);
-			}
-
-			if (_saveImageOverride != null)
-			{
-				return _saveImageOverride(savePath);
-			}
-
-			if (_currentImageMat == null || _currentImageMat.Empty())
-			{
-				return false;
-			}
-
-			return Cv2.ImWrite(savePath, _currentImageMat);
+			return CanvasImageSaver.SaveMat(_currentImageMat, path, _saveImageOverride);
 		}
 
 		public void FitImageToView()
 		{
 			_imageViewer.ZoomToFit();
 			_imageViewer.RefreshGL();
-		}
-
-		private static string EnsureImageFileExtension(string path)
-		{
-			return string.IsNullOrWhiteSpace(System.IO.Path.GetExtension(path))
-				? path + ".png"
-				: path;
 		}
 
 		public void AddInitialRoi(System.Drawing.Rectangle roi)

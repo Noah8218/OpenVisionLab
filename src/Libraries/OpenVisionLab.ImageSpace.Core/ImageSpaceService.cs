@@ -139,17 +139,27 @@ namespace OpenVisionLab.ImageSpace.Core
 
         public void RemoveImage(string title)
         {
-            int index;
+            ImageSpaceImage removed;
             lock (sync)
             {
                 ThrowIfDisposed();
-                index = FindIndexByTitle(title);
+                int index = FindIndexByTitle(title);
+                if (index < 0)
+                {
+                    return;
+                }
+
+                ImageSpaceItem item = items[index];
+                removed = item.Image;
+                if (removed?.References(activeImage) == true)
+                {
+                    activeImage = null;
+                }
+
+                items.RemoveAt(index);
             }
 
-            if (index >= 0)
-            {
-                RemoveImage(index);
-            }
+            removed?.Release();
         }
 
         public void SetRoi(int index, Rectangle roi)

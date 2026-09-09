@@ -48,6 +48,7 @@ if (-not $manifest.SourceTreeClean) {
 $requiredNames = @(
     "OpenVisionLab.exe",
     "OpenVisionLab.dll",
+    "openvisionlab.runtime.json",
     "OpenVisionLab.runtimeconfig.json",
     "OpenVisionLab.Core.dll",
     "OpenVisionLab.Vision2D.dll",
@@ -107,6 +108,59 @@ $unexpectedPayloadFiles = @(
 )
 if ($unexpectedPayloadFiles.Count -gt 0) {
     throw "Files exist outside the release manifest: $($unexpectedPayloadFiles.FullName -join ', ')"
+}
+
+$runtimeBuildManifestPath = Join-Path $distributionFullPath "openvisionlab.runtime.json"
+$runtimeBuildManifest = Get-Content -LiteralPath $runtimeBuildManifestPath -Raw | ConvertFrom-Json
+if ($runtimeBuildManifest.schemaVersion -cne "1.0") {
+    throw "Runtime build manifest schema is invalid: $($runtimeBuildManifest.schemaVersion)"
+}
+if (($runtimeBuildManifest.identity.applicationId -cne "OpenVisionLab.2DStudio") -or
+    ([string]::IsNullOrWhiteSpace([string]$runtimeBuildManifest.identity.applicationVersion)) -or
+    ($runtimeBuildManifest.identity.sourceCommit -ine $manifest.SourceCommit) -or
+    ($runtimeBuildManifest.identity.sourceState -cne "clean")) {
+    throw "Runtime build manifest identity does not match the qualified release source."
+}
+
+$entryAssemblyRelativePath = [string]$runtimeBuildManifest.entryAssembly.relativePath
+if (($entryAssemblyRelativePath -cne "OpenVisionLab.dll") -or
+    ([System.IO.Path]::GetFileName($entryAssemblyRelativePath) -cne $entryAssemblyRelativePath)) {
+    throw "Runtime build manifest entry assembly path is invalid: $entryAssemblyRelativePath"
+}
+$entryAssemblyPath = Join-Path $distributionFullPath $entryAssemblyRelativePath
+$entryAssemblyFile = Get-Item -LiteralPath $entryAssemblyPath
+$entryAssemblyHash = (Get-FileHash -LiteralPath $entryAssemblyPath -Algorithm SHA256).Hash
+if (($entryAssemblyFile.Length -ne ([long]$runtimeBuildManifest.entryAssembly.byteLength)) -or
+    ($entryAssemblyHash -ine ([string]$runtimeBuildManifest.entryAssembly.sha256))) {
+    throw "Runtime build manifest entry assembly length or SHA-256 does not match OpenVisionLab.dll."
+}
+
+$entryAssembly = [System.Reflection.Assembly]::LoadFrom($entryAssemblyPath)
+$entryAssemblyMetadata = @{}
+foreach ($attribute in $entryAssembly.GetCustomAttributesData()) {
+    if (($attribute.AttributeType.FullName -cne "System.Reflection.AssemblyMetadataAttribute") -or
+        ($attribute.ConstructorArguments.Count -ne 2)) {
+        continue
+    }
+
+    $metadataName = [string]$attribute.ConstructorArguments[0].Value
+    $entryAssemblyMetadata[$metadataName] = [string]$attribute.ConstructorArguments[1].Value
+}
+
+$requiredAssemblyMetadata = [ordered]@{
+    OpenVisionIntegrationApplicationId = [string]$runtimeBuildManifest.identity.applicationId
+    OpenVisionApplicationVersion = [string]$runtimeBuildManifest.identity.applicationVersion
+    OpenVisionSourceState = [string]$runtimeBuildManifest.identity.sourceState
+}
+foreach ($metadataName in $requiredAssemblyMetadata.Keys) {
+    if ((-not ($entryAssemblyMetadata.ContainsKey($metadataName))) -or
+        ($entryAssemblyMetadata[$metadataName] -cne $requiredAssemblyMetadata[$metadataName])) {
+        throw "OpenVisionLab.dll assembly metadata '$metadataName' does not match the runtime build manifest."
+    }
+}
+if ((-not ($entryAssemblyMetadata.ContainsKey("OpenVisionSourceCommit"))) -or
+    ($entryAssemblyMetadata["OpenVisionSourceCommit"] -ine ([string]$runtimeBuildManifest.identity.sourceCommit))) {
+    throw "OpenVisionLab.dll assembly metadata 'OpenVisionSourceCommit' does not match the runtime build manifest."
 }
 
 $runtimeConfig = Get-Content -LiteralPath (Join-Path $distributionFullPath "OpenVisionLab.runtimeconfig.json") -Raw | ConvertFrom-Json

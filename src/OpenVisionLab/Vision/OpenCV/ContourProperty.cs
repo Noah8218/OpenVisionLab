@@ -21,7 +21,7 @@ namespace OpenVisionLab
 
     [CategoryOrder("Contour", 10)]
     [System.Xml.Serialization.XmlRoot("CPropertyContour")]
-    public class ContourProperty : OpenCvPropertyBase, IOpenCVPropertyContour, IOpenCvConfigurableProperty<ContourProperty>
+    public class ContourProperty : OpenCvPropertyBase, IOpenCVPropertyContour, IVisionObjectFilterProperty, IOpenCvConfigurableProperty<ContourProperty>
     {
         private Color m_DrawColor = Color.Aquamarine;
 

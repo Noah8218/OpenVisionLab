@@ -28,6 +28,8 @@ namespace OpenVisionLab
         private readonly Func<string, bool> confirmDeleteRecipe;
         private readonly Func<string, string, bool> confirmDeletePipeline;
         private readonly Func<string> selectImportPipelineXmlPath;
+        private readonly Func<string> selectLocatorEvidencePacketPath;
+        private readonly Func<string> selectLocatorEvidenceReviewDecisionPath;
         private readonly Func<string, string> selectExportPipelineXmlPath;
         private readonly Func<string, string> selectExportReviewBundlePath;
         private readonly Func<string, IReadOnlyList<string>> selectValidationSetImagePaths;
@@ -44,9 +46,12 @@ namespace OpenVisionLab
         private readonly Action openPipelineXmlSteps;
         private readonly Action<VISION_MENU> selectStepTool;
         private readonly Func<bool> commitSelectedStepEdit;
-        private readonly Action<string, VisionPipeline> saveStepEditPipeline;
         private readonly Func<bool> saveRecipe;
-        private readonly Func<string, VisionPipeline, OpenVisionRecipeRoundTripValidationResult> validateStepEditRoundTrip;
+        private readonly OpenVisionRecipeStepEditApplyOwner stepEditApplyOwner;
+        private readonly OpenVisionRecipeStepEditApplyProjectionOwner stepEditApplyProjectionOwner;
+        private readonly OpenVisionRecipeWorkspaceLifecycleProjectionOwner workspaceLifecycleProjectionOwner;
+        private readonly OpenVisionRecipeManagerSummaryProjectionOwner recipeManagerSummaryProjectionOwner;
+        private readonly OpenVisionRecipePipelineOptionProjectionOwner recipePipelineOptionProjectionOwner;
         private readonly OpenVisionRecipePendingEditTransitionController pendingEditTransitionController;
         private readonly IReadOnlyList<string> llmToolTemplateOptions = new[]
         {
@@ -54,6 +59,7 @@ namespace OpenVisionLab
             OpenVisionGuidedSetupCatalog.PinArrayGapTemplate,
             OpenVisionGuidedSetupCatalog.DarkBandGapTemplate,
             OpenVisionGuidedSetupCatalog.HybridRelativeRoiGapTemplate,
+            OpenVisionGuidedSetupCatalog.LocatorRelativeBlobTemplate,
             "Line Measurement",
             OpenVisionGuidedSetupCatalog.MatchingTemplate,
             OpenVisionGuidedSetupCatalog.FeatureMatchingTemplate,
@@ -72,8 +78,6 @@ namespace OpenVisionLab
         private IReadOnlyList<OpenVisionRecipeBatchRunOption> benchmarkBaselineRunOptions = Array.Empty<OpenVisionRecipeBatchRunOption>();
         private IReadOnlyList<OpenVisionRecipeBatchRunComparisonRow> recentBatchRunComparisonRows = Array.Empty<OpenVisionRecipeBatchRunComparisonRow>();
         private IReadOnlyList<OpenVisionRecipeSampleMatrixRow> sampleMatrixRows = Array.Empty<OpenVisionRecipeSampleMatrixRow>();
-        private IReadOnlyList<OpenVisionRecipeValidationSetOption> validationSetOptions = Array.Empty<OpenVisionRecipeValidationSetOption>();
-        private IReadOnlyList<OpenVisionRecipeValidationSetImageRow> validationSetImageRows = Array.Empty<OpenVisionRecipeValidationSetImageRow>();
         private IReadOnlyList<OpenVisionRecipeDependencyReviewRow> llmXmlDraftDependencyRows = Array.Empty<OpenVisionRecipeDependencyReviewRow>();
         private readonly IReadOnlyList<OpenVisionRecipeValidationSuiteScopeOption> validationSuiteScopeOptions = OpenVisionRecipeValidationSuiteScopeOption.CreateDefaults();
         private OpenVisionRecipeValidationSuiteScopeOption selectedValidationSuiteScopeOption;
@@ -82,11 +86,6 @@ namespace OpenVisionLab
         private OpenVisionRecipeBatchSampleResultOption selectedRecentBatchSampleResultOption;
         private OpenVisionRecipeBatchRunComparisonRow selectedRecentBatchRunComparisonRow;
         private OpenVisionRecipeSampleMatrixRow selectedSampleMatrixRow;
-        private OpenVisionRecipeValidationSetOption selectedValidationSetOption;
-        private OpenVisionRecipeValidationSetOption pinArrayGapTrainValidationSetOption;
-        private OpenVisionRecipeValidationSetOption pinArrayGapValidationValidationSetOption;
-        private OpenVisionRecipeValidationSetOption pinArrayGapTestValidationSetOption;
-        private OpenVisionRecipeValidationSetImageRow selectedValidationSetImageRow;
         private OpenVisionRecipePipelineStepPreview selectedPipelinePreviewStep;
         private readonly OpenVisionRecipeStepEditSessionViewModel selectedStepEditSession =
             new OpenVisionRecipeStepEditSessionViewModel();
@@ -179,6 +178,20 @@ namespace OpenVisionLab
         private string llmBrowserAssistStatusText = string.Empty;
         private string llmReviewBundleCopyStatusText = string.Empty;
         private string llmXmlDraftPasteStatusText = string.Empty;
+        private string locatorEvidencePacketPath = string.Empty;
+        private string locatorEvidencePacketStatusText = string.Empty;
+        private string locatorEvidenceReviewText = string.Empty;
+        private BitmapSource locatorEvidenceOverlayImage;
+        private OpenVisionRecipeLocatorRelativeBlobEvidencePacket loadedLocatorEvidencePacket;
+        private string loadedLocatorEvidencePacketPath = string.Empty;
+        private bool locatorEvidenceCompilationReady;
+        private OpenVisionRecipeLocatorRelativeBlobReviewDecision loadedLocatorEvidenceReviewDecision;
+        private string loadedLocatorEvidenceReviewDecisionPath = string.Empty;
+        private string locatorEvidenceReviewDecisionPath = string.Empty;
+        private string locatorEvidenceReviewDecisionStatusText = string.Empty;
+        private string locatorEvidenceVisualCorrespondence = OpenVisionRecipeLocatorRelativeBlobReviewDecision.NotReviewed;
+        private string locatorEvidenceReviewer = string.Empty;
+        private string locatorEvidenceReviewNotes = string.Empty;
         private string operatorHandoffReportStatusText = string.Empty;
         private string selectedRecentBatchRunReviewCopyStatusText = string.Empty;
         private string pinArrayGapValidationStatusText = string.Empty;
@@ -190,26 +203,32 @@ namespace OpenVisionLab
         private string validationSetPendingMetricMinimum = string.Empty;
         private string validationSetPendingMetricMaximum = string.Empty;
         private string statusText = string.Empty;
-        private OpenVisionRecipeValidationSetDocument validationSetDocument = OpenVisionRecipeValidationSetStorage.CreateEmpty();
+        private readonly OpenVisionRecipeValidationSetDocumentOwner validationSetDocumentOwner =
+            new OpenVisionRecipeValidationSetDocumentOwner();
+        private readonly OpenVisionRecipeValidationEvidenceOwner validationEvidenceOwner =
+            new OpenVisionRecipeValidationEvidenceOwner();
+        private readonly OpenVisionRecipeValidationSetSelectionOwner validationSetSelectionOwner;
+        private readonly OpenVisionRecipeStepEditLoader stepEditLoader = new OpenVisionRecipeStepEditLoader();
+        private readonly OpenVisionRecipeStepPreviewNavigationOwner stepPreviewNavigationOwner =
+            new OpenVisionRecipeStepPreviewNavigationOwner();
         private readonly OpenVisionRecipePipelineExchangeUseCase pipelineExchangeUseCase = new OpenVisionRecipePipelineExchangeUseCase();
+        private readonly OpenVisionRecipePipelineExchangeProjectionOwner pipelineExchangeProjectionOwner = new OpenVisionRecipePipelineExchangeProjectionOwner();
+        private readonly OpenVisionRecipeReviewBundleDryRunProjectionOwner reviewBundleDryRunProjectionOwner = new OpenVisionRecipeReviewBundleDryRunProjectionOwner();
+        private readonly OpenVisionRecipeRunHistoryOrchestrationOwner runHistoryOrchestrationOwner = new OpenVisionRecipeRunHistoryOrchestrationOwner();
         private readonly OpenVisionRecipePipelineLifecycleUseCase pipelineLifecycleUseCase = new OpenVisionRecipePipelineLifecycleUseCase();
+        private readonly OpenVisionRecipePipelineLifecycleProjectionOwner pipelineLifecycleProjectionOwner;
         private readonly OpenVisionRecipeWorkspaceUseCase recipeWorkspaceUseCase = new OpenVisionRecipeWorkspaceUseCase();
         private readonly OpenVisionRecipeQualifiedSnapshotController qualifiedSnapshotController;
         private readonly Func<string, string, string, bool> confirmQualifiedSnapshotLifecycle;
         private readonly Func<string, bool> openQualifiedSnapshotEvidence;
-        private bool validationSetStorageReady = true;
         private OpenVisionRecipeReviewBundleInspection loadedReviewBundleInspection;
         private bool llmXmlDraftImportReady;
         private bool isGuidedSetupDraftStale;
         private bool isRefreshingOptions;
         private bool isSelectingRecipe;
         private bool isSwitchingRecipe;
-        private bool hasCatalogBenchmarkSamples;
         private OpenVisionRecipePipelineOption selectedPipelineOption;
         private OpenVisionRecipeSampleOption selectedSampleOption;
-        private OpenVisionRecipeSampleRunSummary latestSampleRunSummary = OpenVisionRecipeSampleRunSummary.Empty;
-        private OpenVisionRecipePairRunSummary latestPairRunSummary = OpenVisionRecipePairRunSummary.Empty;
-        private OpenVisionRecipeCatalogBenchmarkSummary latestCatalogBenchmarkSummary = OpenVisionRecipeCatalogBenchmarkSummary.Empty;
         private OpenVisionRecipePairSampleRunSummary selectedPairSampleResult;
         private OpenVisionRecipeManagerSummary selectedRecipeSummary = OpenVisionRecipeManagerSummary.Empty;
 
@@ -243,15 +262,20 @@ namespace OpenVisionLab
             Func<string, bool> openQualifiedSnapshotEvidence = null,
             Action openPipelineXmlSteps = null,
             Func<bool> saveRecipe = null,
-            Func<Task> waitForRecipeSwitchCompletion = null)
+            Func<Task> waitForRecipeSwitchCompletion = null,
+            Func<string> selectLocatorEvidencePacketPath = null,
+            Func<string> selectLocatorEvidenceReviewDecisionPath = null)
         {
             this.currentRecipeProvider = currentRecipeProvider ?? throw new ArgumentNullException(nameof(currentRecipeProvider));
             this.switchRecipe = switchRecipe ?? throw new ArgumentNullException(nameof(switchRecipe));
             this.refreshAfterSwitch = refreshAfterSwitch ?? throw new ArgumentNullException(nameof(refreshAfterSwitch));
+            validationSetSelectionOwner = new OpenVisionRecipeValidationSetSelectionOwner(validationSetDocumentOwner);
             this.waitForRecipeSwitchCompletion = waitForRecipeSwitchCompletion ?? (() => Task.CompletedTask);
             this.confirmDeleteRecipe = confirmDeleteRecipe ?? (_ => true);
             this.confirmDeletePipeline = confirmDeletePipeline ?? ((_, _) => true);
             this.selectImportPipelineXmlPath = selectImportPipelineXmlPath ?? (() => string.Empty);
+            this.selectLocatorEvidencePacketPath = selectLocatorEvidencePacketPath ?? (() => string.Empty);
+            this.selectLocatorEvidenceReviewDecisionPath = selectLocatorEvidenceReviewDecisionPath ?? (() => string.Empty);
             this.selectExportPipelineXmlPath = selectExportPipelineXmlPath ?? (_ => string.Empty);
             this.selectExportReviewBundlePath = selectExportReviewBundlePath ?? (_ => string.Empty);
             this.selectValidationSetImagePaths = selectValidationSetImagePaths ?? (_ => Array.Empty<string>());
@@ -275,27 +299,24 @@ namespace OpenVisionLab
                 openQualifiedSnapshotEvidence ?? (_ => false);
             this.selectStepTool = selectStepTool;
             this.commitSelectedStepEdit = commitSelectedStepEdit ?? (() => true);
-            this.saveStepEditPipeline = saveStepEditPipeline ?? VisionPipelineStorage.Save;
             this.saveRecipe = saveRecipe ?? (() => false);
-            this.validateStepEditRoundTrip = validateStepEditRoundTrip
-                ?? ((recipeName, pipeline) =>
-                {
-                    bool succeeded = VisionPipelineStorage.TryValidateRoundTrip(
-                        recipeName,
-                        pipeline,
-                        out string message);
-                    return new OpenVisionRecipeRoundTripValidationResult
-                    {
-                        Succeeded = succeeded,
-                        Message = message
-                    };
-                });
+            stepEditApplyOwner = new OpenVisionRecipeStepEditApplyOwner(
+                validateStepEditRoundTrip,
+                saveStepEditPipeline);
+            stepEditApplyProjectionOwner = new OpenVisionRecipeStepEditApplyProjectionOwner();
+            pipelineLifecycleProjectionOwner = new OpenVisionRecipePipelineLifecycleProjectionOwner();
+            workspaceLifecycleProjectionOwner = new OpenVisionRecipeWorkspaceLifecycleProjectionOwner();
+            recipeManagerSummaryProjectionOwner = new OpenVisionRecipeManagerSummaryProjectionOwner();
+            recipePipelineOptionProjectionOwner = new OpenVisionRecipePipelineOptionProjectionOwner();
             pendingEditTransitionController = new OpenVisionRecipePendingEditTransitionController(
                 decidePendingEdit ?? (_ => OpenVisionRecipePendingEditDecision.Cancel),
                 TryApplySelectedStepParameters,
                 ClearSelectedStepEdit);
             selectedStepEditSession.PropertyChanged += OnSelectedStepEditSessionPropertyChanged;
+            executionSession.PropertyChanging += OnExecutionSessionPropertyChanging;
             executionSession.PropertyChanged += OnExecutionSessionPropertyChanged;
+            executionSession.BatchRunSaved += OnExecutionBatchRunSaved;
+            executionSession.CommandStateChanged += OnExecutionCommandStateChanged;
             selectedValidationSuiteScopeOption = validationSuiteScopeOptions.FirstOrDefault();
             executionSession.SetStatus(OpenVisionRecipeText.Local(
                 "Suite 범위를 선택한 뒤 명시적으로 Run suite를 실행하세요.",
@@ -303,6 +324,15 @@ namespace OpenVisionLab
             SetLlmXmlDraftDependencyPlaceholder(LocalText(
                 "XML 초안을 붙여넣거나 로드한 뒤 검증을 실행하세요.",
                 "Paste or load an XML draft, then run validation."));
+            LocatorEvidencePacketStatusText = LocalText(
+                "Evidence Packet을 선택하면 해시·Candidate·overlay를 검토합니다. 실행은 별도 명령입니다.",
+                "Select an Evidence Packet to review its hashes, candidate, and overlay. Execution is a separate command.");
+            LocatorEvidenceReviewText = LocalText(
+                "대기 중: 해시 검증된 locator-relative-blob-v1 Evidence Packet을 로드하세요.",
+                "Waiting: load a hash-verified locator-relative-blob-v1 Evidence Packet.");
+            LocatorEvidenceReviewDecisionStatusText = LocalText(
+                "대기 중: Evidence Packet을 로드한 뒤 review decision 파일을 선택하세요.",
+                "Waiting: load an Evidence Packet, then select its review decision file.");
             LlmBrowserAssistStatusText = CreateLlmBrowserAssistReadyText();
 
             CreateRecipeCommand = new RelayCommand(CreateRecipe);
@@ -320,6 +350,12 @@ namespace OpenVisionLab
             RenamePipelineCommand = new RelayCommand(RenameSelectedPipeline, CanRenameSelectedPipeline);
             DeletePipelineCommand = new RelayCommand(DeleteSelectedPipeline, CanDeleteSelectedPipeline);
             LoadLlmXmlDraftCommand = new RelayCommand(LoadLlmXmlDraft, CanUseSelectedRecipe);
+            LoadLocatorEvidencePacketCommand = new RelayCommand(LoadLocatorEvidencePacket, CanUseSelectedRecipe);
+            LoadLocatorEvidenceReviewDecisionCommand = new RelayCommand(LoadLocatorEvidenceReviewDecision, CanUseSelectedRecipe);
+            ApproveLocatorEvidenceReviewDecisionCommand = new RelayCommand(ApproveLocatorEvidenceReviewDecision, CanRecordLocatorEvidenceReviewDecision);
+            RejectLocatorEvidenceReviewDecisionCommand = new RelayCommand(RejectLocatorEvidenceReviewDecision, CanRecordLocatorEvidenceReviewDecision);
+            RequestLocatorEvidenceReplacementCommand = new RelayCommand(RequestLocatorEvidenceReplacement, CanRecordLocatorEvidenceReviewDecision);
+            CompileLocatorEvidencePacketCommand = new RelayCommand(CompileLocatorEvidencePacket, CanCompileLocatorEvidencePacket);
             ValidateLlmXmlDraftCommand = new RelayCommand(ValidateLlmXmlDraft, CanUseLlmXmlDraft);
             ImportLlmXmlDraftCommand = new RelayCommand(ImportLlmXmlDraft, CanImportLlmXmlDraft);
             CopyLlmPromptCommand = new RelayCommand(CopyLlmPrompt, CanCopyLlmPrompt);
@@ -484,18 +520,18 @@ namespace OpenVisionLab
 
         public IReadOnlyList<OpenVisionRecipeValidationSetOption> ValidationSetOptions
         {
-            get => validationSetOptions;
-            private set => SetProperty(ref validationSetOptions, value ?? Array.Empty<OpenVisionRecipeValidationSetOption>());
+            get => validationSetSelectionOwner.Options;
         }
 
         public OpenVisionRecipeValidationSetOption SelectedValidationSetOption
         {
-            get => selectedValidationSetOption;
+            get => validationSetSelectionOwner.Selected;
             set
             {
-                if (SetProperty(ref selectedValidationSetOption, value))
+                if (validationSetSelectionOwner.SelectSet(value))
                 {
                     RefreshValidationSetImageRows();
+                    OnPropertyChanged(nameof(SelectedValidationSetOption));
                     OnPropertyChanged(nameof(ValidationSetSelectionSummaryText));
                     OnPropertyChanged(nameof(ValidationSuiteSummaryText));
                     NotifyValidationSetEvidenceChanged();
@@ -506,11 +542,12 @@ namespace OpenVisionLab
 
         public OpenVisionRecipeValidationSetOption PinArrayGapTrainValidationSetOption
         {
-            get => pinArrayGapTrainValidationSetOption;
+            get => validationSetSelectionOwner.Train;
             set
             {
-                if (SetProperty(ref pinArrayGapTrainValidationSetOption, value))
+                if (validationSetSelectionOwner.SelectTrain(value))
                 {
+                    OnPropertyChanged(nameof(PinArrayGapTrainValidationSetOption));
                     RefreshPinArrayGapValidationIdentityState();
                     RefreshCommandState();
                 }
@@ -519,11 +556,12 @@ namespace OpenVisionLab
 
         public OpenVisionRecipeValidationSetOption PinArrayGapValidationValidationSetOption
         {
-            get => pinArrayGapValidationValidationSetOption;
+            get => validationSetSelectionOwner.Validation;
             set
             {
-                if (SetProperty(ref pinArrayGapValidationValidationSetOption, value))
+                if (validationSetSelectionOwner.SelectValidation(value))
                 {
+                    OnPropertyChanged(nameof(PinArrayGapValidationValidationSetOption));
                     RefreshPinArrayGapValidationIdentityState();
                     RefreshCommandState();
                 }
@@ -532,11 +570,12 @@ namespace OpenVisionLab
 
         public OpenVisionRecipeValidationSetOption PinArrayGapTestValidationSetOption
         {
-            get => pinArrayGapTestValidationSetOption;
+            get => validationSetSelectionOwner.Test;
             set
             {
-                if (SetProperty(ref pinArrayGapTestValidationSetOption, value))
+                if (validationSetSelectionOwner.SelectTest(value))
                 {
+                    OnPropertyChanged(nameof(PinArrayGapTestValidationSetOption));
                     RefreshPinArrayGapValidationIdentityState();
                     RefreshCommandState();
                 }
@@ -561,17 +600,17 @@ namespace OpenVisionLab
 
         public IReadOnlyList<OpenVisionRecipeValidationSetImageRow> ValidationSetImageRows
         {
-            get => validationSetImageRows;
-            private set => SetProperty(ref validationSetImageRows, value ?? Array.Empty<OpenVisionRecipeValidationSetImageRow>());
+            get => validationSetSelectionOwner.ImageRows;
         }
 
         public OpenVisionRecipeValidationSetImageRow SelectedValidationSetImageRow
         {
-            get => selectedValidationSetImageRow;
+            get => validationSetSelectionOwner.SelectedImage;
             set
             {
-                if (SetProperty(ref selectedValidationSetImageRow, value))
+                if (validationSetSelectionOwner.SelectImage(value))
                 {
+                    OnPropertyChanged(nameof(SelectedValidationSetImageRow));
                     LoadSelectedValidationVariantContract();
                     RefreshCommandState();
                 }
@@ -1749,6 +1788,7 @@ namespace OpenVisionLab
             {
                 if (SetProperty(ref llmXmlDraftText, value ?? string.Empty))
                 {
+                    InvalidateLocatorEvidenceCompilation();
                     llmXmlDraftImportReady = false;
                     ClearLoadedReviewBundleContext();
                     RefreshCommandState();
@@ -1918,56 +1958,20 @@ namespace OpenVisionLab
 
         public OpenVisionRecipeSampleRunSummary LatestSampleRunSummary
         {
-            get => latestSampleRunSummary;
-            private set
-            {
-                if (SetProperty(ref latestSampleRunSummary, value ?? OpenVisionRecipeSampleRunSummary.Empty))
-                {
-                    OnPropertyChanged(nameof(HasCurrentRecipeSampleExecution));
-                    OnPropertyChanged(nameof(RecipeOverviewLastResultValueText));
-                    OnPropertyChanged(nameof(RecipeOverviewLastResultToolTipText));
-                    NotifyOperatorReviewChanged();
-                    OnPropertyChanged(nameof(RecipeGuidedSetupText));
-                    OnPropertyChanged(nameof(PinGapIntentLatestRunText));
-                    OnPropertyChanged(nameof(BlobCountIntentLatestRunText));
-                    OnPropertyChanged(nameof(ContourCountIntentLatestRunText));
-                    OnPropertyChanged(nameof(ValidationSuiteSummaryText));
-                }
-            }
+            get => executionSession.LatestSampleRunSummary;
+            private set => executionSession.LatestSampleRunSummary = value;
         }
 
         public OpenVisionRecipePairRunSummary LatestPairRunSummary
         {
-            get => latestPairRunSummary;
-            private set
-            {
-                if (SetProperty(ref latestPairRunSummary, value ?? OpenVisionRecipePairRunSummary.Empty))
-                {
-                    SelectedPairSampleResult = OpenVisionRecipeRunHistoryPresenter.SelectDefaultPairSampleResult(latestPairRunSummary);
-                    RefreshSampleMatrixRows();
-                    NotifyOperatorReviewChanged();
-                    OnPropertyChanged(nameof(FailureReviewText));
-                    OnPropertyChanged(nameof(PipelineSelectedStepOperatorContextText));
-                    OnPropertyChanged(nameof(RecipeGuidedSetupText));
-                    OnPropertyChanged(nameof(ValidationSuiteSummaryText));
-                }
-            }
+            get => executionSession.LatestPairRunSummary;
+            private set => executionSession.LatestPairRunSummary = value;
         }
 
         public OpenVisionRecipeCatalogBenchmarkSummary LatestCatalogBenchmarkSummary
         {
-            get => latestCatalogBenchmarkSummary;
-            private set
-            {
-                if (SetProperty(ref latestCatalogBenchmarkSummary, value ?? OpenVisionRecipeCatalogBenchmarkSummary.Empty))
-                {
-                    OnPropertyChanged(nameof(CatalogBenchmarkSummaryText));
-                    OnPropertyChanged(nameof(CatalogBenchmarkDetailText));
-                    OnPropertyChanged(nameof(RecipeGuidedSetupText));
-                    OnPropertyChanged(nameof(ValidationSuiteSummaryText));
-                    NotifyOperatorReviewChanged();
-                }
-            }
+            get => executionSession.LatestCatalogBenchmarkSummary;
+            private set => executionSession.LatestCatalogBenchmarkSummary = value;
         }
 
         public OpenVisionRecipePairSampleRunSummary SelectedPairSampleResult
@@ -2014,6 +2018,18 @@ namespace OpenVisionLab
         public ICommand DeletePipelineCommand { get; private set; }
 
         public ICommand LoadLlmXmlDraftCommand { get; private set; }
+
+        public ICommand LoadLocatorEvidencePacketCommand { get; private set; }
+
+        public ICommand LoadLocatorEvidenceReviewDecisionCommand { get; private set; }
+
+        public ICommand ApproveLocatorEvidenceReviewDecisionCommand { get; private set; }
+
+        public ICommand RejectLocatorEvidenceReviewDecisionCommand { get; private set; }
+
+        public ICommand RequestLocatorEvidenceReplacementCommand { get; private set; }
+
+        public ICommand CompileLocatorEvidencePacketCommand { get; private set; }
 
         public ICommand ValidateLlmXmlDraftCommand { get; private set; }
 
@@ -2192,22 +2208,10 @@ namespace OpenVisionLab
 
         public string RecipeLibraryText => LocalText("레시피 라이브러리", "Recipe library");
 
-        public string RecipeLibrarySummaryText
-        {
-            get
-            {
-                int total = RecipeOptions?.Count ?? 0;
-                int visible = FilteredRecipeOptions?.Count ?? 0;
-                if (total <= 0)
-                {
-                    return RecipeLibraryText;
-                }
-
-                return visible == total
-                    ? string.Format(CultureInfo.CurrentCulture, "{0} ({1})", RecipeLibraryText, total)
-                    : string.Format(CultureInfo.CurrentCulture, "{0} ({1}/{2})", RecipeLibraryText, visible, total);
-            }
-        }
+        public string RecipeLibrarySummaryText => recipeManagerSummaryProjectionOwner.ProjectLibrarySummary(
+            RecipeLibraryText,
+            RecipeOptions?.Count ?? 0,
+            FilteredRecipeOptions?.Count ?? 0);
 
         public string ReviewWorkspaceText => LocalText("선택 레시피", "Selected recipe");
 
@@ -2259,22 +2263,10 @@ namespace OpenVisionLab
 
         public string PipelineListText => LocalText("파이프라인", "Pipelines");
 
-        public string PipelineListSummaryText
-        {
-            get
-            {
-                int total = PipelineOptions?.Count ?? 0;
-                int visible = FilteredPipelineOptions?.Count ?? 0;
-                if (total <= 0)
-                {
-                    return PipelineListText;
-                }
-
-                return visible == total
-                    ? string.Format(CultureInfo.CurrentCulture, "{0} ({1})", PipelineListText, total)
-                    : string.Format(CultureInfo.CurrentCulture, "{0} ({1}/{2})", PipelineListText, visible, total);
-            }
-        }
+        public string PipelineListSummaryText => recipePipelineOptionProjectionOwner.ProjectListSummary(
+            PipelineListText,
+            PipelineOptions?.Count ?? 0,
+            FilteredPipelineOptions?.Count ?? 0);
 
         public string PipelineFilterLabelText => LocalText("검색", "Search");
 
@@ -2454,7 +2446,7 @@ namespace OpenVisionLab
 
         public string ValidationSetSelectionSummaryText =>
             OpenVisionRecipeValidationSetPresenter.BuildSelectionSummaryText(
-                validationSetStorageReady,
+                validationSetDocumentOwner.StorageReady,
                 SelectedValidationSetOption,
                 ValidationSetImageRows);
 
@@ -2470,7 +2462,7 @@ namespace OpenVisionLab
 
         public string ValidationSetExpectedText =>
             OpenVisionRecipeValidationSetPresenter.BuildExpectedText(
-                validationSetStorageReady,
+                validationSetDocumentOwner.StorageReady,
                 SelectedValidationSetOption);
 
         public string ValidationSetAcceptanceText => BuildValidationSetAcceptanceText();
@@ -2480,7 +2472,7 @@ namespace OpenVisionLab
         public string ValidationSetNextActionText =>
             OpenVisionRecipeValidationSetPresenter.BuildNextActionText(
                 executionSession.IsValidationSuiteRunning,
-                validationSetStorageReady,
+                validationSetDocumentOwner.StorageReady,
                 SelectedValidationSetOption,
                 SelectedPipelineOption != null);
 
@@ -2821,6 +2813,7 @@ namespace OpenVisionLab
             + PinGapIntentRangeMaxText
             + " "
             + PinGapIntentUnitText
+            + LocalText(" / PIXELPERMM = mm/px", " / PIXELPERMM = mm/px")
             + LocalText(
                 " / 기본: 전체 핀 배열 샘플 / 다음: Pin gap XML -> 검증 -> 가져오기 -> 샘플 실행",
                 " / Default: whole pin-array samples / Next: Pin gap XML -> Validate -> Import -> run sample");

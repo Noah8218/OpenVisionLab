@@ -5,6 +5,18 @@ OpenVisionLab의 사용자-visible 변경과 release evidence를 짧게 추적�
 
 ## Unreleased
 
+## 2.2.0-dev.1 - 2026-09-09
+
+### Highlights
+
+- Aligns the application, offline manual, and TCP integration identity surfaces to one candidate version.
+- Promotes the verified ImageCanvas, Image Compare, Recipe execution and validation, Shell, PropertyGrid, Learn, Pipeline Review, and namespace ownership boundaries while preserving Recipe/XML and explicit Preview/Run contracts.
+
+### Verification
+
+- Dev Debug/Release solution builds, readiness, structural audit, and focused contract runners passed.
+- This candidate is not a stable release, tag, deployment, installer, or commercial-GA claim.
+
 ## 2.2.0-dev - 2026-09-01
 
 ### Added

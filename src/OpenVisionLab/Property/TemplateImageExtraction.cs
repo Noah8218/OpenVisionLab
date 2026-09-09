@@ -1,7 +1,7 @@
 using OpenCvSharp;
 using System;
 
-namespace OpenVisionLab
+namespace OpenVisionLab.Property
 {
     internal static class TemplateImageExtraction
     {

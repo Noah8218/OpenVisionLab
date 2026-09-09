@@ -68,6 +68,9 @@ namespace OpenVisionLab
     public sealed class VisionPipelineObjectRunReport
     {
         public int Number { get; set; }
+        public string CandidateId { get; set; } = string.Empty;
+        public int RegionIndex { get; set; }
+        public int NativeIndex { get; set; }
         public bool Accepted { get; set; }
         public double Area { get; set; }
         public double CenterX { get; set; }
@@ -77,7 +80,16 @@ namespace OpenVisionLab
         public int BoundsWidth { get; set; }
         public int BoundsHeight { get; set; }
         public double Angle { get; set; }
+        public string RejectReasonCode { get; set; } = string.Empty;
         public string RejectReason { get; set; } = string.Empty;
+        public int AppliedMinimumArea { get; set; }
+        public int AppliedMaximumArea { get; set; }
+        public int AppliedMinimumWidth { get; set; }
+        public int AppliedMaximumWidth { get; set; }
+        public int AppliedMinimumHeight { get; set; }
+        public int AppliedMaximumHeight { get; set; }
+        public string GenerationStage { get; set; } = string.Empty;
+        public string CoordinateFrame { get; set; } = string.Empty;
     }
 
     public sealed class VisionPipelineMetricRunReport
@@ -485,6 +497,9 @@ namespace OpenVisionLab
                 .Select(item => new VisionPipelineObjectRunReport
                 {
                     Number = item.Number,
+                    CandidateId = item.CandidateId,
+                    RegionIndex = item.RegionIndex,
+                    NativeIndex = item.NativeIndex,
                     Accepted = item.Accepted,
                     Area = item.Area,
                     CenterX = item.CenterX,
@@ -494,7 +509,16 @@ namespace OpenVisionLab
                     BoundsWidth = item.BoundsWidth,
                     BoundsHeight = item.BoundsHeight,
                     Angle = item.Angle,
-                    RejectReason = item.RejectReason
+                    RejectReasonCode = item.RejectReasonCode,
+                    RejectReason = item.RejectReason,
+                    AppliedMinimumArea = item.AppliedMinimumArea,
+                    AppliedMaximumArea = item.AppliedMaximumArea,
+                    AppliedMinimumWidth = item.AppliedMinimumWidth,
+                    AppliedMaximumWidth = item.AppliedMaximumWidth,
+                    AppliedMinimumHeight = item.AppliedMinimumHeight,
+                    AppliedMaximumHeight = item.AppliedMaximumHeight,
+                    GenerationStage = item.GenerationStage,
+                    CoordinateFrame = item.CoordinateFrame
                 })
                 .ToList();
         }

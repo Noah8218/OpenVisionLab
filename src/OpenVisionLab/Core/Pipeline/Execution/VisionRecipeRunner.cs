@@ -187,6 +187,7 @@ namespace OpenVisionLab
                 TotalMilliseconds = steps.Sum(step => step.ElapsedMilliseconds),
                 Steps = steps,
                 NormalizationMessages = (normalizationMessages ?? Enumerable.Empty<string>()).ToList(),
+                PipelineRunResult = runResult,
                 ExecutionProvenance = executionPlan?.Provenance,
                 EffectivePipeline = executionPlan?.EffectivePipeline,
                 OriginalPipelineXmlBytes = executionPlan?.OriginalPipelineXmlBytes,
@@ -343,6 +344,7 @@ namespace OpenVisionLab
         public double TotalMilliseconds { get; set; }
         public List<VisionRecipeStepRunSummary> Steps { get; set; } = new List<VisionRecipeStepRunSummary>();
         public List<string> NormalizationMessages { get; set; } = new List<string>();
+        internal VisionPipelineRunResult PipelineRunResult { get; set; }
         internal VisionPipelineExecutionProvenance ExecutionProvenance { get; set; }
         internal VisionPipeline EffectivePipeline { get; set; }
         internal byte[] OriginalPipelineXmlBytes { get; set; }
@@ -472,6 +474,7 @@ namespace OpenVisionLab
         {
             ResultImage?.Dispose();
             ResultImage = null;
+            PipelineRunResult = null;
         }
     }
 

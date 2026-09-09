@@ -136,15 +136,23 @@
                     Style="{StaticResource SamplePicker.PanelStyle}">
                 <Grid>
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="3*" MinHeight="280" />
                         <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
+                        <RowDefinition Height="2*" MinHeight="140" />
                     </Grid.RowDefinitions>
+
+                    <ScrollViewer Grid.Row="0"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
 
                     <Border Grid.Row="0"
                             Background="#172A31"
@@ -318,7 +326,10 @@
                         </StackPanel>
                     </Border>
 
-                    <Border Grid.Row="6"
+                        </Grid>
+                    </ScrollViewer>
+
+                    <Border Grid.Row="1"
                             Background="#172A31"
                             BorderBrush="{StaticResource SamplePicker.LineBrush}"
                             BorderThickness="0,0,0,1"
@@ -327,7 +338,7 @@
                                    Style="{StaticResource SamplePicker.SectionTitleStyle}" />
                     </Border>
 
-                    <ListBox Grid.Row="7"
+                    <ListBox Grid.Row="2"
                              AutomationProperties.AutomationId="WorkspaceSamplePickerList"
                              Style="{StaticResource SamplePicker.ListBoxStyle}"
                              ItemsSource="{Binding SamplesView}"
@@ -336,6 +347,7 @@
                             <DataTemplate>
                                 <Grid Margin="10,8">
                                     <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="Auto" />
                                     </Grid.RowDefinitions>

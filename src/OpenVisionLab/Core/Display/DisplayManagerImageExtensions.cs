@@ -1,11 +1,27 @@
 using OpenCvSharp;
+using OpenVisionLab.ImageSpace.Core;
+using System;
 using System.Drawing;
+using System.Drawing.Imaging;
+using System.Threading;
 
 namespace OpenVisionLab.Core
 {
     public static class DisplayManagerImageExtensions
     {
         private const int PlaceholderImageMaxSize = 10;
+        private static long snapshotCopyCount;
+        private static long snapshotEstimatedBytes;
+
+        internal static ImageSpaceSnapshotDiagnostics SnapshotDiagnostics => new ImageSpaceSnapshotDiagnostics(
+            Interlocked.Read(ref snapshotCopyCount),
+            Interlocked.Read(ref snapshotEstimatedBytes));
+
+        internal static void ResetSnapshotDiagnosticsForTest()
+        {
+            Interlocked.Exchange(ref snapshotCopyCount, 0);
+            Interlocked.Exchange(ref snapshotEstimatedBytes, 0);
+        }
 
         public static bool IsPlaceholderBitmap(Bitmap image)
         {
@@ -83,6 +99,16 @@ namespace OpenVisionLab.Core
             return displayManager?.ImageSpace?.GetImage(index);
         }
 
+        /// <summary>
+        /// Returns an owned Bitmap cloned while an ImageSpace lease is active.
+        /// The caller owns and must dispose the returned snapshot.
+        /// </summary>
+        public static Bitmap GetLayerImageSnapshot(this IDisplayManager displayManager, string title)
+        {
+            using ImageSpaceImageLease lease = displayManager?.ImageSpace?.AcquireImage(title);
+            return CloneLeasedImage(lease?.Image);
+        }
+
         public static Rectangle GetLayerRoi(this IDisplayManager displayManager, string title)
         {
             return displayManager?.ImageSpace?.GetRoi(title) ?? Rectangle.Empty;
@@ -140,5 +166,49 @@ namespace OpenVisionLab.Core
 
             displayManager?.ImageSpace?.AcceptImageChanged(title);
         }
+
+        private static Bitmap CloneLeasedImage(Bitmap image)
+        {
+            if (image == null)
+            {
+                return null;
+            }
+
+            Bitmap snapshot;
+            try
+            {
+                snapshot = image.Clone(
+                    new Rectangle(0, 0, image.Width, image.Height),
+                    image.PixelFormat);
+            }
+            catch
+            {
+                snapshot = new Bitmap(image);
+            }
+
+            Interlocked.Increment(ref snapshotCopyCount);
+            Interlocked.Add(ref snapshotEstimatedBytes, EstimateBytes(image));
+            return snapshot;
+        }
+
+        private static long EstimateBytes(Bitmap image)
+        {
+            int bitsPerPixel = Image.GetPixelFormatSize(image.PixelFormat);
+            long bytesPerPixel = Math.Max(1, (bitsPerPixel + 7) / 8);
+            return checked((long)image.Width * image.Height * bytesPerPixel);
+        }
+    }
+
+    internal sealed class ImageSpaceSnapshotDiagnostics
+    {
+        public ImageSpaceSnapshotDiagnostics(long copyCount, long estimatedBytes)
+        {
+            CopyCount = copyCount;
+            EstimatedBytes = estimatedBytes;
+        }
+
+        public long CopyCount { get; }
+
+        public long EstimatedBytes { get; }
     }
 }

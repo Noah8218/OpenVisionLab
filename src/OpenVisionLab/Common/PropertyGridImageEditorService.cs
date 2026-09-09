@@ -1,5 +1,6 @@
 using OpenVisionLab.Common;
 using OpenVisionLab.Core;
+using OpenVisionLab.Property;
 using OpenCvSharp;
 using System;
 using System.Collections.Generic;

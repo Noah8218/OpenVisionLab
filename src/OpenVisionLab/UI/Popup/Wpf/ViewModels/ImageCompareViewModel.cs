@@ -8,7 +8,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows.Media.Imaging;
 using DrawingColor = System.Drawing.Color;
-using DrawingPixelFormat = System.Drawing.Imaging.PixelFormat;
 using MediaBrush = System.Windows.Media.Brush;
 using MediaBrushes = System.Windows.Media.Brushes;
 using SolidColorBrush = System.Windows.Media.SolidColorBrush;
@@ -304,8 +303,7 @@ namespace OpenVisionLab
         private string displayName = string.Empty;
         private string headerText = string.Empty;
         private string formatText = string.Empty;
-        private BitmapSource source;
-        private Bitmap bitmap;
+        private ImageCompareImageResource imageResource;
         private bool isSelected;
         private bool isSizeMismatch;
         private double zoom = 1.0;
@@ -319,9 +317,9 @@ namespace OpenVisionLab
         public event PropertyChangedEventHandler PropertyChanged;
 
         public int Index { get; }
-        public int Width => bitmap?.Width ?? 0;
-        public int Height => bitmap?.Height ?? 0;
-        public bool IsLoaded => bitmap != null && Width > 0 && Height > 0;
+        public int Width => imageResource?.Bitmap?.Width ?? 0;
+        public int Height => imageResource?.Bitmap?.Height ?? 0;
+        public bool IsLoaded => imageResource?.Bitmap != null && Width > 0 && Height > 0;
 
         public string DisplayName
         {
@@ -337,13 +335,9 @@ namespace OpenVisionLab
 
         public string EmptyText => OpenVisionLanguageService.T("ImageCompare.NoImage");
 
-        public BitmapSource Source
-        {
-            get => source;
-            private set => SetField(ref source, value);
-        }
+        public BitmapSource Source => imageResource?.Source;
 
-        public Bitmap Bitmap => bitmap;
+        public Bitmap Bitmap => imageResource?.Bitmap;
 
         public bool IsSelected
         {
@@ -377,10 +371,10 @@ namespace OpenVisionLab
                 return;
             }
 
-            bitmap = new Bitmap(filePath);
-            formatText = ResolveFormatText(filePath, bitmap.PixelFormat);
-            Source = LoadBitmapSource(filePath);
+            imageResource = ImageCompareImageResource.Load(filePath);
+            formatText = imageResource.FormatText;
             OnPropertyChanged(nameof(Bitmap));
+            OnPropertyChanged(nameof(Source));
             OnPropertyChanged(nameof(Width));
             OnPropertyChanged(nameof(Height));
             OnPropertyChanged(nameof(IsLoaded));
@@ -412,98 +406,14 @@ namespace OpenVisionLab
 
         private void DisposeBitmap()
         {
-            bitmap?.Dispose();
-            bitmap = null;
-            Source = null;
+            imageResource?.Dispose();
+            imageResource = null;
             formatText = string.Empty;
             OnPropertyChanged(nameof(Bitmap));
+            OnPropertyChanged(nameof(Source));
             OnPropertyChanged(nameof(Width));
             OnPropertyChanged(nameof(Height));
             OnPropertyChanged(nameof(IsLoaded));
-        }
-
-        private static BitmapSource LoadBitmapSource(string path)
-        {
-            BitmapImage image = new BitmapImage();
-            using FileStream stream = File.OpenRead(path);
-            image.BeginInit();
-            image.CacheOption = BitmapCacheOption.OnLoad;
-            image.StreamSource = stream;
-            image.EndInit();
-            image.Freeze();
-            return image;
-        }
-
-        private static string ResolveFormatText(string path, DrawingPixelFormat pixelFormat)
-        {
-            if (TryReadPngFormatText(path, out string pngText)) { return pngText; }
-            if (TryReadBmpFormatText(path, out string bmpText)) { return bmpText; }
-
-            int bits = Image.GetPixelFormatSize(pixelFormat);
-            return bits > 0 ? $"Decoded {bits}-bit ({pixelFormat})" : pixelFormat.ToString();
-        }
-
-        private static bool TryReadPngFormatText(string path, out string formatText)
-        {
-            formatText = string.Empty;
-            try
-            {
-                byte[] bytes = File.ReadAllBytes(path);
-                if (bytes.Length < 29 ||
-                    bytes[0] != 0x89 ||
-                    bytes[1] != 0x50 ||
-                    bytes[2] != 0x4E ||
-                    bytes[3] != 0x47)
-                {
-                    return false;
-                }
-
-                int bitDepth = bytes[24];
-                int colorType = bytes[25];
-                int channels = colorType switch
-                {
-                    0 => 1,
-                    2 => 3,
-                    3 => 1,
-                    4 => 2,
-                    6 => 4,
-                    _ => 1
-                };
-                string colorName = colorType switch
-                {
-                    0 => "Gray",
-                    2 => "RGB",
-                    3 => "Indexed",
-                    4 => "GrayA",
-                    6 => "RGBA",
-                    _ => "ColorType" + colorType.ToString(CultureInfo.InvariantCulture)
-                };
-
-                formatText = $"PNG {bitDepth * channels}-bit {colorName}";
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        private static bool TryReadBmpFormatText(string path, out string formatText)
-        {
-            formatText = string.Empty;
-            try
-            {
-                byte[] bytes = File.ReadAllBytes(path);
-                if (bytes.Length < 30 || bytes[0] != 0x42 || bytes[1] != 0x4D) { return false; }
-
-                int bitsPerPixel = BitConverter.ToUInt16(bytes, 28);
-                formatText = $"BMP {bitsPerPixel}-bit";
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
         }
 
         private bool SetField<T>(ref T field, T value, [CallerMemberName] string propertyName = null)

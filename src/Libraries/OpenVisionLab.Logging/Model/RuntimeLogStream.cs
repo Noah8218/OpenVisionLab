@@ -2,6 +2,8 @@
 using log4net.Core;
 using log4net.Repository.Hierarchy;
 using System;
+using System.Linq;
+using System.Threading;
 
 namespace OpenVisionLab.Logging.Model
 {
@@ -9,7 +11,7 @@ namespace OpenVisionLab.Logging.Model
     {
         private readonly RuntimeLogSink _appender;
         private readonly Hierarchy _logRepository;
-        private bool _disposed;
+        private int _disposed;
 
         public RuntimeLogStream()
         {
@@ -21,13 +23,17 @@ namespace OpenVisionLab.Logging.Model
             _logRepository.RaiseConfigurationChanged(EventArgs.Empty);
         }
 
-        public string GetLog() => _disposed ? string.Empty : _appender.ReadBuffer();
+        public string GetLog() => Volatile.Read(ref _disposed) != 0 ? string.Empty : _appender.ReadBuffer();
 
-        public string[] GetLogs() => GetLog().Split(new[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+        public string[] GetLogs() => Volatile.Read(ref _disposed) != 0
+            ? Array.Empty<string>()
+            : _appender.ReadEntries().ToArray();
+
+        public long DroppedLogCount => _appender.DroppedLogCount;
 
         public void Dispose()
         {
-            if (_disposed)
+            if (Interlocked.Exchange(ref _disposed, 1) != 0)
             {
                 return;
             }
@@ -35,7 +41,6 @@ namespace OpenVisionLab.Logging.Model
             _logRepository.Root.RemoveAppender(_appender);
             _logRepository.RaiseConfigurationChanged(EventArgs.Empty);
             _appender.Close();
-            _disposed = true;
         }
     }
 }

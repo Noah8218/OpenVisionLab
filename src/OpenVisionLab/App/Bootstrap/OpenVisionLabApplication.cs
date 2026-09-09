@@ -84,6 +84,15 @@ namespace OpenVisionLab
                         startupLoadingWindow = null;
                         shellWindow.Activate();
                     }
+
+                    if (OpenVisionTcpIntegrationExeSmoke.IsRequested(args))
+                    {
+                        var smokePassed = await OpenVisionTcpIntegrationExeSmoke.RunAsync(
+                            shellWindow,
+                            args);
+                        Environment.ExitCode = smokePassed ? 0 : 1;
+                        application.Shutdown(Environment.ExitCode);
+                    }
                 };
                 shellWindow.ContentRendered += startupContentRendered;
 

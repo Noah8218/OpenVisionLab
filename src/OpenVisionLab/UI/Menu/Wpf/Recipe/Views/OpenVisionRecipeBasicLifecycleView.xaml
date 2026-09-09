@@ -1,0 +1,93 @@
+<UserControl x:Class="OpenVisionLab.OpenVisionRecipeBasicLifecycleView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+             HorizontalContentAlignment="Stretch"
+             VerticalContentAlignment="Stretch">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="90" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <TextBlock Text="{Binding RecipeCommands.EditRecipeNameLabelText}"
+                   Foreground="#A8CBD1"
+                   VerticalAlignment="Center" />
+        <TextBox Grid.Column="1"
+                 Height="26"
+                 Padding="7,2"
+                 VerticalContentAlignment="Center"
+                 AutomationProperties.AutomationId="HostRecipeNameEditor"
+                 Foreground="{DynamicResource ShellHost.FieldTextBrush}"
+                 CaretBrush="#8FE8F0"
+                 BorderBrush="{DynamicResource ShellHost.FieldBorderBrush}"
+                 Background="{DynamicResource ShellHost.FieldBrush}"
+                 Text="{Binding RecipeCommands.EditRecipeName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+        <WrapPanel Grid.Column="2"
+                   Margin="12,0,0,0"
+                   HorizontalAlignment="Right"
+                   AutomationProperties.AutomationId="HostRecipeManagerCommandStrip">
+            <Button MinWidth="86"
+                    Height="28"
+                    Margin="0,0,6,0"
+                    AutomationProperties.AutomationId="HostRecipeCreateNamedButton"
+                    Command="{Binding RecipeCommands.CreateNamedRecipeCommand}">
+                <StackPanel Orientation="Horizontal">
+                    <iconPacks:PackIconMaterial Kind="Plus" Width="13" Height="13" Margin="0,1,5,0" />
+                    <TextBlock Text="{Binding RecipeCommands.CreateNamedRecipeText}" />
+                </StackPanel>
+            </Button>
+            <Button MinWidth="74"
+                    Height="28"
+                    Margin="0,0,6,0"
+                    AutomationProperties.AutomationId="HostRecipeDuplicateButton"
+                    Command="{Binding RecipeCommands.DuplicateRecipeCommand}">
+                <StackPanel Orientation="Horizontal">
+                    <iconPacks:PackIconMaterial Kind="ImageMultipleOutline" Width="13" Height="13" Margin="0,1,5,0" />
+                    <TextBlock Text="{Binding RecipeCommands.DuplicateRecipeText}" />
+                </StackPanel>
+            </Button>
+            <Button MinWidth="86"
+                    Height="28"
+                    Margin="0,0,6,0"
+                    AutomationProperties.AutomationId="HostRecipeRenameButton"
+                    Command="{Binding RecipeCommands.RenameRecipeCommand}">
+                <StackPanel Orientation="Horizontal">
+                    <iconPacks:PackIconMaterial Kind="PencilOutline" Width="13" Height="13" Margin="0,1,5,0" />
+                    <TextBlock Text="{Binding RecipeCommands.RenameRecipeText}" />
+                </StackPanel>
+            </Button>
+            <Button MinWidth="72"
+                    Height="28"
+                    AutomationProperties.AutomationId="HostRecipeDeleteButton"
+                    Command="{Binding RecipeCommands.DeleteRecipeCommand}">
+                <StackPanel Orientation="Horizontal">
+                    <iconPacks:PackIconMaterial Kind="LayersOffOutline" Width="13" Height="13" Margin="0,1,5,0" />
+                    <TextBlock Text="{Binding RecipeCommands.DeleteRecipeText}" />
+                </StackPanel>
+            </Button>
+        </WrapPanel>
+        <TextBlock Grid.Row="1"
+                   Grid.Column="1"
+                   Grid.ColumnSpan="2"
+                   Margin="0,4,0,0"
+                   AutomationProperties.AutomationId="HostRecipeEditValidation"
+                   Foreground="#A8CBD1"
+                   FontSize="10"
+                   Text="{Binding RecipeCommands.RecipeEditValidationText}"
+                   TextWrapping="Wrap"
+                   TextTrimming="CharacterEllipsis" />
+        <TextBlock Grid.Row="2"
+                   Grid.ColumnSpan="3"
+                   Margin="0,5,0,0"
+                   Foreground="#8AD7DA"
+                   FontSize="10"
+                   Text="{Binding RecipeCommands.StatusText}"
+                   TextWrapping="Wrap" />
+    </Grid>
+</UserControl>

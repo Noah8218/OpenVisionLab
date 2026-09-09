@@ -1,5 +1,6 @@
 using OpenVisionLab.Vision2D.Pipeline;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 
@@ -7,6 +8,46 @@ namespace OpenVisionLab
 {
     internal sealed class OpenVisionRecipeWorkspaceUseCase
     {
+        public bool CanCreate(string requestedBaseName)
+        {
+            string requested = requestedBaseName?.Trim();
+            return string.IsNullOrWhiteSpace(requested)
+                || RecipeWorkspaceService.IsValidRecipeName(requested);
+        }
+
+        public bool CanDuplicate(
+            string sourceName,
+            string requestedBaseName,
+            IReadOnlyCollection<string> recipeNames)
+        {
+            string selected = sourceName?.Trim();
+            string requested = requestedBaseName?.Trim();
+            return ContainsRecipe(recipeNames, selected)
+                && (string.IsNullOrWhiteSpace(requested)
+                    || RecipeWorkspaceService.IsValidRecipeName(requested));
+        }
+
+        public bool CanRename(
+            string sourceName,
+            string targetName,
+            IReadOnlyCollection<string> recipeNames)
+        {
+            string oldName = sourceName?.Trim();
+            string newName = targetName?.Trim();
+            return ContainsRecipe(recipeNames, oldName)
+                && RecipeWorkspaceService.IsValidRecipeName(newName)
+                && !string.Equals(oldName, newName, StringComparison.OrdinalIgnoreCase)
+                && !ContainsRecipe(recipeNames, newName);
+        }
+
+        public bool CanDelete(string recipeName, IReadOnlyCollection<string> recipeNames)
+        {
+            string selected = recipeName?.Trim();
+            return recipeNames != null
+                && recipeNames.Count > 1
+                && ContainsRecipe(recipeNames, selected);
+        }
+
         public OpenVisionRecipeWorkspaceResult Create(string requestedBaseName = null)
         {
             string recipeName = CreateUniqueRecipeName(requestedBaseName);
@@ -43,6 +84,18 @@ namespace OpenVisionLab
 
             RecipeWorkspaceService.EnsureVisionWorkspace(fallbackRecipeName);
             return OpenVisionRecipeWorkspaceResult.Success(fallbackRecipeName);
+        }
+
+        private static bool ContainsRecipe(
+            IReadOnlyCollection<string> recipeNames,
+            string recipeName)
+        {
+            return recipeNames != null
+                && !string.IsNullOrWhiteSpace(recipeName)
+                && recipeNames.Any(name => string.Equals(
+                    name,
+                    recipeName,
+                    StringComparison.OrdinalIgnoreCase));
         }
 
         private static string CreateUniqueRecipeName(string requestedBaseName)

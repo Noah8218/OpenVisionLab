@@ -2,12 +2,13 @@ using OpenVisionLab.Vision2D.Pipeline;
 using System;
 using System.Globalization;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace OpenVisionLab
 {
     public sealed partial class OpenVisionShellHostRecipeCommandSurface
     {
-        private void CreateRecipe()
+        private async void CreateRecipe()
         {
             if (!TryLeaveSelectedStepEdit(
                 OpenVisionRecipePendingEditTransitionKind.Recipe,
@@ -16,10 +17,10 @@ namespace OpenVisionLab
                 return;
             }
 
-            CreateAndSwitchRecipe(recipeWorkspaceUseCase.Create());
+            await CreateAndSwitchRecipeAsync(recipeWorkspaceUseCase.Create());
         }
 
-        private void CreateNamedRecipe()
+        private async void CreateNamedRecipe()
         {
             string requestedName = EditRecipeName?.Trim();
             if (!TryLeaveSelectedStepEdit(
@@ -29,14 +30,13 @@ namespace OpenVisionLab
                 return;
             }
 
-            CreateAndSwitchRecipe(recipeWorkspaceUseCase.Create(requestedName));
+            await CreateAndSwitchRecipeAsync(recipeWorkspaceUseCase.Create(requestedName));
         }
 
         private bool CanCreateNamedRecipe()
         {
             string requestedName = EditRecipeName?.Trim();
-            return string.IsNullOrWhiteSpace(requestedName)
-                || RecipeWorkspaceService.IsValidRecipeName(requestedName);
+            return recipeWorkspaceUseCase.CanCreate(requestedName);
         }
 
         private void DuplicateSelectedRecipe()
@@ -51,17 +51,18 @@ namespace OpenVisionLab
             }
 
             OpenVisionRecipeWorkspaceResult result = recipeWorkspaceUseCase.Duplicate(sourceName, requestedName);
+            OpenVisionRecipeWorkspaceLifecycleProjection projection =
+                workspaceLifecycleProjectionOwner.Project(
+                    OpenVisionRecipeWorkspaceLifecycleOperation.Duplicate,
+                    result);
             if (!result.Succeeded)
             {
-                StatusText = LocalText("레시피 복제에 실패했습니다.", "Duplicate failed.");
+                StatusText = projection.StatusText;
                 return;
             }
 
             switchRecipe(result.RecipeName);
-            StatusText = string.Format(
-                CultureInfo.CurrentCulture,
-                LocalText("복제됨: {0}", "Duplicated: {0}"),
-                result.RecipeName);
+            StatusText = projection.StatusText;
             RefreshOptions();
             refreshAfterSwitch();
         }
@@ -70,10 +71,7 @@ namespace OpenVisionLab
         {
             string selected = NormalizeRecipeName(selectedRecipeName);
             string requested = EditRecipeName?.Trim();
-            return !string.IsNullOrWhiteSpace(selected)
-                && RecipeOptions.Any(name => string.Equals(name, selected, StringComparison.OrdinalIgnoreCase))
-                && (string.IsNullOrWhiteSpace(requested)
-                    || RecipeWorkspaceService.IsValidRecipeName(requested));
+            return recipeWorkspaceUseCase.CanDuplicate(selected, requested, RecipeOptions);
         }
 
         private void RenameSelectedRecipe()
@@ -94,17 +92,18 @@ namespace OpenVisionLab
             }
 
             OpenVisionRecipeWorkspaceResult result = recipeWorkspaceUseCase.Rename(oldName, newName);
+            OpenVisionRecipeWorkspaceLifecycleProjection projection =
+                workspaceLifecycleProjectionOwner.Project(
+                    OpenVisionRecipeWorkspaceLifecycleOperation.Rename,
+                    result);
             if (!result.Succeeded)
             {
-                StatusText = LocalText("이름 변경에 실패했습니다.", "Rename failed.");
+                StatusText = projection.StatusText;
                 return;
             }
 
             switchRecipe(result.RecipeName);
-            StatusText = string.Format(
-                CultureInfo.CurrentCulture,
-                LocalText("이름 변경됨: {0}", "Renamed: {0}"),
-                result.RecipeName);
+            StatusText = projection.StatusText;
             RefreshOptions();
             refreshAfterSwitch();
         }
@@ -113,10 +112,7 @@ namespace OpenVisionLab
         {
             string oldName = NormalizeRecipeName(selectedRecipeName);
             string newName = NormalizeRecipeName(EditRecipeName);
-            return !string.IsNullOrWhiteSpace(oldName)
-                && RecipeWorkspaceService.IsValidRecipeName(newName)
-                && !string.Equals(oldName, newName, StringComparison.OrdinalIgnoreCase)
-                && !RecipeOptions.Any(name => string.Equals(name, newName, StringComparison.OrdinalIgnoreCase));
+            return recipeWorkspaceUseCase.CanRename(oldName, newName, RecipeOptions);
         }
 
         private void DeleteSelectedRecipe()
@@ -145,17 +141,19 @@ namespace OpenVisionLab
                 .FirstOrDefault(name => !string.Equals(name, deletedName, StringComparison.OrdinalIgnoreCase));
             fallback = NormalizeRecipeName(fallback);
             OpenVisionRecipeWorkspaceResult result = recipeWorkspaceUseCase.Delete(deletedName, fallback);
+            OpenVisionRecipeWorkspaceLifecycleProjection projection =
+                workspaceLifecycleProjectionOwner.Project(
+                    OpenVisionRecipeWorkspaceLifecycleOperation.Delete,
+                    result,
+                    deletedName);
             if (!result.Succeeded)
             {
-                StatusText = LocalText("삭제에 실패했습니다.", "Delete failed.");
+                StatusText = projection.StatusText;
                 return;
             }
 
             switchRecipe(result.RecipeName);
-            StatusText = string.Format(
-                CultureInfo.CurrentCulture,
-                LocalText("삭제됨: {0}", "Deleted: {0}"),
-                deletedName);
+            StatusText = projection.StatusText;
             RefreshOptions();
             refreshAfterSwitch();
         }
@@ -163,14 +161,16 @@ namespace OpenVisionLab
         private bool CanDeleteSelectedRecipe()
         {
             string selected = NormalizeRecipeName(selectedRecipeName);
-            return !string.IsNullOrWhiteSpace(selected)
-                && RecipeOptions.Count > 1
-                && RecipeOptions.Any(name => string.Equals(name, selected, StringComparison.OrdinalIgnoreCase));
+            return recipeWorkspaceUseCase.CanDelete(selected, RecipeOptions);
         }
 
-        private async void CreateAndSwitchRecipe(OpenVisionRecipeWorkspaceResult result)
+        private async Task CreateAndSwitchRecipeAsync(OpenVisionRecipeWorkspaceResult result)
         {
-            if (!result.Succeeded)
+            OpenVisionRecipeWorkspaceLifecycleProjection projection =
+                workspaceLifecycleProjectionOwner.Project(
+                    OpenVisionRecipeWorkspaceLifecycleOperation.Create,
+                    result);
+            if (!projection.Succeeded)
             {
                 return;
             }
@@ -183,10 +183,7 @@ namespace OpenVisionLab
                 switchRecipe(result.RecipeName);
                 RefreshAfterRecipeSwitchIfNeeded(result.RecipeName);
                 await waitForRecipeSwitchCompletion();
-                StatusText = string.Format(
-                    CultureInfo.CurrentCulture,
-                    LocalText("생성됨: {0}", "Created: {0}"),
-                    result.RecipeName);
+                StatusText = projection.StatusText;
             }
             finally
             {

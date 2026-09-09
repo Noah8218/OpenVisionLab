@@ -7,11 +7,16 @@ the images and measurements behind each OK/NG decision.
 
 ## Version
 
-Current version: `v2.2.0-dev`
+Current version: `v2.2.0-dev.1`
 
-This project is maintained using explicit version numbers.
+This project is maintained using explicit version numbers. The current value is a development candidate; it keeps the existing Recipe/XML and explicit Preview/Run contracts while the ownership refactors are verified.
 
 ### Recent version history
+
+#### `2.2.0-dev.1 (2026-09-09)
+
+- Aligns the application, manual, and integration identity surfaces to one version.
+- Promotes the verified ImageCanvas, Image Compare, Recipe, Shell, PropertyGrid, Learn, and namespace ownership boundaries.
 
 #### `v2.2.0-dev` (2026-09-01)
 

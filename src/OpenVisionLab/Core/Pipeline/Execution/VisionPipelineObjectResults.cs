@@ -16,6 +16,9 @@ namespace OpenVisionLab
     public sealed class VisionPipelineObjectResult
     {
         public int Number { get; set; }
+        public string CandidateId { get; set; } = string.Empty;
+        public int RegionIndex { get; set; }
+        public int NativeIndex { get; set; }
         public bool Accepted { get; set; }
         public double Area { get; set; }
         public double CenterX { get; set; }
@@ -25,7 +28,16 @@ namespace OpenVisionLab
         public int BoundsWidth { get; set; }
         public int BoundsHeight { get; set; }
         public double Angle { get; set; }
+        public string RejectReasonCode { get; set; } = string.Empty;
         public string RejectReason { get; set; } = string.Empty;
+        public int AppliedMinimumArea { get; set; }
+        public int AppliedMaximumArea { get; set; }
+        public int AppliedMinimumWidth { get; set; }
+        public int AppliedMaximumWidth { get; set; }
+        public int AppliedMinimumHeight { get; set; }
+        public int AppliedMaximumHeight { get; set; }
+        public string GenerationStage { get; set; } = string.Empty;
+        public string CoordinateFrame { get; set; } = string.Empty;
 
         public string StateText => Accepted ? "OK" : "REJECT";
     }
@@ -79,22 +91,71 @@ namespace OpenVisionLab
             }
 
             ObjectFilterCriteria criteria = ObjectFilterCriteria.From(step.Parameters);
+            bool sdkCandidatesAvailable = TryCaptureSdkCandidates(executedTool, out List<VisionPipelineObjectResult> rows);
             ApplyFilter(executedTool, toolResult, criteria);
 
-            int auditMinimumArea = executedTool is ContourTool
-                ? Math.Max(1, criteria.MinimumArea / 4)
-                : 0;
-            List<VisionPipelineObjectResult> rows = TryCaptureUnfiltered(
-                step,
-                input,
-                criteria,
-                auditMinimumArea);
-            if (rows.Count == 0)
+            if (sdkCandidatesAvailable)
             {
-                rows = CaptureAccepted(executedTool, criteria);
+                VisionPipelineObjectResultStore.Set(toolResult, Stabilize(rows));
+                return;
             }
 
-            VisionPipelineObjectResultStore.Set(toolResult, Stabilize(rows));
+            // An updated SDK is required for object evidence. Do not recreate
+            // rejected candidates by executing a relaxed second Tool.
+            VisionPipelineObjectResultStore.Set(toolResult, Array.Empty<VisionPipelineObjectResult>());
+        }
+
+        private static bool TryCaptureSdkCandidates(
+            IVisionTool tool,
+            out List<VisionPipelineObjectResult> rows)
+        {
+            if (tool is BlobTool blob)
+            {
+                rows = CaptureCandidates(blob.candidates);
+                return true;
+            }
+
+            if (tool is ContourTool contour)
+            {
+                rows = CaptureCandidates(contour.candidates);
+                return true;
+            }
+
+            rows = new List<VisionPipelineObjectResult>();
+            return false;
+        }
+
+        private static List<VisionPipelineObjectResult> CaptureCandidates(
+            IEnumerable<VisionObjectCandidate> candidates)
+        {
+            return (candidates ?? Enumerable.Empty<VisionObjectCandidate>())
+                .Where(candidate => candidate != null)
+                .Select(candidate => new VisionPipelineObjectResult
+                {
+                    CandidateId = candidate.CandidateId ?? string.Empty,
+                    RegionIndex = candidate.RegionIndex,
+                    NativeIndex = candidate.NativeIndex,
+                    Accepted = candidate.Accepted,
+                    Area = candidate.Area,
+                    CenterX = candidate.Center.X,
+                    CenterY = candidate.Center.Y,
+                    BoundsX = candidate.Bounding.X,
+                    BoundsY = candidate.Bounding.Y,
+                    BoundsWidth = candidate.Bounding.Width,
+                    BoundsHeight = candidate.Bounding.Height,
+                    Angle = candidate.Angle,
+                    RejectReasonCode = candidate.RejectReasonCode.ToString(),
+                    RejectReason = candidate.RejectReasonText ?? string.Empty,
+                    AppliedMinimumArea = candidate.AppliedLimits?.MinimumArea ?? 0,
+                    AppliedMaximumArea = candidate.AppliedLimits?.MaximumArea ?? 0,
+                    AppliedMinimumWidth = candidate.AppliedLimits?.MinimumWidth ?? 0,
+                    AppliedMaximumWidth = candidate.AppliedLimits?.MaximumWidth ?? 0,
+                    AppliedMinimumHeight = candidate.AppliedLimits?.MinimumHeight ?? 0,
+                    AppliedMaximumHeight = candidate.AppliedLimits?.MaximumHeight ?? 0,
+                    GenerationStage = candidate.GenerationStage.ToString(),
+                    CoordinateFrame = candidate.CoordinateFrame.ToString()
+                })
+                .ToList();
         }
 
         public static void ApplyNativeFilter(
@@ -111,52 +172,6 @@ namespace OpenVisionLab
             VisionToolResult toolResult)
         {
             ApplyFilter(tool, toolResult, ObjectFilterCriteria.From(property));
-        }
-
-        private static List<VisionPipelineObjectResult> TryCaptureUnfiltered(
-            VisionPipelineStep step,
-            Mat input,
-            ObjectFilterCriteria criteria,
-            int auditMinimumArea)
-        {
-            try
-            {
-                VisionPipelineStep auditStep = CloneForAreaAudit(step, auditMinimumArea);
-                IVisionTool auditTool = VisionPipelineAppToolFactory.Create(auditStep);
-                using IDisposable auditToolLifetime = auditTool as IDisposable;
-                using Mat auditInput = input.Clone();
-                using VisionToolResult auditResult = auditTool.Execute(auditInput);
-                if (auditResult?.Success != true)
-                {
-                    return new List<VisionPipelineObjectResult>();
-                }
-
-                return CaptureAll(auditTool, criteria);
-            }
-            catch
-            {
-                return new List<VisionPipelineObjectResult>();
-            }
-        }
-
-        private static VisionPipelineStep CloneForAreaAudit(VisionPipelineStep source, int auditMinimumArea)
-        {
-            VisionPipelineStep clone = new VisionPipelineStep
-            {
-                Name = source.Name,
-                ToolType = source.ToolType,
-                Enabled = source.Enabled,
-                InputLayer = source.InputLayer,
-                OutputLayer = source.OutputLayer
-            };
-            foreach (KeyValuePair<string, string> parameter in source.Parameters ?? new Dictionary<string, string>())
-            {
-                clone.Parameters[parameter.Key] = parameter.Value;
-            }
-
-            clone.Parameters["MIN_AREA"] = auditMinimumArea.ToString(CultureInfo.InvariantCulture);
-            clone.Parameters["MAX_AREA"] = int.MaxValue.ToString(CultureInfo.InvariantCulture);
-            return clone;
         }
 
         private static List<VisionPipelineObjectResult> CaptureAll(
@@ -200,20 +215,6 @@ namespace OpenVisionLab
             return new List<VisionPipelineObjectResult>();
         }
 
-        private static List<VisionPipelineObjectResult> CaptureAccepted(
-            IVisionTool tool,
-            ObjectFilterCriteria criteria)
-        {
-            List<VisionPipelineObjectResult> rows = CaptureAll(tool, criteria);
-            foreach (VisionPipelineObjectResult row in rows)
-            {
-                row.Accepted = true;
-                row.RejectReason = string.Empty;
-            }
-
-            return rows;
-        }
-
         private static VisionPipelineObjectResult Create(
             double area,
             double centerX,
@@ -237,7 +238,13 @@ namespace OpenVisionLab
                 BoundsWidth = boundsWidth,
                 BoundsHeight = boundsHeight,
                 Angle = angle,
-                RejectReason = reason
+                RejectReason = reason,
+                AppliedMinimumArea = criteria.MinimumArea,
+                AppliedMaximumArea = criteria.MaximumArea,
+                AppliedMinimumWidth = criteria.MinimumWidth,
+                AppliedMaximumWidth = criteria.MaximumWidth,
+                AppliedMinimumHeight = criteria.MinimumHeight,
+                AppliedMaximumHeight = criteria.MaximumHeight
             };
         }
 

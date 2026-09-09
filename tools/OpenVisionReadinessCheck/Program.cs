@@ -162,7 +162,7 @@ internal static class Program
         RequireNotContains(recipeCommandSurface, "private string BuildRecentBatchRunPerformanceComparisonText()", "Recipe command surface does not format Run History timing comparison.");
         RequireNotContains(recipeCommandSurface, "private static bool HaveEquivalentBatchSampleSets(", "Recipe command surface does not compare Run History sample sets.");
         RequireContains(recipeCommandSurface, "OpenVisionRecipeRunHistoryPresenter.BuildFilteredSampleResults", "Recipe command surface delegates Run History filtering.");
-        RequireContains(recipeCommandSurface, "OpenVisionRecipeRunHistoryPresenter.BuildComparisonRows", "Recipe command surface delegates Run History comparison rows.");
+        RequireContains(recipeCommandSurface, "runHistoryOrchestrationOwner.BuildComparison", "Recipe command surface delegates Run History comparison rows through the orchestration owner.");
         RequireContains(recipeCommandSurface, "OpenVisionRecipeRunHistoryPresenter.BuildComparisonSummaryText", "Recipe command surface delegates Run History comparison summary.");
 
         string recipeRunHistoryPresenter = Read(repoRoot, @"src\OpenVisionLab\UI\Menu\Wpf\Recipe\Review\OpenVisionRecipeRunHistoryPresenter.cs");
@@ -277,7 +277,7 @@ internal static class Program
         RequireNotContains(recipeLifecycleValidationPresenter, "VisionPipelineExecutionService.RunAsync", "Recipe lifecycle validation presenter does not execute a pipeline.");
 
         RequireNotContains(recipeCommandSurface, "private static string BuildLlmXmlValidationReport(", "Recipe command surface does not format stored-pipeline XML validation evidence.");
-        RequireContains(recipeCommandSurface, "OpenVisionRecipeStoredPipelineValidationReportBuilder.Build", "Recipe command surface delegates stored-pipeline XML validation evidence.");
+        RequireContains(recipeCommandSurface, "recipeManagerSummaryProjectionOwner.Project", "Recipe command surface delegates stored-pipeline XML validation evidence through the summary projection owner.");
 
         string storedPipelineValidationReportBuilder = Read(repoRoot, @"src\OpenVisionLab\UI\Menu\Wpf\Recipe\Validation\OpenVisionRecipeStoredPipelineValidationReportBuilder.cs");
         RequireContains(storedPipelineValidationReportBuilder, "internal static class OpenVisionRecipeStoredPipelineValidationReportBuilder", "Stored-pipeline XML validation evidence has an explicit Validation owner.");
@@ -880,10 +880,38 @@ internal static class Program
             "ThresholdToolWpfView.xaml",
             "ThresholdToolWpfView.xaml.cs");
         RequireToolViewOwnerFiles(repoRoot, @"src\OpenVisionLab\UI\VisionTest\Wpf\Learn",
+            "BinaryLearnPresenter.cs",
+            "BinaryLearnView.xaml",
+            "BinaryLearnView.xaml.cs",
+            "FeatureMatchingLearnPresenter.cs",
+            "FoundationLearnPresenter.cs",
+            "FoundationLearnView.xaml",
+            "FoundationLearnView.xaml.cs",
+            "GeometryLearnPresenter.cs",
+            "GeometryLearnView.xaml",
+            "GeometryLearnView.xaml.cs",
+            "GrayscaleLearnPresenter.cs",
+            "GrayscaleLearnView.xaml",
+            "GrayscaleLearnView.xaml.cs",
+            "LayerRecipeLearnPresenter.cs",
+            "LayerRecipeLearnView.xaml",
+            "LayerRecipeLearnView.xaml.cs",
+            "LearnCellVisuals.cs",
+            "LearnResources.xaml",
+            "LineLearnPresenter.cs",
+            "LineLearnView.xaml",
+            "LineLearnView.xaml.cs",
+            "MatchingLearnPresenter.cs",
+            "MatchingLearnView.xaml",
+            "MatchingLearnView.xaml.cs",
+            "MetricsAcceptanceLearnPresenter.cs",
+            "MetricsAcceptanceLearnView.xaml",
+            "MetricsAcceptanceLearnView.xaml.cs",
             "OpenVisionLearnBasicGrayscaleSimulationModel.cs",
             "OpenVisionLearnBinarySimulationModel.cs",
             "OpenVisionLearnLineSimulationModel.cs",
             "OpenVisionLearnMatchingSimulationModel.cs",
+            "OpenVisionLearnTopicPresentationPolicy.cs",
             "OpenVisionLearnTopics.cs",
             "OpenVisionLearnWindow.xaml",
             "OpenVisionLearnWindow.xaml.cs",
@@ -1517,6 +1545,27 @@ internal static class Program
         RequireContains(shellHostView, "HostRecipeGuidedSetupPinGapInputs", "Guided setup renders Pin gap intent inputs.");
         RequireContains(shellHostView, "HostRecipeGuidedSetupPinGapCalibrationReview", "Guided setup renders Pin gap calibration state and conversion review.");
         RequireContains(shellHostView, "HostRecipeGuidedSetupBlobInputs", "Guided setup renders Blob intent inputs.");
+        RequireContains(shellHostView, "ShellHost.LocatorEvidenceVisibilityStyle", "Guided setup scopes Evidence Packet review to the locator-relative Blob intent.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupLocatorEvidencePacketPanel", "Guided setup renders the locator Evidence Packet review panel.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupLocatorEvidencePacketPath", "Guided setup exposes the Evidence Packet path.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupLoadLocatorEvidencePacketButton", "Guided setup exposes explicit Evidence Packet loading.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupCompileLocatorEvidenceButton", "Guided setup exposes explicit Evidence Packet compile.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupLocatorEvidenceReviewDecisionPath", "Guided setup exposes the review decision path.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupLoadLocatorEvidenceReviewDecisionButton", "Guided setup exposes explicit review decision loading.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupLocatorEvidenceVisualCorrespondence", "Guided setup exposes visual correspondence review state.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupLocatorEvidenceReviewer", "Guided setup exposes the reviewer field.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupLocatorEvidenceReviewNotes", "Guided setup exposes review notes.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupApproveLocatorEvidenceButton", "Guided setup exposes explicit candidate approval.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupRejectLocatorEvidenceButton", "Guided setup exposes explicit candidate rejection.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupRequestLocatorEvidenceReplacementButton", "Guided setup exposes replacement requests.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupLocatorEvidenceReview", "Guided setup renders Candidate and integrity review.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupLocatorEvidenceOverlay", "Guided setup renders the current-run locator overlay.");
+        RequireContains(shellHostView, "HostRecipeGuidedSetupLocatorEvidenceBoundary", "Guided setup states the Evidence Packet no-auto-run boundary.");
+        RequireContains(recipeCommandSurface, "LoadLocatorEvidencePacketFromPath", "Recipe command surface validates and loads Evidence Packets explicitly.");
+        RequireContains(recipeCommandSurface, "CompileLocatorEvidencePacketFromCurrentSettings", "Recipe command surface compiles Evidence Packets against current settings.");
+        RequireContains(recipeCommandSurface, "LoadLocatorEvidenceReviewDecisionFromPath", "Recipe command surface validates review decisions against current packet and settings.");
+        RequireContains(recipeCommandSurface, "RecordLocatorEvidenceReviewDecision", "Recipe command surface records explicit locator review decisions.");
+        RequireContains(recipeCommandSurface, "TryValidateLocatorEvidenceReviewDecisionForPromotion", "Recipe promotion consumes only a current locator review decision.");
         RequireContains(shellHostView, "HostRecipeGuidedSetupContourInputs", "Guided setup renders Contour intent inputs.");
         RequireContains(shellHostView, "HostRecipeGuidedSetupMatchingInputs", "Guided setup renders Matching intent inputs.");
         RequireContains(shellHostView, "HostRecipeGuidedSetupMatchingTemplatePathText", "Guided setup renders the Matching template path.");
@@ -1562,6 +1611,11 @@ internal static class Program
         RequireContains(screenshotSmoke, "HostRecipeGuidedSetupDraftText", "Screenshot smoke verifies the Guided setup draft output.");
         RequireContains(screenshotSmoke, "HostRecipeGuidedSetupPinGapInputs", "Screenshot smoke verifies Pin gap input controls.");
         RequireContains(screenshotSmoke, "HostRecipeGuidedSetupBlobInputs", "Screenshot smoke verifies Blob input controls.");
+        RequireContains(screenshotSmoke, "HostRecipeGuidedSetupLocatorEvidencePacketPanel", "Screenshot smoke verifies the locator Evidence Packet panel.");
+        RequireContains(screenshotSmoke, "LoadLocatorEvidencePacketFromPath", "Screenshot smoke exercises Evidence Packet loading.");
+        RequireContains(screenshotSmoke, "CompileLocatorEvidencePacketFromCurrentSettings", "Screenshot smoke exercises Evidence Packet compile without side effects.");
+        RequireContains(screenshotSmoke, "HostRecipeGuidedSetupLocatorEvidenceReviewDecisionPath", "Screenshot smoke verifies the locator review decision path.");
+        RequireContains(screenshotSmoke, "HostRecipeGuidedSetupApproveLocatorEvidenceButton", "Screenshot smoke verifies explicit locator approval remains gated.");
         RequireContains(screenshotSmoke, "HostRecipeGuidedSetupContourInputs", "Screenshot smoke verifies Contour input controls.");
         RequireContains(screenshotSmoke, "HostRecipeGuidedSetupMatchingInputs", "Screenshot smoke verifies Matching input controls.");
         RequireContains(screenshotSmoke, "HostRecipeGuidedSetupMeanInputs", "Screenshot smoke verifies Mean input controls.");
@@ -1706,7 +1760,22 @@ internal static class Program
         }
 
         string learnWindowXaml = Read(repoRoot, @"src\OpenVisionLab\UI\VisionTest\Wpf\Learn\OpenVisionLearnWindow.xaml");
+        string learnFoundationViewXaml = Read(repoRoot, @"src\OpenVisionLab\UI\VisionTest\Wpf\Learn\FoundationLearnView.xaml");
         string learnWindow = Read(repoRoot, @"src\OpenVisionLab\UI\VisionTest\Wpf\Learn\OpenVisionLearnWindow.xaml.cs");
+        string learnGrayscalePresenter = Read(repoRoot, @"src\OpenVisionLab\UI\VisionTest\Wpf\Learn\GrayscaleLearnPresenter.cs");
+        string learnGrayscaleXaml = Read(repoRoot, @"src\OpenVisionLab\UI\VisionTest\Wpf\Learn\GrayscaleLearnView.xaml");
+        string learnGeometryPresenter = Read(repoRoot, @"src\OpenVisionLab\UI\VisionTest\Wpf\Learn\GeometryLearnPresenter.cs");
+        string learnGeometryView = Read(repoRoot, @"src\OpenVisionLab\UI\VisionTest\Wpf\Learn\GeometryLearnView.xaml.cs");
+        string learnGeometryXaml = Read(repoRoot, @"src\OpenVisionLab\UI\VisionTest\Wpf\Learn\GeometryLearnView.xaml");
+        string learnBinaryPresenter = Read(repoRoot, @"src\OpenVisionLab\UI\VisionTest\Wpf\Learn\BinaryLearnPresenter.cs");
+        string learnBinaryXaml = Read(repoRoot, @"src\OpenVisionLab\UI\VisionTest\Wpf\Learn\BinaryLearnView.xaml");
+        string learnLinePresenter = Read(repoRoot, @"src\OpenVisionLab\UI\VisionTest\Wpf\Learn\LineLearnPresenter.cs");
+        string learnLineXaml = Read(repoRoot, @"src\OpenVisionLab\UI\VisionTest\Wpf\Learn\LineLearnView.xaml");
+        string learnMatchingPresenter = Read(repoRoot, @"src\OpenVisionLab\UI\VisionTest\Wpf\Learn\MatchingLearnPresenter.cs");
+        string learnFeatureMatchingPresenter = Read(repoRoot, @"src\OpenVisionLab\UI\VisionTest\Wpf\Learn\FeatureMatchingLearnPresenter.cs");
+        string learnMatchingXaml = Read(repoRoot, @"src\OpenVisionLab\UI\VisionTest\Wpf\Learn\MatchingLearnView.xaml");
+        string learnMetricsXaml = Read(repoRoot, @"src\OpenVisionLab\UI\VisionTest\Wpf\Learn\MetricsAcceptanceLearnView.xaml");
+        string learnLayerRecipeXaml = Read(repoRoot, @"src\OpenVisionLab\UI\VisionTest\Wpf\Learn\LayerRecipeLearnView.xaml");
         string learnBasicGrayscaleSimulationModel = Read(
             repoRoot,
             @"src\OpenVisionLab\UI\VisionTest\Wpf\Learn\OpenVisionLearnBasicGrayscaleSimulationModel.cs");
@@ -1738,33 +1807,44 @@ internal static class Program
         RequireContains(foundationGuide, "Name the image concept first, choose the matching tool family", "OpenCvSharp foundations guide connects concepts to tool choice.");
         RequireContains(foundationGuide, "Use the provided Good/Bad samples", "OpenCvSharp foundations guide starts practice from provided sample evidence.");
         RequireContains(foundationGuide, "Good/Bad samples", "OpenCvSharp foundations guide connects concepts to Good/Bad validation.");
+        RequireContains(learnGrayscaleXaml, "OpenVisionLearnThresholdTabs", "Grayscale View owns the existing Threshold tabs.");
         RequireContains(learnWindowXaml, "OpenVisionLearnOpenFoundationDocsButton", "OpenVision Learn exposes a Foundation Docs button.");
-        RequireContains(learnWindow, "OpenVisionLearnBinarySimulationModel.CalculateMorphology", "Learn view delegates morphology calculation to the binary simulation model.");
-        RequireContains(learnWindow, "OpenVisionLearnBinarySimulationModel.LabelConnectedBlobs", "Learn view delegates connected-component calculation to the binary simulation model.");
+        RequireContains(learnWindowXaml, "local:GeometryLearnView", "OpenVision Learn composes Geometry through its dedicated View.");
+        RequireContains(learnGeometryPresenter, "internal sealed class GeometryLearnPresenter", "Geometry lesson policy has a standalone Presenter owner.");
+        RequireNotContains(learnGeometryPresenter, "DispatcherTimer", "Geometry lesson policy does not own WPF timer lifetime.");
+        RequireContains(learnGeometryView, "private readonly DispatcherTimer animationTimer", "Geometry View owns its animation timer.");
+        RequireContains(learnGeometryView, "Loaded += OnLoaded", "Geometry View subscribes its timer at load.");
+        RequireContains(learnGeometryView, "animationTimer.Tick -= AnimationTimer_Tick", "Geometry View removes its timer callback at unload.");
+        RequireContains(learnGeometryXaml, "OpenVisionLearnGeometryPlayButton", "Geometry View retains the existing Play control contract.");
+        RequireNotContains(learnWindow, "private readonly DispatcherTimer geometryAnimationTimer", "Learn Window no longer owns the Geometry timer.");
+        RequireNotContains(learnWindow, "private void GeometryAnimationTimer_Tick", "Learn Window no longer owns Geometry animation callbacks.");
+        RequireContains(learnBinaryPresenter, "OpenVisionLearnBinarySimulationModel.CalculateMorphology", "Learn view delegates morphology calculation to the binary simulation model.");
+        RequireContains(learnBinaryPresenter, "OpenVisionLearnBinarySimulationModel.LabelConnectedBlobs", "Learn view delegates connected-component calculation to the binary simulation model.");
+        RequireContains(learnBinaryPresenter, "OpenVisionLearnBinarySimulationModel.FindContourPixels", "Learn binary presenter delegates contour extraction to the existing simulation model.");
         RequireContains(learnBinarySimulationModel, "public static bool[] CalculateMorphology", "Learn binary simulation model owns morphology calculation.");
         RequireContains(learnBinarySimulationModel, "public static (int[] Labels, int[] Areas) LabelConnectedBlobs", "Learn binary simulation model owns connected-component labeling.");
         RequireContains(learnBinarySimulationModel, "public static bool[] FindContourPixels", "Learn binary simulation model owns contour extraction.");
         RequireNotContains(learnWindow, "private static int FloodFillBlob", "Learn view no longer owns connected-component flood fill.");
         RequireNotContains(learnWindow, "private static bool[] Erode", "Learn view no longer owns morphology erosion.");
         RequireNotContains(learnWindow, "private static bool[] FindContourPixels", "Learn view no longer owns contour extraction.");
-        RequireContains(learnWindow, "OpenVisionLearnMatchingSimulationModel.EvaluateTemplate", "Learn view delegates template score evaluation to the matching simulation model.");
-        RequireContains(learnWindow, "OpenVisionLearnMatchingSimulationModel.EvaluateFeatures", "Learn view delegates feature match evaluation to the matching simulation model.");
+        RequireContains(learnMatchingPresenter, "OpenVisionLearnMatchingSimulationModel.EvaluateTemplate", "Matching Learn presenter delegates template score evaluation to the matching simulation model.");
+        RequireContains(learnFeatureMatchingPresenter, "OpenVisionLearnMatchingSimulationModel.EvaluateFeatures", "FeatureMatching Learn presenter delegates feature match evaluation to the matching simulation model.");
         RequireContains(learnMatchingSimulationModel, "public static TemplateEvaluation EvaluateTemplate", "Learn matching simulation model owns template score evaluation.");
         RequireContains(learnMatchingSimulationModel, "public static FeatureEvaluation EvaluateFeatures", "Learn matching simulation model owns feature match evaluation.");
         RequireNotContains(learnWindow, "private double CalculateTemplateScore", "Learn view no longer owns template score calculation.");
         RequireNotContains(learnWindow, "private readonly int[] matchingSearchValues", "Learn view no longer owns matching sample data.");
         RequireNotContains(learnWindow, "private readonly double[] featureMatchScores", "Learn view no longer owns feature score data.");
-        RequireContains(learnWindow, "OpenVisionLearnLineSimulationModel.EvaluateEdgeLine", "Learn view delegates edge/line evaluation to the line simulation model.");
-        RequireContains(learnWindow, "OpenVisionLearnLineSimulationModel.EvaluateLineDistance", "Learn view delegates line-distance evaluation to the line simulation model.");
+        RequireContains(learnLinePresenter, "OpenVisionLearnLineSimulationModel.EvaluateEdgeLine", "Learn view delegates edge/line evaluation to the line simulation model.");
+        RequireContains(learnLinePresenter, "OpenVisionLearnLineSimulationModel.EvaluateLineDistance", "Learn view delegates line-distance evaluation to the line simulation model.");
         RequireContains(learnLineSimulationModel, "public static EdgeLineEvaluation EvaluateEdgeLine", "Learn line simulation model owns edge/line evaluation.");
         RequireContains(learnLineSimulationModel, "public static LineDistanceEvaluation EvaluateLineDistance", "Learn line simulation model owns line-distance evaluation.");
         RequireNotContains(learnWindow, "private readonly int[] edgeLineSampleValues", "Learn view no longer owns edge/line sample data.");
         RequireNotContains(learnWindow, "private readonly int[] lineDistanceLeftEdges", "Learn view no longer owns line-distance left-edge data.");
         RequireNotContains(learnWindow, "private readonly int[] lineDistanceRightEdges", "Learn view no longer owns line-distance right-edge data.");
-        RequireContains(learnWindow, "OpenVisionLearnBasicGrayscaleSimulationModel.EvaluateBrightness", "Learn view delegates brightness evaluation to the basic grayscale simulation model.");
-        RequireContains(learnWindow, "OpenVisionLearnBasicGrayscaleSimulationModel.EvaluateThreshold", "Learn view delegates threshold evaluation to the basic grayscale simulation model.");
-        RequireContains(learnWindow, "OpenVisionLearnBasicGrayscaleSimulationModel.EvaluateArithmetic", "Learn view delegates arithmetic evaluation to the basic grayscale simulation model.");
-        RequireContains(learnWindow, "OpenVisionLearnBasicGrayscaleSimulationModel.EvaluateFilter", "Learn view delegates filter evaluation to the basic grayscale simulation model.");
+        RequireContains(learnGrayscalePresenter, "OpenVisionLearnBasicGrayscaleSimulationModel.EvaluateBrightness", "Learn view delegates brightness evaluation to the basic grayscale simulation model.");
+        RequireContains(learnGrayscalePresenter, "OpenVisionLearnBasicGrayscaleSimulationModel.EvaluateThreshold", "Learn view delegates threshold evaluation to the basic grayscale simulation model.");
+        RequireContains(learnGrayscalePresenter, "OpenVisionLearnBasicGrayscaleSimulationModel.EvaluateArithmetic", "Learn view delegates arithmetic evaluation to the basic grayscale simulation model.");
+        RequireContains(learnGrayscalePresenter, "OpenVisionLearnBasicGrayscaleSimulationModel.EvaluateFilter", "Learn view delegates filter evaluation to the basic grayscale simulation model.");
         RequireContains(learnBasicGrayscaleSimulationModel, "public static BrightnessEvaluation EvaluateBrightness", "Learn basic grayscale model owns brightness evaluation.");
         RequireContains(learnBasicGrayscaleSimulationModel, "public static ThresholdEvaluation EvaluateThreshold", "Learn basic grayscale model owns threshold evaluation.");
         RequireContains(learnBasicGrayscaleSimulationModel, "public static ArithmeticEvaluation EvaluateArithmetic", "Learn basic grayscale model owns arithmetic evaluation.");
@@ -1783,11 +1863,11 @@ internal static class Program
         RequireContains(learnWindowXaml, "Preview 또는 Pipeline Review 실행", "OpenVision Learn gives the operator the next execution action.");
         RequireContains(learnWindowXaml, "입력 이미지, 출력 이미지, 핵심 지표", "OpenVision Learn names the evidence the operator should compare.");
         RequireNotContains(learnWindowXaml, "바뀌면 안", "OpenVision Learn must not expose internal routing contracts as learner copy.");
-        RequireContains(learnWindowXaml, "OpenVisionLearnFoundationTypeCards", "OpenVision Learn foundation topic exposes Point/Rect/Size/Mat cards.");
-        RequireContains(learnWindowXaml, "OpenVisionLearnBeginnerPathPanel", "OpenVision Learn foundation topic exposes a beginner path panel.");
-        RequireContains(learnWindowXaml, "추천 순서: 영상 기초", "OpenVision Learn foundation topic shows the beginner tool path.");
-        RequireContains(learnWindowXaml, "Good/Bad 기준으로 비교", "OpenVision Learn beginner path connects concepts to Good/Bad checks.");
-        RequireContains(learnWindowXaml, "Mat = 행 x 열 x 채널", "OpenVision Learn foundation topic explains Mat as an image matrix.");
+        RequireContains(learnFoundationViewXaml, "OpenVisionLearnFoundationTypeCards", "OpenVision Learn foundation topic exposes Point/Rect/Size/Mat cards.");
+        RequireContains(learnFoundationViewXaml, "OpenVisionLearnBeginnerPathPanel", "OpenVision Learn foundation topic exposes a beginner path panel.");
+        RequireContains(learnFoundationViewXaml, "추천 순서: 영상 기초", "OpenVision Learn foundation topic shows the beginner tool path.");
+        RequireContains(learnFoundationViewXaml, "Good/Bad 기준으로 비교", "OpenVision Learn beginner path connects concepts to Good/Bad checks.");
+        RequireContains(learnFoundationViewXaml, "Mat = 행 x 열 x 채널", "OpenVision Learn foundation topic explains Mat as an image matrix.");
         string meanGuide = Read(repoRoot, @"docs\learn\LEARN_MEAN.md");
         string thresholdGuide = Read(repoRoot, @"docs\learn\LEARN_THRESHOLD.md");
         string filterGuide = Read(repoRoot, @"docs\learn\LEARN_FILTER.md");
@@ -1822,13 +1902,13 @@ internal static class Program
         RequireContains(blobGuide, "`ResultCount`만으로 끝내지 말고", "Blob Learn guide requires metric gates beyond count.");
         RequireContains(contourGuide, "## Blob과 Contour 구분", "Contour Learn guide distinguishes Contour from Blob.");
         RequireContains(contourGuide, "`DrawMode`, `RetrievalMode`, `MIN_AREA`, `MAX_AREA`", "Contour Learn guide names the first operator checks.");
-        RequireContains(learnWindowXaml, "OpenVisionLearnBlobDecisionPanel", "OpenVision Learn Blob topic exposes the Blob decision panel.");
-        RequireContains(learnWindowXaml, "판단 기준: Blob = 연결 영역", "OpenVision Learn Blob topic labels the Blob decision rule.");
-        RequireContains(learnWindowXaml, "OpenVisionLearnContourDecisionPanel", "OpenVision Learn Contour topic exposes the Contour decision panel.");
-        RequireContains(learnWindowXaml, "판단 기준: Contour = 외곽선/모양", "OpenVision Learn Contour topic labels the Contour decision rule.");
-        RequireContains(learnWindowXaml, "OpenVisionLearnMatchingFamilyDecisionPanel", "OpenVision Learn Matching topic exposes the Matching family decision panel.");
-        RequireContains(learnWindowXaml, "도구 선택: Matching / EdgeBasedMatching / FeatureMatching", "OpenVision Learn Matching-family topics label the tool selection rule.");
-        RequireContains(learnWindowXaml, "OpenVisionLearnFeatureMatchingFamilyDecisionPanel", "OpenVision Learn FeatureMatching topic exposes the Matching family decision panel.");
+        RequireContains(learnBinaryXaml, "OpenVisionLearnBlobDecisionPanel", "OpenVision Learn Blob topic exposes the Blob decision panel.");
+        RequireContains(learnBinaryXaml, "판단 기준: Blob = 연결 영역", "OpenVision Learn Blob topic labels the Blob decision rule.");
+        RequireContains(learnBinaryXaml, "OpenVisionLearnContourDecisionPanel", "OpenVision Learn Contour topic exposes the Contour decision panel.");
+        RequireContains(learnBinaryXaml, "판단 기준: Contour = 외곽선/모양", "OpenVision Learn Contour topic labels the Contour decision rule.");
+        RequireContains(learnMatchingXaml, "OpenVisionLearnMatchingFamilyDecisionPanel", "Matching Learn topic exposes the Matching family decision panel.");
+        RequireContains(learnMatchingXaml, "도구 선택: Matching / EdgeBasedMatching / FeatureMatching", "Matching Learn topics label the tool selection rule.");
+        RequireContains(learnMatchingXaml, "OpenVisionLearnFeatureMatchingFamilyDecisionPanel", "FeatureMatching Learn topic exposes the Matching family decision panel.");
         RequireContains(toolShell, "learnWindowController.Open(LearnTopicIndex)", "PropertyGrid tool Learn buttons delegate the configured Learn topic.");
         RequireContains(doubleInputToolShell, "learnWindowController.Open(LearnTopicIndex)", "Double-input tool Learn buttons delegate the configured Learn topic.");
         RequireContains(toolLearnWindowController, "new OpenVisionLearnWindow(127, 255, false, topicIndex)", "Common Tool Learn controller opens the configured Learn topic.");
@@ -1907,8 +1987,8 @@ internal static class Program
         RequireContains(metricsAcceptanceGuide, "add range/max gates for outliers", "Metrics/Acceptance Learn document teaches distance outlier gates.");
         RequireContains(metricsAcceptanceGuide, "## Minimum Tool Gate Cheat Sheet", "Metrics/Acceptance Learn document has the tool gate cheat sheet.");
         RequireContains(metricsAcceptanceGuide, "FeatureMatching | `GoodMatches`, `ScoreMax`, RANSAC/overlay", "Metrics/Acceptance Learn document names the FeatureMatching minimum gates.");
-        RequireContains(learnWindowXaml, "OpenVisionLearnMetricGateCheatSheetPanel", "OpenVision Learn Metrics/Acceptance topic exposes the metric gate cheat sheet panel.");
-        RequireContains(learnWindowXaml, "Minimum Good/Bad gate cheat sheet", "OpenVision Learn Metrics/Acceptance topic labels the metric gate cheat sheet.");
+        RequireContains(learnMetricsXaml, "OpenVisionLearnMetricGateCheatSheetPanel", "Metrics/Acceptance Learn topic exposes the metric gate cheat sheet panel.");
+        RequireContains(learnMetricsXaml, "Minimum Good/Bad gate cheat sheet", "Metrics/Acceptance Learn topic labels the metric gate cheat sheet.");
         RequireContains(metricsAcceptanceGuide, "ResultImageWidth=286", "Metrics/Acceptance Learn document teaches the RotateScale output width gate.");
         RequireContains(metricsAcceptanceGuide, "ResultImageHeight=210", "Metrics/Acceptance Learn document teaches the RotateScale output height gate.");
         RequireContains(metricsAcceptanceGuide, "Transform samples may be Good-only", "Metrics/Acceptance Learn document explains Good-only transform benchmarks.");
@@ -1918,7 +1998,7 @@ internal static class Program
         RequireContains(learnTopicsCatalog, "OpenVisionLearnTopicIndex.MetricsAcceptance", "OpenVision Learn topic 13 resolves Metrics/Acceptance via enum mapping.");
         RequireContains(learnTopicsCatalog, "\"LEARN_METRICS_ACCEPTANCE.md\"", "OpenVision Learn topic 13 resolves Metrics/Acceptance document.");
         RequireContains(learnTopicsCatalog, "Metrics/Acceptance 기준", "OpenVision Learn topic 13 exposes Metrics/Acceptance practice guidance.");
-        RequireContains(learnWindow, "metricsAcceptanceTopicPanel", "OpenVision Learn has a visible Metrics/Acceptance topic panel.");
+        RequireContains(learnMetricsXaml, "metricsAcceptanceTopicPanel", "Metrics/Acceptance Learn has a visible topic panel.");
 
         string pipelineLayerRoutingGuide = Read(repoRoot, @"docs\learn\LEARN_PIPELINE_LAYER_ROUTING.md");
         RequireContains(pipelineLayerRoutingGuide, "## Building A Route", "Pipeline/Layer Learn document explains how to build a route.");
@@ -1928,10 +2008,10 @@ internal static class Program
         RequireContains(pipelineLayerRoutingGuide, "Click Preview or Run Review", "Pipeline/Layer Learn document gives the operator the next review action.");
         RequireContains(pipelineLayerRoutingGuide, "## Operator Route Review Loop", "Pipeline/Layer Learn document has the operator route review loop.");
         RequireContains(pipelineLayerRoutingGuide, "inspect the previous `OutputLayer` first", "Pipeline/Layer Learn document explains how to locate the first changed result.");
-        RequireContains(learnWindowXaml, "OpenVisionLearnLayerRoutingSafetyPanel", "OpenVision Learn exposes the route safety checklist panel.");
-        RequireContains(learnWindowXaml, "Layer 연결 원리", "OpenVision Learn topic 11 explains layer routing.");
-        RequireContains(learnWindowXaml, "OpenVisionLearnLayerRouteReviewLoopPanel", "OpenVision Learn exposes the operator route review loop panel.");
-        RequireContains(learnWindowXaml, "Pipeline 검토 순서", "OpenVision Learn topic 11 shows the operator route review loop.");
+        RequireContains(learnLayerRecipeXaml, "OpenVisionLearnLayerRoutingSafetyPanel", "Layer/Recipe Learn exposes the route safety checklist panel.");
+        RequireContains(learnLayerRecipeXaml, "Layer 연결 원리", "Layer/Recipe Learn explains layer routing.");
+        RequireContains(learnLayerRecipeXaml, "OpenVisionLearnLayerRouteReviewLoopPanel", "Layer/Recipe Learn exposes the operator route review loop panel.");
+        RequireContains(learnLayerRecipeXaml, "Pipeline 검토 순서", "Layer/Recipe Learn shows the operator route review loop.");
 
         string learnSmokeScript = Read(repoRoot, @"tools\RunLearnModeUiSmokes.ps1");
         foreach (string learnSmokeTarget in new[]
@@ -1982,6 +2062,9 @@ internal static class Program
         string pipelineReviewDocumentSource = Read(
             repoRoot,
             @"src\OpenVisionLab\UI\Menu\Wpf\Documents\OpenVisionPipelineReviewDocument.cs");
+        string pipelineReviewDomainEvidenceProjectionOwnerSource = Read(
+            repoRoot,
+            @"src\OpenVisionLab\UI\Menu\Wpf\PipelineReview\Presenters\OpenVisionPipelineReviewDomainEvidenceProjectionOwner.cs");
         string pipelineReviewFixturePresenterSource = Read(
             repoRoot,
             @"src\OpenVisionLab\UI\Menu\Wpf\PipelineReview\Presenters\OpenVisionPipelineReviewFixturePresenter.cs");
@@ -2002,14 +2085,14 @@ internal static class Program
             @"src\OpenVisionLab\UI\VisionTest\Wpf\ToolViews\ThresholdToolWpfView.xaml.cs");
         RequireContains(learnScreenshotSmoke, "wpf_openvision_learn_edge_based_matching", "Learn screenshot smoke exposes the EdgeBasedMatching topic target.");
         RequireContains(learnScreenshotSmoke, "CaptureOpenVisionLearnEdgeBasedMatching", "Learn screenshot smoke verifies the EdgeBasedMatching topic.");
-        RequireContains(learnWindowXaml, "EdgeDetection에서는 경계 픽셀", "OpenVision Learn Edge / Line topic distinguishes edge and line evidence.");
+        RequireContains(learnLineXaml, "EdgeDetection에서는 경계 픽셀", "OpenVision Learn Edge / Line topic distinguishes edge and line evidence.");
         RequireContains(learnScreenshotSmoke, "\"EdgeDetection\", \"LineDistance\"", "Learn screenshot smoke verifies Edge / Line role-map guidance.");
         RequireContains(learnScreenshotSmoke, "OpenVisionLearnEdgeDetectionPracticePanel", "Learn screenshot smoke verifies the EdgeDetection public practice panel.");
         RequireContains(learnScreenshotSmoke, "Public_EdgeDetection_Shapes_Good", "Learn screenshot smoke verifies the EdgeDetection public Good/Bad pair.");
         RequireContains(learnScreenshotSmoke, "OpenVisionLearnLineDistancePracticePanel", "Learn screenshot smoke verifies the LineDistance public practice panel.");
         RequireContains(learnScreenshotSmoke, "Public_Line_Pins_Good", "Learn screenshot smoke verifies the LineDistance public Good/Bad pair.");
         RequireContains(learnScreenshotSmoke, "DistanceMmMax", "Learn screenshot smoke verifies LineDistance max/outlier guidance.");
-        RequireContains(learnWindowXaml, "판정 기준: DistanceMmAvg", "OpenVision Learn LineDistance topic explains average plus consistency gates.");
+        RequireContains(learnLineXaml, "판정 기준: DistanceMmAvg", "OpenVision Learn LineDistance topic explains average plus consistency gates.");
         string lineGuide = Read(repoRoot, @"docs\learn\LEARN_LINE.md");
         RequireContains(lineGuide, "LineDistance outlier gate", "Line Learn document explains the LineDistance outlier gate.");
         RequireContains(lineGuide, "`DistanceMmRange`, `DistancePxRange`, `DistanceMmMax`, or `DistancePxMax`", "Line Learn document requires consistency/outlier metrics.");
@@ -2563,9 +2646,9 @@ internal static class Program
             "EdgeBasedMatchingDiagnostics",
             "Pipeline result summaries retain matcher diagnostics without rerunning.");
         RequireContains(
-            pipelineReviewDocumentSource,
+            pipelineReviewDomainEvidenceProjectionOwnerSource,
             "summary?.EdgeBasedMatchingDiagnostics",
-            "Pipeline Review consumes same-run matcher diagnostics.");
+            "Pipeline Review domain projection consumes same-run matcher diagnostics.");
         RequireContains(
             pipelineReviewViewXaml,
             "PipelineReviewMatcherDiagnosticTab",

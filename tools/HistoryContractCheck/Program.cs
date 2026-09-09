@@ -1,5 +1,7 @@
 using System;
 using System.Drawing;
+using System.Threading;
+using System.Threading.Tasks;
 using OpenVisionLab.History;
 using OpenVisionLab.ImageSpace.Core;
 
@@ -17,6 +19,7 @@ internal static class Program
             CheckImageSpaceFrameOwnership();
             CheckImageSpaceInsertRemove();
             CheckImageSpaceLeaseRetirement();
+            CheckImageSpaceSnapshotAndAtomicRemove();
             Console.WriteLine("HistoryContract=OK");
             return 0;
         }
@@ -243,6 +246,71 @@ internal static class Program
         replacementLease.Dispose();
         AssertBitmapDisposed(replacement);
         Assert(imageSpace.AcquireImage("Main") == null, "Removed image must not issue a new lease.");
+    }
+
+    private static void CheckImageSpaceSnapshotAndAtomicRemove()
+    {
+        using ImageSpaceService imageSpace = new ImageSpaceService();
+        Bitmap original = new Bitmap(5, 4);
+        Bitmap replacement = new Bitmap(7, 6);
+        original.SetPixel(1, 1, Color.Red);
+        replacement.SetPixel(1, 1, Color.Blue);
+        imageSpace.SetImage(0, "Main", original);
+
+        using ManualResetEventSlim acquired = new ManualResetEventSlim(false);
+        using ManualResetEventSlim continueRead = new ManualResetEventSlim(false);
+        Task<Bitmap> snapshotTask = Task.Run(() =>
+        {
+            using ImageSpaceImageLease lease = imageSpace.AcquireImage("Main")
+                ?? throw new InvalidOperationException("Snapshot barrier could not acquire the source image.");
+            acquired.Set();
+            continueRead.Wait();
+            return new Bitmap(lease.Image);
+        });
+
+        Assert(acquired.Wait(TimeSpan.FromSeconds(5)), "Snapshot barrier did not acquire the source image.");
+        imageSpace.SetImage(0, "Main", replacement);
+        imageSpace.RemoveImage("Main");
+        continueRead.Set();
+
+        using Bitmap snapshot = snapshotTask.GetAwaiter().GetResult();
+        Assert(snapshot.GetPixel(1, 1).ToArgb() == Color.Red.ToArgb(),
+            "An execution snapshot must retain the old pixels after replacement and removal.");
+        Assert(imageSpace.GetImage("Main") == null, "Atomic removal must retire the current layer title.");
+
+        AssertBitmapDisposed(replacement);
+        AssertBitmapDisposed(original);
+
+        for (int iteration = 0; iteration < 128; iteration++)
+        {
+            using ImageSpaceService concurrentSpace = new ImageSpaceService();
+            Bitmap keep = new Bitmap(3, 3);
+            Bitmap target = new Bitmap(3, 3);
+            keep.SetPixel(0, 0, Color.Green);
+            target.SetPixel(0, 0, Color.Yellow);
+            concurrentSpace.SetImage(0, "Keep", keep);
+            concurrentSpace.SetImage(1, "Target", target);
+
+            using ManualResetEventSlim start = new ManualResetEventSlim(false);
+            Task remove = Task.Run(() =>
+            {
+                start.Wait();
+                concurrentSpace.RemoveImage("Target");
+            });
+            Task insert = Task.Run(() =>
+            {
+                start.Wait();
+                concurrentSpace.InsertImage(0, "Inserted", new Bitmap(2, 2));
+            });
+            start.Set();
+            Task.WaitAll(remove, insert);
+
+            Bitmap retained = concurrentSpace.GetImage("Keep");
+            Assert(retained != null && retained.GetPixel(0, 0).ToArgb() == Color.Green.ToArgb(),
+                "Concurrent RemoveImage(title)/InsertImage must not remove the neighboring layer.");
+            Assert(concurrentSpace.GetImage("Target") == null,
+                "Concurrent RemoveImage(title)/InsertImage must remove the requested title.");
+        }
     }
 
     private static void Assert(bool condition, string message)

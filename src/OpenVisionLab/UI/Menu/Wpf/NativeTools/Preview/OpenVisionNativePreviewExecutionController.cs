@@ -31,7 +31,7 @@ namespace OpenVisionLab
             bool normalizeSingleChannelInput,
             Func<Mat, VisionToolResult> executePreview)
         {
-            Bitmap sourceBitmap = displayManager.GetLayerImage(inputLayer);
+            using Bitmap sourceBitmap = displayManager.GetLayerImageSnapshot(inputLayer);
             if (sourceBitmap == null)
             {
                 return OpenVisionNativePreviewExecutionResult.Failed("Preview NG / input image missing");
@@ -69,7 +69,7 @@ namespace OpenVisionLab
             string activationLayer,
             bool useOffsetMode)
         {
-            Bitmap sourceA = displayManager.GetLayerImage(inputLayerA);
+            using Bitmap sourceA = displayManager.GetLayerImageSnapshot(inputLayerA);
             if (sourceA == null)
             {
                 return OpenVisionNativePreviewExecutionResult.Failed("Preview NG / input A image missing");
@@ -85,7 +85,7 @@ namespace OpenVisionLab
                 if (VisionPipelineArithmeticStep.RequiresInputLayerB(step))
                 {
                     string inputB = VisionPipelineArithmeticStep.GetInputLayerB(step);
-                    Bitmap sourceB = displayManager.GetLayerImage(inputB);
+                    using Bitmap sourceB = displayManager.GetLayerImageSnapshot(inputB);
                     if (sourceB == null)
                     {
                         return OpenVisionNativePreviewExecutionResult.Failed("Preview NG / input B image missing");

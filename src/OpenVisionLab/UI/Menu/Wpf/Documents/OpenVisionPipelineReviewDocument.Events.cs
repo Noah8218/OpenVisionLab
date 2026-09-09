@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Windows;
+using System.Windows.Threading;
 using OpenVisionLab.Pipeline.Controls;
 using OpenVisionLab.Vision2D.Pipeline;
 
@@ -17,23 +18,49 @@ namespace OpenVisionLab
 
         private async void OnRunReviewRequested(object sender, EventArgs e)
         {
+            if (disposed)
+            {
+                return;
+            }
+
             await RunReviewAsync();
         }
 
         private void InvokeOnViewDispatcher(Action action)
         {
-            if (action == null)
+            if (action == null || disposed)
             {
                 return;
             }
 
-            if (view.Dispatcher.CheckAccess())
+            Dispatcher dispatcher = view.Dispatcher;
+            if (dispatcher.HasShutdownStarted || dispatcher.HasShutdownFinished)
             {
-                action();
                 return;
             }
 
-            view.Dispatcher.Invoke(action);
+            if (dispatcher.CheckAccess())
+            {
+                if (!disposed)
+                {
+                    action();
+                }
+
+                return;
+            }
+
+            try
+            {
+                dispatcher.Invoke(action);
+            }
+            catch (InvalidOperationException)
+                when (dispatcher.HasShutdownStarted || dispatcher.HasShutdownFinished || disposed)
+            {
+            }
+            catch (OperationCanceledException)
+                when (dispatcher.HasShutdownStarted || dispatcher.HasShutdownFinished || disposed)
+            {
+            }
         }
 
         private void OnPreviousStepRequested(object sender, EventArgs e)
@@ -130,7 +157,7 @@ namespace OpenVisionLab
                 string.Equals(item.Identity, e?.PointAIdentity, StringComparison.OrdinalIgnoreCase));
             VisionPipelineGeometryFeatureResult pointB = points.FirstOrDefault(item =>
                 string.Equals(item.Identity, e?.PointBIdentity, StringComparison.OrdinalIgnoreCase));
-            Bitmap coordinateImage = ResolveLayerPreviewImage(pointA?.CoordinateLayer);
+            using Bitmap coordinateImage = layerImageOwner.AcquirePreview(pointA?.CoordinateLayer);
 
             if (!VisionPipelineScaleCalibrationStorage.TryCalculate(
                     activePipelineName,
@@ -174,7 +201,7 @@ namespace OpenVisionLab
             }
 
             VisionPipelineStep target = pipeline.Steps[e.StepIndex];
-            Bitmap coordinateImage = ResolveLayerPreviewImage(record.CoordinateLayer);
+            using Bitmap coordinateImage = layerImageOwner.AcquirePreview(record.CoordinateLayer);
             if (!VisionPipelineScaleCalibrationStorage.TryApply(record, coordinateImage, target, out error))
             {
                 view.SetScaleCalibrationStatus("Scale was not applied: " + error);
@@ -266,7 +293,7 @@ namespace OpenVisionLab
             validationResult = VisionPipelineValidator.Validate(pipeline, GetLayerNames());
             view.SetRecipeContext(recipeContext.Name);
             view.SetPipelineHeader(activePipelineName, stepCount);
-            view.SetReviewProgress(FormatReviewProgressText());
+            view.SetReviewProgress(ProjectReviewProgressText());
             view.SetValidation(FormatValidationStatus(validationResult), FormatValidationDetails(validationResult));
             RefreshReadiness();
 

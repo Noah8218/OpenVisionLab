@@ -131,7 +131,7 @@ namespace OpenVisionLab.Docking.Controls
         {
             document.Title = documentId;
             document.ContentId = documentId;
-            document.CanClose = false;
+            document.CanClose = true;
             document.CanHide = false;
             document.CanAutoHide = false;
             document.CanFloat = false;

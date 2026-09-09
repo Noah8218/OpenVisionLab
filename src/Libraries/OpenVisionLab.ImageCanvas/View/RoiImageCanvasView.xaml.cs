@@ -1,4 +1,5 @@
 using System;
+using OpenVisionLab.ImageCanvas.Dialogs;
 using OpenVisionLab.ImageCanvas.ViewModels;
 using System.Windows;
 using System.Windows.Controls;
@@ -7,9 +8,10 @@ using System.Windows.Threading;
 
 namespace OpenVisionLab.ImageCanvas.Views
 {
-	public partial class RoiImageCanvasView : UserControl, IDisposable
+	public partial class RoiImageCanvasView : UserControl, IDisposable, IImageCanvasContextMenuHost
 	{
 		private RoiImageCanvasViewModel attachedViewModel;
+		private readonly IImageCanvasDialogHost imageCanvasDialogHost = new RoiImageCanvasDialogHost();
 		private DispatcherOperation pendingImageViewerRefresh;
 		private bool disposed;
 
@@ -75,6 +77,14 @@ namespace OpenVisionLab.ImageCanvas.Views
 			}
 		}
 
+		void IImageCanvasContextMenuHost.OpenContextMenu()
+		{
+			if (MainGrid?.ContextMenu != null)
+			{
+				MainGrid.ContextMenu.IsOpen = true;
+			}
+		}
+
 		private void ImageCanvasView_Loaded(object sender, RoutedEventArgs e)
 		{
 			AttachImageViewer();
@@ -95,6 +105,12 @@ namespace OpenVisionLab.ImageCanvas.Views
 
 		private void DetachImageViewer()
 		{
+			if (attachedViewModel != null)
+			{
+				attachedViewModel.ImageDialogHost = null;
+				attachedViewModel.ContextMenuHost = null;
+			}
+
 			if (imageBoxCameraTwoD != null)
 			{
 				imageBoxCameraTwoD.Child = null;
@@ -115,8 +131,9 @@ namespace OpenVisionLab.ImageCanvas.Views
 				if (!ReferenceEquals(attachedViewModel, viewModel))
 				{
 					attachedViewModel = viewModel;
+					viewModel.ImageDialogHost = imageCanvasDialogHost;
+					viewModel.ContextMenuHost = this;
 					imageBoxCameraTwoD.Child = viewModel.ImageViewer;
-					viewModel.ContextMenu = MainGrid.ContextMenu;
 					MainGrid.ContextMenu.DataContext = viewModel;
 
 					if (viewModel.LoadedCommand?.CanExecute(null) == true)
@@ -206,6 +223,12 @@ namespace OpenVisionLab.ImageCanvas.Views
 			Unloaded -= ImageCanvasView_Unloaded;
 			PreviewKeyDown -= ImageCanvasView_PreviewKeyDown;
 			KeyUp -= ImageCanvasView_KeyUp;
+			if (attachedViewModel != null)
+			{
+				attachedViewModel.ImageDialogHost = null;
+				attachedViewModel.ContextMenuHost = null;
+			}
+
 			attachedViewModel = null;
 			if (MainGrid?.ContextMenu != null)
 			{

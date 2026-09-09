@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Xml.Serialization;
+using OpenVisionLab.Property;
 using static OpenVisionLab.Common.ParameterManager;
 
 namespace OpenVisionLab

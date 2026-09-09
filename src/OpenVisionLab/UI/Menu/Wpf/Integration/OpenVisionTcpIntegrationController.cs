@@ -37,11 +37,13 @@ namespace OpenVisionLab
         private readonly RelayCommand runCommand;
         private readonly RelayCommand pushCommand;
         private readonly RelayCommand pullCommand;
+        private readonly object disposalSync = new object();
 
         private OpenVisionTcpIntegrationWindow window;
         private TwoDIntegrationTcpExchange exchange;
         private CancellationTokenSource activeOperationSource;
         private Task activeOperationTask;
+        private Task disposalTask = Task.CompletedTask;
         private byte[] sessionSharedKey;
         private bool hasSessionSharedKeyInput;
         private string sessionSharedKeyError = string.Empty;
@@ -549,26 +551,29 @@ namespace OpenVisionLab
 
         public void Dispose()
         {
-            if (disposed)
+            TwoDIntegrationTcpExchange current;
+            Task operation;
+            CancellationTokenSource operationSource;
+            lock (disposalSync)
             {
-                return;
+                if (disposed)
+                {
+                    return;
+                }
+
+                disposed = true;
+                operationSource = activeOperationSource;
+                operation = activeOperationTask;
+                current = exchange;
+                exchange = null;
+                disposalTask = DisposeExchangeAfterOperationAsync(operation, current);
             }
 
-            disposed = true;
             languageChangeController.Dispose();
-            activeOperationSource?.Cancel();
-            if (exchange != null)
+            operationSource?.Cancel();
+            if (current != null)
             {
-                exchange.RequestCompleted -= OnRequestCompleted;
-                try
-                {
-                    exchange.DisposeAsync().AsTask().GetAwaiter().GetResult();
-                }
-                catch
-                {
-                }
-
-                exchange = null;
+                current.RequestCompleted -= OnRequestCompleted;
             }
 
             IsListening = false;
@@ -581,8 +586,67 @@ namespace OpenVisionLab
             OpenVisionTcpIntegrationWindow currentWindow = window;
             window = null;
             currentWindow?.Close();
-            activeOperationSource?.Dispose();
-            activeOperationSource = null;
+        }
+
+        public async Task DisposeAsync()
+        {
+            Dispose();
+            Task completion;
+            lock (disposalSync)
+            {
+                completion = disposalTask;
+            }
+
+            await completion.ConfigureAwait(false);
+        }
+
+        private async Task DisposeExchangeAfterOperationAsync(
+            Task operation,
+            TwoDIntegrationTcpExchange current)
+        {
+            try
+            {
+                if (operation != null)
+                {
+                    try
+                    {
+                        await operation.ConfigureAwait(false);
+                    }
+                    catch
+                    {
+                    }
+                }
+
+                if (current != null)
+                {
+                    try
+                    {
+                        await current.StopAsync().ConfigureAwait(false);
+                    }
+                    catch
+                    {
+                    }
+
+                    try
+                    {
+                        await current.DisposeAsync().ConfigureAwait(false);
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
+            finally
+            {
+                lock (disposalSync)
+                {
+                    if (ReferenceEquals(activeOperationSource, null) || activeOperationTask == null)
+                    {
+                        activeOperationSource?.Dispose();
+                        activeOperationSource = null;
+                    }
+                }
+            }
         }
 
         private Task RunSessionOperationAsync(
@@ -610,20 +674,26 @@ namespace OpenVisionLab
 
         private async Task RunOperationAsync(string operationName, Func<CancellationToken, Task> operation)
         {
-            if (IsBusy || disposed)
-            {
-                return;
-            }
-
             CancellationTokenSource source = new CancellationTokenSource();
-            activeOperationSource = source;
-            IsBusy = true;
-            OperationStatusText = operationName + "...";
             Task task = Task.CompletedTask;
+            bool started = false;
             try
             {
-                task = operation(source.Token);
-                activeOperationTask = task;
+                lock (disposalSync)
+                {
+                    if (IsBusy || disposed)
+                    {
+                        return;
+                    }
+
+                    activeOperationSource = source;
+                    IsBusy = true;
+                    OperationStatusText = operationName + "...";
+                    started = true;
+                    task = operation(source.Token) ?? Task.CompletedTask;
+                    activeOperationTask = task;
+                }
+
                 await task;
             }
             catch (OperationCanceledException)
@@ -636,18 +706,25 @@ namespace OpenVisionLab
             }
             finally
             {
-                if (ReferenceEquals(activeOperationSource, source))
+                if (!started)
                 {
-                    activeOperationSource = null;
+                    source.Dispose();
                 }
-
-                if (ReferenceEquals(activeOperationTask, task))
+                else
                 {
-                    activeOperationTask = null;
-                }
+                    if (ReferenceEquals(activeOperationSource, source))
+                    {
+                        activeOperationSource = null;
+                    }
 
-                source.Dispose();
-                IsBusy = false;
+                    if (ReferenceEquals(activeOperationTask, task))
+                    {
+                        activeOperationTask = null;
+                    }
+
+                    source.Dispose();
+                    IsBusy = false;
+                }
             }
         }
 
@@ -933,26 +1010,38 @@ namespace OpenVisionLab
 
         private void OnRequestCompleted(TcpIntegrationTransferReceipt receipt)
         {
-            dispatcher.BeginInvoke(new Action(() =>
+            if (disposed || dispatcher.HasShutdownStarted || dispatcher.HasShutdownFinished)
             {
-                if (disposed || exchange == null)
-                {
-                    return;
-                }
+                return;
+            }
 
-                ApplyReceipt(receipt);
-                try
+            try
+            {
+                dispatcher.BeginInvoke(new Action(() =>
                 {
-                    RefreshTransactionsCore(receipt.TransactionId);
-                    OperationStatusText = LocalText(
-                        "TCP 요청을 수신했습니다. 검토 후 ACK와 검사를 명시적으로 실행하십시오.",
-                        "TCP request received. Review it, then explicitly ACK and run inspection.");
-                }
-                catch (Exception exception)
-                {
-                    OperationStatusText = exception.GetBaseException().Message;
-                }
-            }));
+                    if (disposed || exchange == null)
+                    {
+                        return;
+                    }
+
+                    ApplyReceipt(receipt);
+                    try
+                    {
+                        RefreshTransactionsCore(receipt.TransactionId);
+                        OperationStatusText = LocalText(
+                            "TCP 요청을 수신했습니다. 검토 후 ACK와 검사를 명시적으로 실행하십시오.",
+                            "TCP request received. Review it, then explicitly ACK and run inspection.");
+                    }
+                    catch (Exception exception)
+                    {
+                        OperationStatusText = exception.GetBaseException().Message;
+                    }
+                }));
+            }
+            catch (InvalidOperationException)
+                when (dispatcher.HasShutdownStarted || dispatcher.HasShutdownFinished || disposed)
+            {
+            }
         }
 
         private void SetSetting(ref string field, string value, [CallerMemberName] string propertyName = null)

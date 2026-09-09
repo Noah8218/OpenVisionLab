@@ -275,23 +275,55 @@
                     <RowDefinition Height="8" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <GroupBox Header="{Binding SourceImageHeaderText}"
-                          Padding="6">
-                    <Border Background="#090D13"
+                <GroupBox Padding="6">
+                    <GroupBox.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding SourceImageHeaderText}" />
+                            <TextBlock Text="{Binding ImageNavigationHintText}"
+                                       Margin="10,0,0,0"
+                                       FontSize="11"
+                                       Foreground="{StaticResource VisionTool.SecondaryTextBrush}" />
+                        </StackPanel>
+                    </GroupBox.Header>
+                    <Border x:Name="sourceImageSurface"
+                            Background="#090D13"
                             BorderBrush="{StaticResource VisionTool.HeaderBorderBrush}"
-                            BorderThickness="1">
-                        <Image Source="{Binding SelectedSourceImage}"
+                            BorderThickness="1"
+                            ClipToBounds="True"
+                            Cursor="Hand"
+                            ToolTip="{Binding ImageNavigationHintText}"
+                            AutomationProperties.AutomationId="VisionToolNImageSourceImageSurface"
+                            AutomationProperties.Name="{Binding SourceImageHeaderText}"
+                            AutomationProperties.HelpText="{Binding ImageNavigationHintText}">
+                        <Image x:Name="sourceImagePreview"
+                               Source="{Binding SelectedSourceImage}"
                                Stretch="Uniform"
                                SnapsToDevicePixels="True" />
                     </Border>
                 </GroupBox>
                 <GroupBox Grid.Row="2"
-                          Header="{Binding ResultImageHeaderText}"
                           Padding="6">
-                    <Border Background="#090D13"
+                    <GroupBox.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding ResultImageHeaderText}" />
+                            <TextBlock Text="{Binding ImageNavigationHintText}"
+                                       Margin="10,0,0,0"
+                                       FontSize="11"
+                                       Foreground="{StaticResource VisionTool.SecondaryTextBrush}" />
+                        </StackPanel>
+                    </GroupBox.Header>
+                    <Border x:Name="drawingImageSurface"
+                            Background="#090D13"
                             BorderBrush="{StaticResource VisionTool.HeaderBorderBrush}"
-                            BorderThickness="1">
-                        <Image Source="{Binding SelectedDrawingImage}"
+                            BorderThickness="1"
+                            ClipToBounds="True"
+                            Cursor="Hand"
+                            ToolTip="{Binding ImageNavigationHintText}"
+                            AutomationProperties.AutomationId="VisionToolNImageDrawingImageSurface"
+                            AutomationProperties.Name="{Binding ResultImageHeaderText}"
+                            AutomationProperties.HelpText="{Binding ImageNavigationHintText}">
+                        <Image x:Name="drawingImagePreview"
+                               Source="{Binding SelectedDrawingImage}"
                                Stretch="Uniform"
                                SnapsToDevicePixels="True" />
                     </Border>
@@ -301,25 +333,28 @@
                         BorderBrush="{StaticResource VisionTool.HeaderBorderBrush}"
                         BorderThickness="1"
                         Padding="9,7">
-                    <TextBlock Text="{Binding SelectedEvidenceText}"
-                               TextWrapping="Wrap"
-                               MaxHeight="120">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="Foreground" Value="{StaticResource VisionTool.SecondaryTextBrush}" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding SelectedRow.IsNg}" Value="True">
-                                        <Setter Property="Foreground" Value="{StaticResource VisionTool.StatusErrorBrush}" />
-                                        <Setter Property="FontWeight" Value="SemiBold" />
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding SelectedRow.IsError}" Value="True">
-                                        <Setter Property="Foreground" Value="{StaticResource VisionTool.StatusErrorBrush}" />
-                                        <Setter Property="FontWeight" Value="Bold" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
+                    <ScrollViewer MaxHeight="120"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled">
+                        <TextBlock Text="{Binding SelectedEvidenceText}"
+                                   TextWrapping="Wrap">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{StaticResource VisionTool.SecondaryTextBrush}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SelectedRow.IsNg}" Value="True">
+                                            <Setter Property="Foreground" Value="{StaticResource VisionTool.StatusErrorBrush}" />
+                                            <Setter Property="FontWeight" Value="SemiBold" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding SelectedRow.IsError}" Value="True">
+                                            <Setter Property="Foreground" Value="{StaticResource VisionTool.StatusErrorBrush}" />
+                                            <Setter Property="FontWeight" Value="Bold" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </ScrollViewer>
                 </Border>
             </Grid>
         </Grid>

@@ -46,6 +46,9 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 
 		public void Dispose()
 		{
+			_mouseInputController?.Dispose();
+			_keyboardInputController?.Dispose();
+
 			if (_refreshTimer != null)
 			{
 				_refreshTimer.Stop();

@@ -192,6 +192,7 @@ namespace System.Windows.Controls.WpfPropertyGrid
     public class PropertyGrid : UserControl, IPropertyGridView
     {
         private readonly WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyGrid innerPropertyGrid;
+        private readonly PropertyGridPropertyValueChangeSubscription propertyValueChangeSubscription;
         private readonly Border searchEmptyOverlay;
         private readonly TextBlock searchEmptyMessage;
         private readonly HashSet<string> registeredPropertyEditors = new HashSet<string>();
@@ -204,67 +205,7 @@ namespace System.Windows.Controls.WpfPropertyGrid
         private static readonly Dictionary<Type, HashSet<string>> hiddenPropertiesByType = new Dictionary<Type, HashSet<string>>();
         private static readonly ConditionalWeakTable<object, ProgressivePropertyViewportState> progressivePropertyViewports = new ConditionalWeakTable<object, ProgressivePropertyViewportState>();
         private static readonly ConditionalWeakTable<object, PropertyGridNavigationState> navigationStates = new ConditionalWeakTable<object, PropertyGridNavigationState>();
-        private static readonly HashSet<string> ChildParameterPropertyNames = new HashSet<string>(StringComparer.Ordinal)
-        {
-            "THRESHOLD_TYPES",
-            "THRESHOLD",
-            "ADAPTIVE_THRESHOLD",
-            "ADAPTIVE_THRESHOLD_TYPES",
-            "ADAPTIVE_THRESHOLD_ALGORITHM",
-            "BlockSize",
-            "Weight",
-            "USE_MULTI_ROI",
-            "CvROI",
-            "CvROIS",
-            "CvMASKS",
-            "EPSILON",
-            "FIND_ANGLE",
-            "FIND_ANGLE_MIN",
-            "FIND_ANGLE_MAX",
-            "CANNY_LOW",
-            "CANNY_HIGH",
-            "POINT_RANGE",
-            "MANUAL_ANGLE_VALUE",
-            "EXTEND_FIT_LINE_VALUE",
-            "AVERAGE_Diff",
-            "AVERAGE_FILTER_TYPE",
-            "USE_COARSE_TO_FINE_ANGLE_SEARCH",
-            "COARSE_ANGLE_STEP",
-            "COARSE_ANGLE_TOP_K",
-            "PYRAMID_POSITION_TOP_N",
-            "PYRAMID_POSITION_MIN_SCORE",
-            "HYBRID_VERIFY_TOP_N",
-            "HYBRID_VERIFY_IMAGE_WEIGHT"
-        };
-        private static readonly HashSet<string> AffineAdvancedPropertyNames = new HashSet<string>(StringComparer.Ordinal)
-        {
-            "OutputWidth",
-            "OutputHeight",
-            "Interpolation",
-            "BorderType",
-            "BorderValue",
-            "MinimumSourceTriangleArea",
-            "MinimumDestinationTriangleArea",
-            "MinimumValidPixelRatio"
-        };
-        private static readonly HashSet<string> AffineSourceBindingPropertyNames = new HashSet<string>(StringComparer.Ordinal)
-        {
-            "SourcePoint1Feature",
-            "SourcePoint2Feature",
-            "SourcePoint3Feature",
-            "SourcePoint1X",
-            "SourcePoint1Y",
-            "SourcePoint2X",
-            "SourcePoint2Y",
-            "SourcePoint3X",
-            "SourcePoint3Y"
-        };
-        private readonly Dictionary<WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyItem, Action<WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyItem, object, object>> propertyValueChangedHandlers =
-            new Dictionary<WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyItem, Action<WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyItem, object, object>>();
-        private readonly Dictionary<WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyItem, PropertyChangedEventHandler> propertyItemPropertyChangedHandlers =
-            new Dictionary<WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyItem, PropertyChangedEventHandler>();
-        private readonly Dictionary<WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyItem, object> propertyItemLastValues =
-            new Dictionary<WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyItem, object>();
+        private Func<object, string, bool> childParameterPredicate;
         private static readonly DependencyProperty DialogPropertyValueProperty =
             DependencyProperty.RegisterAttached(
                 "DialogPropertyValue",
@@ -297,6 +238,8 @@ namespace System.Windows.Controls.WpfPropertyGrid
         {
             EnsureOriginalWpfResources();
             innerPropertyGrid = new WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyGrid();
+            propertyValueChangeSubscription = new PropertyGridPropertyValueChangeSubscription(
+                (property, oldValue, newValue) => RaisePropertyValueChanged(property, oldValue, newValue));
             ApplyBridgeDensity();
 
             Grid contentHost = new Grid();
@@ -833,7 +776,7 @@ namespace System.Windows.Controls.WpfPropertyGrid
                 suppressPropertyValueChanged = true;
                 try
                 {
-                    UnregisterPropertyValueChangedHandlers();
+                    propertyValueChangeSubscription.Detach();
                     EnsurePropertyGridProvider(value?.GetType());
                     RegisterPropertyEditors(value);
                     RegisterComparers(value);
@@ -841,7 +784,7 @@ namespace System.Windows.Controls.WpfPropertyGrid
                     // Visibility/language changes mark it dirty explicitly below.
                     AssignSelectedObject(value);
                     ApplyHiddenPropertyBrowsableState(value);
-                    RegisterPropertyValueChangedHandlers();
+                    propertyValueChangeSubscription.Attach(innerPropertyGrid.Properties);
                     ScheduleNormalizeInnerEditorControls();
                     ScheduleRestoreNavigationState(value);
                     ScheduleSearchFeedbackUpdate();
@@ -863,6 +806,7 @@ namespace System.Windows.Controls.WpfPropertyGrid
         public void ApplyDisplayOptions(PropertyGridDisplayOptions options)
         {
             options = options ?? new PropertyGridDisplayOptions();
+            childParameterPredicate = options.ChildParameterPredicate;
 
             TrySetInnerProperty("PropertyNameColumnWidth", new GridLength(Math.Max(80, options.PropertyNameColumnWidth)));
             TrySetInnerProperty("EditorColumnMinWidth", Math.Max(80, options.EditorColumnMinWidth));
@@ -1735,17 +1679,10 @@ namespace System.Windows.Controls.WpfPropertyGrid
 
         private bool IsChildParameterProperty(string propertyName)
         {
-            if (ChildParameterPropertyNames.Contains(propertyName))
-            {
-                return true;
-            }
-
-            Type selectedType = SelectedObject?.GetType();
-            return selectedType != null
-                && ((selectedType.GetProperty("ShowAdvancedSettings", BindingFlags.Instance | BindingFlags.Public) != null
-                        && AffineAdvancedPropertyNames.Contains(propertyName))
-                    || (selectedType.GetProperty("UseDetectedSourcePoints", BindingFlags.Instance | BindingFlags.Public) != null
-                        && AffineSourceBindingPropertyNames.Contains(propertyName)));
+            object selectedObject = SelectedObject;
+            return selectedObject != null
+                && !string.IsNullOrWhiteSpace(propertyName)
+                && childParameterPredicate?.Invoke(selectedObject, propertyName) == true;
         }
 
         private void ApplyCompatibilityReadOnlyPresentation(Border rowBorder, string propertyName)
@@ -2022,7 +1959,7 @@ namespace System.Windows.Controls.WpfPropertyGrid
             }
 
             CommitRangeEditorValues(rangeEditor, source, propertyItem);
-            object newValue = ReadPropertyItemValue(propertyItem);
+            object newValue = PropertyGridPropertyValueChangeSubscription.ReadPropertyItemValue(propertyItem);
             RaisePropertyValueChanged(propertyItem, null, newValue);
         }
 
@@ -2777,7 +2714,7 @@ namespace System.Windows.Controls.WpfPropertyGrid
             suppressPropertyValueChanged = true;
             try
             {
-                UnregisterPropertyValueChangedHandlers();
+                propertyValueChangeSubscription.Detach();
                 AssignSelectedObject(null);
                 if (metadataCacheClearPending)
                 {
@@ -2788,7 +2725,7 @@ namespace System.Windows.Controls.WpfPropertyGrid
                 RegisterComparers(selectedObject);
                 AssignSelectedObject(selectedObject);
                 ApplyHiddenPropertyBrowsableState(selectedObject);
-                RegisterPropertyValueChangedHandlers();
+                propertyValueChangeSubscription.Attach(innerPropertyGrid.Properties);
                 ScheduleNormalizeInnerEditorControls();
                 ScheduleRestoreNavigationState(selectedObject);
             }
@@ -3155,93 +3092,6 @@ namespace System.Windows.Controls.WpfPropertyGrid
             }
         }
 
-        private void RegisterPropertyValueChangedHandlers()
-        {
-            if (innerPropertyGrid.Properties == null)
-            {
-                return;
-            }
-
-            foreach (object propertyObject in (IEnumerable)innerPropertyGrid.Properties)
-            {
-                WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyItem propertyItem =
-                    propertyObject as WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyItem;
-                if (propertyItem == null || propertyValueChangedHandlers.ContainsKey(propertyItem))
-                {
-                    continue;
-                }
-
-                Action<WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyItem, object, object> handler =
-                    (property, oldValue, newValue) =>
-                    {
-                        propertyItemLastValues[property] = newValue;
-                        RaisePropertyValueChanged(property, oldValue, newValue);
-                    };
-                propertyItem.ValueChanged += handler;
-                propertyValueChangedHandlers.Add(propertyItem, handler);
-
-                propertyItemLastValues[propertyItem] = ReadPropertyItemValue(propertyItem);
-                INotifyPropertyChanged notifyPropertyChanged = propertyItem as INotifyPropertyChanged;
-                if (notifyPropertyChanged != null)
-                {
-                    PropertyChangedEventHandler propertyChangedHandler = (sender, e) =>
-                    {
-                        if (!string.Equals(e.PropertyName, "PropertyValue", StringComparison.Ordinal))
-                        {
-                            return;
-                        }
-
-                        object oldValue = propertyItemLastValues.TryGetValue(propertyItem, out object value)
-                            ? value
-                            : null;
-                        object newValue = ReadPropertyItemValue(propertyItem);
-                        if (object.Equals(oldValue, newValue))
-                        {
-                            return;
-                        }
-
-                        propertyItemLastValues[propertyItem] = newValue;
-                        RaisePropertyValueChanged(propertyItem, oldValue, newValue);
-                    };
-                    notifyPropertyChanged.PropertyChanged += propertyChangedHandler;
-                    propertyItemPropertyChangedHandlers.Add(propertyItem, propertyChangedHandler);
-                }
-            }
-        }
-
-        private void UnregisterPropertyValueChangedHandlers()
-        {
-            foreach (KeyValuePair<WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyItem, PropertyChangedEventHandler> handler in propertyItemPropertyChangedHandlers)
-            {
-                INotifyPropertyChanged notifyPropertyChanged = handler.Key as INotifyPropertyChanged;
-                if (notifyPropertyChanged != null)
-                {
-                    notifyPropertyChanged.PropertyChanged -= handler.Value;
-                }
-            }
-
-            foreach (KeyValuePair<WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyItem, Action<WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyItem, object, object>> handler in propertyValueChangedHandlers)
-            {
-                handler.Key.ValueChanged -= handler.Value;
-            }
-
-            propertyItemPropertyChangedHandlers.Clear();
-            propertyValueChangedHandlers.Clear();
-            propertyItemLastValues.Clear();
-        }
-
-        private static object ReadPropertyItemValue(WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyItem propertyItem)
-        {
-            try
-            {
-                return propertyItem?.GetValue();
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
         private void RaisePropertyValueChanged(WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyItem property, object oldValue, object newValue)
         {
             RaisePropertyValueChanged(new PropertyItem(this, property), oldValue, newValue);
@@ -3512,379 +3362,6 @@ namespace System.Windows.Controls.WpfPropertyGrid
 
             PropertyInfo property = innerItem.GetType().GetProperty("PropertyDescriptor");
             return property?.GetValue(innerItem, null) as PropertyDescriptor;
-        }
-    }
-
-    internal static class BridgeCategoryOrderMap
-    {
-        public static Dictionary<string, int> Create(Type selectedType)
-        {
-            Dictionary<string, int> categoryOrders = new Dictionary<string, int>();
-            if (selectedType == null)
-            {
-                return categoryOrders;
-            }
-
-            List<Type> hierarchy = new List<Type>();
-            for (Type currentType = selectedType; currentType != null && currentType != typeof(object); currentType = currentType.BaseType)
-            {
-                hierarchy.Add(currentType);
-            }
-
-            // Base defaults are applied first so a derived tool can intentionally override shared category order.
-            for (int index = hierarchy.Count - 1; index >= 0; index--)
-            {
-                foreach (CategoryOrderAttribute attribute in hierarchy[index].GetCustomAttributes(typeof(CategoryOrderAttribute), false))
-                {
-                    categoryOrders[attribute.CategoryName] = attribute.Order;
-                    categoryOrders[PropertyGridLocalization.TranslateCategory(attribute.CategoryName)] = attribute.Order;
-                }
-            }
-
-            return categoryOrders;
-        }
-    }
-
-    internal sealed class BridgePropertyComparer
-        : IComparer<WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyItem>
-    {
-        private readonly Dictionary<string, int> categoryOrders;
-
-        public BridgePropertyComparer(Type selectedType)
-        {
-            categoryOrders = BridgeCategoryOrderMap.Create(selectedType);
-        }
-
-        public int Compare(
-            WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyItem x,
-            WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyItem y)
-        {
-            int categoryCompare = GetCategoryOrder(x).CompareTo(GetCategoryOrder(y));
-            if (categoryCompare != 0)
-            {
-                return categoryCompare;
-            }
-
-            int orderCompare = GetOrder(x).CompareTo(GetOrder(y));
-            if (orderCompare != 0)
-            {
-                return orderCompare;
-            }
-
-            return string.Compare(GetName(x), GetName(y), StringComparison.CurrentCultureIgnoreCase);
-        }
-
-        private int GetCategoryOrder(WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyItem item)
-        {
-            string categoryName = item?.CategoryName ?? item?.PropertyDescriptor?.Category ?? string.Empty;
-            return categoryName != null && categoryOrders.TryGetValue(categoryName, out int order) ? order : int.MaxValue;
-        }
-
-        private static int GetOrder(WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyItem item)
-        {
-            PropertyOrderAttribute attribute = item?.PropertyDescriptor?.Attributes[typeof(PropertyOrderAttribute)] as PropertyOrderAttribute;
-            return attribute?.Order ?? int.MaxValue;
-        }
-
-        private static string GetName(WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyItem item)
-        {
-            return item?.DisplayName ?? item?.PropertyDescriptor?.Name ?? string.Empty;
-        }
-    }
-
-    internal sealed class BridgeCategoryComparer
-        : IComparer<WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.CategoryItem>
-    {
-        private readonly Dictionary<string, int> categoryOrders;
-
-        public BridgeCategoryComparer(Type selectedType)
-        {
-            categoryOrders = BridgeCategoryOrderMap.Create(selectedType);
-        }
-
-        public int Compare(
-            WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.CategoryItem x,
-            WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.CategoryItem y)
-        {
-            string xName = GetCategoryName(x);
-            string yName = GetCategoryName(y);
-
-            int orderCompare = GetOrder(xName).CompareTo(GetOrder(yName));
-            if (orderCompare != 0)
-            {
-                return orderCompare;
-            }
-
-            return string.Compare(xName, yName, StringComparison.CurrentCultureIgnoreCase);
-        }
-
-        private int GetOrder(string categoryName)
-        {
-            return categoryName != null && categoryOrders.TryGetValue(categoryName, out int order) ? order : int.MaxValue;
-        }
-
-        private static string GetCategoryName(WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.CategoryItem item)
-        {
-            CategoryAttribute categoryAttribute = item?.Attribute as CategoryAttribute;
-            return categoryAttribute?.Category ?? string.Empty;
-        }
-    }
-
-    internal sealed class DynamicPropertyGridTypeDescriptionProvider : TypeDescriptionProvider
-    {
-        private readonly TypeDescriptionProvider parentProvider;
-
-        public DynamicPropertyGridTypeDescriptionProvider(TypeDescriptionProvider parentProvider)
-            : base(parentProvider)
-        {
-            this.parentProvider = parentProvider;
-        }
-
-        public override ICustomTypeDescriptor GetTypeDescriptor(Type objectType, object instance)
-        {
-            return new DynamicPropertyGridTypeDescriptor(parentProvider.GetTypeDescriptor(objectType, instance), objectType, instance);
-        }
-    }
-
-    internal sealed class DynamicPropertyGridTypeDescriptor : CustomTypeDescriptor
-    {
-        private static readonly ConcurrentDictionary<string, LocalizedPropertyDescriptor> LocalizedDescriptorCache =
-            new ConcurrentDictionary<string, LocalizedPropertyDescriptor>(StringComparer.Ordinal);
-
-        private readonly Type objectType;
-        private readonly object instance;
-
-        public DynamicPropertyGridTypeDescriptor(ICustomTypeDescriptor parentDescriptor, Type objectType, object instance)
-            : base(parentDescriptor)
-        {
-            this.objectType = objectType;
-            this.instance = instance;
-        }
-        public override PropertyDescriptorCollection GetProperties()
-        {
-            return BuildProperties(base.GetProperties());
-        }
-
-        public override PropertyDescriptorCollection GetProperties(Attribute[] attributes)
-        {
-            return BuildProperties(base.GetProperties(attributes));
-        }
-
-        private PropertyDescriptorCollection BuildProperties(PropertyDescriptorCollection properties)
-        {
-            List<PropertyDescriptor> localizedProperties = new List<PropertyDescriptor>();
-            HashSet<string> propertyNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            HashSet<string> rangeCompanionNames = BuildRangeCompanionNames(properties);
-            bool hasProgressiveViewport = PropertyGrid.TryGetProgressivePropertyViewport(instance, out int visiblePropertyCount);
-            foreach (PropertyDescriptor property in properties)
-            {
-                if (property == null
-                    || !ShouldExposeProperty(property)
-                    || !propertyNames.Add(property.Name ?? string.Empty))
-                {
-                    continue;
-                }
-
-                if (hasProgressiveViewport && localizedProperties.Count >= visiblePropertyCount)
-                {
-                    continue;
-                }
-
-                localizedProperties.Add(GetLocalizedPropertyDescriptor(property));
-            }
-
-            return new PropertyDescriptorCollection(localizedProperties.ToArray(), true);
-        }
-
-        private static HashSet<string> BuildRangeCompanionNames(PropertyDescriptorCollection properties)
-        {
-            HashSet<string> companionNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (PropertyDescriptor property in properties)
-            {
-                RangeEditorAttribute rangeEditor = property?.Attributes[typeof(RangeEditorAttribute)] as RangeEditorAttribute;
-                if (rangeEditor == null)
-                {
-                    continue;
-                }
-
-                // RangeEditor rows edit Min/Max as one operator concept. Keep the model's max
-                // property for XML/execution, but do not show it again as a duplicate row.
-                if (!string.IsNullOrWhiteSpace(rangeEditor.MaxPropertyName)
-                    && !string.Equals(rangeEditor.MaxPropertyName, property.Name, StringComparison.OrdinalIgnoreCase))
-                {
-                    companionNames.Add(rangeEditor.MaxPropertyName);
-                }
-            }
-
-            return companionNames;
-        }
-
-        private static void RegisterHiddenProperties(Type selectedType, IEnumerable<string> propertyNames)
-        {
-            PropertyGrid.RegisterHiddenPropertiesForType(selectedType, propertyNames);
-        }
-
-        private LocalizedPropertyDescriptor GetLocalizedPropertyDescriptor(PropertyDescriptor property)
-        {
-            // Property models are type-shaped. Reusing wrappers avoids rebuilding dozens of
-            // descriptor objects on every heavy tool open while preserving live localization.
-            string key = (objectType?.AssemblyQualifiedName ?? string.Empty) + "|" + (property?.Name ?? string.Empty);
-            return LocalizedDescriptorCache.GetOrAdd(
-                key,
-                _ => new LocalizedPropertyDescriptor(objectType, property));
-        }
-
-        private bool ShouldExposeProperty(PropertyDescriptor property)
-        {
-            if (property == null)
-            {
-                return false;
-            }
-
-            string name = property.Name ?? string.Empty;
-            if (PropertyGrid.IsPropertyHidden(objectType, name))
-            {
-                return false;
-            }
-
-            // The bridge is used for algorithm property models, not arbitrary WPF controls.
-            // Historical OpenCV property models inherited DependencyObject; keep filtering attached descriptors.
-            return name.IndexOf('.') < 0;
-        }
-    }
-
-    internal sealed class LocalizedPropertyDescriptor : PropertyDescriptor
-    {
-
-        private readonly Type objectType;
-        private readonly PropertyDescriptor innerDescriptor;
-
-        public LocalizedPropertyDescriptor(Type objectType, PropertyDescriptor innerDescriptor)
-            : base(innerDescriptor)
-        {
-            this.objectType = objectType;
-            this.innerDescriptor = innerDescriptor;
-        }
-
-        public override string DisplayName => FormatDisplayName(
-            innerDescriptor.Name,
-            PropertyGridLocalization.TranslateProperty(
-                objectType,
-                innerDescriptor,
-                "DisplayName",
-                innerDescriptor.DisplayName));
-
-        public override string Description => PropertyGridLocalization.TranslateProperty(
-            objectType,
-            innerDescriptor,
-            "Description",
-            innerDescriptor.Description);
-
-        public override string Category => PropertyGridLocalization.TranslateCategory(innerDescriptor.Category);
-
-        public override Type ComponentType => innerDescriptor.ComponentType;
-
-        public override bool IsReadOnly => innerDescriptor.IsReadOnly;
-
-        public override Type PropertyType => innerDescriptor.PropertyType;
-
-        private static string FormatDisplayName(string propertyName, string displayName)
-        {
-            return displayName;
-        }
-
-        public override bool CanResetValue(object component)
-        {
-            return innerDescriptor.CanResetValue(component);
-        }
-
-        public override object GetValue(object component)
-        {
-            return innerDescriptor.GetValue(component);
-        }
-
-        public override void ResetValue(object component)
-        {
-            innerDescriptor.ResetValue(component);
-        }
-
-        public override void SetValue(object component, object value)
-        {
-            innerDescriptor.SetValue(component, value);
-        }
-
-        public override bool ShouldSerializeValue(object component)
-        {
-            return innerDescriptor.ShouldSerializeValue(component);
-        }
-    }
-
-    internal static class PropertyGridLocalization
-    {
-        public static string TranslateProperty(Type objectType, PropertyDescriptor descriptor, string field, string fallback)
-        {
-            if (descriptor == null)
-            {
-                return fallback ?? string.Empty;
-            }
-
-            foreach (string key in BuildPropertyKeys(objectType, descriptor, field))
-            {
-                string translated = TranslateOrDefault(key, null);
-                if (!string.IsNullOrWhiteSpace(translated))
-                {
-                    return translated;
-                }
-            }
-
-            return fallback ?? descriptor.Name ?? string.Empty;
-        }
-
-        public static string TranslateCategory(string category)
-        {
-            if (string.IsNullOrWhiteSpace(category))
-            {
-                return category ?? string.Empty;
-            }
-
-            return TranslateOrDefault("PropertyGrid.Category." + NormalizeKeyPart(category), category);
-        }
-
-        private static IEnumerable<string> BuildPropertyKeys(Type objectType, PropertyDescriptor descriptor, string field)
-        {
-            if (objectType != null)
-            {
-                if (!string.IsNullOrWhiteSpace(objectType.FullName))
-                {
-                    yield return "PropertyGrid.Type." + objectType.FullName + "." + descriptor.Name + "." + field;
-                }
-
-                yield return "PropertyGrid.Type." + objectType.Name + "." + descriptor.Name + "." + field;
-            }
-
-            yield return "PropertyGrid.Property." + descriptor.Name + "." + field;
-
-            if (!string.IsNullOrWhiteSpace(descriptor.DisplayName)
-                && !string.Equals(descriptor.DisplayName, descriptor.Name, StringComparison.Ordinal))
-            {
-                yield return "PropertyGrid.DisplayName." + NormalizeKeyPart(descriptor.DisplayName);
-            }
-        }
-
-        private static string TranslateOrDefault(string key, string fallback)
-        {
-            string translated = OpenVisionLanguageService.T(key);
-            return string.Equals(translated, key, StringComparison.OrdinalIgnoreCase) ? fallback : translated;
-        }
-
-        private static string NormalizeKeyPart(string value)
-        {
-            return (value ?? string.Empty)
-                .Trim()
-                .Replace(" ", "_")
-                .Replace("/", "_")
-                .Replace("\\", "_")
-                .Replace(".", "_");
         }
     }
 

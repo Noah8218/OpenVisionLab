@@ -94,6 +94,7 @@ namespace OpenVisionLab
         private readonly OpenVisionShellHostLayerInteractionController layerInteractionController;
         private readonly OpenVisionShellHostToolWindowController toolWindowController;
         private readonly OpenVisionShellHostCommandController commandController;
+        private readonly OpenVisionShellHostLearnWindowController learnWindowController;
         private readonly OpenVisionShellHostRecipeController recipeController;
         private readonly OpenVisionShellHostToolSelectionController toolSelectionController;
         private readonly OpenVisionShellHostBusyPresenter busyPresenter;
@@ -124,8 +125,6 @@ namespace OpenVisionLab
         private bool isRecipeManagerPanelDragging;
         private bool isRestoringRecipeManagerAfterCanceledClose;
         private bool failNextRecipeStepEditCommitForTest;
-        private bool failNextRecipeStepSaveForTest;
-        private bool failNextRecipeStepRoundTripValidationForTest;
         private bool disposed;
         private Point recipeManagerPanelDragStartPoint;
         private double recipeManagerPanelDragStartX;
@@ -398,7 +397,6 @@ namespace OpenVisionLab
                 workspaceFallbackZoomController,
                 () => WorkspaceLayerTitle,
                 () => recipeContextStore.Current,
-                SelectToolMenu,
                 (sampleName, pipelineName) =>
                     RecipeCommands?.PrepareWorkspaceSampleContext(
                         sampleName,
@@ -424,6 +422,10 @@ namespace OpenVisionLab
                 },
                 initialWorkspaceImagePath: runtimeContext.Global.System.LastWorkspaceImagePath,
                 rememberWorkspaceImagePath: RememberWorkspaceImagePath);
+            learnWindowController = new OpenVisionShellHostLearnWindowController(
+                () => Window.GetWindow(this),
+                commandController.PromptAndOpenRunnableSample,
+                SelectToolMenu);
             WorkspaceCommands = new OpenVisionShellHostWorkspaceCommandSurface(
                 commandController,
                 workspacePreviewController,
@@ -462,8 +464,6 @@ namespace OpenVisionLab
                 evidence => runEvidenceViewerController.Open(evidence),
                 OpenRecipeImageListValidation,
                 DecidePendingRecipeEdit,
-                ValidateRecipeStepRoundTrip,
-                SaveRecipeStepPipeline,
                 confirmQualifiedSnapshotLifecycle:
                     ConfirmQualifiedSnapshotLifecycle,
                 openQualifiedSnapshotEvidence:
@@ -473,7 +473,11 @@ namespace OpenVisionLab
                 saveRecipe:
                     () => this.runtimeContext.Global.Recipe.SaveTools(),
                 waitForRecipeSwitchCompletion:
-                    () => recipeController.RecipePreparationTask);
+                    () => recipeController.RecipePreparationTask,
+                selectLocatorEvidencePacketPath:
+                    SelectLocatorEvidencePacketPath,
+                selectLocatorEvidenceReviewDecisionPath:
+                    SelectLocatorEvidenceReviewDecisionPath);
             InputBindings.Add(new KeyBinding(
                 RecipeCommands.SaveRecipeCommand,
                 new KeyGesture(Key.S, ModifierKeys.Control)));
@@ -481,6 +485,7 @@ namespace OpenVisionLab
             ChromeCommands = new OpenVisionShellHostChromeCommandSurface(
                 () => IsToolRailCompact = !IsToolRailCompact,
                 commandController,
+                learnWindowController,
                 toolWindowLifecycleController,
                 toolWindowController,
                 OpenGuidedSetupForTool,
@@ -751,7 +756,9 @@ namespace OpenVisionLab
             ClearValue(CommandSurfacesProperty);
             ClearValue(ChromeCommandsProperty);
             ClearValue(SessionCommandsProperty);
-            Content = null;
+            // The owning Window detaches this view after disposal. Clearing the
+            // nested content here can make WPF tear down an active template or
+            // popup animation with a null animation destination.
             (displayManager as IDisposable)?.Dispose();
         }
 

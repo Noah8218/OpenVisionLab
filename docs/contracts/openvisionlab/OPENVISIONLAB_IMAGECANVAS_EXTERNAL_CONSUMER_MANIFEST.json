@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "contractId": "IMAGE-CANVAS-EXTERNAL-CONSUMER-CONTRACT",
+  "status": "validated-prototype",
+  "updated": "2026-08-27",
+  "purpose": "Minimal .NET 8 WPF consumer boundary for displaying an image, drawing rectangle evidence, selecting one overlay, highlighting it, round-tripping view state, and showing validated read-only 3D-to-2D projection markers.",
+  "sampleProject": "tools/ImageCanvasExternalConsumerSmoke/ImageCanvasExternalConsumerSmoke.csproj",
+  "libraryProject": "src/Libraries/OpenVisionLab.ImageCanvas/OpenVisionLab.ImageCanvas.csproj",
+  "targetFramework": "net8.0-windows7.0",
+  "dependencyRules": {
+    "applicationProjectReference": false,
+    "packageReferences": [],
+    "consumerOwns": [
+      "ImageCanvasExternalConsumerSession",
+      "ImageCanvasExternalOverlay",
+      "ImageCanvasSourceRectangle",
+      "ImageCanvasExternalViewState",
+      "ImageCanvasExternalProjectionResultReader",
+      "ImageCanvasExternalProjectedPoint"
+    ],
+    "libraryOwns": [
+      "ImageCanvasControl",
+      "RoiImageCanvasViewModel",
+      "OpenGL texture and overlay lifetime"
+    ]
+  },
+  "runtimeOutputObserved": [
+    {
+      "assembly": "OpenVisionLab.ImageCanvas",
+      "source": "project-reference",
+      "path": "src/Libraries/OpenVisionLab.ImageCanvas/OpenVisionLab.ImageCanvas.csproj"
+    },
+    {
+      "assembly": "OpenVisionLab.Localization",
+      "source": "transitive-project-reference",
+      "path": "src/Libraries/OpenVisionLab.Localization/OpenVisionLab.Localization.csproj"
+    },
+    {
+      "assembly": "OpenCvSharp",
+      "source": "library-reference",
+      "path": "dll/OpenVisionLab-Vision-SDK/OpenCvSharp.dll"
+    },
+    {
+      "assembly": "SharpGL",
+      "source": "library-reference",
+      "path": "dll/SharpGL/SharpGL.dll"
+    },
+    {
+      "assembly": "SharpGL.WinForms",
+      "source": "library-reference",
+      "path": "dll/SharpGL/SharpGL.WinForms.dll"
+    },
+    {
+      "assembly": "OpenCvSharpExtern",
+      "source": "native-runtime",
+      "path": "dll/OpenCVSharp/OpenCvSharpExtern.dll"
+    }
+  ],
+  "publicSurface": {
+    "imageOwnership": [
+      "Borrow",
+      "Clone",
+      "TakeOwnership"
+    ],
+    "overlayGeometry": "ImageCanvasSourceRectangle uses source-image top-left coordinates; Right and Bottom are exclusive.",
+    "selection": "One programmatically selected overlay ID at a time; SelectionChanged reports selected metadata.",
+    "highlight": "Selected rectangle is marked with the existing CanvasRect editing visual and a wider line; no new renderer is introduced.",
+    "viewState": [
+      "CaptureViewState",
+      "ApplyViewState",
+      "FitImageToView"
+    ],
+    "threading": "Session calls that touch the viewer must run on the WPF UI dispatcher.",
+    "lifecycle": "Dispose is UI-thread-only, idempotent, and releases the native ImageCanvasControl through the existing ViewModel owner.",
+    "projection": "ImageCanvasExternalProjectionResultReader validates schema 1.0, paired transaction identity, dimensions, finite coordinates, and exposes only valid in-bounds 3D-to-2D points for read-only marker replacement."
+  },
+  "validation": {
+    "command": "dotnet <sample-output>/ImageCanvasExternalConsumerSmoke.dll --smoke <D-drive-artifact-directory>",
+    "crossModalCommand": "dotnet <Machine-repo>/tools/RunCrossModalProjectionSmoke.ps1",
+    "checks": [
+      "image upload through TakeOwnership",
+      "Borrow and Clone caller bitmap remains usable",
+      "accepted and rejected rectangle overlays",
+      "selection change and rejected reason round-trip",
+      "Fit -> Capture -> Apply -> Capture view-state round-trip",
+      "overlay visibility toggle and unknown-ID no-op",
+      "100 create/dispose cycles",
+      "dynamic two-monitor placement on the smaller monitor on the left",
+      "physical HWND screenshot with current image and overlay evidence",
+      "3D Result watcher refreshes read-only reverse-projected markers after publication",
+      "projection marker screen performs no pipeline execution or layer mutation"
+    ],
+    "artifactExample": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/imagecanvas-external-consumer-20260827-r29",
+    "crossModalArtifactExample": "D:/OpenVisionLab-TestData/OpenVisionLab-CrossRepo/projection/cross-modal-projection-20260827-163714-c93911d218f94f7e9b4586a7bda7dcae",
+    "requiredEvidence": [
+      "contract-smoke.txt",
+      "source.png",
+      "external-consumer-selected-rejected.png",
+      "cross-modal-2d-screen-smoke.txt",
+      "cross-modal-2d-screen.png"
+    ]
+  },
+  "explicitExclusions": [
+    "OpenVisionLab application ProjectReference",
+    "net48 support",
+    "Linux or Avalonia host",
+    "single-DLL redistribution",
+    "NuGet publication",
+    "full renderer rewrite",
+    "freehand canvas hit-test selection",
+    "multi-selection",
+    "non-rectangle shape contract",
+    "direct marker connection to the OpenVisionLab application Pipeline Review",
+    "pipeline, layer, route, Preview, or Run ownership"
+  ]
+}

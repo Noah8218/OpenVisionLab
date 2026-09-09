@@ -865,7 +865,6 @@ namespace OpenVisionLab
             SetStatus(result.Status);
             showOutputWorkspacePreviewOnNextLayerStateChanged = true;
             RefreshLayerState();
-            OpenVisionLanguageService.LanguageChanged += OnPreviewViewerLanguageChanged;
         }
 
         private VisionPipelineStep CreateArithmeticStep()

@@ -62,45 +62,6 @@ namespace OpenVisionLab
             return recipeStepPropertyGridHostController?.CommitPendingEdit() ?? true;
         }
 
-        private OpenVisionRecipeRoundTripValidationResult ValidateRecipeStepRoundTrip(
-            string recipeName,
-            OpenVisionLab.Vision2D.Pipeline.VisionPipeline pipeline)
-        {
-            if (failNextRecipeStepRoundTripValidationForTest)
-            {
-                failNextRecipeStepRoundTripValidationForTest = false;
-                return new OpenVisionRecipeRoundTripValidationResult
-                {
-                    Succeeded = false,
-                    Message = "Forced round-trip validation failure for current-build smoke."
-                };
-            }
-
-            bool succeeded = VisionPipelineStorage.TryValidateRoundTrip(
-                recipeName,
-                pipeline,
-                out string message);
-            return new OpenVisionRecipeRoundTripValidationResult
-            {
-                Succeeded = succeeded,
-                Message = message
-            };
-        }
-
-        private void SaveRecipeStepPipeline(
-            string recipeName,
-            OpenVisionLab.Vision2D.Pipeline.VisionPipeline pipeline)
-        {
-            if (failNextRecipeStepSaveForTest)
-            {
-                failNextRecipeStepSaveForTest = false;
-                throw new InvalidOperationException(
-                    "Forced XML save failure for current-build smoke.");
-            }
-
-            VisionPipelineStorage.Save(recipeName, pipeline);
-        }
-
         private void HandleRecipeManagerTitleBarMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (recipeManagerPanel?.Visibility != Visibility.Visible || rootShellHost == null || recipeManagerPanelTransform == null)
@@ -352,7 +313,7 @@ namespace OpenVisionLab
 
         private void OpenLearnForPipelineReviewTool(string toolType)
         {
-            commandController?.OpenLearnForToolType(toolType);
+            learnWindowController?.OpenLearnForToolType(toolType);
         }
 
         private void StopRecipeManagerPanelDrag()
@@ -504,6 +465,34 @@ namespace OpenVisionLab
                     ? "?뚯씠?꾨씪??XML ?먮뒗 寃??踰덈뱾 ?닿린"
                     : "Open pipeline XML or review bundle",
                 Filter = "OpenVision XML / Review bundle (*.xml;*.review.zip;*.zip)|*.xml;*.review.zip;*.zip|OpenVision Pipeline XML (*.xml)|*.xml|Review bundle (*.review.zip;*.zip)|*.review.zip;*.zip|All files (*.*)|*.*",
+                Multiselect = false
+            };
+
+            return dialog.ShowDialog(Window.GetWindow(this)) == true ? dialog.FileName : string.Empty;
+        }
+
+        private string SelectLocatorEvidencePacketPath()
+        {
+            OpenFileDialog dialog = new OpenFileDialog
+            {
+                Title = OpenVisionLanguageService.CurrentLanguage == OpenVisionLanguage.Korean
+                    ? "Locator Evidence Packet 열기"
+                    : "Open locator Evidence Packet",
+                Filter = "Locator Evidence Packet (*.packet.json;*.json)|*.packet.json;*.json|All files (*.*)|*.*",
+                Multiselect = false
+            };
+
+            return dialog.ShowDialog(Window.GetWindow(this)) == true ? dialog.FileName : string.Empty;
+        }
+
+        private string SelectLocatorEvidenceReviewDecisionPath()
+        {
+            OpenFileDialog dialog = new OpenFileDialog
+            {
+                Title = OpenVisionLanguageService.CurrentLanguage == OpenVisionLanguage.Korean
+                    ? "Locator review decision 열기"
+                    : "Open locator review decision",
+                Filter = "Locator review decision (*.json)|*.json|All files (*.*)|*.*",
                 Multiselect = false
             };
 

@@ -1048,6 +1048,8 @@ PipelineReview.RecipeContextFormat	레시피: {0}	Recipe: {0}
 PipelineReview.ReturnToRecipe	레시피로 돌아가기	Return to Recipe
 PipelineReview.ReturnToRecipeToolTip	Pipeline Review를 닫고 선택한 레시피 요약으로 돌아갑니다.	Close Pipeline Review and return to the selected recipe summary.
 PipelineReview.StepFlow	Step 흐름	Step Flow
+PipelineReview.StepFlow.HideToolTip	Step 흐름 접기	Collapse Step Flow
+PipelineReview.StepFlow.ShowToolTip	Step 흐름 펼치기	Expand Step Flow
 PipelineReview.Step	Step	Step
 PipelineReview.Tool	Tool	Tool
 PipelineReview.State	상태	State
@@ -1059,6 +1061,10 @@ PipelineReview.Parameters	파라미터	Parameters
 PipelineReview.Validation	Pipeline 구성	Pipeline definition
 PipelineReview.Result	검사 결과	Inspection result
 PipelineReview.RunLog	실행 로그	Run Log
+PipelineReview.Details.Toggle	리뷰 상세	Review details
+PipelineReview.Details.Summary	흐름, 파라미터, 결과, 실행 로그	Flow, parameters, result, and run log
+PipelineReview.Details.ShowToolTip	리뷰 상세 열기	Show review details
+PipelineReview.Details.HideToolTip	리뷰 상세 닫기	Hide review details
 PipelineReview.Readiness.Title	검사 준비도	Inspection readiness
 PipelineReview.Readiness.Input	입력 이미지	Input image
 PipelineReview.Readiness.Route	Step / 경로	Steps / routes
@@ -1087,6 +1093,7 @@ PipelineReview.MetaFormat	{0} / {1} Step	{0} / {1} steps
 PipelineReview.Progress.NotRun	미실행	Not run
 PipelineReview.Progress.NoSteps	Step 없음	No steps
 PipelineReview.Progress.Running	실행 중...	Running...
+PipelineReview.Progress.Draining	종료 대기	Waiting for execution to stop
 PipelineReview.Progress.CountsFormat	OK {0} / NG {1} / 대기 {2}	OK {0} / NG {1} / WAIT {2}
 PipelineReview.Progress.OffFormat	OFF {0}	OFF {0}
 PipelineReview.ValidationNotRun	검증 전	Validation not run
@@ -1154,6 +1161,7 @@ PipelineReview.NoStepsStatus	Pipeline에 Step이 없습니다.	Pipeline has no s
 PipelineReview.NoImage	이미지 없음	No image
 PipelineReview.Execution.NotRun	실행 전	Not run
 PipelineReview.Execution.AlreadyRunning	이미 실행 중	Already running
+PipelineReview.Execution.Draining	종료 대기	Waiting for execution to stop
 PipelineReview.Execution.NoSteps	Step 없음	No steps
 PipelineReview.Execution.ValidationErrors	검증 오류	Validation errors
 PipelineReview.ValidationError	검증 오류	Validation error
@@ -1188,6 +1196,7 @@ PipelineReview.RouteFormat	{0} -> {1}	{0} -> {1}
 PipelineReview.StepDetails.Title	Step 상세	Step Details
 PipelineReview.ObjectInspector.Title	검출 후보	Detection candidates
 PipelineReview.ObjectInspector.CountFormat	검출 후보 {0} / 검사 대상 {1} / 필터 제외 {2}	Candidates {0} / inspection objects {1} / filtered out {2}
+PipelineReview.ObjectInspector.RegionColumn	영역	Region
 PipelineReview.ObjectInspector.StateColumn	판정	Status
 PipelineReview.ObjectInspector.AreaColumn	면적	Area
 PipelineReview.ObjectInspector.CenterXColumn	X	X

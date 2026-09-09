@@ -101,9 +101,18 @@ namespace OpenVisionLab
             OpenVisionRecipePinArrayGapIntentValidationContext pinArrayGapIntentContext,
             OpenVisionRecipeDarkBandGapIntentValidationContext darkBandGapIntentContext,
             OpenVisionRecipeHybridRelativeRoiIntentValidationContext hybridRelativeRoiIntentContext,
+            OpenVisionRecipeLocatorRelativeBlobIntentValidationContext locatorRelativeBlobIntentContext,
             ICollection<string> validationLines)
         {
             template = template ?? string.Empty;
+            if (IsLocatorRelativeBlobTemplate(template))
+            {
+                return AppendLocatorRelativeBlobIntentContractValidation(
+                    pipeline,
+                    locatorRelativeBlobIntentContext,
+                    validationLines);
+            }
+
             if (IsHybridRelativeRoiGapTemplate(template))
             {
                 return AppendHybridRelativeRoiIntentContractValidation(
@@ -174,6 +183,52 @@ namespace OpenVisionLab
             }
 
             validationLines.Add("Intent contract: SKIP - selected intent has no strict tool-family gate.");
+            return true;
+        }
+
+        private static bool AppendLocatorRelativeBlobIntentContractValidation(
+            VisionPipeline pipeline,
+            OpenVisionRecipeLocatorRelativeBlobIntentValidationContext intentContext,
+            ICollection<string> validationLines)
+        {
+            OpenVisionRecipeLocatorRelativeBlobIntentSkill.Plan plan = null;
+            string planMessage = string.Empty;
+            bool planReady = intentContext != null
+                && OpenVisionRecipeLocatorRelativeBlobIntentSkill.TryCreatePlan(
+                    intentContext.LocatorTemplatePath,
+                    intentContext.SearchRoiText,
+                    intentContext.InspectionRoiText,
+                    intentContext.ReferencePoseText,
+                    intentContext.ScoreMinimumText,
+                    intentContext.ScoreMarginText,
+                    intentContext.AngleMinimumText,
+                    intentContext.AngleMaximumText,
+                    intentContext.ScaleRatioMinimumText,
+                    intentContext.ScaleRatioMaximumText,
+                    intentContext.MinimumValidPixelRatioText,
+                    intentContext.ThresholdText,
+                    intentContext.MinimumAreaText,
+                    intentContext.MaximumAreaText,
+                    intentContext.ExpectedCountText,
+                    out plan,
+                    out planMessage);
+            if (!planReady)
+            {
+                validationLines.Add("Locator-relative Blob contract: NG - reviewed locator, reference ROI, threshold, or Blob limits are missing or invalid. " + planMessage);
+                return false;
+            }
+
+            if (!OpenVisionRecipeLocatorRelativeBlobIntentSkill.TryValidatePipeline(pipeline, plan, out string pipelineMessage))
+            {
+                validationLines.Add("Locator-relative Blob contract: NG - " + pipelineMessage);
+                return false;
+            }
+
+            validationLines.Add("Locator-relative Blob contract: OK - Matching ambiguity -> fixture pose -> NormalizeImage -> Threshold -> fixed reference-coordinate Blob is locked to the reviewed plan.");
+            validationLines.Add(plan.IsMeasurementOnly
+                ? "Locator-relative Blob judgement: MEASURE ONLY / NOT JUDGED - no LLM or per-image ResultCount tolerance is present."
+                : "Locator-relative Blob judgement: operator-owned exact ResultCount gate is present; it was not inferred or tuned by the LLM.");
+            validationLines.Add("Locator-relative Blob evidence: WAIT - a hash-verified evidence packet and current-run overlay are required before evidence compilation and explicit Run.");
             return true;
         }
 

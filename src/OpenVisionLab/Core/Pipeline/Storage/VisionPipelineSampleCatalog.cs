@@ -432,6 +432,22 @@ namespace OpenVisionLab
             return CatalogListText;
         }
 
+        internal void ResolvePipelineDependencyPaths(VisionPipeline pipeline)
+        {
+            if (pipeline?.Steps == null || string.IsNullOrWhiteSpace(CatalogSourcePath))
+            {
+                return;
+            }
+
+            string workspaceRoot = ResolveRepoRoot(Path.GetDirectoryName(CatalogSourcePath));
+            foreach (VisionPipelineStep step in pipeline.Steps.Where(item => item?.Parameters != null))
+            {
+                ResolvePipelineDependencyPath(step.Parameters, workspaceRoot, "TemplatePath");
+                ResolvePipelineDependencyPath(step.Parameters, workspaceRoot, "PATTERN_PATH");
+                ResolvePipelineDependencyPath(step.Parameters, workspaceRoot, "PatternPath");
+            }
+        }
+
         public static List<VisionPipelineSampleCatalogItem> LoadRunnable()
         {
             List<VisionPipelineSampleCatalogItem> items = new List<VisionPipelineSampleCatalogItem>();
@@ -743,6 +759,22 @@ namespace OpenVisionLab
             }
 
             return Path.GetFullPath(Path.Combine(repoRoot, path));
+        }
+
+        private static void ResolvePipelineDependencyPath(
+            IDictionary<string, string> parameters,
+            string workspaceRoot,
+            string key)
+        {
+            if (!parameters.TryGetValue(key, out string value) || string.IsNullOrWhiteSpace(value))
+            {
+                return;
+            }
+
+            string candidate = value.Trim().Trim('"');
+            parameters[key] = Path.IsPathRooted(candidate)
+                ? Path.GetFullPath(candidate)
+                : ResolveRelativePath(workspaceRoot, candidate);
         }
 
         private static string ResolveWorkspacePath(params string[] parts)

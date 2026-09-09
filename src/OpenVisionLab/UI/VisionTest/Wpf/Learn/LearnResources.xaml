@@ -1,0 +1,32 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:OpenVisionLab">
+    <ResourceDictionary.MergedDictionaries>
+        <local:SharedResourceDictionary Source="../Tooling/Presentation/VisionToolWpfTheme.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <Style x:Key="LearnPanelStyle" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource VisionTool.PanelBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource VisionTool.HeaderBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="Padding" Value="14" />
+    </Style>
+
+    <Style x:Key="LearnMutedTextStyle" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{StaticResource VisionTool.SecondaryTextBrush}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style x:Key="LearnAnimationStatusStyle"
+           TargetType="TextBlock"
+           BasedOn="{StaticResource LearnMutedTextStyle}">
+        <Setter Property="AutomationProperties.LiveSetting" Value="Polite" />
+    </Style>
+
+    <SolidColorBrush x:Key="Learn.Animation.NeutralBrush" Color="#525B69" />
+    <SolidColorBrush x:Key="Learn.Animation.CandidateBrush" Color="#228491" />
+    <SolidColorBrush x:Key="Learn.Animation.PassBrush" Color="#408F4D" />
+    <SolidColorBrush x:Key="Learn.Animation.WarningBrush" Color="#B07C2A" />
+</ResourceDictionary>

@@ -1,7 +1,6 @@
 using OpenVisionLab.Vision2D.Pipeline;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 
@@ -43,18 +42,18 @@ namespace OpenVisionLab
             }
 
             OpenVisionRecipePipelineExchangeResult result = pipelineExchangeUseCase.Import(recipeName, path);
-            if (!result.Succeeded)
+            OpenVisionRecipePipelineExchangeProjection projection = pipelineExchangeProjectionOwner.Project(
+                OpenVisionRecipePipelineExchangeOperation.Import,
+                result);
+            if (!projection.Succeeded)
             {
-                StatusText = result.Detail;
+                StatusText = projection.StatusText;
                 UpdateSelectedRecipeSummary();
                 return false;
             }
 
-            RefreshPipelineOptions(result.PipelineName);
-            StatusText = string.Format(
-                CultureInfo.CurrentCulture,
-                LocalText("XML 가져오기 완료: {0}", "Imported XML: {0}"),
-                result.PipelineName);
+            RefreshPipelineOptions(projection.PipelineName);
+            StatusText = projection.StatusText;
             RefreshOptions();
             refreshAfterSwitch();
             return true;
@@ -93,17 +92,17 @@ namespace OpenVisionLab
                 recipeName,
                 activePipelineName,
                 path);
-            if (!result.Succeeded)
+            OpenVisionRecipePipelineExchangeProjection projection = pipelineExchangeProjectionOwner.Project(
+                OpenVisionRecipePipelineExchangeOperation.Export,
+                result);
+            if (!projection.Succeeded)
             {
-                StatusText = result.Detail;
+                StatusText = projection.StatusText;
                 UpdateSelectedRecipeSummary();
                 return false;
             }
 
-            StatusText = string.Format(
-                CultureInfo.CurrentCulture,
-                LocalText("XML 내보내기 완료: {0}", "Exported XML: {0}"),
-                Path.GetFileName(path));
+            StatusText = projection.StatusText;
             UpdateSelectedRecipeSummary();
             return true;
         }
@@ -142,17 +141,16 @@ namespace OpenVisionLab
                 activePipelineName,
                 path,
                 BuildRecipeReviewReferences());
-            string message = result.Detail;
-            if (!result.Succeeded)
+            OpenVisionRecipePipelineExchangeProjection projection = pipelineExchangeProjectionOwner.Project(
+                OpenVisionRecipePipelineExchangeOperation.ExportReviewBundle,
+                result);
+            if (!projection.Succeeded)
             {
-                StatusText = LocalText("검토 묶음 내보내기 실패: ", "Review bundle export failed: ") + message;
+                StatusText = projection.StatusText;
                 return false;
             }
 
-            StatusText = string.Format(
-                CultureInfo.CurrentCulture,
-                LocalText("검토 묶음 내보내기 완료: {0}", "Exported review bundle: {0}"),
-                Path.GetFileName(result.Detail));
+            StatusText = projection.StatusText;
             return true;
         }
 

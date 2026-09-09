@@ -29,7 +29,12 @@ namespace OpenVisionLab
             Binder = OpenVisionToolOpenProfiler.Measure("NewPropertyGridBinder", () => new PropertyGridEventBinder(null));
 
             // Algorithm tools stay PropertyGrid-driven: model properties define the generated editor UI.
-            OpenVisionToolOpenProfiler.Measure("ApplyPropertyGridDisplayOptions", () => Grid.ApplyDisplayOptions(PropertyGridDisplayOptions.ToolForm));
+            OpenVisionToolOpenProfiler.Measure("ApplyPropertyGridDisplayOptions", () =>
+            {
+                PropertyGridDisplayOptions options = PropertyGridDisplayOptions.ToolForm;
+                options.ChildParameterPredicate = PropertyGridToolPolicy.IsChildParameterProperty;
+                Grid.ApplyDisplayOptions(options);
+            });
             OpenVisionToolOpenProfiler.Measure("AttachPropertyGridEvents", () =>
             {
                 Grid.PropertyValueChanged += OnPropertyValueChanged;

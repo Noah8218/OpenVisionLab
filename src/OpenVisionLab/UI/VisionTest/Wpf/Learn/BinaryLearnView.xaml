@@ -1,0 +1,619 @@
+<UserControl x:Class="OpenVisionLab.BinaryLearnView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:OpenVisionLab"
+             Focusable="False">
+    <UserControl.Resources>
+        <local:SharedResourceDictionary Source="LearnResources.xaml" />
+    </UserControl.Resources>
+    <Grid>
+            <Border x:Name="morphologyTopicPanel"
+                    Margin="0,10,8,0"
+                    Style="{StaticResource LearnPanelStyle}"
+                    Visibility="Collapsed">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <Border Margin="0,0,0,12"
+                                Style="{StaticResource LearnPanelStyle}"
+                                AutomationProperties.AutomationId="OpenVisionLearnMorphologyPracticePanel">
+                            <StackPanel>
+                                <TextBlock Text="공개 샘플로 확인"
+                                           FontWeight="SemiBold" />
+                                <TextBlock Margin="0,4,0,0"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           TextWrapping="Wrap"
+                                           Text="Good: Public_Morphology_Cleanup_Good  |  Bad: Public_Morphology_Cleanup_Missing_Bad" />
+                                <TextBlock Margin="0,3,0,0"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           TextWrapping="Wrap"
+                                           Text="Pipeline: Public_Morphology_Cleanup  |  판정: ResultCount 4는 OK, 2는 NG" />
+                                <TextBlock Margin="0,3,0,0"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           TextWrapping="Wrap"
+                                           Text="상단 실습 샘플 버튼으로 두 장을 연 뒤 Morphology Tool에서 Open, Rect, 5×5 Kernel을 확인하고, Preview 또는 Pipeline Review를 직접 실행해 작은 노이즈와 최종 개수를 비교합니다." />
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock Text="모폴로지는 이진 영상의 흰 영역 모양을 정리합니다"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Margin="0,8,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="Threshold 후에는 작은 흰 점, 끊어진 선, 구멍이 남을 수 있습니다. 모폴로지는 3x3 같은 커널을 움직이며 흰 영역을 줄이거나 키워 Blob과 Contour가 더 안정적으로 보게 만듭니다." />
+                        <TextBlock Margin="0,5,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="Threshold 결과를 Morphology 입력으로 사용하면 흰 영역의 작은 노이즈와 구멍을 정리할 수 있습니다. 정리된 결과는 Blob 또는 Contour 입력으로 이어집니다." />
+
+                        <Grid Margin="0,12,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock VerticalAlignment="Center"
+                                       Text="관련 Tool View"
+                                       FontWeight="SemiBold" />
+                            <Button x:Name="btnMorphologyOpenTool"
+                                    Grid.Column="1"
+                                    MinWidth="152"
+                                    Height="30"
+                                    Padding="10,4"
+                                    Content="Morphology Tool 열기"
+                                    IsEnabled="False"
+                                    Tag="Morphology"
+                                    ToolTip="Morphology Tool View의 Operation, Kernel 크기, Shape 위치를 엽니다."
+                                    Click="OpenRelatedToolButton_Click"
+                                    AutomationProperties.AutomationId="OpenVisionLearnMorphologyOpenToolButton" />
+                        </Grid>
+                        <StackPanel x:Name="morphologyToolLocationPanel"
+                                    Margin="0,8,0,0"
+                                    AutomationProperties.AutomationId="OpenVisionLearnMorphologyToolLocationPanel">
+                            <Separator Margin="0,0,0,7" />
+                            <TextBlock x:Name="txtMorphologyToolLocationTitle"
+                                       FontWeight="SemiBold"
+                                       Text="찾을 위치: Input/Output Layer, Operation, Kernel Width/Height, Shape"
+                                       TextWrapping="Wrap"
+                                       AutomationProperties.AutomationId="OpenVisionLearnMorphologyToolLocationTitle" />
+                            <TextBlock x:Name="txtMorphologyToolLocationDetail"
+                                       Margin="0,4,0,0"
+                                       Style="{StaticResource LearnMutedTextStyle}"
+                                       Text="3×3, 5×5, 7×7 Kernel과 Rect/Ellipse/Cross Shape를 바꾸고 Preview에서 전후 영역 모양을 비교하세요."
+                                       TextWrapping="Wrap"
+                                       AutomationProperties.AutomationId="OpenVisionLearnMorphologyToolLocationDetail" />
+                        </StackPanel>
+
+                        <Grid Margin="0,12,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="14" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Button x:Name="btnMorphologyPlay"
+                                    MinWidth="72"
+                                    Height="30"
+                                    Content="Play"
+                                    Click="MorphologyPlayButton_Click"
+                                    ToolTip="커널을 한 셀씩 자동으로 이동합니다."
+                                    AutomationProperties.AutomationId="OpenVisionLearnMorphologyPlayButton" />
+                            <Button Grid.Column="2"
+                                    MinWidth="78"
+                                    Height="30"
+                                    Content="Step"
+                                    Click="MorphologyStepButton_Click"
+                                    ToolTip="다음 픽셀 하나를 계산합니다."
+                                    AutomationProperties.AutomationId="OpenVisionLearnMorphologyStepButton" />
+                            <Button Grid.Column="4"
+                                    MinWidth="72"
+                                    Height="30"
+                                    Content="Reset"
+                                    Click="MorphologyResetButton_Click"
+                                    ToolTip="출력 계산을 처음 상태로 되돌립니다."
+                                    AutomationProperties.AutomationId="OpenVisionLearnMorphologyResetButton" />
+                            <TextBlock x:Name="txtMorphologyAnimationStatus"
+                                       Grid.Column="6"
+                                       VerticalAlignment="Center"
+                                       Style="{StaticResource LearnAnimationStatusStyle}"
+                                       AutomationProperties.Name="Morphology animation status"
+                                       AutomationProperties.AutomationId="OpenVisionLearnMorphologyAnimationStatus" />
+                        </Grid>
+
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="Threshold 후 이진 영상"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Margin="0,3,0,10"
+                                               Text="흰색은 검사 대상, 검정은 배경입니다."
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <UniformGrid x:Name="morphologyInputGrid"
+                                                 Columns="5"
+                                                 Rows="5" />
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Column="2"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="모폴로지 적용 후"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock x:Name="txtMorphologyFormula"
+                                               Margin="0,3,0,10"
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <UniformGrid x:Name="morphologyOutputGrid"
+                                                 Columns="5"
+                                                 Rows="5" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <Border Margin="0,12,0,0"
+                                Style="{StaticResource LearnPanelStyle}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="10" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="10" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="10" />
+                                        <ColumnDefinition Width="220" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="연산 종류"
+                                               FontWeight="SemiBold"
+                                               VerticalAlignment="Center" />
+                                    <ComboBox x:Name="morphologyModeCombo"
+                                              Grid.Column="2"
+                                              SelectedIndex="0"
+                                              SelectionChanged="MorphologyModeCombo_SelectionChanged"
+                                              AutomationProperties.Name="Morphology operation"
+                                              AutomationProperties.AutomationId="OpenVisionLearnMorphologyModeCombo">
+                                        <ComboBoxItem Content="Erosion" />
+                                        <ComboBoxItem Content="Dilation" />
+                                        <ComboBoxItem Content="Opening" />
+                                        <ComboBoxItem Content="Closing" />
+                                    </ComboBox>
+                                </Grid>
+                                <TextBlock x:Name="txtMorphologyMeaning"
+                                           Grid.Row="2"
+                                           Style="{StaticResource LearnMutedTextStyle}" />
+                                <TextBlock Grid.Row="4"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           Text="커널 크기와 반복 횟수는 항상 정리 전/후 레이어를 비교하면서 정합니다." />
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <Border x:Name="blobTopicPanel"
+                    Margin="0,10,8,0"
+                    Style="{StaticResource LearnPanelStyle}"
+                    Visibility="Collapsed">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <Border Margin="0,0,0,12"
+                                Style="{StaticResource LearnPanelStyle}"
+                                AutomationProperties.AutomationId="OpenVisionLearnBlobPracticePanel">
+                            <StackPanel>
+                                <TextBlock Text="공개 샘플로 확인"
+                                           FontWeight="SemiBold" />
+                                <TextBlock Margin="0,4,0,0"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           TextWrapping="Wrap"
+                                           Text="Good: Public_Blob_Particles_Good  |  Bad: Public_Blob_Particles_Sparse_Bad" />
+                                <TextBlock Margin="0,3,0,0"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           TextWrapping="Wrap"
+                                           Text="Pipeline: Public_Blob_Particles  |  판정: ResultCount 8..14는 OK, 2..4는 NG" />
+                                <TextBlock Margin="0,3,0,0"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           TextWrapping="Wrap"
+                                           Text="상단 실습 샘플 버튼으로 두 장을 연 뒤 Blob Tool에서 MIN_AREA와 MAX_AREA를 확인하고, Preview 또는 Pipeline Review를 직접 실행해 후보 box와 최종 개수를 비교합니다." />
+                            </StackPanel>
+                        </Border>
+                        <TextBlock Text="Blob은 붙어 있는 흰 영역을 하나의 후보로 셉니다"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Margin="0,8,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="Threshold와 Morphology 후, 연결된 흰 픽셀 묶음을 찾고 개수, 면적, 위치, 폭/높이를 측정합니다." />
+                        <TextBlock Margin="0,5,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="MIN_AREA와 MAX_AREA는 작은 먼지와 큰 배경 덩어리를 제외하는 면적 범위입니다. 후보 색을 보며 통과 영역과 제외 영역을 구분하세요." />
+
+                        <Grid Margin="0,12,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock VerticalAlignment="Center"
+                                       Text="관련 Tool View"
+                                       FontWeight="SemiBold" />
+                            <Button x:Name="btnBlobOpenTool"
+                                    Grid.Column="1"
+                                    MinWidth="126"
+                                    Height="30"
+                                    Padding="10,4"
+                                    Content="Blob Tool 열기"
+                                    IsEnabled="False"
+                                    Tag="Blob"
+                                    ToolTip="Blob Tool View의 Threshold, ROI, Area 범위 위치를 엽니다."
+                                    Click="OpenRelatedToolButton_Click"
+                                    AutomationProperties.AutomationId="OpenVisionLearnBlobOpenToolButton" />
+                        </Grid>
+                        <StackPanel x:Name="blobToolLocationPanel"
+                                    Margin="0,8,0,0"
+                                    AutomationProperties.AutomationId="OpenVisionLearnBlobToolLocationPanel">
+                            <Separator Margin="0,0,0,7" />
+                            <TextBlock x:Name="txtBlobToolLocationTitle"
+                                       FontWeight="SemiBold"
+                                       Text="PropertyGrid: Use ROI / ROI, Blob Parameter > Min area / Max area"
+                                       TextWrapping="Wrap"
+                                       AutomationProperties.AutomationId="OpenVisionLearnBlobToolLocationTitle" />
+                            <TextBlock x:Name="txtBlobToolLocationDetail"
+                                       Margin="0,4,0,0"
+                                       Style="{StaticResource LearnMutedTextStyle}"
+                                       Text="Preview 또는 Pipeline Review에서 ResultCount, AreaMin/AreaMax, BoundsWidth/BoundsHeight를 함께 확인하세요."
+                                       TextWrapping="Wrap"
+                                       AutomationProperties.AutomationId="OpenVisionLearnBlobToolLocationDetail" />
+                        </StackPanel>
+
+                        <Border Margin="0,12,0,0"
+                                Style="{StaticResource LearnPanelStyle}"
+                                AutomationProperties.AutomationId="OpenVisionLearnBlobDecisionPanel">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="6" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="4" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <TextBlock Text="판단 기준: Blob = 연결 영역"
+                                           FontWeight="SemiBold" />
+                                <TextBlock Grid.Row="2"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           Text="쓸 때: 흰 픽셀 덩어리의 개수, 면적, BoundsWidth/BoundsHeight가 OK/NG 기준일 때." />
+                                <TextBlock Grid.Row="4"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           Text="먼저 볼 것: polarity, ROI, MIN_AREA/MAX_AREA. ResultCount만 보지 말고 AreaMin/AreaMax와 box metric을 같이 확인합니다." />
+                            </Grid>
+                        </Border>
+
+                        <Grid Margin="0,14,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="이진 입력"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Margin="0,3,0,10"
+                                               Text="흰색 묶음 하나가 Blob 후보입니다."
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <UniformGrid x:Name="blobInputGrid"
+                                                 Columns="6"
+                                                 Rows="5" />
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Column="2"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="면적 필터 후 후보"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock x:Name="txtBlobFormula"
+                                               Margin="0,3,0,10"
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="8" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="8" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="14" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Button x:Name="btnBlobPlay"
+                                                MinWidth="72"
+                                                Height="30"
+                                                Content="Play"
+                                                Click="BlobPlayButton_Click"
+                                                ToolTip="Blob 후보를 하나씩 표시합니다."
+                                                AutomationProperties.AutomationId="OpenVisionLearnBlobPlayButton" />
+                                        <Button Grid.Column="2"
+                                                MinWidth="78"
+                                                Height="30"
+                                                Content="Step"
+                                                Click="BlobStepButton_Click"
+                                                ToolTip="다음 Blob 후보를 판단합니다."
+                                                AutomationProperties.AutomationId="OpenVisionLearnBlobStepButton" />
+                                        <Button Grid.Column="4"
+                                                MinWidth="72"
+                                                Height="30"
+                                                Content="Reset"
+                                                Click="BlobResetButton_Click"
+                                                ToolTip="Blob 후보 판단을 처음 상태로 되돌립니다."
+                                                AutomationProperties.AutomationId="OpenVisionLearnBlobResetButton" />
+                                        <TextBlock x:Name="txtBlobAnimationStatus"
+                                                   Grid.Column="6"
+                                                   VerticalAlignment="Center"
+                                                   Style="{StaticResource LearnAnimationStatusStyle}"
+                                                   AutomationProperties.Name="Blob animation status"
+                                                   AutomationProperties.AutomationId="OpenVisionLearnBlobAnimationStatus" />
+                                    </Grid>
+                                    <UniformGrid x:Name="blobOutputGrid"
+                                                 Columns="6"
+                                                 Rows="5" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <Border Margin="0,12,0,0"
+                                Style="{StaticResource LearnPanelStyle}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="8" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="10" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="10" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="MIN_AREA"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock x:Name="txtBlobMinArea"
+                                               Grid.Column="1"
+                                               Foreground="{StaticResource VisionTool.SecondaryTextBrush}" />
+                                </Grid>
+                                <Slider x:Name="blobMinAreaSlider"
+                                        Grid.Row="2"
+                                        Minimum="1"
+                                        Maximum="6"
+                                        TickFrequency="1"
+                                        IsSnapToTickEnabled="True"
+                                        IsMoveToPointEnabled="True"
+                                        ValueChanged="BlobMinAreaSlider_ValueChanged"
+                                        AutomationProperties.Name="Minimum Blob area in pixels"
+                                        AutomationProperties.AutomationId="OpenVisionLearnBlobMinAreaSlider" />
+                                <TextBlock x:Name="txtBlobMeaning"
+                                           Grid.Row="4"
+                                           Style="{StaticResource LearnMutedTextStyle}" />
+                                <TextBlock Grid.Row="6"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           Text="Blob이 NG라면 이진 입력 레이어와 MIN_AREA/MAX_AREA를 먼저 확인합니다." />
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <Border x:Name="contourTopicPanel"
+                    Margin="0,10,8,0"
+                    Style="{StaticResource LearnPanelStyle}"
+                    Visibility="Collapsed">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <Border Margin="0,0,0,12"
+                                Style="{StaticResource LearnPanelStyle}"
+                                AutomationProperties.AutomationId="OpenVisionLearnContourPracticePanel">
+                            <StackPanel>
+                                <TextBlock Text="공개 샘플로 확인"
+                                           FontWeight="SemiBold" />
+                                <TextBlock Margin="0,4,0,0"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           TextWrapping="Wrap"
+                                           Text="Good: Public_Contour_Shapes_Good  |  Bad: Public_Contour_Shapes_Missing_Bad" />
+                                <TextBlock Margin="0,3,0,0"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           TextWrapping="Wrap"
+                                           Text="Pipeline: Public_Contour_Shapes  |  판정: ResultCount 5는 OK, 2는 NG" />
+                                <TextBlock Margin="0,3,0,0"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           TextWrapping="Wrap"
+                                           Text="상단 실습 샘플 버튼으로 두 장을 연 뒤 Contour Tool에서 Retrieval mode, MIN_AREA, MAX_AREA, 컨투어 표시를 확인하고, Preview 또는 Pipeline Review를 직접 실행해 외곽선과 최종 개수를 비교합니다." />
+                            </StackPanel>
+                        </Border>
+                        <TextBlock Text="Contour는 통과한 영역의 경계선을 따라갑니다"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Margin="0,8,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="Blob이 연결된 영역을 후보로 세는 단계라면, Contour는 그 후보의 외곽선을 따라 실제 모양, 위치, 폭/높이를 확인하는 단계입니다." />
+                        <TextBlock Margin="0,5,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="Threshold와 Morphology 결과가 흔들리면 Contour도 흔들립니다. 그래서 보통 이진 입력, 면적 필터, 외곽선 결과를 같은 레시피에서 비교합니다." />
+
+                        <Grid Margin="0,12,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock VerticalAlignment="Center"
+                                       Text="관련 Tool View"
+                                       FontWeight="SemiBold" />
+                            <Button x:Name="btnContourOpenTool"
+                                    Grid.Column="1"
+                                    MinWidth="138"
+                                    Height="30"
+                                    Padding="10,4"
+                                    Content="Contour Tool 열기"
+                                    IsEnabled="False"
+                                    Tag="Contour"
+                                    ToolTip="Contour Tool View의 Threshold, ROI, Area 범위와 표시 옵션 위치를 엽니다."
+                                    Click="OpenRelatedToolButton_Click"
+                                    AutomationProperties.AutomationId="OpenVisionLearnContourOpenToolButton" />
+                        </Grid>
+                        <StackPanel x:Name="contourToolLocationPanel"
+                                    Margin="0,8,0,0"
+                                    AutomationProperties.AutomationId="OpenVisionLearnContourToolLocationPanel">
+                            <Separator Margin="0,0,0,7" />
+                            <TextBlock x:Name="txtContourToolLocationTitle"
+                                       FontWeight="SemiBold"
+                                       Text="PropertyGrid: Contour > 컨투어 표시, Retrieval mode, Min area / Max area"
+                                       TextWrapping="Wrap"
+                                       AutomationProperties.AutomationId="OpenVisionLearnContourToolLocationTitle" />
+                            <TextBlock x:Name="txtContourToolLocationDetail"
+                                       Margin="0,4,0,0"
+                                       Style="{StaticResource LearnMutedTextStyle}"
+                                       Text="필요하면 Approximation과 표시 색상/선 두께를 조정하고 Preview 또는 Pipeline Review에서 ResultCount, AreaMax, BoundsWidthMax, BoundsHeightMax를 비교하세요."
+                                       TextWrapping="Wrap"
+                                       AutomationProperties.AutomationId="OpenVisionLearnContourToolLocationDetail" />
+                        </StackPanel>
+
+                        <Border Margin="0,12,0,0"
+                                Style="{StaticResource LearnPanelStyle}"
+                                AutomationProperties.AutomationId="OpenVisionLearnContourDecisionPanel">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="6" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="4" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <TextBlock Text="판단 기준: Contour = 외곽선/모양"
+                                           FontWeight="SemiBold" />
+                                <TextBlock Grid.Row="2"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           Text="쓸 때: 통과한 후보의 경계, 중심, 폭/높이, shape 개수, DrawMode 표시를 확인할 때." />
+                                <TextBlock Grid.Row="4"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           Text="먼저 볼 것: Threshold/Morphology Output, RetrievalMode, DrawMode, MIN_AREA/MAX_AREA. ResultCount와 AreaMax, BoundsWidthMax, BoundsHeightMax를 같이 봅니다." />
+                            </Grid>
+                        </Border>
+
+                        <Grid Margin="0,14,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="Blob 필터 후 이진 후보"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Margin="0,3,0,10"
+                                               Text="큰 흰 영역은 검사 대상, 작은 점은 제외 후보입니다."
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <UniformGrid x:Name="contourInputGrid"
+                                                 Columns="7"
+                                                 Rows="5" />
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Column="2"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="외곽선 표시 결과"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock x:Name="txtContourFormula"
+                                               Margin="0,3,0,10"
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Button x:Name="btnContourPlay"
+                                                    MinWidth="72"
+                                                    Height="30"
+                                                    Content="Play"
+                                                    Click="ContourPlayButton_Click"
+                                                    ToolTip="Show the Contour decision steps."
+                                                    AutomationProperties.AutomationId="OpenVisionLearnContourPlayButton" />
+                                            <Button MinWidth="78"
+                                                    Height="30"
+                                                    Margin="8,0,0,0"
+                                                    Content="Step"
+                                                    Click="ContourStepButton_Click"
+                                                    ToolTip="Advance one Contour decision step."
+                                                    AutomationProperties.AutomationId="OpenVisionLearnContourStepButton" />
+                                            <Button MinWidth="72"
+                                                    Height="30"
+                                                    Margin="8,0,0,0"
+                                                    Content="Reset"
+                                                    Click="ContourResetButton_Click"
+                                                    ToolTip="Return the Contour animation to the binary input step."
+                                                    AutomationProperties.AutomationId="OpenVisionLearnContourResetButton" />
+                                        </StackPanel>
+                                        <TextBlock x:Name="txtContourAnimationStatus"
+                                                   Grid.Row="1"
+                                                   Margin="0,6,0,0"
+                                                   TextWrapping="Wrap"
+                                                   Style="{StaticResource LearnAnimationStatusStyle}"
+                                                   AutomationProperties.Name="Contour animation status"
+                                                   AutomationProperties.AutomationId="OpenVisionLearnContourAnimationStatus" />
+                                    </Grid>
+                                    <UniformGrid x:Name="contourOutputGrid"
+                                                 Columns="7"
+                                                 Rows="5" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <Border Margin="0,12,0,0"
+                                Style="{StaticResource LearnPanelStyle}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="10" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="10" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="10" />
+                                        <ColumnDefinition Width="220" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="표시 방식"
+                                               FontWeight="SemiBold"
+                                               VerticalAlignment="Center" />
+                                    <ComboBox x:Name="contourDrawModeCombo"
+                                              Grid.Column="2"
+                                              SelectedIndex="0"
+                                              SelectionChanged="ContourDrawModeCombo_SelectionChanged"
+                                              AutomationProperties.Name="Contour draw mode"
+                                              AutomationProperties.AutomationId="OpenVisionLearnContourDrawModeCombo">
+                                        <ComboBoxItem Content="Contour" />
+                                        <ComboBoxItem Content="Bounding box" />
+                                        <ComboBoxItem Content="Contour + box" />
+                                    </ComboBox>
+                                </Grid>
+                                <TextBlock x:Name="txtContourMeaning"
+                                           Grid.Row="2"
+                                           Style="{StaticResource LearnMutedTextStyle}" />
+                                <TextBlock Grid.Row="4"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           Text="Contour 결과가 NG라면 먼저 Threshold/Morphology Output과 Blob 면적 필터를 확인합니다." />
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+    </Grid>
+</UserControl>

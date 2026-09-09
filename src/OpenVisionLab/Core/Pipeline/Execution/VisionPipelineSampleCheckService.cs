@@ -22,6 +22,7 @@ namespace OpenVisionLab
         public bool ActualSuccess { get; set; }
         // Legacy sample-validation result after expected-failure and metric checks.
         public bool Success { get; set; }
+        public bool HasToolError { get; set; }
         public string Message { get; set; } = string.Empty;
         public string MetricText { get; set; } = string.Empty;
         public string DistanceMetricText { get; set; } = string.Empty;
@@ -330,6 +331,7 @@ namespace OpenVisionLab
                         ExecutionCompleted = true,
                         ActualSuccess = result.Success,
                         Success = success,
+                        HasToolError = result.Steps.Any(step => step != null && !step.Skipped && !step.ToolSuccess),
                         Message = message,
                         MetricText = metricText,
                         DistanceMetricText = BuildDistanceMetricText(result),
@@ -377,6 +379,7 @@ namespace OpenVisionLab
                 throw new InvalidOperationException($"Recipe XML could not be loaded: {sample.PipelineFullPath}");
             }
 
+            sample.ResolvePipelineDependencyPaths(loadedPipeline);
             VisionRecipeRunResult loadedResult = await runner.RunAsync(
                 loadedPipeline,
                 source,

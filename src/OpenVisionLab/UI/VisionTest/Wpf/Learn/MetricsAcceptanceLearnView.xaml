@@ -1,0 +1,106 @@
+<UserControl x:Class="OpenVisionLab.MetricsAcceptanceLearnView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:OpenVisionLab"
+             Focusable="False">
+    <UserControl.Resources>
+        <local:SharedResourceDictionary Source="LearnResources.xaml" />
+    </UserControl.Resources>
+    <Border x:Name="metricsAcceptanceTopicPanel"
+            Margin="0,10,8,0"
+            Style="{StaticResource LearnPanelStyle}"
+            Visibility="Visible">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <TextBlock Text="Metric은 영상 결과를 수치로 바꾸어 OK/NG를 판정합니다."
+                           FontWeight="SemiBold" />
+                <TextBlock Margin="0,8,0,0"
+                           Style="{StaticResource LearnMutedTextStyle}"
+                           Text="Good/Bad 샘플에서 지표가 의도한 결함 때문에 달라지는지 확인하세요. 결과가 비어 있으면 먼저 이미지, Template, 입력 Layer와 Pipeline 연결 상태를 확인합니다." />
+
+                <Border Margin="0,12,0,0"
+                        Style="{StaticResource LearnPanelStyle}">
+                    <Expander x:Name="metricGateCheatSheetExpander"
+                              Header="Minimum Good/Bad gate cheat sheet"
+                              IsExpanded="False"
+                              AutomationProperties.AutomationId="OpenVisionLearnMetricGateCheatSheetPanel">
+                        <TextBlock Margin="0,6,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                           Text="Matching/EdgeBasedMatching: ScoreMax + ResultCount + overlay 위치&#x0a;FeatureMatching: GoodMatches + ScoreMax + RANSAC/overlay&#x0a;Blob/Contour: ResultCount + AreaMin/AreaMax + BoundsWidth/BoundsHeight&#x0a;LineDistance: DistanceMmAvg + DistanceMmRange 또는 DistanceMmMax&#x0a;HSV/Mean/Geometry: MaskPixelRatio, MeanValueAvg 또는 ResultImageWidth/Height" />
+                    </Expander>
+                </Border>
+
+                <Grid Margin="0,14,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.Column="0"
+                            Style="{StaticResource LearnPanelStyle}">
+                        <StackPanel>
+                            <TextBlock Text="거리 샘플 (mm)"
+                                       FontWeight="SemiBold" />
+                            <TextBlock Margin="0,6,0,0"
+                                       Style="{StaticResource LearnMutedTextStyle}"
+                                       Text="한 줄의 긴 측정값이 평균 안에 숨는 사례입니다." />
+                            <UniformGrid x:Name="metricsAcceptanceSampleGrid"
+                                         Margin="0,10,0,0"
+                                         Columns="5"
+                                         Rows="1" />
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="2"
+                            Style="{StaticResource LearnPanelStyle}">
+                        <StackPanel>
+                            <TextBlock Text="판정 기준"
+                                       FontWeight="SemiBold" />
+                            <TextBlock x:Name="txtMetricsAcceptanceFormula"
+                                       Margin="0,4,0,8"
+                                       Style="{StaticResource LearnMutedTextStyle}" />
+                            <StackPanel Orientation="Horizontal">
+                                <Button x:Name="btnMetricsAcceptancePlay"
+                                        MinWidth="72"
+                                        Height="30"
+                                        Content="Play"
+                                        Click="MetricsAcceptancePlayButton_Click"
+                                        ToolTip="Show sample, average, and outlier gate steps."
+                                        AutomationProperties.AutomationId="OpenVisionLearnMetricsAcceptancePlayButton" />
+                                <Button MinWidth="78"
+                                        Height="30"
+                                        Margin="8,0,0,0"
+                                        Content="Step"
+                                        Click="MetricsAcceptanceStepButton_Click"
+                                        ToolTip="Advance one acceptance review step."
+                                        AutomationProperties.AutomationId="OpenVisionLearnMetricsAcceptanceStepButton" />
+                                <Button MinWidth="72"
+                                        Height="30"
+                                        Margin="8,0,0,0"
+                                        Content="Reset"
+                                        Click="MetricsAcceptanceResetButton_Click"
+                                        ToolTip="Return to the unreviewed metric samples."
+                                        AutomationProperties.AutomationId="OpenVisionLearnMetricsAcceptanceResetButton" />
+                            </StackPanel>
+                            <TextBlock x:Name="txtMetricsAcceptanceAnimationStatus"
+                                       Margin="0,6,0,0"
+                                       Style="{StaticResource LearnAnimationStatusStyle}"
+                                       AutomationProperties.Name="Metrics and Acceptance animation status"
+                                       AutomationProperties.AutomationId="OpenVisionLearnMetricsAcceptanceAnimationStatus" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <Border Margin="0,12,0,0"
+                        Style="{StaticResource LearnPanelStyle}">
+                    <StackPanel>
+                            <TextBlock Text="실습 순서"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Margin="0,6,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                       Text="실습 샘플에서 Good/Bad 쌍을 선택하고 Run Review를 실행한 뒤 ScoreMax, ResultCount, MeanValueAvg, DistanceMmAvg, DistanceMmRange를 판정 범위와 비교합니다." />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </Border>
+</UserControl>

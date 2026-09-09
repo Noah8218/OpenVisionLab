@@ -3,6 +3,7 @@ using AvalonDock.Layout;
 using System;
 using System.Windows;
 using System.Windows.Automation;
+using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 
 namespace OpenVisionLab.Docking.Controls
@@ -19,6 +20,11 @@ namespace OpenVisionLab.Docking.Controls
             DependencyObject current = source;
             while (current != null)
             {
+                if (current is ButtonBase)
+                {
+                    return string.Empty;
+                }
+
                 string typeName = current.GetType().Name;
                 string automationId = current is FrameworkElement element
                     ? AutomationProperties.GetAutomationId(element)

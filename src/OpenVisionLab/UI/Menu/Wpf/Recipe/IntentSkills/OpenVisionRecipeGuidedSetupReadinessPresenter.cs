@@ -16,6 +16,13 @@ namespace OpenVisionLab
                 " 위 값은 검사 설정 탭에서 입력합니다.",
                 " Enter these values in the Build inspection tab.");
 
+            if (OpenVisionRecipeLlmIntent.IsLocatorRelativeBlobTemplate(template))
+            {
+                return OpenVisionRecipeText.Local(
+                    "필수 입력: 검토된 locator 템플릿·검색 ROI·기준 자세·기준좌표 Blob ROI, 점수·모호성·각도·배율·유효영역 제한, Threshold와 Blob 면적. Min/Max 개수가 같을 때만 작업자 소유 ResultCount gate를 만들며, 그 외에는 측정 전용입니다. LLM은 증거 패킷의 Candidate ID만 선택합니다.",
+                    "Required inputs: reviewed locator template, search ROI, reference pose, fixed reference-coordinate Blob ROI, score/ambiguity/angle/scale/coverage limits, threshold, and Blob area. An operator-owned ResultCount gate is created only when Min and Max count match; otherwise the draft is measurement-only. The LLM selects only an evidence-packet Candidate ID.") + setupLocation;
+            }
+
             if (OpenVisionRecipeLlmIntent.IsHybridRelativeRoiGapTemplate(template))
             {
                 return OpenVisionRecipeText.Local(
@@ -102,6 +109,46 @@ namespace OpenVisionLab
         {
             input = input ?? new OpenVisionRecipeGuidedSetupReadinessInput();
             string template = input.Template ?? string.Empty;
+            if (OpenVisionRecipeLlmIntent.IsLocatorRelativeBlobTemplate(template))
+            {
+                if (!OpenVisionRecipeLocatorRelativeBlobIntentSkill.TryCreatePlan(
+                        input.ReferenceImagePath,
+                        input.HybridSearchRoiText,
+                        input.HybridRelativeRoiText,
+                        input.HybridReferencePoseText,
+                        input.HybridScoreMinimumText,
+                        input.HybridScoreMarginText,
+                        input.HybridAngleMinimumText,
+                        input.HybridAngleMaximumText,
+                        input.HybridScaleRatioMinimumText,
+                        input.HybridScaleRatioMaximumText,
+                        input.HybridMinimumValidPixelRatioText,
+                        input.BlobCountThresholdText,
+                        input.BlobCountMinAreaText,
+                        input.BlobCountMaxAreaText,
+                        string.Empty,
+                        out OpenVisionRecipeLocatorRelativeBlobIntentSkill.Plan plan,
+                        out string planMessage))
+                {
+                    return Status(false, "MISSING: " + planMessage);
+                }
+
+                bool minCountReady = OpenVisionRecipeBlobCountIntentSkill.TryParseNonNegativeInt(input.BlobCountMinCountText, out int minCount);
+                bool maxCountReady = OpenVisionRecipeBlobCountIntentSkill.TryParseNonNegativeInt(input.BlobCountMaxCountText, out int maxCount);
+                if (!minCountReady || !maxCountReady || minCount > maxCount)
+                {
+                    return Status(false, OpenVisionRecipeText.Local(
+                        "MISSING: ResultCount 최소/최대 개수는 0 이상이고 최소 <= 최대여야 합니다.",
+                        "MISSING: ResultCount min/max must be non-negative and min <= max."));
+                }
+
+                return Status(
+                    true,
+                    plan.IsMeasurementOnly
+                        ? "LOCATION GATED / MEASURE READY / NOT JUDGED: evidence Candidate ID -> NormalizeImage -> fixed ROI Threshold + Blob / count range is review-only"
+                        : "LOCATION GATED / MEASURE READY: evidence Candidate ID -> NormalizeImage -> fixed ROI Threshold + Blob / exact ResultCount gate");
+            }
+
             if (OpenVisionRecipeLlmIntent.IsHybridRelativeRoiGapTemplate(template))
             {
                 if (!OpenVisionRecipeHybridRelativeRoiIntentSkill.TryValidateInputs(

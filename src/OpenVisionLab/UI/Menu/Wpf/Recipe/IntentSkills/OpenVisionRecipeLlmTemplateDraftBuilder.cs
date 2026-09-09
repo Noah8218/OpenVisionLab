@@ -6,7 +6,24 @@ namespace OpenVisionLab
 {
     internal static class OpenVisionRecipeLlmTemplateDraftBuilder
     {
-        internal static VisionPipeline Create(string template, string referenceImagePath, string pinGapRoiText)
+        internal static VisionPipeline Create(
+            string template,
+            string referenceImagePath,
+            string pinGapRoiText,
+            string locatorSearchRoiText = null,
+            string locatorInspectionRoiText = null,
+            string locatorReferencePoseText = null,
+            string locatorScoreMinimumText = null,
+            string locatorScoreMarginText = null,
+            string locatorAngleMinimumText = null,
+            string locatorAngleMaximumText = null,
+            string locatorScaleRatioMinimumText = null,
+            string locatorScaleRatioMaximumText = null,
+            string locatorMinimumValidPixelRatioText = null,
+            string locatorThresholdText = null,
+            string locatorMinimumAreaText = null,
+            string locatorMaximumAreaText = null,
+            string locatorExpectedCountText = null)
         {
             string selectedTemplate = template ?? string.Empty;
             string pipelineName = "LLM_Starter_" + RecipeWorkspaceService.NormalizeStoragePathSegment(
@@ -14,6 +31,33 @@ namespace OpenVisionLab
                 "Item",
                 "LLM template name");
             VisionPipeline pipeline = new VisionPipeline { Name = pipelineName };
+
+            if (OpenVisionRecipeLlmIntent.IsLocatorRelativeBlobTemplate(selectedTemplate))
+            {
+                if (!OpenVisionRecipeLocatorRelativeBlobIntentSkill.TryCreatePlan(
+                        referenceImagePath,
+                        locatorSearchRoiText,
+                        locatorInspectionRoiText,
+                        locatorReferencePoseText,
+                        locatorScoreMinimumText,
+                        locatorScoreMarginText,
+                        locatorAngleMinimumText,
+                        locatorAngleMaximumText,
+                        locatorScaleRatioMinimumText,
+                        locatorScaleRatioMaximumText,
+                        locatorMinimumValidPixelRatioText,
+                        locatorThresholdText,
+                        locatorMinimumAreaText,
+                        locatorMaximumAreaText,
+                        locatorExpectedCountText,
+                        out OpenVisionRecipeLocatorRelativeBlobIntentSkill.Plan plan,
+                        out _))
+                {
+                    return pipeline;
+                }
+
+                return OpenVisionRecipeLocatorRelativeBlobIntentSkill.CreateMeasurementPipeline(plan);
+            }
 
             if (OpenVisionRecipeLlmIntent.IsPinArrayGapTemplate(selectedTemplate))
             {

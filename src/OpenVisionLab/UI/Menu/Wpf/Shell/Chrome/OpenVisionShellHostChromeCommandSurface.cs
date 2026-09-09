@@ -9,6 +9,7 @@ namespace OpenVisionLab
     {
         private readonly Action toggleToolRail;
         private readonly OpenVisionShellHostCommandController commandController;
+        private readonly OpenVisionShellHostLearnWindowController learnWindowController;
         private readonly OpenVisionShellHostToolWindowLifecycleController toolWindowLifecycleController;
         private readonly OpenVisionShellHostToolWindowController toolWindowController;
         private readonly Action<VISION_MENU> openGuidedSetupForTool;
@@ -17,6 +18,7 @@ namespace OpenVisionLab
         internal OpenVisionShellHostChromeCommandSurface(
             Action toggleToolRail,
             OpenVisionShellHostCommandController commandController,
+            OpenVisionShellHostLearnWindowController learnWindowController,
             OpenVisionShellHostToolWindowLifecycleController toolWindowLifecycleController,
             OpenVisionShellHostToolWindowController toolWindowController,
             Action<VISION_MENU> openGuidedSetupForTool,
@@ -24,25 +26,26 @@ namespace OpenVisionLab
         {
             this.toggleToolRail = toggleToolRail ?? throw new ArgumentNullException(nameof(toggleToolRail));
             this.commandController = commandController ?? throw new ArgumentNullException(nameof(commandController));
+            this.learnWindowController = learnWindowController ?? throw new ArgumentNullException(nameof(learnWindowController));
             this.toolWindowLifecycleController = toolWindowLifecycleController ?? throw new ArgumentNullException(nameof(toolWindowLifecycleController));
             this.toolWindowController = toolWindowController ?? throw new ArgumentNullException(nameof(toolWindowController));
             this.openGuidedSetupForTool = openGuidedSetupForTool ?? throw new ArgumentNullException(nameof(openGuidedSetupForTool));
             this.openTcpIntegration = openTcpIntegration ?? throw new ArgumentNullException(nameof(openTcpIntegration));
 
             ToggleToolRailCommand = new RelayCommand(this.toggleToolRail);
-            OpenLearnCommand = new RelayCommand(this.commandController.OpenLearn);
+            OpenLearnCommand = new RelayCommand(this.learnWindowController.OpenLearn);
             OpenToolLearnCommand = new RelayCommand<object>(parameter =>
             {
                 if (parameter is OpenVisionShellNavItem item)
                 {
-                    this.commandController.OpenLearnForTool(item.Menu);
+                    this.learnWindowController.OpenLearnForTool(item.Menu);
                 }
             });
             OpenToolSamplesCommand = new RelayCommand<object>(parameter =>
             {
                 if (parameter is OpenVisionShellNavItem item)
                 {
-                    this.commandController.OpenSamplesForTool(item.Menu);
+                    this.learnWindowController.OpenSamplesForTool(item.Menu);
                 }
             });
             OpenToolGuidedSetupCommand = new RelayCommand<object>(parameter =>

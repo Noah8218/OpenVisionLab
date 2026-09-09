@@ -1,6 +1,7 @@
 using OpenVisionLab.Pipeline.Controls;
 using OpenVisionLab.Vision2D.Pipeline;
 using OpenVisionLab.Vision2D.Result;
+using MahApps.Metro.IconPacks;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -39,6 +40,8 @@ namespace OpenVisionLab
         private bool suppressFixtureConsumerSelection;
         private bool hasScaleCalibrationRecord;
         private bool useCompactImageLayout;
+        private bool reviewDetailsExpanded;
+        private bool stepFlowExpanded = true;
 
         public OpenVisionPipelineReviewView()
         {
@@ -61,7 +64,13 @@ namespace OpenVisionLab
             SizeChanged += OnViewSizeChanged;
             btnReviewGuideToggle.Checked += OnReviewGuideToggleChanged;
             btnReviewGuideToggle.Unchecked += OnReviewGuideToggleChanged;
+            btnReviewDetailsToggle.Checked += OnReviewDetailsToggleChanged;
+            btnReviewDetailsToggle.Unchecked += OnReviewDetailsToggleChanged;
+            btnStepFlowToggle.Checked += OnStepFlowToggleChanged;
+            btnStepFlowToggle.Unchecked += OnStepFlowToggleChanged;
             Unloaded += OnUnloaded;
+            UpdateReviewDetailRowHeight();
+            UpdateStepFlowLayout();
         }
 
         public event EventHandler<PipelineFlowStepSelectedEventArgs> StepSelected = delegate { };
@@ -155,6 +164,10 @@ namespace OpenVisionLab
             SizeChanged -= OnViewSizeChanged;
             btnReviewGuideToggle.Checked -= OnReviewGuideToggleChanged;
             btnReviewGuideToggle.Unchecked -= OnReviewGuideToggleChanged;
+            btnReviewDetailsToggle.Checked -= OnReviewDetailsToggleChanged;
+            btnReviewDetailsToggle.Unchecked -= OnReviewDetailsToggleChanged;
+            btnStepFlowToggle.Checked -= OnStepFlowToggleChanged;
+            btnStepFlowToggle.Unchecked -= OnStepFlowToggleChanged;
             Unloaded -= OnUnloaded;
             objectResultBaseImage?.Dispose();
             objectResultBaseImage = null;
@@ -183,6 +196,7 @@ namespace OpenVisionLab
             lblResult.Text = T("PipelineReview.Result", "Inspection result");
             lblRunLog.Text = T("PipelineReview.RunLog", "Run Log");
             objectInspectorTab.Header = T("PipelineReview.ObjectInspector.Title", "Detection candidates");
+            objectRegionColumn.Header = T("PipelineReview.ObjectInspector.RegionColumn", "Region");
             objectStateColumn.Header = T("PipelineReview.ObjectInspector.StateColumn", "Status");
             objectAreaColumn.Header = T("PipelineReview.ObjectInspector.AreaColumn", "Area");
             objectCenterXColumn.Header = T("PipelineReview.ObjectInspector.CenterXColumn", "Center X");
@@ -212,6 +226,10 @@ namespace OpenVisionLab
             txtApplyScaleCalibrationButton.Text = T("PipelineReview.ScaleCalibration.Apply", "Apply to Step");
             lblReadiness.Text = T("PipelineReview.Readiness.Title", "Inspection readiness");
             txtReviewGuideToggle.Text = T("PipelineReview.Guide.Toggle", "Review guidance");
+            txtReviewDetailsToggle.Text = T("PipelineReview.Details.Toggle", "Review details");
+            txtReviewDetailsSummary.Text = T(
+                "PipelineReview.Details.Summary",
+                "Flow, parameters, result, and run log");
             lblReviewGuideStage.Text = T("PipelineReview.Guide.Stage", "Review");
             lblReviewGuideCurrent.Text = T("PipelineReview.Guide.Current", "Current Step");
             lblReviewGuideNext.Text = T("PipelineReview.Guide.Next", "Next Check");
@@ -265,6 +283,8 @@ namespace OpenVisionLab
             btnFixtureProducerEdit.ToolTip = T("PipelineReview.FixtureDesigner.EditProducerToolTip", "Open the fixture Matching Step in the authoritative Recipe Manager PropertyGrid");
             btnFixtureMeasurementEdit.ToolTip = T("PipelineReview.FixtureDesigner.EditMeasurementToolTip", "Open the downstream reference-coordinate ROI Step in the authoritative Recipe Manager PropertyGrid");
             btnFixtureRun.ToolTip = T("PipelineReview.FixtureDesigner.RunToolTip", "Run the pipeline explicitly and refresh fixture evidence");
+            UpdateReviewDetailsToggleVisuals();
+            UpdateStepFlowToggleVisuals();
         }
 
         private static string T(string key, string fallbackText)
@@ -612,35 +632,48 @@ namespace OpenVisionLab
         private void UpdateReviewDetailRowHeight()
         {
             bool compactGuideExpanded = useCompactImageLayout && btnReviewGuideToggle.IsChecked == true;
-            reviewDetailTabs.Visibility = compactGuideExpanded
+            bool detailsVisible = reviewDetailsExpanded && !compactGuideExpanded;
+            reviewDetailHost.Visibility = compactGuideExpanded
                 ? System.Windows.Visibility.Collapsed
                 : System.Windows.Visibility.Visible;
-            reviewDetailGapRow.Height = new System.Windows.GridLength(compactGuideExpanded ? 0D : 8D);
-            reviewDetailRow.MinHeight = compactGuideExpanded ? 0D : 96D;
+            reviewDetailTabs.Visibility = detailsVisible
+                ? System.Windows.Visibility.Visible
+                : System.Windows.Visibility.Collapsed;
+            reviewDetailSplitter.Visibility = detailsVisible
+                ? System.Windows.Visibility.Visible
+                : System.Windows.Visibility.Collapsed;
+            reviewDetailGapRow.Height = new System.Windows.GridLength(detailsVisible ? 8D : 4D);
+            reviewDetailRow.MinHeight = compactGuideExpanded ? 0D : 34D;
             if (compactGuideExpanded)
             {
                 reviewDetailRow.Height = new System.Windows.GridLength(0D);
                 return;
             }
 
+            if (!detailsVisible)
+            {
+                reviewDetailRow.Height = new System.Windows.GridLength(34D);
+                return;
+            }
+
             if (useCompactImageLayout)
             {
                 double compactHeight = matcherDiagnosticTab.Visibility == System.Windows.Visibility.Visible
-                    ? 180D
+                    ? 240D
                     : circleEvidenceTab.Visibility == System.Windows.Visibility.Visible
-                        ? 160D
-                        : 130D;
+                        ? 220D
+                        : 220D;
                 reviewDetailRow.Height = new System.Windows.GridLength(compactHeight);
                 return;
             }
 
             double height = matcherDiagnosticTab.Visibility == System.Windows.Visibility.Visible
-                ? 240D
+                ? 300D
                 : objectInspectorTab.Visibility == System.Windows.Visibility.Visible
-                    ? 180D
+                    ? 240D
                 : circleEvidenceTab.Visibility == System.Windows.Visibility.Visible
-                    ? 220D
-                    : 130D;
+                    ? 280D
+                    : 240D;
             reviewDetailRow.Height = new System.Windows.GridLength(height);
         }
 
@@ -666,6 +699,73 @@ namespace OpenVisionLab
         private void OnReviewGuideToggleChanged(object sender, System.Windows.RoutedEventArgs e)
         {
             UpdateReviewDetailRowHeight();
+        }
+
+        private void OnReviewDetailsToggleChanged(object sender, System.Windows.RoutedEventArgs e)
+        {
+            reviewDetailsExpanded = btnReviewDetailsToggle.IsChecked == true;
+            UpdateReviewDetailsToggleVisuals();
+            UpdateReviewDetailRowHeight();
+        }
+
+        private void OnStepFlowToggleChanged(object sender, System.Windows.RoutedEventArgs e)
+        {
+            stepFlowExpanded = btnStepFlowToggle.IsChecked == true;
+            UpdateStepFlowLayout();
+        }
+
+        private void UpdateReviewDetailsToggleVisuals()
+        {
+            if (btnReviewDetailsToggle == null)
+            {
+                return;
+            }
+
+            reviewDetailsExpanded = btnReviewDetailsToggle.IsChecked == true;
+            reviewDetailsToggleIcon.RenderTransform = new System.Windows.Media.RotateTransform(
+                reviewDetailsExpanded ? 180D : 0D);
+            btnReviewDetailsToggle.ToolTip = reviewDetailsExpanded
+                ? T("PipelineReview.Details.HideToolTip", "Hide review details")
+                : T("PipelineReview.Details.ShowToolTip", "Show review details");
+        }
+
+        private void UpdateStepFlowLayout()
+        {
+            if (btnStepFlowToggle == null)
+            {
+                return;
+            }
+
+            stepFlowExpanded = btnStepFlowToggle.IsChecked == true;
+            stepFlowColumn.Width = new System.Windows.GridLength(stepFlowExpanded ? 300D : 44D);
+            stepFlowPanel.Padding = stepFlowExpanded
+                ? new System.Windows.Thickness(10D)
+                : new System.Windows.Thickness(4D);
+            lblStepFlow.Visibility = stepFlowExpanded
+                ? System.Windows.Visibility.Visible
+                : System.Windows.Visibility.Collapsed;
+            stepFlowFocusHost.Visibility = stepFlowExpanded
+                ? System.Windows.Visibility.Visible
+                : System.Windows.Visibility.Collapsed;
+            pipelineFlowView.Visibility = stepFlowExpanded
+                ? System.Windows.Visibility.Visible
+                : System.Windows.Visibility.Collapsed;
+            stepFlowToggleIcon.Kind = stepFlowExpanded
+                ? PackIconMaterialKind.ChevronLeft
+                : PackIconMaterialKind.ChevronRight;
+            btnStepFlowToggle.ToolTip = stepFlowExpanded
+                ? T("PipelineReview.StepFlow.HideToolTip", "Collapse Step Flow")
+                : T("PipelineReview.StepFlow.ShowToolTip", "Expand Step Flow");
+        }
+
+        private void UpdateStepFlowToggleVisuals()
+        {
+            if (btnStepFlowToggle == null)
+            {
+                return;
+            }
+
+            UpdateStepFlowLayout();
         }
 
         internal bool MatcherDiagnosticTabVisibleForTest =>

@@ -297,8 +297,8 @@
     {
       "path": "dll/OpenVisionLab-Vision-SDK/OpenVisionLab.Core.dll",
       "repositoryState": "present",
-      "length": 36352,
-      "sha256": "5A694F8EC3F703E1E0E6FED49D6171203F45BC38A9A5B7445067CD2436A906A8",
+      "length": 35840,
+      "sha256": "6233CE81E3EFB83BF70C701873D83A2829463EC9F45AA7BD41CA037E132006B6",
       "assembly": "OpenVisionLab.Core, Version=3.0.0.0",
       "classification": "runtime-required",
       "directReferences": [
@@ -324,8 +324,8 @@
     {
       "path": "dll/OpenVisionLab-Vision-SDK/OpenVisionLab.Vision2D.Blob.dll",
       "repositoryState": "present",
-      "length": 20992,
-      "sha256": "AC874C4802FB6C9AB0AE743252A2DA52646A9B5B54EFC0DE08A665D21CEA659D",
+      "length": 24576,
+      "sha256": "EF9E85C37794B066EB97FA4E959241AD02F7B850EDF4EDF05B1AB41B903D8FCA",
       "assembly": "OpenVisionLab.Vision2D.Blob, Version=3.0.0.0",
       "classification": "runtime-required",
       "directReferences": [
@@ -350,8 +350,8 @@
     {
       "path": "dll/OpenVisionLab-Vision-SDK/OpenVisionLab.Vision2D.dll",
       "repositoryState": "present",
-      "length": 342528,
-      "sha256": "D656DB832842521A19D24583F928880092A52AB33A4631C9508A17523B0D22EF",
+      "length": 355328,
+      "sha256": "91A6D4DB01AA2E97F54BB5FF7A61FB0D0404432D0D86821E889350CCA5007B62",
       "assembly": "OpenVisionLab.Vision2D, Version=3.0.0.0",
       "classification": "runtime-required",
       "directReferences": [

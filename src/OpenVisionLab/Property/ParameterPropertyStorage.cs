@@ -1,4 +1,4 @@
-﻿namespace OpenVisionLab
+﻿namespace OpenVisionLab.Property
 {
     internal static class ParameterPropertyStorage
     {

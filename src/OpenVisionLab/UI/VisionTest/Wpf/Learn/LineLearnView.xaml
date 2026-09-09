@@ -1,0 +1,395 @@
+<UserControl x:Class="OpenVisionLab.LineLearnView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:OpenVisionLab"
+             Focusable="False">
+    <UserControl.Resources>
+        <local:SharedResourceDictionary Source="LearnResources.xaml" />
+    </UserControl.Resources>
+    <Grid>
+            <Border x:Name="edgeLineTopicPanel"
+                    Margin="0,10,8,0"
+                    Style="{StaticResource LearnPanelStyle}"
+                Visibility="Collapsed">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <Border Margin="0,0,0,12"
+                                Style="{StaticResource LearnPanelStyle}"
+                                AutomationProperties.AutomationId="OpenVisionLearnEdgeDetectionPracticePanel">
+                            <StackPanel>
+                                <TextBlock Text="공개 샘플로 확인"
+                                           FontWeight="SemiBold" />
+                                <TextBlock Margin="0,4,0,0"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           TextWrapping="Wrap"
+                                           Text="Good: Public_EdgeDetection_Shapes_Good  |  Bad: Public_EdgeDetection_Shapes_Missing_Bad" />
+                                <TextBlock Margin="0,3,0,0"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           TextWrapping="Wrap"
+                                           Text="Pipeline: Public_EdgeDetection_Shapes  |  최종 판정: ResultCount 4는 OK, 2는 NG" />
+                                <TextBlock Margin="0,3,0,0"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           TextWrapping="Wrap"
+                                           Text="상단 실습 샘플 버튼으로 두 장을 연 뒤 EdgeDetection Tool에서 Canny Low/High와 L2 Gradient를 확인하고, Preview 또는 Pipeline Review를 직접 실행해 edge map과 downstream Contour의 최종 개수를 비교합니다. 거리/폭 측정은 다음 LineDistance 주제에서 다룹니다." />
+                            </StackPanel>
+                        </Border>
+                        <TextBlock Text="Edge는 밝기 차이, Line은 이어진 Edge 후보입니다"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Margin="0,8,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="Edge는 이웃 픽셀 사이 GV 차이가 큰 지점입니다. Line은 그런 Edge 후보가 같은 방향으로 충분히 이어진 경우입니다." />
+                        <TextBlock Margin="0,5,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="OpenVisionLab에서는 Edge/Line으로 경계 위치를 확인하고, 거리나 폭 판정은 다음 LineDistance 측정 단계에서 다룹니다." />
+
+                        <Grid Margin="0,12,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock VerticalAlignment="Center"
+                                       Text="관련 Tool View"
+                                       FontWeight="SemiBold" />
+                            <Button x:Name="btnEdgeDetectionOpenTool"
+                                    Grid.Column="1"
+                                    MinWidth="164"
+                                    Height="30"
+                                    Padding="10,4"
+                                    Content="EdgeDetection Tool 열기"
+                                    IsEnabled="False"
+                                    Tag="EdgeDetection"
+                                    ToolTip="EdgeDetection Tool View의 Edge Type과 Canny/Sobel 파라미터 위치를 엽니다."
+                                    Click="OpenRelatedToolButton_Click"
+                                    AutomationProperties.AutomationId="OpenVisionLearnEdgeDetectionOpenToolButton" />
+                            <Button x:Name="btnEdgeLineOpenLineTool"
+                                    Grid.Column="3"
+                                    MinWidth="118"
+                                    Height="30"
+                                    Padding="10,4"
+                                    Content="Line Tool 열기"
+                                    IsEnabled="False"
+                                    Tag="Line"
+                                    ToolTip="Line Tool View의 Purpose, ROI, Polarity, Direction, Contrast 위치를 엽니다."
+                                    Click="OpenRelatedToolButton_Click"
+                                    AutomationProperties.AutomationId="OpenVisionLearnEdgeLineOpenLineToolButton" />
+                        </Grid>
+                        <StackPanel x:Name="edgeLineToolLocationPanel"
+                                    Margin="0,8,0,0"
+                                    AutomationProperties.AutomationId="OpenVisionLearnEdgeLineToolLocationPanel">
+                            <Separator Margin="0,0,0,7" />
+                            <TextBlock x:Name="txtEdgeLineToolLocationTitle"
+                                       FontWeight="SemiBold"
+                                       Text="선택 기준: EdgeDetection = edge map 생성 | Line = ROI에서 edge/fit line 검출"
+                                       TextWrapping="Wrap"
+                                       AutomationProperties.AutomationId="OpenVisionLearnEdgeLineToolLocationTitle" />
+                            <TextBlock x:Name="txtEdgeLineToolLocationDetail"
+                                       Margin="0,4,0,0"
+                                       Style="{StaticResource LearnMutedTextStyle}"
+                                       Text="EdgeDetection에서는 경계 픽셀을, Line에서는 ROI 안의 검출점과 피팅 라인을 Preview로 확인하세요."
+                                       TextWrapping="Wrap"
+                                       AutomationProperties.AutomationId="OpenVisionLearnEdgeLineToolLocationDetail" />
+                        </StackPanel>
+
+                        <Grid Margin="0,14,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="원본 GV 샘플"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Margin="0,3,0,10"
+                                               Text="왼쪽 어두운 영역과 오른쪽 밝은 영역 사이에 경계가 있습니다."
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <UniformGrid x:Name="edgeLineInputGrid"
+                                                 Columns="5"
+                                                 Rows="5" />
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Column="2"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="Edge / Line 후보"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock x:Name="txtEdgeLineFormula"
+                                               Margin="0,3,0,10"
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Button x:Name="btnEdgeLinePlay"
+                                                    MinWidth="72"
+                                                    Height="30"
+                                                    Content="Play"
+                                                    Click="EdgeLinePlayButton_Click"
+                                                    ToolTip="Show the Edge / Line decision steps."
+                                                    AutomationProperties.AutomationId="OpenVisionLearnEdgeLinePlayButton" />
+                                            <Button MinWidth="78"
+                                                    Height="30"
+                                                    Margin="8,0,0,0"
+                                                    Content="Step"
+                                                    Click="EdgeLineStepButton_Click"
+                                                    ToolTip="Advance one Edge / Line decision step."
+                                                    AutomationProperties.AutomationId="OpenVisionLearnEdgeLineStepButton" />
+                                            <Button MinWidth="72"
+                                                    Height="30"
+                                                    Margin="8,0,0,0"
+                                                    Content="Reset"
+                                                    Click="EdgeLineResetButton_Click"
+                                                    ToolTip="Return the Edge / Line animation to the GV sample step."
+                                                    AutomationProperties.AutomationId="OpenVisionLearnEdgeLineResetButton" />
+                                        </StackPanel>
+                                        <TextBlock x:Name="txtEdgeLineAnimationStatus"
+                                                   Grid.Row="1"
+                                                   Margin="0,6,0,0"
+                                                   TextWrapping="Wrap"
+                                                   Style="{StaticResource LearnAnimationStatusStyle}"
+                                                   AutomationProperties.Name="Edge and Line animation status"
+                                                   AutomationProperties.AutomationId="OpenVisionLearnEdgeLineAnimationStatus" />
+                                    </Grid>
+                                    <UniformGrid x:Name="edgeLineOutputGrid"
+                                                 Columns="5"
+                                                 Rows="5" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <Border Margin="0,12,0,0"
+                                Style="{StaticResource LearnPanelStyle}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="8" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="10" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="8" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="EDGE_THRESHOLD"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock x:Name="txtEdgeThreshold"
+                                               Grid.Column="1"
+                                               Foreground="{StaticResource VisionTool.SecondaryTextBrush}" />
+                                </Grid>
+                                <Slider x:Name="edgeThresholdSlider"
+                                        Grid.Row="2"
+                                        Minimum="10"
+                                        Maximum="150"
+                                        TickFrequency="5"
+                                        IsSnapToTickEnabled="True"
+                                        IsMoveToPointEnabled="True"
+                                        ValueChanged="EdgeThresholdSlider_ValueChanged"
+                                        AutomationProperties.Name="Edge strength threshold"
+                                        AutomationProperties.AutomationId="OpenVisionLearnEdgeThresholdSlider" />
+                                <TextBlock x:Name="txtEdgeLineMeaning"
+                                           Grid.Row="4"
+                                           Style="{StaticResource LearnMutedTextStyle}" />
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+            <Border x:Name="lineDistanceTopicPanel"
+                    Margin="0,10,8,0"
+                    Style="{StaticResource LearnPanelStyle}"
+                    Visibility="Collapsed">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <Border Margin="0,0,0,12"
+                                Style="{StaticResource LearnPanelStyle}"
+                                AutomationProperties.AutomationId="OpenVisionLearnLineDistancePracticePanel">
+                            <StackPanel>
+                                <TextBlock Text="공개 샘플로 확인"
+                                           FontWeight="SemiBold" />
+                                <TextBlock Margin="0,4,0,0"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           TextWrapping="Wrap"
+                                           Text="Good: Public_Line_Pins_Good  |  Bad: Public_Line_Pins_WidePin_Bad" />
+                                <TextBlock Margin="0,3,0,0"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           TextWrapping="Wrap"
+                                           Text="Pipeline: Public_Line_Pins_Distance  |  일관성: DistanceMmRange 0.03 이하는 OK  |  대표 거리: DistanceMmAvg 0.20..0.25" />
+                                <TextBlock Margin="0,3,0,0"
+                                           Style="{StaticResource LearnMutedTextStyle}"
+                                           TextWrapping="Wrap"
+                                           Text="상단 실습 샘플 버튼으로 두 장을 연 뒤 Line Tool에서 Measure, Line A/B, CvROI, PIXELPERMM과 sampling 값을 확인합니다. Preview 또는 Pipeline Review를 직접 실행해 Range를 먼저 보고, 통과한 경우에만 평균 거리를 비교합니다." />
+                            </StackPanel>
+                        </Border>
+                        <TextBlock Text="LineDistance는 두 Edge 사이 거리를 여러 줄에서 잽니다"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Margin="0,8,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="한 줄만 재면 우연히 맞을 수 있습니다. LineDistance는 ROI 안에서 여러 sampling line을 만들고, 각 줄의 왼쪽/오른쪽 Edge 사이 거리를 계산합니다." />
+                        <TextBlock Margin="0,5,0,0"
+                                   Style="{StaticResource LearnMutedTextStyle}"
+                                   Text="핀 gap, pitch, 폭, clearance 같은 측정은 DistanceAvg만 보지 말고 DistanceRange나 Max 같은 튐 검사를 같이 둡니다." />
+
+                        <Grid Margin="0,12,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock VerticalAlignment="Center"
+                                       Text="관련 Tool View"
+                                       FontWeight="SemiBold" />
+                            <Button x:Name="btnLineDistanceOpenTool"
+                                    Grid.Column="1"
+                                    MinWidth="118"
+                                    Height="30"
+                                    Padding="10,4"
+                                    Content="Line Tool 열기"
+                                    IsEnabled="False"
+                                    Tag="Line"
+                                    ToolTip="Line Tool View의 Measure, Line A/B, ROI, Pixel/mm 위치를 엽니다."
+                                    Click="OpenRelatedToolButton_Click"
+                                    AutomationProperties.AutomationId="OpenVisionLearnLineDistanceOpenToolButton" />
+                        </Grid>
+                        <StackPanel x:Name="lineDistanceToolLocationPanel"
+                                    Margin="0,8,0,0"
+                                    AutomationProperties.AutomationId="OpenVisionLearnLineDistanceToolLocationPanel">
+                            <Separator Margin="0,0,0,7" />
+                            <TextBlock x:Name="txtLineDistanceToolLocationTitle"
+                                       FontWeight="SemiBold"
+                                       Text="Line Tool: Purpose &gt; Measure, Line A/B, ROI"
+                                       TextWrapping="Wrap"
+                                       AutomationProperties.AutomationId="OpenVisionLearnLineDistanceToolLocationTitle" />
+                            <TextBlock x:Name="txtLineDistanceToolLocationDetail"
+                                       Margin="0,4,0,0"
+                                       Style="{StaticResource LearnMutedTextStyle}"
+                                       Text="Pixel/mm, Polarity, Direction, Contrast, Sampling step을 설정하고 Preview 또는 Pipeline Review에서 DistanceMmAvg와 DistanceMmRange/Max를 함께 확인하세요."
+                                       TextWrapping="Wrap"
+                                       AutomationProperties.AutomationId="OpenVisionLearnLineDistanceToolLocationDetail" />
+                        </StackPanel>
+
+                        <Grid Margin="0,14,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="ROI 안의 sampling line"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Margin="0,3,0,10"
+                                               Text="L/R은 각 줄에서 찾은 왼쪽/오른쪽 Edge입니다."
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <UniformGrid x:Name="lineDistanceInputGrid"
+                                                 Columns="9"
+                                                 Rows="5" />
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Column="2"
+                                    Style="{StaticResource LearnPanelStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="줄별 거리"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock x:Name="txtLineDistanceFormula"
+                                               Margin="0,3,0,10"
+                                               Style="{StaticResource LearnMutedTextStyle}" />
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Button x:Name="btnLineDistancePlay"
+                                                    MinWidth="72"
+                                                    Height="30"
+                                                    Content="Play"
+                                                    Click="LineDistancePlayButton_Click"
+                                                    ToolTip="Show the LineDistance measurement steps."
+                                                    AutomationProperties.AutomationId="OpenVisionLearnLineDistancePlayButton" />
+                                            <Button MinWidth="78"
+                                                    Height="30"
+                                                    Margin="8,0,0,0"
+                                                    Content="Step"
+                                                    Click="LineDistanceStepButton_Click"
+                                                    ToolTip="Advance one LineDistance measurement step."
+                                                    AutomationProperties.AutomationId="OpenVisionLearnLineDistanceStepButton" />
+                                            <Button MinWidth="72"
+                                                    Height="30"
+                                                    Margin="8,0,0,0"
+                                                    Content="Reset"
+                                                    Click="LineDistanceResetButton_Click"
+                                                    ToolTip="Return the LineDistance animation to the L/R edge-pair step."
+                                                    AutomationProperties.AutomationId="OpenVisionLearnLineDistanceResetButton" />
+                                        </StackPanel>
+                                        <TextBlock x:Name="txtLineDistanceAnimationStatus"
+                                                   Grid.Row="1"
+                                                   Margin="0,6,0,0"
+                                                   TextWrapping="Wrap"
+                                                   Style="{StaticResource LearnAnimationStatusStyle}"
+                                                   AutomationProperties.Name="LineDistance animation status"
+                                                   AutomationProperties.AutomationId="OpenVisionLearnLineDistanceAnimationStatus" />
+                                    </Grid>
+                                    <UniformGrid x:Name="lineDistanceOutputGrid"
+                                                 Columns="5"
+                                                 Rows="1" />
+                                    <TextBlock Margin="0,10,0,0"
+                                               Style="{StaticResource LearnMutedTextStyle}"
+                                               Text="판정 기준: DistanceMmAvg는 대표 gap/pitch를 확인하고 DistanceMmRange 또는 DistanceMmMax는 유난히 길거나 짧은 측정선을 찾습니다. CvROI, SAMPLING_STEP, POINT_RANGE, 방향, 극성, PIXELPERMM을 먼저 맞추세요." />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <Border Margin="0,12,0,0"
+                                Style="{StaticResource LearnPanelStyle}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="8" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="10" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="10" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="6" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="DISTANCE_RANGE_MAX"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock x:Name="txtLineDistanceRangeMax"
+                                               Grid.Column="1"
+                                               Foreground="{StaticResource VisionTool.SecondaryTextBrush}" />
+                                </Grid>
+                                <Slider x:Name="lineDistanceRangeMaxSlider"
+                                        Grid.Row="2"
+                                        Minimum="0"
+                                        Maximum="2"
+                                        TickFrequency="0.25"
+                                        IsSnapToTickEnabled="True"
+                                        IsMoveToPointEnabled="True"
+                                        ValueChanged="LineDistanceRangeMaxSlider_ValueChanged"
+                                        AutomationProperties.Name="Maximum distance range in millimeters"
+                                        AutomationProperties.AutomationId="OpenVisionLearnLineDistanceRangeSlider" />
+                                <TextBlock x:Name="txtLineDistanceMeaning"
+                                           Grid.Row="4"
+                                           Style="{StaticResource LearnMutedTextStyle}" />
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+    </Grid>
+</UserControl>

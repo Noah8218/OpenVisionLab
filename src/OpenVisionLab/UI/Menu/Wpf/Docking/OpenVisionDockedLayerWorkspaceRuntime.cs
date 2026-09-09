@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -221,6 +222,11 @@ namespace OpenVisionLab
 
         private void OnWorkspacePreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
+            if (FindVisualAncestor<ButtonBase>(e?.OriginalSource as DependencyObject) != null)
+            {
+                return;
+            }
+
             pointerLayerSelectionPending = true;
             workspaceView.Dispatcher.BeginInvoke(
                 DispatcherPriority.Background,

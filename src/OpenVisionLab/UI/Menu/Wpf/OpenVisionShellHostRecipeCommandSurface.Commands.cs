@@ -42,6 +42,12 @@ namespace OpenVisionLab
         private void InitializeLlmDraftCommands()
         {
             LoadLlmXmlDraftCommand = new RelayCommand(LoadLlmXmlDraft, CanUseSelectedRecipe);
+            LoadLocatorEvidencePacketCommand = new RelayCommand(LoadLocatorEvidencePacket, CanUseSelectedRecipe);
+            LoadLocatorEvidenceReviewDecisionCommand = new RelayCommand(LoadLocatorEvidenceReviewDecision, CanUseSelectedRecipe);
+            ApproveLocatorEvidenceReviewDecisionCommand = new RelayCommand(ApproveLocatorEvidenceReviewDecision, CanRecordLocatorEvidenceReviewDecision);
+            RejectLocatorEvidenceReviewDecisionCommand = new RelayCommand(RejectLocatorEvidenceReviewDecision, CanRecordLocatorEvidenceReviewDecision);
+            RequestLocatorEvidenceReplacementCommand = new RelayCommand(RequestLocatorEvidenceReplacement, CanRecordLocatorEvidenceReviewDecision);
+            CompileLocatorEvidencePacketCommand = new RelayCommand(CompileLocatorEvidencePacket, CanCompileLocatorEvidencePacket);
             ValidateLlmXmlDraftCommand = new RelayCommand(ValidateLlmXmlDraft, CanUseLlmXmlDraft);
             ImportLlmXmlDraftCommand = new RelayCommand(ImportLlmXmlDraft, CanImportLlmXmlDraft);
             CopyLlmPromptCommand = new RelayCommand(CopyLlmPrompt, CanCopyLlmPrompt);

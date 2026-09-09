@@ -39,6 +39,12 @@ public sealed record TwoDIntegrationRunRecord(
     /// </summary>
     public int SourceImageWidth { get; init; }
     public int SourceImageHeight { get; init; }
+
+    /// <summary>
+    /// Unknown metric names are retained with an explicit unit diagnostic
+    /// instead of being silently projected to the dimensionless unit.
+    /// </summary>
+    public IReadOnlyList<string> MetricUnitDiagnostics { get; init; } = [];
 }
 
 public sealed record TwoDIntegrationStepRecord(
@@ -57,6 +63,14 @@ public sealed record TwoDIntegrationStepRecord(
     /// consumer can project the actual detected points.
     /// </summary>
     public IReadOnlyList<TwoDIntegrationOverlayRecord> Overlays { get; init; } = [];
+
+    /// <summary>
+    /// The layers used by the step are persisted with the geometry. A
+    /// consumer must not assume that an overlay belongs to the source image.
+    /// </summary>
+    public string InputLayer { get; init; } = string.Empty;
+    public string OutputLayer { get; init; } = string.Empty;
+    public string OverlayCoordinateLayer { get; init; } = string.Empty;
 }
 
 public sealed record TwoDIntegrationOverlayRecord(
@@ -86,7 +100,9 @@ public sealed record TwoDIntegrationOverlayPoint(double X, double Y);
 public static class TwoDIntegrationExchange
 {
     private const string RunRecordFileName = "2d-run-record.json";
-    private const string MetricUnit = "unitless";
+    private const string RunLockFileName = ".2d-run.lock";
+    private const string MixedOverlayCoordinateLayer = "mixed";
+    private const string UnknownOverlayCoordinateLayer = "unknown";
     private static readonly JsonSerializerOptions RunRecordJsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -179,73 +195,49 @@ public static class TwoDIntegrationExchange
     public static IntegrationAcknowledgementV2 AcknowledgeHandoff(
         string exchangeRoot,
         Guid transactionId) =>
-        AcknowledgeHandoff(
+        PublishAcknowledgement(
             exchangeRoot,
             transactionId,
-            ReadHandoff(exchangeRoot, transactionId).Context.ConsumerBuild);
+            rejectionReason: null,
+            runtimeBuildManifestPath: null);
 
     internal static IntegrationAcknowledgementV2 AcknowledgeHandoff(
         string exchangeRoot,
         Guid transactionId,
         string runtimeBuildManifestPath) =>
-        AcknowledgeHandoff(
-            exchangeRoot,
-            transactionId,
-            TwoDIntegrationBuildIdentity.LoadQualifiedTargetIdentity(
-                ReadHandoff(exchangeRoot, transactionId).Context.ConsumerBuild,
-                runtimeBuildManifestPath));
-
-    public static IntegrationAcknowledgementV2 AcknowledgeHandoff(
-        string exchangeRoot,
-        Guid transactionId,
-        IntegrationApplicationIdentity consumerBuild) =>
         PublishAcknowledgement(
             exchangeRoot,
             transactionId,
-            consumerBuild,
-            rejectionReason: null);
+            rejectionReason: null,
+            runtimeBuildManifestPath: runtimeBuildManifestPath);
 
     public static IntegrationAcknowledgementV2 RejectHandoff(
         string exchangeRoot,
         Guid transactionId,
         string rejectionReason) =>
-        RejectHandoff(
+        PublishAcknowledgement(
             exchangeRoot,
             transactionId,
-            ReadHandoffEnvelope(exchangeRoot, transactionId).Context.ConsumerBuild,
-            rejectionReason);
+            rejectionReason,
+            runtimeBuildManifestPath: null);
 
     internal static IntegrationAcknowledgementV2 RejectHandoff(
         string exchangeRoot,
         Guid transactionId,
         string rejectionReason,
         string runtimeBuildManifestPath) =>
-        RejectHandoff(
-            exchangeRoot,
-            transactionId,
-            TwoDIntegrationBuildIdentity.LoadQualifiedTargetIdentity(
-                ReadHandoffEnvelope(exchangeRoot, transactionId).Context.ConsumerBuild,
-                runtimeBuildManifestPath),
-            rejectionReason);
-
-    public static IntegrationAcknowledgementV2 RejectHandoff(
-        string exchangeRoot,
-        Guid transactionId,
-        IntegrationApplicationIdentity consumerBuild,
-        string rejectionReason) =>
         PublishAcknowledgement(
             exchangeRoot,
             transactionId,
-            consumerBuild,
-            rejectionReason);
+            rejectionReason,
+            runtimeBuildManifestPath);
 
     private static IntegrationAcknowledgementV2 PublishAcknowledgement(
         string exchangeRoot,
         Guid transactionId,
-        IntegrationApplicationIdentity consumerBuild,
-        string rejectionReason)
+        string? rejectionReason,
+        string? runtimeBuildManifestPath)
     {
-        ArgumentNullException.ThrowIfNull(consumerBuild);
         if (rejectionReason is not null && string.IsNullOrWhiteSpace(rejectionReason))
         {
             throw new ArgumentException(
@@ -256,7 +248,10 @@ public static class TwoDIntegrationExchange
         var handoff = rejectionReason is null
             ? ReadHandoff(exchangeRoot, transactionId)
             : ReadHandoffEnvelope(exchangeRoot, transactionId);
-        EnsureConsumerIdentity(handoff, consumerBuild);
+        ValidateTwoDConsumer(handoff);
+        var consumerBuild = TwoDIntegrationBuildIdentity.LoadQualifiedTargetIdentity(
+            handoff.Context.ConsumerBuild,
+            runtimeBuildManifestPath);
         var transactionDirectory = GetTransactionDirectory(exchangeRoot, transactionId);
         var acknowledgementPath = Path.Combine(
             transactionDirectory,
@@ -347,18 +342,17 @@ public static class TwoDIntegrationExchange
         return result;
     }
 
-    public static async Task<IntegrationResultV2> RunAcceptedHandoffAsync(
+    public static Task<IntegrationResultV2> RunAcceptedHandoffAsync(
         string exchangeRoot,
         Guid transactionId,
         int stepTimeoutMilliseconds = 60000,
         CancellationToken cancellationToken = default) =>
-        await RunAcceptedHandoffAsync(
-                exchangeRoot,
-                transactionId,
-                ReadHandoff(exchangeRoot, transactionId).Context.ConsumerBuild,
-                stepTimeoutMilliseconds,
-                cancellationToken)
-            .ConfigureAwait(false);
+        RunAcceptedHandoffCoreAsync(
+            exchangeRoot,
+            transactionId,
+            runtimeBuildManifestPath: null,
+            stepTimeoutMilliseconds: stepTimeoutMilliseconds,
+            cancellationToken: cancellationToken);
 
     internal static Task<IntegrationResultV2> RunAcceptedHandoffAsync(
         string exchangeRoot,
@@ -366,23 +360,20 @@ public static class TwoDIntegrationExchange
         string runtimeBuildManifestPath,
         int stepTimeoutMilliseconds = 60000,
         CancellationToken cancellationToken = default) =>
-        RunAcceptedHandoffAsync(
+        RunAcceptedHandoffCoreAsync(
             exchangeRoot,
             transactionId,
-            TwoDIntegrationBuildIdentity.LoadQualifiedTargetIdentity(
-                ReadHandoff(exchangeRoot, transactionId).Context.ConsumerBuild,
-                runtimeBuildManifestPath),
+            runtimeBuildManifestPath,
             stepTimeoutMilliseconds,
             cancellationToken);
 
-    public static async Task<IntegrationResultV2> RunAcceptedHandoffAsync(
+    private static async Task<IntegrationResultV2> RunAcceptedHandoffCoreAsync(
         string exchangeRoot,
         Guid transactionId,
-        IntegrationApplicationIdentity consumerBuild,
-        int stepTimeoutMilliseconds = 60000,
-        CancellationToken cancellationToken = default)
+        string? runtimeBuildManifestPath,
+        int stepTimeoutMilliseconds,
+        CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(consumerBuild);
         if (stepTimeoutMilliseconds <= 0)
         {
             throw new ArgumentOutOfRangeException(
@@ -391,7 +382,10 @@ public static class TwoDIntegrationExchange
         }
 
         var handoff = ReadHandoff(exchangeRoot, transactionId);
-        EnsureConsumerIdentity(handoff, consumerBuild);
+        ValidateTwoDConsumer(handoff);
+        var consumerBuild = TwoDIntegrationBuildIdentity.LoadQualifiedTargetIdentity(
+            handoff.Context.ConsumerBuild,
+            runtimeBuildManifestPath);
         var acknowledgement = ReadAcknowledgement(exchangeRoot, transactionId);
         if (acknowledgement.Status != IntegrationAcknowledgementStatus.Accepted)
         {
@@ -401,6 +395,7 @@ public static class TwoDIntegrationExchange
         }
 
         var transactionDirectory = GetTransactionDirectory(exchangeRoot, transactionId);
+        using var runLease = AcquireRunLease(transactionDirectory);
         var resultPath = Path.Combine(
             transactionDirectory,
             IntegrationTransactionLayout.ResultFileName);
@@ -419,6 +414,7 @@ public static class TwoDIntegrationExchange
             IntegrationArtifactRoles.InspectionRecipe);
         var sourcePath = ResolveArtifactPath(transactionDirectory, sourceArtifact);
         var recipePath = ResolveArtifactPath(transactionDirectory, recipeArtifact);
+        string locatorEvidenceDirectory = string.Empty;
 
         try
         {
@@ -430,16 +426,35 @@ public static class TwoDIntegrationExchange
                     $"The inspection source could not be decoded: {sourceArtifact.RelativePath}");
             }
 
-            using var run = await new VisionRecipeRunner().RunAsync(
+            var locatorPlan = TwoDIntegrationLocatorRecipeContract.IsLocatorRecipe(recipePath)
+                ? TwoDIntegrationLocatorRecipeContract.CreatePlan(
                     recipePath,
-                    source,
-                    VisionRecipeRunner.DefaultInputLayer,
-                    stepTimeoutMilliseconds,
-                    cancellationToken)
-                .ConfigureAwait(false);
+                    ResolveArtifactPath(
+                        transactionDirectory,
+                        RequireLocatorTemplateArtifact(handoff)))
+                : null;
+            var locatorPipeline = locatorPlan is null
+                ? null
+                : OpenVisionRecipeLocatorRelativeBlobIntentSkill.CreateMeasurementPipeline(locatorPlan);
+            using var run = locatorPipeline is null
+                ? await new VisionRecipeRunner().RunAsync(
+                        recipePath,
+                        source,
+                        VisionRecipeRunner.DefaultInputLayer,
+                        stepTimeoutMilliseconds,
+                        cancellationToken)
+                    .ConfigureAwait(false)
+                : await new VisionRecipeRunner().RunAsync(
+                        locatorPipeline,
+                        source,
+                        VisionRecipeRunner.DefaultInputLayer,
+                        stepTimeoutMilliseconds,
+                        cancellationToken)
+                    .ConfigureAwait(false);
             cancellationToken.ThrowIfCancellationRequested();
 
             var runId = CreateRunId(handoff);
+            var metricProjection = CreateMetricProjection(run);
             var runRecord = CreateRunRecord(
                 runId,
                 handoff,
@@ -447,7 +462,54 @@ public static class TwoDIntegrationExchange
                 recipeArtifact,
                 run,
                 source.Width,
-                source.Height);
+                source.Height,
+                metricProjection.UnknownUnitDiagnostics);
+            IReadOnlyList<IntegrationArtifactReference> evidence = [];
+            if (locatorPlan is not null)
+            {
+                locatorEvidenceDirectory = Path.Combine(
+                    transactionDirectory,
+                    IntegrationTransactionLayout.ArtifactsDirectoryName,
+                    "locator");
+                if (run.PipelineRunResult is null
+                    || locatorPipeline is null)
+                {
+                    throw new InvalidOperationException(
+                        "The locator runtime result was not retained for evidence export.");
+                }
+
+                if (!OpenVisionRecipeLocatorRelativeBlobEvidenceExporter.TryExport(
+                        locatorPlan,
+                        locatorPipeline,
+                        run.PipelineRunResult,
+                        source,
+                        sourcePath,
+                        locatorEvidenceDirectory,
+                        consumerBuild.ApplicationVersion,
+                        out _,
+                        out var packetPath,
+                        out var overlayPath,
+                        out var exportMessage))
+                {
+                    throw new InvalidOperationException(
+                        $"The locator evidence packet was not published: {exportMessage}");
+                }
+
+                evidence =
+                [
+                    CreateArtifactReference(
+                        TwoDIntegrationLocatorRecipeContract.EvidenceRole,
+                        TwoDIntegrationLocatorRecipeContract.EvidenceArtifactId,
+                        packetPath,
+                        $"{IntegrationTransactionLayout.ArtifactsDirectoryName}/locator/evidence.packet.json"),
+                    CreateArtifactReference(
+                        TwoDIntegrationLocatorRecipeContract.OverlayRole,
+                        TwoDIntegrationLocatorRecipeContract.OverlayArtifactId,
+                        overlayPath,
+                        $"{IntegrationTransactionLayout.ArtifactsDirectoryName}/locator/locator-runtime-overlay.png")
+                ];
+            }
+
             var runRecordPath = WriteRunRecord(
                 transactionDirectory,
                 runRecord);
@@ -474,8 +536,8 @@ public static class TwoDIntegrationExchange
                     runId,
                     runRecordReference,
                     IntegrationRunCorrelation.FromContext(handoff.Context),
-                    CreateMetrics(run),
-                    [],
+                    metricProjection.Metrics,
+                    evidence,
                     null);
                 ThrowIfInvalid(IntegrationContractValidator.ValidateV2Sequence(
                     handoff,
@@ -495,6 +557,7 @@ public static class TwoDIntegrationExchange
         }
         catch (OperationCanceledException)
         {
+            TryDeleteLocatorArtifacts(locatorEvidenceDirectory);
             return PublishFailedResult(
                 transactionDirectory,
                 handoff,
@@ -509,6 +572,7 @@ public static class TwoDIntegrationExchange
         }
         catch (Exception exception)
         {
+            TryDeleteLocatorArtifacts(locatorEvidenceDirectory);
             return PublishFailedResult(
                 transactionDirectory,
                 handoff,
@@ -560,6 +624,10 @@ public static class TwoDIntegrationExchange
         return result;
     }
 
+    internal sealed record IntegrationMetricProjection(
+        IReadOnlyList<IntegrationMetric> Metrics,
+        IReadOnlyList<string> UnknownUnitDiagnostics);
+
     private static TwoDIntegrationRunRecord CreateRunRecord(
         string runId,
         IntegrationHandoffV2 handoff,
@@ -567,7 +635,8 @@ public static class TwoDIntegrationExchange
         IntegrationArtifactReference recipeArtifact,
         VisionRecipeRunResult run,
         int sourceImageWidth,
-        int sourceImageHeight) =>
+        int sourceImageHeight,
+        IReadOnlyList<string> metricUnitDiagnostics) =>
         new(
             "1.1",
             runId,
@@ -591,11 +660,14 @@ public static class TwoDIntegrationExchange
                     step.ToolSuccess,
                     step.AcceptancePassed,
                     step.Message,
-                        step.ElapsedMilliseconds,
-                        new Dictionary<string, double>(
+                    step.ElapsedMilliseconds,
+                    new Dictionary<string, double>(
                         step.Metrics ?? new Dictionary<string, double>(),
                         StringComparer.OrdinalIgnoreCase))
                     {
+                        InputLayer = step.InputLayer ?? string.Empty,
+                        OutputLayer = step.OutputLayer ?? string.Empty,
+                        OverlayCoordinateLayer = ResolveOverlayCoordinateLayer(step),
                         Overlays = (step.Overlays ?? [])
                             .Select(overlay => new TwoDIntegrationOverlayRecord(
                                 overlay.Kind,
@@ -622,32 +694,77 @@ public static class TwoDIntegrationExchange
                 .ToArray())
         {
             SourceImageWidth = sourceImageWidth,
-            SourceImageHeight = sourceImageHeight
+            SourceImageHeight = sourceImageHeight,
+            MetricUnitDiagnostics = metricUnitDiagnostics ?? []
         };
 
-    private static IReadOnlyList<IntegrationMetric> CreateMetrics(
+    internal static IntegrationMetricProjection CreateMetricProjection(
         VisionRecipeRunResult run)
     {
         var metrics = new List<IntegrationMetric>
         {
-            new("totalMilliseconds", run.TotalMilliseconds, "ms")
+            new("totalMilliseconds", run.TotalMilliseconds, TwoDIntegrationMetricUnits.Millisecond)
         };
+        var unknownUnitDiagnostics = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var step in run.Steps ?? [])
         {
             foreach (var metric in step.Metrics ?? new Dictionary<string, double>())
             {
                 if (double.IsFinite(metric.Value))
                 {
-                    metrics.Add(new(
-                        $"step.{step.Index}.{metric.Key}",
-                        metric.Value,
-                        MetricUnit));
+                    string name = $"step.{step.Index}.{metric.Key}";
+                    string unit = TwoDIntegrationMetricUnits.Resolve(metric.Key);
+                    if (!TwoDIntegrationMetricUnits.IsKnown(metric.Key))
+                    {
+                        unknownUnitDiagnostics.Add(
+                            $"{name}: metric unit is unknown; emitted as '{TwoDIntegrationMetricUnits.Unknown}'.");
+                    }
+
+                    metrics.Add(new(name, metric.Value, unit));
                 }
             }
         }
 
-        return metrics;
+        return new(
+            metrics,
+            unknownUnitDiagnostics
+                .OrderBy(diagnostic => diagnostic, StringComparer.OrdinalIgnoreCase)
+                .ToArray());
     }
+
+    internal static string ResolveOverlayCoordinateLayer(
+        VisionRecipeStepRunSummary step)
+    {
+        if (step?.Overlays is not { Count: > 0 })
+        {
+            return string.Empty;
+        }
+
+        string toolType = step.ToolType?.Trim() ?? string.Empty;
+        if (IsOverlayMergeTool(toolType))
+        {
+            return MixedOverlayCoordinateLayer;
+        }
+
+        string layer = IsCoordinateTransformTool(toolType)
+            ? step.OutputLayer
+            : step.InputLayer;
+        return string.IsNullOrWhiteSpace(layer)
+            ? UnknownOverlayCoordinateLayer
+            : layer.Trim();
+    }
+
+    private static bool IsCoordinateTransformTool(string toolType) =>
+        string.Equals(toolType, "rotatescale", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(toolType, "rotateandscale", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(toolType, "affine", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(toolType, "affinematrix", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(toolType, "affinetransform", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsOverlayMergeTool(string toolType) =>
+        string.Equals(toolType, "overlaymerge", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(toolType, "resultmerge", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(toolType, "mergeresult", StringComparison.OrdinalIgnoreCase);
 
     private static string WriteRunRecord(
         string transactionDirectory,
@@ -717,6 +834,29 @@ public static class TwoDIntegrationExchange
         return artifact;
     }
 
+    private static IntegrationArtifactReference RequireLocatorTemplateArtifact(
+        IntegrationHandoffV2 handoff)
+    {
+        var matches = handoff.Context.Artifacts
+            .Where(artifact => string.Equals(
+                artifact.Role,
+                TwoDIntegrationLocatorRecipeContract.TemplateArtifactRole,
+                StringComparison.Ordinal)
+                && string.Equals(
+                    artifact.ArtifactId,
+                    TwoDIntegrationLocatorRecipeContract.TemplateArtifactId,
+                    StringComparison.Ordinal))
+            .ToArray();
+        if (matches.Length != 1)
+        {
+            throw new IntegrationContractException(
+                IntegrationErrorCode.InvalidArtifact,
+                "A locator integration Handoff requires exactly one hash-checked locator-template artifact.");
+        }
+
+        return matches[0];
+    }
+
     private static void ValidateTwoDConsumer(IntegrationHandoffV2 handoff)
     {
         if (handoff.Context.Modality != IntegrationInspectionModality.TwoD
@@ -731,29 +871,6 @@ public static class TwoDIntegrationExchange
                 "The Handoff is not a 2D Image inspection request.");
         }
     }
-
-    private static void EnsureConsumerIdentity(
-        IntegrationHandoffV2 handoff,
-        IntegrationApplicationIdentity consumerBuild)
-    {
-        ValidateTwoDConsumer(handoff);
-        if (!ApplicationIdentitiesMatch(
-                handoff.Context.ConsumerBuild,
-                consumerBuild))
-        {
-            throw new IntegrationContractException(
-                IntegrationErrorCode.CorrelationMismatch,
-                "The supplied 2D consumer build does not match the Handoff context.");
-        }
-    }
-
-    private static bool ApplicationIdentitiesMatch(
-        IntegrationApplicationIdentity actual,
-        IntegrationApplicationIdentity expected) =>
-        string.Equals(actual.ApplicationId, expected.ApplicationId, StringComparison.Ordinal)
-        && string.Equals(actual.ApplicationVersion, expected.ApplicationVersion, StringComparison.Ordinal)
-        && string.Equals(actual.SourceCommit, expected.SourceCommit, StringComparison.OrdinalIgnoreCase)
-        && actual.SourceState == expected.SourceState;
 
     private static IntegrationArtifactReference CreateArtifactReference(
         string role,
@@ -792,6 +909,28 @@ public static class TwoDIntegrationExchange
             Path.GetFullPath(exchangeRoot),
             IntegrationTransactionLayout.TransactionsDirectoryName,
             transactionId.ToString("D"));
+    }
+
+    private static IDisposable AcquireRunLease(string transactionDirectory)
+    {
+        var lockPath = Path.Combine(transactionDirectory, RunLockFileName);
+        try
+        {
+            return new RunLease(lockPath);
+        }
+        catch (IOException exception) when (IsRunLeaseContention(exception))
+        {
+            throw new IntegrationContractException(
+                IntegrationErrorCode.InvalidState,
+                "The Handoff is already being run.",
+                exception);
+        }
+    }
+
+    private static bool IsRunLeaseContention(IOException exception)
+    {
+        var win32Error = exception.HResult & 0xFFFF;
+        return win32Error is 32 or 33;
     }
 
     private static string ResolveArtifactPath(
@@ -880,6 +1019,30 @@ public static class TwoDIntegrationExchange
         }
     }
 
+    private sealed class RunLease : IDisposable
+    {
+        private readonly string _path;
+        private readonly FileStream _stream;
+
+        public RunLease(string path)
+        {
+            _path = path;
+            _stream = new FileStream(
+                path,
+                FileMode.OpenOrCreate,
+                FileAccess.ReadWrite,
+                FileShare.None,
+                bufferSize: 1,
+                options: FileOptions.SequentialScan);
+        }
+
+        public void Dispose()
+        {
+            _stream.Dispose();
+            TryDeleteFile(_path);
+        }
+    }
+
     private static void ThrowIfInvalid(IntegrationValidationResult validation)
     {
         if (validation.IsValid)
@@ -906,5 +1069,16 @@ public static class TwoDIntegrationExchange
         {
             // Preserve the original contract or I/O failure.
         }
+    }
+
+    private static void TryDeleteLocatorArtifacts(string directory)
+    {
+        if (string.IsNullOrWhiteSpace(directory))
+        {
+            return;
+        }
+
+        TryDeleteFile(Path.Combine(directory, "evidence.packet.json"));
+        TryDeleteFile(Path.Combine(directory, "locator-runtime-overlay.png"));
     }
 }

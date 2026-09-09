@@ -233,7 +233,9 @@ namespace OpenVisionLab
                 Index = index,
                 ImagePath = imagePath,
                 Status = ResolveStatus(check, hasAcceptance),
-                Success = check?.ExecutionCompleted == true && (!hasAcceptance || check.Success),
+                Success = check?.ExecutionCompleted == true
+                    && check.HasToolError == false
+                    && (!hasAcceptance || check.Success),
                 TotalMilliseconds = check?.TotalMilliseconds ?? 0D,
                 Message = check?.Message ?? string.Empty,
                 MetricText = string.IsNullOrWhiteSpace(metricText) ? "-" : metricText,
@@ -248,7 +250,7 @@ namespace OpenVisionLab
 
         private static string ResolveStatus(VisionPipelineSampleCheckResult check, bool hasAcceptance)
         {
-            if (check?.ExecutionCompleted != true)
+            if (check?.ExecutionCompleted != true || check.HasToolError)
             {
                 return "ERROR";
             }

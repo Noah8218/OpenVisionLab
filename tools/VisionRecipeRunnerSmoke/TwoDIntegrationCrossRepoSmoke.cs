@@ -10,7 +10,9 @@ internal static class TwoDIntegrationCrossRepoSmoke
     public static async Task<int> RunAsync(
         string exchangeRoot,
         string producerManifestPath,
-        string evidenceRoot)
+        string evidenceRoot,
+        string runtimeBuildManifestPath,
+        bool requireLocatorEvidence = false)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(exchangeRoot);
         ArgumentException.ThrowIfNullOrWhiteSpace(producerManifestPath);
@@ -33,6 +35,9 @@ internal static class TwoDIntegrationCrossRepoSmoke
         Require(
             ApplicationIdentitiesMatch(handoff.Context.ConsumerBuild, manifest.Consumer),
             "The consumer identity in the manifest does not match the Handoff.");
+        var localConsumer = TwoDIntegrationBuildIdentity.LoadQualifiedTargetIdentity(
+            handoff.Context.ConsumerBuild,
+            runtimeBuildManifestPath);
         Require(
             string.Equals(
                 handoff.Context.InputSha256,
@@ -43,11 +48,20 @@ internal static class TwoDIntegrationCrossRepoSmoke
                 manifest.RecipeSha256,
                 StringComparison.OrdinalIgnoreCase),
             "The manifest artifact identities do not match the Handoff context.");
+        var locatorTemplateArtifact = handoff.Context.Artifacts.SingleOrDefault(artifact =>
+            string.Equals(artifact.Role, "locator-template", StringComparison.Ordinal)
+            && string.Equals(artifact.ArtifactId, "locator-template", StringComparison.Ordinal));
+        if (requireLocatorEvidence)
+        {
+            Require(
+                locatorTemplateArtifact is not null,
+                "The Machine Studio Handoff did not carry the locator-template artifact.");
+        }
 
         var acknowledgement = TwoDIntegrationExchange.AcknowledgeHandoff(
             exchangeRoot,
             manifest.TransactionId,
-            manifest.Consumer);
+            runtimeBuildManifestPath);
         var transactionDirectory = Path.Combine(
             Path.GetFullPath(exchangeRoot),
             IntegrationTransactionLayout.TransactionsDirectoryName,
@@ -62,7 +76,7 @@ internal static class TwoDIntegrationCrossRepoSmoke
         var result = await TwoDIntegrationExchange.RunAcceptedHandoffAsync(
                 exchangeRoot,
                 manifest.TransactionId,
-                manifest.Consumer)
+                runtimeBuildManifestPath)
             .ConfigureAwait(false);
         var persisted = TwoDIntegrationExchange.ReadResult(
             exchangeRoot,
@@ -93,6 +107,47 @@ internal static class TwoDIntegrationCrossRepoSmoke
             ?? throw new InvalidOperationException("The 2D Run Record was unexpectedly null.");
         var overlayCount = validRunRecord.Steps?.SelectMany(step => step.Overlays ?? []).Count() ?? 0;
 
+        string locatorEvidenceSchemaVersion = string.Empty;
+        string locatorSelectedCandidateId = string.Empty;
+        int locatorCandidateCount = 0;
+        double locatorScoreMargin = 0D;
+        if (requireLocatorEvidence)
+        {
+            var locatorEvidence = persisted.Evidence.SingleOrDefault(artifact =>
+                string.Equals(artifact.Role, "locator-relative-blob-evidence", StringComparison.Ordinal)
+                && string.Equals(artifact.ArtifactId, "locator-relative-blob-evidence", StringComparison.Ordinal));
+            var locatorOverlayEvidence = persisted.Evidence.SingleOrDefault(artifact =>
+                string.Equals(artifact.Role, "locator-relative-blob-overlay", StringComparison.Ordinal)
+                && string.Equals(artifact.ArtifactId, "locator-relative-blob-overlay", StringComparison.Ordinal));
+            Require(
+                locatorEvidence is not null
+                    && locatorOverlayEvidence is not null,
+                "The 2D Result did not publish both locator packet and overlay evidence.");
+            var locatorPacketPath = Path.GetFullPath(Path.Combine(
+                transactionDirectory,
+                locatorEvidence!.RelativePath.Replace('/', Path.DirectorySeparatorChar)));
+            using var locatorPacket = JsonDocument.Parse(File.ReadAllText(locatorPacketPath));
+            var locatorRoot = locatorPacket.RootElement;
+            var locatorCandidates = locatorRoot.GetProperty("candidates");
+            locatorSelectedCandidateId = locatorRoot.GetProperty("selectedCandidateId").GetString() ?? string.Empty;
+            var selectedCandidate = locatorCandidates.EnumerateArray().Single(candidate =>
+                string.Equals(
+                    candidate.GetProperty("candidateId").GetString(),
+                    locatorSelectedCandidateId,
+                    StringComparison.Ordinal));
+            locatorScoreMargin = selectedCandidate.GetProperty("scoreMargin").GetDouble();
+            locatorEvidenceSchemaVersion = locatorRoot.GetProperty("schemaVersion").GetString() ?? string.Empty;
+            locatorCandidateCount = locatorCandidates.GetArrayLength();
+            Require(
+                string.Equals(
+                    locatorEvidenceSchemaVersion,
+                    "locator-relative-blob-evidence-v1.1",
+                    StringComparison.Ordinal)
+                && locatorCandidateCount >= 2
+                && locatorScoreMargin > 0D,
+                "The locator Result Evidence packet did not retain a valid selected candidate and competing score margin.");
+        }
+
         var fullEvidenceRoot = Path.GetFullPath(evidenceRoot);
         Directory.CreateDirectory(fullEvidenceRoot);
         var reportPath = Path.Combine(
@@ -104,8 +159,8 @@ internal static class TwoDIntegrationCrossRepoSmoke
             manifest.MessageId,
             handoff.Producer.ApplicationId,
             handoff.Producer.SourceCommit,
-            manifest.Consumer.ApplicationId,
-            manifest.Consumer.SourceCommit,
+            localConsumer.ApplicationId,
+            localConsumer.SourceCommit,
             acknowledgement.Status.ToString(),
             result.Status.ToString(),
             result.Outcome.ToString(),
@@ -115,7 +170,13 @@ internal static class TwoDIntegrationCrossRepoSmoke
             result.Metrics.Count,
             validRunRecord.SourceImageWidth,
             validRunRecord.SourceImageHeight,
-            overlayCount);
+            overlayCount,
+            persisted.Evidence.Count,
+            locatorEvidenceSchemaVersion,
+            locatorSelectedCandidateId,
+            locatorCandidateCount,
+            locatorScoreMargin,
+            requireLocatorEvidence);
         File.WriteAllText(
             reportPath,
             JsonSerializer.Serialize(
@@ -193,4 +254,10 @@ internal sealed record TwoDIntegrationCrossRepoReport(
     int MetricCount,
     int SourceImageWidth,
     int SourceImageHeight,
-    int OverlayCount);
+    int OverlayCount,
+    int EvidenceCount,
+    string LocatorEvidenceSchemaVersion,
+    string LocatorSelectedCandidateId,
+    int LocatorCandidateCount,
+    double LocatorScoreMargin,
+    bool LocatorEvidenceRequired);

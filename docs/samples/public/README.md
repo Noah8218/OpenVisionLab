@@ -18,6 +18,7 @@ Current generated set:
 - `Fixture_Pad_Synthetic_Shifted_OK.png`: shifted part with a locator and valid inspection pad.
 - `Fixture_Pad_Synthetic_Shifted_Missing_NG.png`: same shifted locator with the inspection pad missing.
 - `templates/Fixture_Locator_Synthetic_Template.png`: reference-pose locator crop used by the Fixture pipeline.
+- `Public_Locator_Relative_Blob_Integration.recipe.json`: Machine Studio handoff recipe for the explicit locator-template artifact and relative Blob inspection contract.
 - `Blob_Particles_Synthetic_OK.png`: blob/counting source image.
 - `Blob_Particles_Synthetic_Sparse_NG.png`: sparse blob negative image.
 - `Contour_Shapes_Synthetic_OK.png`: contour shape-count source image.
@@ -53,6 +54,7 @@ Runnable public samples:
 - `../OpenVisionLab.ProductSampleCatalog.csv`: product-domain sample catalog with secondary battery, display, and semiconductor Good/Bad pairs.
 - `Public_Matching_DiePad.pipeline.xml`: Matching benchmark using the synthetic template.
 - `Public_Matching_FixturePad.pipeline.xml`: Matching fixture translation plus downstream Blob ROI inspection benchmark.
+- `Public_Locator_Relative_Blob_Integration.recipe.json`: locator-relative-blob recipe used by the Machine Studio cross-process handoff smoke.
 - `Public_Blob_Particles.pipeline.xml`: Threshold + Blob count benchmark.
 - `Public_Contour_Shapes.pipeline.xml`: Threshold + Contour shape-count benchmark.
 - `Public_Geometry_RotateScale.pipeline.xml`: RotateScale output-size benchmark.

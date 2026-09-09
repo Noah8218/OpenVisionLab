@@ -26,8 +26,7 @@ namespace OpenVisionLab
             }
 
             OpenVisionRecipeCatalogPairValidationSetImportResult result =
-                OpenVisionRecipeCatalogPairValidationSetService.Import(
-                    validationSetDocument,
+                validationSetDocumentOwner.ImportCatalogPair(
                     SelectedSampleOption.Sample,
                     SampleOptions.Select(option => option?.Sample),
                     SelectedPipelineOption?.PipelineName);
@@ -72,7 +71,7 @@ namespace OpenVisionLab
 
         private bool CanCreateValidationSetFromSelectedPair()
         {
-            return validationSetStorageReady
+            return validationSetDocumentOwner.StorageReady
                 && !executionSession.IsValidationSuiteRunning
                 && !executionSession.IsSampleCheckRunning
                 && !executionSession.IsPairCheckRunning
@@ -90,7 +89,11 @@ namespace OpenVisionLab
             }
 
             string name = NewValidationSetName.Trim();
-            validationSetDocument.Sets.Add(new OpenVisionRecipeValidationSet { Name = name });
+            if (!validationSetDocumentOwner.TryCreateSet(name))
+            {
+                return;
+            }
+
             if (!TrySaveValidationSetDocument(LocalText("검증 세트 만들기", "Create validation set")))
             {
                 return;
@@ -104,11 +107,10 @@ namespace OpenVisionLab
         private bool CanCreateValidationSet()
         {
             string name = NewValidationSetName?.Trim() ?? string.Empty;
-            return validationSetStorageReady
+            return validationSetDocumentOwner.StorageReady
                 && !executionSession.IsValidationSuiteRunning
                 && OpenVisionRecipeValidationSetStorage.IsValidSetName(name)
-                && !validationSetDocument.Sets.Any(set =>
-                    string.Equals(set?.Name, name, StringComparison.OrdinalIgnoreCase));
+                && !validationSetDocumentOwner.ContainsSet(name);
         }
 
         private void DeleteValidationSet()
@@ -119,8 +121,11 @@ namespace OpenVisionLab
                 return;
             }
 
-            validationSetDocument.Sets.RemoveAll(set =>
-                string.Equals(set?.Name, option.Name, StringComparison.OrdinalIgnoreCase));
+            if (!validationSetDocumentOwner.TryDeleteSet(option.Name))
+            {
+                return;
+            }
+
             if (!TrySaveValidationSetDocument(LocalText("검증 세트 삭제", "Delete validation set")))
             {
                 return;
@@ -132,7 +137,7 @@ namespace OpenVisionLab
 
         private bool CanDeleteValidationSet()
         {
-            return validationSetStorageReady
+            return validationSetDocumentOwner.StorageReady
                 && !executionSession.IsValidationSuiteRunning
                 && SelectedValidationSetOption != null;
         }
@@ -295,33 +300,27 @@ namespace OpenVisionLab
                 return false;
             }
 
-            OpenVisionRecipeValidationSetImage contract = new OpenVisionRecipeValidationSetImage
+            if (!validationSetDocumentOwner.TryAddImages(
+                    option.Name,
+                    paths,
+                    expected,
+                    notes,
+                    variantId,
+                    metricName,
+                    metricMinimum,
+                    metricMaximum,
+                    out int added,
+                    out int updated,
+                    out int skipped,
+                    out string contractError))
             {
-                VariantId = variantId,
-                ExpectedMetricName = metricName,
-                ExpectedMetricMinimum = metricMinimum,
-                ExpectedMetricMaximum = metricMaximum
-            };
-            if (!OpenVisionRecipeValidationSetStorage.TryValidateVariantContract(contract, out string contractError))
-            {
-                ValidationSuiteStatusText = LocalText("Variant 계약 ERROR: ", "Variant contract ERROR: ")
-                    + contractError;
-                return false;
-            }
+                if (!string.IsNullOrWhiteSpace(contractError))
+                {
+                    ValidationSuiteStatusText = LocalText("Variant 계약 ERROR: ", "Variant contract ERROR: ")
+                        + contractError;
+                    return false;
+                }
 
-            int added = OpenVisionRecipeValidationSetStorage.AddOrUpdateImages(
-                option.Set,
-                paths,
-                expected,
-                notes,
-                variantId,
-                metricName,
-                metricMinimum,
-                metricMaximum,
-                out int updated,
-                out int skipped);
-            if (added == 0 && updated == 0)
-            {
                 if (skipped > 0)
                 {
                     ValidationSuiteStatusText = LocalText("지원되는 기존 이미지가 선택되지 않았습니다.", "No supported existing images were selected.");
@@ -371,9 +370,9 @@ namespace OpenVisionLab
                 return;
             }
 
-            if (!OpenVisionRecipeValidationSetStorage.TryApplyVariantContract(
-                    option.Set,
-                    row.Image,
+            if (!validationSetDocumentOwner.TryApplyVariantContract(
+                    option.Name,
+                    row.Path,
                     ValidationSetPendingVariantId,
                     ValidationSetPendingMetricName,
                     ValidationSetPendingMetricMinimum,
@@ -410,7 +409,7 @@ namespace OpenVisionLab
 
         private bool CanApplyValidationSetVariantContract()
         {
-            return validationSetStorageReady
+            return validationSetDocumentOwner.StorageReady
                 && !executionSession.IsValidationSuiteRunning
                 && SelectedValidationSetOption?.Set != null
                 && !SelectedValidationSetOption.Set.IsIdentityLocked
@@ -419,7 +418,7 @@ namespace OpenVisionLab
 
         private bool CanAddValidationSetImages()
         {
-            return validationSetStorageReady
+            return validationSetDocumentOwner.StorageReady
                 && !executionSession.IsValidationSuiteRunning
                 && SelectedValidationSetOption?.Set != null
                 && !SelectedValidationSetOption.Set.IsIdentityLocked;
@@ -463,9 +462,9 @@ namespace OpenVisionLab
             }
 
             string missingFileName = row.FileName;
-            if (!OpenVisionRecipeValidationSetStorage.TryRepairMissingImagePath(
-                    option.Set,
-                    row.Image,
+            if (!validationSetDocumentOwner.TryRepairMissingImagePath(
+                    option.Name,
+                    row.Path,
                     replacementPath,
                     out string repairedPath,
                     out string error))
@@ -491,7 +490,7 @@ namespace OpenVisionLab
 
         private bool CanRepairValidationSetImagePath()
         {
-            return validationSetStorageReady
+            return validationSetDocumentOwner.StorageReady
                 && !executionSession.IsValidationSuiteRunning
                 && SelectedValidationSetOption?.Set != null
                 && !SelectedValidationSetOption.Set.IsIdentityLocked
@@ -508,8 +507,11 @@ namespace OpenVisionLab
                 return;
             }
 
-            option.Set.Images.RemoveAll(image => ReferenceEquals(image, row.Image)
-                || string.Equals(image?.Path, row.Path, StringComparison.OrdinalIgnoreCase));
+            if (!validationSetDocumentOwner.TryRemoveImage(option.Name, row.Path))
+            {
+                return;
+            }
+
             string setName = option.Name;
             if (!TrySaveValidationSetDocument(LocalText("검증 이미지 제거", "Remove validation image")))
             {
@@ -522,7 +524,7 @@ namespace OpenVisionLab
 
         private bool CanRemoveValidationSetImage()
         {
-            return validationSetStorageReady
+            return validationSetDocumentOwner.StorageReady
                 && !executionSession.IsValidationSuiteRunning
                 && SelectedValidationSetOption?.Set != null
                 && !SelectedValidationSetOption.Set.IsIdentityLocked
@@ -531,9 +533,8 @@ namespace OpenVisionLab
 
         private bool TrySaveValidationSetDocument(string operation)
         {
-            if (OpenVisionRecipeValidationSetStorage.TrySave(
+            if (validationSetDocumentOwner.TrySave(
                 NormalizeRecipeName(selectedRecipeName),
-                validationSetDocument,
                 out string error))
             {
                 return true;
@@ -553,20 +554,23 @@ namespace OpenVisionLab
             string previousTrainName = PinArrayGapTrainValidationSetOption?.Name ?? string.Empty;
             string previousValidationName = PinArrayGapValidationValidationSetOption?.Name ?? string.Empty;
             string previousTestName = PinArrayGapTestValidationSetOption?.Name ?? string.Empty;
-            validationSetStorageReady = OpenVisionRecipeValidationSetStorage.TryLoad(
-                recipeName,
-                out validationSetDocument,
-                out string error);
+            string previousImagePath = SelectedValidationSetImageRow?.Path ?? string.Empty;
+            bool storageReady = validationSetDocumentOwner.TryLoad(recipeName, out string error);
 
-            if (!validationSetStorageReady)
+            if (!storageReady)
             {
-                ValidationSetOptions = Array.Empty<OpenVisionRecipeValidationSetOption>();
-                SelectedValidationSetOption = null;
-                PinArrayGapTrainValidationSetOption = null;
-                PinArrayGapValidationValidationSetOption = null;
-                PinArrayGapTestValidationSetOption = null;
-                RefreshValidationSetImageRows();
+                validationSetSelectionOwner.Clear();
+                OnPropertyChanged(nameof(ValidationSetOptions));
+                OnPropertyChanged(nameof(SelectedValidationSetOption));
+                OnPropertyChanged(nameof(PinArrayGapTrainValidationSetOption));
+                OnPropertyChanged(nameof(PinArrayGapValidationValidationSetOption));
+                OnPropertyChanged(nameof(PinArrayGapTestValidationSetOption));
+                OnPropertyChanged(nameof(ValidationSetImageRows));
+                OnPropertyChanged(nameof(SelectedValidationSetImageRow));
+                LoadSelectedValidationVariantContract();
                 ValidationSuiteStatusText = LocalText("로컬 검증 세트 로드 ERROR: ", "Local validation set load ERROR: ") + error;
+                RefreshPinArrayGapValidationIdentityState();
+                NotifyValidationSetEvidenceChanged();
                 RefreshCommandState();
                 return;
             }
@@ -584,21 +588,22 @@ namespace OpenVisionLab
                 previousTestName = frozenRecord.Test?.SetName ?? string.Empty;
             }
 
-            OpenVisionRecipeValidationSetOptionSelection selection = OpenVisionRecipeValidationSetPresenter.BuildOptionSelection(
-                validationSetDocument,
+            validationSetSelectionOwner.Refresh(
                 previousName,
                 previousTrainName,
                 previousValidationName,
-                previousTestName);
-            ValidationSetOptions = selection.Options;
-            SelectedValidationSetOption = selection.Selected;
-            PinArrayGapTrainValidationSetOption = selection.Train;
-            PinArrayGapValidationValidationSetOption = selection.Validation;
-            PinArrayGapTestValidationSetOption = selection.Test;
-            if (selection.Selected == null)
-            {
-                RefreshValidationSetImageRows();
-            }
+                previousTestName,
+                previousImagePath);
+            OnPropertyChanged(nameof(ValidationSetOptions));
+            OnPropertyChanged(nameof(SelectedValidationSetOption));
+            OnPropertyChanged(nameof(PinArrayGapTrainValidationSetOption));
+            OnPropertyChanged(nameof(PinArrayGapValidationValidationSetOption));
+            OnPropertyChanged(nameof(PinArrayGapTestValidationSetOption));
+            OnPropertyChanged(nameof(ValidationSetImageRows));
+            OnPropertyChanged(nameof(SelectedValidationSetImageRow));
+            LoadSelectedValidationVariantContract();
+            RefreshPinArrayGapValidationIdentityState();
+            NotifyValidationSetEvidenceChanged();
 
             OnPropertyChanged(nameof(ValidationSetSelectionSummaryText));
             OnPropertyChanged(nameof(ValidationSuiteSummaryText));
@@ -608,33 +613,16 @@ namespace OpenVisionLab
         private void RefreshValidationSetImageRows()
         {
             string previousPath = SelectedValidationSetImageRow?.Path ?? string.Empty;
-            OpenVisionRecipeValidationSetImageSelection selection = OpenVisionRecipeValidationSetPresenter.BuildImageSelection(
-                SelectedValidationSetOption,
-                previousPath);
-            ValidationSetImageRows = selection.Rows;
-            SelectedValidationSetImageRow = selection.Selected;
+            validationSetSelectionOwner.RefreshImageRows(previousPath);
+            OnPropertyChanged(nameof(ValidationSetImageRows));
+            OnPropertyChanged(nameof(SelectedValidationSetImageRow));
+            LoadSelectedValidationVariantContract();
             NotifyValidationSetEvidenceChanged();
         }
 
         private string CreateUniqueValidationSetName()
         {
-            const string baseName = "Local_Validation_Set";
-            HashSet<string> names = validationSetDocument.Sets
-                .Where(set => set != null && !string.IsNullOrWhiteSpace(set.Name))
-                .Select(set => set.Name)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-            if (!names.Contains(baseName))
-            {
-                return baseName;
-            }
-
-            int suffix = 2;
-            while (names.Contains(baseName + "_" + suffix.ToString(CultureInfo.InvariantCulture)))
-            {
-                suffix++;
-            }
-
-            return baseName + "_" + suffix.ToString(CultureInfo.InvariantCulture);
+            return validationSetDocumentOwner.CreateUniqueSetName();
         }
     }
 }

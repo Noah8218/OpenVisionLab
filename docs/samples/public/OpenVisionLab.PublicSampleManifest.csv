@@ -6,6 +6,7 @@ docs/samples/public/templates/Matching_DiePad_Synthetic_Template.png,Synthetic,O
 docs/samples/public/Fixture_Pad_Synthetic_Shifted_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated shifted fixture scene with the inspection pad present
 docs/samples/public/Fixture_Pad_Synthetic_Shifted_Missing_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated shifted fixture scene with the locator present and inspection pad missing
 docs/samples/public/templates/Fixture_Locator_Synthetic_Template.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated locator template crop from the reference-pose fixture scene
+docs/samples/public/Public_Locator_Relative_Blob_Integration.recipe.json,Contract,OpenVisionLab,,Repository license,,OpenVisionLab Machine Studio integration,Reviewed locator-relative-blob handoff recipe; template is staged as a hash-checked transaction artifact
 docs/samples/public/Blob_Particles_Synthetic_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated blob particle source image
 docs/samples/public/Blob_Particles_Synthetic_Sparse_NG.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated sparse blob negative sample
 docs/samples/public/Contour_Shapes_Synthetic_OK.png,Synthetic,OpenVisionLab,,Repository license,,tools/GenerateOpenVisionSyntheticSamples.ps1,Generated contour shape-count source image

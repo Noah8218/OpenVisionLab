@@ -84,6 +84,26 @@ if ($Mode -eq "Release") {
     }
 }
 
+function Invoke-GitText {
+    param([string[]]$Arguments)
+
+    $output = & git -C $repoRoot @Arguments 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        return ""
+    }
+
+    return (($output | ForEach-Object { $_.ToString() }) -join "`n").Trim()
+}
+
+$sourceCommit = Invoke-GitText @("rev-parse", "HEAD")
+$sourceCommitTime = Invoke-GitText @("show", "-s", "--format=%cI", "HEAD")
+$sourceBranch = Invoke-GitText @("branch", "--show-current")
+$sourceStatus = Invoke-GitText @("status", "--porcelain=v1", "--untracked-files=normal", "--ignore-submodules=none")
+$sourceRemote = Invoke-GitText @("remote", "get-url", "origin")
+if ($sourceCommit.Length -ne 40) {
+    throw "Could not resolve the 40-character source commit before the runtime build."
+}
+
 New-Item -ItemType Directory -Force -Path $outputFullPath | Out-Null
 
 $projectPath = Join-Path $repoRoot "src\OpenVisionLab\OpenVisionLab.csproj"
@@ -163,6 +183,7 @@ separate release gates.
 $requiredFiles = @(
     "OpenVisionLab.exe",
     "OpenVisionLab.dll",
+    "openvisionlab.runtime.json",
     "OpenVisionLab.runtimeconfig.json",
     "OpenVisionLab.Core.dll",
     "OpenVisionLab.Vision2D.dll",
@@ -187,22 +208,6 @@ if ($missingFiles.Count -gt 0) {
     throw "Clean runtime is missing required file(s): " + ($missingFiles -join ", ")
 }
 
-function Invoke-GitText {
-    param([string[]]$Arguments)
-
-    $output = & git -C $repoRoot @Arguments 2>$null
-    if ($LASTEXITCODE -ne 0) {
-        return ""
-    }
-
-    return (($output | ForEach-Object { $_.ToString() }) -join "`n").Trim()
-}
-
-$sourceCommit = Invoke-GitText @("rev-parse", "HEAD")
-$sourceCommitTime = Invoke-GitText @("show", "-s", "--format=%cI", "HEAD")
-$sourceBranch = Invoke-GitText @("branch", "--show-current")
-$sourceStatus = Invoke-GitText @("status", "--porcelain", "--untracked-files=no")
-$sourceRemote = Invoke-GitText @("remote", "get-url", "origin")
 $sdkVersion = (& dotnet --version).Trim()
 $visionSdkManifestPath = Join-Path $repoRoot "dll\OpenVisionLab-Vision-SDK\sdk-manifest.json"
 $visionSdkManifest = Get-Content -LiteralPath $visionSdkManifestPath -Raw | ConvertFrom-Json

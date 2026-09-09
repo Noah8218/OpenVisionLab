@@ -47,6 +47,7 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
         private string searchText = string.Empty;
         private string summaryText;
         private string latestSummaryText;
+        private long droppedLogCount;
 
         public LogPanelViewModel()
         {
@@ -235,6 +236,18 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
             private set => SetProperty(ref latestSummaryText, value);
         }
 
+        public long DroppedLogCount
+        {
+            get => droppedLogCount;
+            private set => SetProperty(ref droppedLogCount, value);
+        }
+
+        public string DroppedLogText => DroppedLogCount <= 0
+            ? string.Empty
+            : LocalText(
+                $"로그 {DroppedLogCount.ToString("N0", CultureInfo.CurrentCulture)}건이 표시 버퍼에서 생략되었습니다.",
+                $"{DroppedLogCount.ToString("N0", CultureInfo.CurrentCulture)} log entries were omitted from the display buffer.");
+
         public static void ApplyQuickFilter(string type, string level, string searchText, bool showEntireStream)
         {
             QuickFilterRequested?.Invoke(new LogPanelQuickFilterRequest
@@ -270,6 +283,7 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
             OnPropertyChanged(nameof(EmptyTitleText));
             OnPropertyChanged(nameof(EmptyDetailText));
             OnPropertyChanged(nameof(EmptyActionHintText));
+            OnPropertyChanged(nameof(DroppedLogText));
             OnPropertyChanged(nameof(ModeToolTip));
             OnPropertyChanged(nameof(ClearToolTip));
             OnPropertyChanged(nameof(FolderToolTip));
@@ -309,6 +323,7 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
 
         private void RefreshTimer_Tick(object sender, EventArgs e)
         {
+            UpdateDroppedLogCount();
             string[] newLogs = logBufferReader.GetLogs();
             if (newLogs.Length == 0)
             {
@@ -332,6 +347,19 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
                 .ToList();
 
             AddLogs(FilteredLogs, filtered);
+            UpdateSummaryText();
+        }
+
+        private void UpdateDroppedLogCount()
+        {
+            long currentDroppedLogCount = logBufferReader.DroppedLogCount;
+            if (currentDroppedLogCount == DroppedLogCount)
+            {
+                return;
+            }
+
+            DroppedLogCount = currentDroppedLogCount;
+            OnPropertyChanged(nameof(DroppedLogText));
             UpdateSummaryText();
         }
 
@@ -522,9 +550,12 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
         private void UpdateSummaryText()
         {
             HasVisibleLogs = FilteredLogs.Count > 0;
-            SummaryText = ShowEntireStream && string.IsNullOrWhiteSpace(SearchText)
+            string countText = ShowEntireStream && string.IsNullOrWhiteSpace(SearchText)
                 ? FormatCount(Logs.Count)
                 : string.Format(CultureInfo.CurrentCulture, T("Log.FilteredCountFormat"), FilteredLogs.Count, Logs.Count);
+            SummaryText = string.IsNullOrWhiteSpace(DroppedLogText)
+                ? countText
+                : countText + " · " + DroppedLogText;
             LatestSummaryText = BuildLatestSummaryText();
             OnPropertyChanged(nameof(ActiveFilterText));
         }

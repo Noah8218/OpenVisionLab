@@ -2,6 +2,9 @@ using OpenCvSharp;
 using OpenVisionLab;
 using OpenVisionLab.Common;
 using OpenVisionLab.Core;
+using OpenVisionLab.Core.Integration;
+using OpenVisionLab.Integration.Contracts;
+using OpenVisionLab.Pipeline.Controls;
 using OpenVisionLab.Vision2D;
 using OpenVisionLab.Vision2D.Blob;
 using OpenVisionLab.Vision2D.Pipeline;
@@ -24,9 +27,36 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Drawing.Imaging;
+using System.Net;
+using System.Net.Sockets;
+using System.Windows.Threading;
 using System.Xml;
 using System.Xml.Serialization;
 using Bitmap = System.Drawing.Bitmap;
+
+if (args.Length == 6
+    && string.Equals(args[0], "--integration-2d", StringComparison.OrdinalIgnoreCase))
+{
+    return await TwoDIntegrationSmoke.RunAsync(
+        args[1],
+        args[2],
+        args[3],
+        args[4],
+        args[5]);
+}
+
+if ((args.Length == 5
+        || args.Length == 6
+            && string.Equals(args[5], "--require-locator-evidence", StringComparison.OrdinalIgnoreCase))
+    && string.Equals(args[0], "--integration-2d-published", StringComparison.OrdinalIgnoreCase))
+{
+    return await TwoDIntegrationCrossRepoSmoke.RunAsync(
+        args[1],
+        args[2],
+        args[3],
+        args[4],
+        args.Length == 6);
+}
 
 if (args.Length == 1 && string.Equals(args[0], "--pinarraygap-intent-contract", StringComparison.OrdinalIgnoreCase))
 {
@@ -40,15 +70,232 @@ if ((args.Length == 1 || args.Length == 2)
 }
 
 if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--image-space-snapshot-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return await RunImageSpaceSnapshotContractAsync(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--pipeline-review-layer-image-owner-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return RunPipelineReviewLayerImageOwnerContract(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--pipeline-review-cache-lifetime-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return await RunPipelineReviewCacheLifetimeContractAsync(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--pipeline-review-stale-callback-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return await RunPipelineReviewStaleCallbackContractAsync(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--pipeline-review-execution-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return await RunPipelineReviewExecutionContractAsync(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--pipeline-review-document-revision-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return OpenVisionPipelineReviewDocumentRevisionContract.Run(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--tcp-controller-disposal-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return await RunTcpControllerDisposalContractAsync(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
     && string.Equals(args[0], "--bitmap-converter-contract", StringComparison.OrdinalIgnoreCase))
 {
     return RunBitmapConverterContract(args.Length == 2 ? args[1] : null);
 }
 
 if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--image-compare-resource-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return ImageCompareResourceContract.Run(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
     && string.Equals(args[0], "--recipe-storage-path-contract", StringComparison.OrdinalIgnoreCase))
 {
     return RunRecipeStoragePathContract(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--validation-set-document-owner-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return RunValidationSetDocumentOwnerContract(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--validation-evidence-owner-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return ValidationEvidenceOwnerContract.Run(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--step-preview-navigation-owner-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return StepPreviewNavigationOwnerContract.Run(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--shell-recipe-basic-lifecycle-view-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return ShellRecipeBasicLifecycleViewContract.Run(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--property-grid-value-change-subscription-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return PropertyGridPropertyValueChangeSubscriptionContract.Run(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--property-grid-metadata-adapter-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return PropertyGridMetadataAdapterContract.Run(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--namespace-project-boundary-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return NamespaceProjectBoundaryContract.Run(args.Length == 2 ? args[1] : null);
+}
+if (args.Length == 2 && string.Equals(args[0], "--recipe-execution-session-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return await RecipeExecutionSessionContract.RunAsync(args[1]);
+}
+
+if (args.Length == 2 && string.Equals(args[0], "--recipe-run-history-orchestration-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return RecipeRunHistoryOrchestrationContract.Run(args[1]);
+}
+
+if (args.Length == 2 && string.Equals(args[0], "--learn-matching-presentation-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return LearnMatchingPresentationContract.Run(args[1]);
+}
+
+if (args.Length == 2 && string.Equals(args[0], "--learn-foundation-presentation-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return LearnFoundationPresentationContract.Run(args[1]);
+}
+
+if (args.Length == 2 && string.Equals(args[0], "--learn-geometry-presentation-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return LearnGeometryPresentationContract.Run(args[1]);
+}
+
+if (args.Length == 2 && string.Equals(args[0], "--learn-grayscale-presentation-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return LearnGrayscalePresentationContract.Run(args[1]);
+}
+
+if (args.Length == 2 && string.Equals(args[0], "--learn-binary-presentation-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return LearnBinaryPresentationContract.Run(args[1]);
+}
+
+if (args.Length == 2 && string.Equals(args[0], "--learn-line-presentation-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return LearnLinePresentationContract.Run(args[1]);
+}
+
+if (args.Length == 2 && string.Equals(args[0], "--learn-metrics-acceptance-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return LearnMetricsAcceptanceContract.Run(args[1]);
+}
+
+if (args.Length == 2 && string.Equals(args[0], "--learn-layer-recipe-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return LearnLayerRecipeContract.Run(args[1]);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--step-edit-loader-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return RunStepEditLoaderContract(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--step-edit-apply-owner-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return RunStepEditApplyOwnerContract(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--step-edit-apply-projection-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return RunStepEditApplyProjectionContract(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--recipe-workspace-policy-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return RunRecipeWorkspacePolicyContract(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--recipe-workspace-lifecycle-projection-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return RunRecipeWorkspaceLifecycleProjectionContract(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--recipe-manager-summary-projection-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return RunRecipeManagerSummaryProjectionContract(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--recipe-manager-pipeline-option-projection-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return RunRecipeManagerPipelineOptionProjectionContract(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--recipe-pipeline-lifecycle-projection-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return RunRecipePipelineLifecycleProjectionContract(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--recipe-pipeline-exchange-projection-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return RunRecipePipelineExchangeProjectionContract(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--recipe-review-bundle-dry-run-projection-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return RunRecipeReviewBundleDryRunProjectionContract(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--pipeline-review-result-status-projection-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return RunPipelineReviewResultStatusProjectionContract(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--pipeline-review-guide-result-projection-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return RunPipelineReviewGuideResultProjectionContract(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--pipeline-review-domain-evidence-projection-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return RunPipelineReviewDomainEvidenceProjectionContract(args.Length == 2 ? args[1] : null);
 }
 
 if ((args.Length == 1 || args.Length == 2)
@@ -64,6 +311,18 @@ if ((args.Length == 1 || args.Length == 2)
 }
 
 if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--pipeline-persistence-process-recovery-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return RunPipelinePersistenceProcessRecoveryContract(args.Length == 2 ? args[1] : null);
+}
+
+if (args.Length >= 2
+    && string.Equals(args[0], "--pipeline-persistence-process-recovery-probe", StringComparison.OrdinalIgnoreCase))
+{
+    return RunPipelinePersistenceProcessRecoveryProbe(args);
+}
+
+if ((args.Length == 1 || args.Length == 2)
     && string.Equals(args[0], "--reliability-soak-contract", StringComparison.OrdinalIgnoreCase))
 {
     return await RunReliabilitySoakContractAsync(args.Length == 2 ? args[1] : null);
@@ -73,6 +332,12 @@ if ((args.Length == 1 || args.Length == 2)
     && string.Equals(args[0], "--object-dimension-filter-contract", StringComparison.OrdinalIgnoreCase))
 {
     return await RunObjectDimensionFilterContractAsync(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--object-candidate-parity-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return await RunObjectCandidateParityContractAsync(args.Length == 2 ? args[1] : null);
 }
 
 if ((args.Length == 1 || args.Length == 2)
@@ -178,12 +443,44 @@ if (args.Length < 2)
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --batch <imageListPath> <datasetRoot> <pipelineXmlPath> <csvPath>");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --batch-evidence <imageListPath> <datasetRoot> <pipelineXmlPath> <csvPath> <evidenceRoot>");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --pinarraygap-intent-contract");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --integration-2d <evidenceRoot> <goodImagePath> <badImagePath> <pipelineXmlPath> <runtimeBuildManifestPath>");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --integration-2d-published <exchangeRoot> <producerManifestPath> <evidenceRoot> <runtimeBuildManifestPath> [--require-locator-evidence]");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --runtime-stability-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --image-space-snapshot-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --pipeline-review-layer-image-owner-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --pipeline-review-cache-lifetime-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --pipeline-review-stale-callback-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --pipeline-review-execution-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --pipeline-review-document-revision-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --tcp-controller-disposal-contract [evidenceDirectory]");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --bitmap-converter-contract [evidenceDirectory]");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --recipe-storage-path-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --validation-set-document-owner-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --property-grid-value-change-subscription-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --property-grid-metadata-adapter-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --recipe-execution-session-contract <evidenceDirectory> (isolated D-drive runtime)");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --recipe-run-history-orchestration-contract <evidenceDirectory> (isolated D-drive runtime)");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --learn-matching-presentation-contract <evidenceDirectory>");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --learn-metrics-acceptance-contract <evidenceDirectory>");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --learn-layer-recipe-contract <evidenceDirectory>");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --step-edit-loader-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --step-edit-apply-owner-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --step-edit-apply-projection-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --recipe-workspace-policy-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --recipe-workspace-lifecycle-projection-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --recipe-manager-summary-projection-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --recipe-manager-pipeline-option-projection-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --recipe-pipeline-lifecycle-projection-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --recipe-pipeline-exchange-projection-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --recipe-review-bundle-dry-run-projection-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --pipeline-review-result-status-projection-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --pipeline-review-guide-result-projection-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --pipeline-review-domain-evidence-projection-contract [evidenceDirectory]");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --pipeline-provenance-contract [evidenceDirectory]");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --reliability-soak-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --pipeline-persistence-process-recovery-contract [evidenceDirectory]");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --object-dimension-filter-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --object-candidate-parity-contract [evidenceDirectory]");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --blob-contour-audit-baseline [evidenceDirectory]");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --tool-n-image-verification-contract [evidenceDirectory]");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --affine-transform-contract [evidenceDirectory]");
@@ -214,6 +511,19 @@ static string? GetOptionValue(string[] args, string optionName)
         if (string.Equals(args[i], optionName, StringComparison.OrdinalIgnoreCase))
         {
             return Path.GetFullPath(args[i + 1]);
+        }
+    }
+
+    return null;
+}
+
+static string? GetRawOptionValue(string[] args, string optionName)
+{
+    for (int i = 0; i < args.Length - 1; i++)
+    {
+        if (string.Equals(args[i], optionName, StringComparison.OrdinalIgnoreCase))
+        {
+            return args[i + 1];
         }
     }
 
@@ -367,6 +677,825 @@ static async Task<int> RunRuntimeStabilityContractAsync(string? requestedEvidenc
         Console.Error.WriteLine("- " + failure);
     }
     return 1;
+}
+
+static async Task<int> RunImageSpaceSnapshotContractAsync(string? requestedEvidenceDirectory)
+{
+    string evidenceDirectory = Path.GetFullPath(requestedEvidenceDirectory
+        ?? Path.Combine(
+            "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev",
+            "refactor-ovl04-" + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture)));
+    Directory.CreateDirectory(evidenceDirectory);
+    List<string> observations = new List<string>();
+    List<string> failures = new List<string>();
+
+    try
+    {
+        DisplayManagerImageExtensions.ResetSnapshotDiagnosticsForTest();
+        using (DisplayManagerService displayManager = new DisplayManagerService())
+        {
+            Bitmap original = new Bitmap(12, 8);
+            original.SetPixel(2, 2, System.Drawing.Color.Red);
+            displayManager.CreateLayerDisplay(ImageSpaceFrame.TakeOwnership(original), "Main");
+
+            using (Bitmap snapshot = displayManager.GetLayerImageSnapshot("Main"))
+            {
+                if (snapshot == null)
+                {
+                    throw new InvalidOperationException("ImageSpace snapshot was not created.");
+                }
+
+                Require(snapshot.GetPixel(2, 2).ToArgb() == System.Drawing.Color.Red.ToArgb(),
+                    "ImageSpace snapshot did not retain the source pixels.");
+
+                using Bitmap replacement = new Bitmap(12, 8);
+                replacement.SetPixel(2, 2, System.Drawing.Color.Blue);
+                displayManager.SetLayerImage(0, replacement);
+                displayManager.ImageSpace.RemoveImage("Main");
+
+                Require(snapshot.GetPixel(2, 2).ToArgb() == System.Drawing.Color.Red.ToArgb(),
+                    "ImageSpace snapshot changed after layer replacement/removal.");
+                Require(displayManager.GetLayerImageSnapshot("Main") == null,
+                    "Removed layer unexpectedly issued a new snapshot.");
+            }
+            observations.Add("display-snapshot: independent pixels survived replacement/removal");
+
+            displayManager.CreateLayerDisplay(
+                ImageSpaceFrame.TakeOwnership(new Bitmap(12, 8)),
+                "Main");
+            displayManager.CreateLayerDisplay(
+                ImageSpaceFrame.TakeOwnership(new Bitmap(12, 8)),
+                "Secondary");
+
+            VisionPipeline arithmeticPipeline = new VisionPipeline { Name = "OVL-04 Arithmetic Snapshot" };
+            arithmeticPipeline.Steps.Add(VisionPipelineStepBuilder.FromArithmetic(
+                "Arithmetic Snapshot",
+                "ADD",
+                "Main",
+                "Secondary",
+                "Arithmetic_Output",
+                useConstantInput: false,
+                useColorConstant: false,
+                gray: 1,
+                b: 1,
+                g: 1,
+                r: 1,
+                offsetX: 0,
+                offsetY: 0));
+
+            bool reviewLayersRemoved = false;
+            using (OpenVisionPipelineReviewExecutionController review =
+                new OpenVisionPipelineReviewExecutionController(displayManager, action =>
+                {
+                    action();
+                    if (reviewLayersRemoved)
+                    {
+                        return;
+                    }
+
+                    reviewLayersRemoved = true;
+                    displayManager.ImageSpace.RemoveImage("Main");
+                    displayManager.ImageSpace.RemoveImage("Secondary");
+                }))
+            {
+                OpenVisionPipelineReviewExecutionResult reviewResult = await review.RunAsync(
+                    arithmeticPipeline,
+                    VisionRecipeRunner.DefaultStepTimeoutMilliseconds);
+                Require(reviewResult.StepResultCount == 1,
+                    "Pipeline Review did not execute the multi-input Arithmetic step from snapshots.");
+            }
+            observations.Add("pipeline-review: Main/Secondary snapshots remained usable after storage removal");
+
+            displayManager.CreateLayerDisplay(
+                ImageSpaceFrame.TakeOwnership(new Bitmap(12, 8)),
+                "Main");
+            displayManager.CreateLayerDisplay(
+                ImageSpaceFrame.TakeOwnership(new Bitmap(12, 8)),
+                "Secondary");
+
+            OpenVisionNativePreviewLayerPublisher publisher =
+                new OpenVisionNativePreviewLayerPublisher(displayManager);
+            OpenVisionNativePreviewExecutionController preview =
+                new OpenVisionNativePreviewExecutionController(displayManager, publisher);
+            OpenVisionNativePreviewExecutionResult singleResult = preview.RunSingleInput(
+                "Main",
+                "Preview_Output",
+                "Main",
+                normalizeSingleChannelInput: false,
+                executePreview: source => new VisionToolResult
+                {
+                    Success = true,
+                    ResultImage = source.Clone()
+                });
+            Require(singleResult.Success, "Native Preview did not execute from an image snapshot.");
+
+            OpenVisionNativePreviewExecutionResult arithmeticResult = preview.RunArithmetic(
+                arithmeticPipeline.Steps[0],
+                "Main",
+                "Arithmetic_Preview_Output",
+                "Main",
+                useOffsetMode: false);
+            Require(arithmeticResult.Success,
+                "Native Preview Arithmetic did not retain both snapshot inputs.");
+            observations.Add("native-preview: single-input and Arithmetic A/B snapshot paths passed");
+        }
+
+        ImageSpaceSnapshotDiagnostics diagnostics = DisplayManagerImageExtensions.SnapshotDiagnostics;
+        Require(diagnostics.CopyCount >= 6,
+            "Snapshot diagnostics did not count the expected Preview/Review copies.");
+        Require(diagnostics.EstimatedBytes > 0,
+            "Snapshot diagnostics did not record an estimated byte count.");
+        observations.Add($"snapshot-diagnostics: copies={diagnostics.CopyCount}, estimatedBytes={diagnostics.EstimatedBytes}");
+        observations.Add("peak-memory: not measured; estimatedBytes is width*height*bytes-per-pixel only");
+    }
+    catch (Exception exception)
+    {
+        failures.Add(exception.GetBaseException().Message);
+    }
+
+    string reportPath = Path.Combine(evidenceDirectory, "image-space-snapshot-contract.txt");
+    File.WriteAllLines(
+        reportPath,
+        new[]
+        {
+            "Result: " + (failures.Count == 0 ? "PASS" : "FAIL"),
+            "Contract: ImageSpace lease-backed execution snapshots and atomic title removal",
+            "EvidenceDirectory: " + evidenceDirectory
+        }
+        .Concat(observations)
+        .Concat(failures.Select(item => "Failure: " + item)));
+
+    if (failures.Count == 0)
+    {
+        Console.WriteLine("ImageSpace snapshot contract passed.");
+        Console.WriteLine(reportPath);
+        return 0;
+    }
+
+    Console.Error.WriteLine("ImageSpace snapshot contract failed.");
+    foreach (string failure in failures)
+    {
+        Console.Error.WriteLine("- " + failure);
+    }
+    Console.Error.WriteLine(reportPath);
+    return 1;
+}
+
+static int RunPipelineReviewLayerImageOwnerContract(string? requestedEvidenceDirectory)
+{
+    string evidenceDirectory = Path.GetFullPath(requestedEvidenceDirectory
+        ?? Path.Combine(
+            "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev",
+            "refactor-ovl07-pipeline-review-layer-image-owner-" + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture)));
+    Directory.CreateDirectory(evidenceDirectory);
+    List<string> observations = new List<string>();
+    List<string> failures = new List<string>();
+
+    try
+    {
+        using DisplayManagerService displayManager = new DisplayManagerService();
+        using Bitmap cachedOutput = new Bitmap(12, 8);
+        cachedOutput.SetPixel(2, 2, System.Drawing.Color.Blue);
+        Bitmap original = new Bitmap(12, 8);
+        original.SetPixel(2, 2, System.Drawing.Color.Red);
+        displayManager.CreateLayerDisplay(ImageSpaceFrame.TakeOwnership(original), "Main");
+
+        OpenVisionPipelineReviewLayerImageOwner owner =
+            new OpenVisionPipelineReviewLayerImageOwner(
+                displayManager,
+                layerName => string.Equals(layerName, "Main", StringComparison.OrdinalIgnoreCase)
+                    ? new Bitmap(cachedOutput)
+                    : null);
+
+        using (Bitmap displaySnapshot = owner.AcquirePreview("Main"))
+        {
+            if (displaySnapshot == null)
+            {
+                throw new InvalidOperationException("Pipeline Review layer owner did not acquire a display snapshot.");
+            }
+
+            Require(
+                displaySnapshot.GetPixel(2, 2).ToArgb() == System.Drawing.Color.Red.ToArgb(),
+                "Pipeline Review preview did not prefer the current display layer.");
+
+            using Bitmap outputSnapshot = owner.AcquireOutputPreview("Main");
+            if (outputSnapshot == null)
+            {
+                throw new InvalidOperationException("Pipeline Review output owner did not acquire a cache snapshot.");
+            }
+
+            Require(
+                outputSnapshot.GetPixel(2, 2).ToArgb() == System.Drawing.Color.Blue.ToArgb(),
+                "Pipeline Review output preview did not prefer the review cache.");
+
+            using Bitmap replacement = new Bitmap(12, 8);
+            replacement.SetPixel(2, 2, System.Drawing.Color.Green);
+            displayManager.SetLayerImage(0, replacement);
+            displayManager.ImageSpace.RemoveImage("Main");
+
+            Require(
+                displaySnapshot.GetPixel(2, 2).ToArgb() == System.Drawing.Color.Red.ToArgb(),
+                "Owned Pipeline Review snapshot changed after Layer replacement/removal.");
+        }
+        observations.Add("display snapshot remains independent after Layer replacement/removal");
+
+        using (Bitmap fallbackSnapshot = owner.AcquirePreview("Main"))
+        {
+            if (fallbackSnapshot == null)
+            {
+                throw new InvalidOperationException("Pipeline Review owner did not fall back to cached output.");
+            }
+
+            Require(
+                fallbackSnapshot.GetPixel(2, 2).ToArgb() == System.Drawing.Color.Blue.ToArgb(),
+                "Cached output fallback was not cloned with the expected pixels.");
+        }
+        Require(owner.HasPreview("Main"), "Pipeline Review owner did not report cached fallback availability.");
+        Require(!owner.HasPreview("Missing"), "Pipeline Review owner reported a missing Layer as available.");
+        observations.Add("cached output fallback is cloned and missing Layers fail closed");
+    }
+    catch (Exception exception)
+    {
+        failures.Add(exception.GetBaseException().Message);
+    }
+
+    string reportPath = Path.Combine(evidenceDirectory, "pipeline-review-layer-image-owner-contract.txt");
+    File.WriteAllLines(
+        reportPath,
+        new[]
+        {
+            "Result: " + (failures.Count == 0 ? "PASS" : "FAIL"),
+            "Contract: OVL-07 Pipeline Review layer image snapshot owner boundary",
+            "EvidenceDirectory: " + evidenceDirectory
+        }
+        .Concat(observations)
+        .Concat(failures.Select(item => "Failure: " + item)));
+
+    if (failures.Count == 0)
+    {
+        Console.WriteLine("Pipeline Review layer image owner contract passed.");
+        Console.WriteLine(reportPath);
+        return 0;
+    }
+
+    Console.Error.WriteLine("Pipeline Review layer image owner contract failed.");
+    foreach (string failure in failures)
+    {
+        Console.Error.WriteLine("- " + failure);
+    }
+    Console.Error.WriteLine(reportPath);
+    return 1;
+}
+
+static async Task<int> RunPipelineReviewCacheLifetimeContractAsync(string? requestedEvidenceDirectory)
+{
+    string evidenceDirectory = Path.GetFullPath(requestedEvidenceDirectory
+        ?? Path.Combine(
+            "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev",
+            "refactor-ovl07-pipeline-review-cache-retirement-" + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture)));
+    Directory.CreateDirectory(evidenceDirectory);
+    List<string> observations = new List<string>();
+    List<string> failures = new List<string>();
+
+    try
+    {
+        using DisplayManagerService displayManager = new DisplayManagerService();
+        displayManager.CreateLayerDisplay(ImageSpaceFrame.TakeOwnership(new Bitmap(12, 8)), "Main");
+        VisionPipeline pipeline = CreateReviewExecutionContractPipeline();
+
+        using OpenVisionPipelineReviewExecutionController controller =
+            new OpenVisionPipelineReviewExecutionController(displayManager, action => action());
+
+        OpenVisionPipelineReviewExecutionResult firstRun = await controller.RunAsync(pipeline, 1000, 101, 201);
+        Require(!firstRun.WasSuperseded, "The first cache-lifetime run was unexpectedly superseded.");
+        using Bitmap firstSnapshot = controller.AcquireCachedOutputSnapshot("Review_Output");
+        if (firstSnapshot == null)
+        {
+            throw new InvalidOperationException("The completed Review run did not expose an owned cached-output snapshot.");
+        }
+
+        int firstPixel = firstSnapshot.GetPixel(2, 2).ToArgb();
+        Require(firstSnapshot.Width > 0 && firstSnapshot.Height > 0, "The first cached-output snapshot was empty.");
+
+        OpenVisionPipelineReviewExecutionResult secondRun = await controller.RunAsync(pipeline, 1000, 102, 202);
+        Require(!secondRun.WasSuperseded, "The replacement cache-lifetime run was unexpectedly superseded.");
+        using Bitmap secondSnapshot = controller.AcquireCachedOutputSnapshot("Review_Output");
+        if (secondSnapshot == null)
+        {
+            throw new InvalidOperationException("The replacement Review run did not expose a cached-output snapshot.");
+        }
+
+        int secondPixel = secondSnapshot.GetPixel(2, 2).ToArgb();
+        Require(firstSnapshot.GetPixel(2, 2).ToArgb() == firstPixel, "Replacing the internal cache disposed or mutated an earlier snapshot.");
+        observations.Add("replacement: cached output replacement leaves prior caller-owned snapshot valid");
+
+        controller.Reset();
+        using Bitmap resetSnapshot = controller.AcquireCachedOutputSnapshot("Review_Output");
+        Require(resetSnapshot == null, "Reset did not retire the review cache.");
+        Require(firstSnapshot.GetPixel(2, 2).ToArgb() == firstPixel, "Reset disposed an earlier caller-owned snapshot.");
+        Require(secondSnapshot.GetPixel(2, 2).ToArgb() == secondPixel, "Reset invalidated the replacement snapshot.");
+        observations.Add("reset: cache is empty while snapshots already returned to callers remain valid");
+
+        OpenVisionPipelineReviewExecutionResult thirdRun = await controller.RunAsync(pipeline, 1000, 103, 203);
+        Require(!thirdRun.WasSuperseded, "The post-reset cache-lifetime run was unexpectedly superseded.");
+        using Bitmap closeSnapshot = controller.AcquireCachedOutputSnapshot("Review_Output");
+        if (closeSnapshot == null)
+        {
+            throw new InvalidOperationException("The post-reset Review run did not expose a cached-output snapshot.");
+        }
+
+        await controller.DisposeAsync();
+        using Bitmap closedSnapshot = controller.AcquireCachedOutputSnapshot("Review_Output");
+        Require(closedSnapshot == null, "DisposeAsync left a retired review cache visible.");
+        Require(closeSnapshot.Width > 0 && closeSnapshot.Height > 0, "DisposeAsync invalidated a caller-owned cached snapshot.");
+        observations.Add("close: DisposeAsync retires internal cache without invalidating returned snapshots");
+    }
+    catch (Exception exception)
+    {
+        failures.Add(exception.GetBaseException().Message);
+    }
+
+    string reportPath = Path.Combine(evidenceDirectory, "pipeline-review-cache-lifetime-contract.txt");
+    File.WriteAllLines(
+        reportPath,
+        new[]
+        {
+            "Result: " + (failures.Count == 0 ? "PASS" : "FAIL"),
+            "Contract: OVL-07 Pipeline Review cached image replacement and Reset/Close retirement",
+            "EvidenceDirectory: " + evidenceDirectory
+        }
+        .Concat(observations)
+        .Concat(failures.Select(item => "Failure: " + item)));
+
+    if (failures.Count == 0)
+    {
+        Console.WriteLine("Pipeline Review cache lifetime contract passed.");
+        Console.WriteLine(reportPath);
+        return 0;
+    }
+
+    Console.Error.WriteLine("Pipeline Review cache lifetime contract failed.");
+    foreach (string failure in failures)
+    {
+        Console.Error.WriteLine("- " + failure);
+    }
+    Console.Error.WriteLine(reportPath);
+    return 1;
+}
+
+static async Task<int> RunPipelineReviewStaleCallbackContractAsync(string? requestedEvidenceDirectory)
+{
+    string evidenceDirectory = Path.GetFullPath(requestedEvidenceDirectory
+        ?? Path.Combine(
+            "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev",
+            "refactor-ovl07-pipeline-review-stale-callback-" + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture)));
+    Directory.CreateDirectory(evidenceDirectory);
+    List<string> observations = new List<string>();
+    List<string> failures = new List<string>();
+
+    try
+    {
+        using DisplayManagerService displayManager = new DisplayManagerService();
+        displayManager.CreateLayerDisplay(ImageSpaceFrame.TakeOwnership(new Bitmap(12, 8)), "Main");
+        VisionPipeline pipeline = CreateReviewExecutionContractPipeline();
+
+        using OpenVisionPipelineReviewExecutionController controller =
+            new OpenVisionPipelineReviewExecutionController(displayManager, action => action());
+        using ManualResetEventSlim callbackEntered = new ManualResetEventSlim(false);
+        using ManualResetEventSlim resetStarted = new ManualResetEventSlim(false);
+        using ManualResetEventSlim releaseCallback = new ManualResetEventSlim(false);
+        EventHandler<OpenVisionPipelineReviewStepUpdatedEventArgs> callbackHandler = (_, _) =>
+        {
+            callbackEntered.Set();
+            releaseCallback.Wait();
+        };
+        controller.StepUpdated += callbackHandler;
+        try
+        {
+            // Run the controller from a worker so a synchronous invokeOnUi test callback can
+            // hold the application boundary while the caller starts the Reset race probe.
+            Task<OpenVisionPipelineReviewExecutionResult> runTask = Task.Run(
+                async () => await controller.RunAsync(pipeline, 1000, 301, 401).ConfigureAwait(false));
+            if (!callbackEntered.Wait(5000))
+            {
+                failures.Add("The callback atomicity probe did not enter StepUpdated.");
+                controller.Reset();
+                await runTask;
+            }
+            else
+            {
+                Task resetTask = Task.Factory.StartNew(
+                    () =>
+                    {
+                        resetStarted.Set();
+                        controller.Reset();
+                    },
+                    CancellationToken.None,
+                    TaskCreationOptions.LongRunning,
+                    TaskScheduler.Default);
+                Require(resetStarted.Wait(5000), "The Reset atomicity probe did not start.");
+                if (resetTask.Wait(250))
+                {
+                    failures.Add("Reset completed while an entered StepUpdated callback still held the application boundary.");
+                }
+
+                releaseCallback.Set();
+                await resetTask;
+                OpenVisionPipelineReviewExecutionResult runResult = await runTask;
+                Require(runResult.WasSuperseded, "Reset did not supersede the run after the entered callback boundary.");
+                Require(!controller.TryGetSummary(pipeline.Steps[0], out _), "Reset left a stale summary after the entered callback.");
+                using Bitmap cachedOutput = controller.AcquireCachedOutputSnapshot("Review_Output");
+                Require(cachedOutput == null, "Reset left a stale cached output after the entered callback.");
+                observations.Add("entered callback: Reset waited for the atomic callback boundary and final state is empty");
+            }
+        }
+        finally
+        {
+            releaseCallback.Set();
+            controller.StepUpdated -= callbackHandler;
+        }
+
+        using OpenVisionPipelineReviewExecutionController closeController =
+            new OpenVisionPipelineReviewExecutionController(displayManager, action => action());
+        using ManualResetEventSlim closeCallbackEntered = new ManualResetEventSlim(false);
+        using ManualResetEventSlim disposeStarted = new ManualResetEventSlim(false);
+        using ManualResetEventSlim releaseCloseCallback = new ManualResetEventSlim(false);
+        EventHandler<OpenVisionPipelineReviewStepUpdatedEventArgs> closeCallbackHandler = (_, _) =>
+        {
+            closeCallbackEntered.Set();
+            releaseCloseCallback.Wait();
+        };
+        closeController.StepUpdated += closeCallbackHandler;
+        try
+        {
+            Task<OpenVisionPipelineReviewExecutionResult> closeRunTask = Task.Run(
+                async () => await closeController.RunAsync(pipeline, 1000, 302, 402).ConfigureAwait(false));
+            if (!closeCallbackEntered.Wait(5000))
+            {
+                failures.Add("The Close callback atomicity probe did not enter StepUpdated.");
+                releaseCloseCallback.Set();
+                await closeRunTask;
+            }
+            else
+            {
+                Task disposeTask = Task.Factory.StartNew(
+                    async () =>
+                    {
+                        disposeStarted.Set();
+                        await closeController.DisposeAsync().ConfigureAwait(false);
+                    },
+                    CancellationToken.None,
+                    TaskCreationOptions.LongRunning,
+                    TaskScheduler.Default).Unwrap();
+                Require(disposeStarted.Wait(5000), "The Close atomicity probe did not start.");
+                if (disposeTask.Wait(250))
+                {
+                    failures.Add("Close completed while an entered StepUpdated callback still held the application boundary.");
+                }
+
+                releaseCloseCallback.Set();
+                await disposeTask;
+                OpenVisionPipelineReviewExecutionResult closeRunResult = await closeRunTask;
+                Require(closeRunResult.WasSuperseded, "Close did not supersede the run after the entered callback boundary.");
+                Require(!closeController.TryGetSummary(pipeline.Steps[0], out _), "Close left a stale summary after the entered callback.");
+                using Bitmap closedCachedOutput = closeController.AcquireCachedOutputSnapshot("Review_Output");
+                Require(closedCachedOutput == null, "Close left a stale cached output after the entered callback.");
+                observations.Add("entered callback: Close waited for the atomic callback boundary and final state is empty");
+            }
+        }
+        finally
+        {
+            releaseCloseCallback.Set();
+            closeController.StepUpdated -= closeCallbackHandler;
+        }
+    }
+    catch (Exception exception)
+    {
+        failures.Add(exception.GetBaseException().Message);
+    }
+
+    string reportPath = Path.Combine(evidenceDirectory, "pipeline-review-stale-callback-contract.txt");
+    File.WriteAllLines(
+        reportPath,
+        new[]
+        {
+            "Result: " + (failures.Count == 0 ? "PASS" : "FAIL"),
+            "Contract: OVL-07 Pipeline Review stale callback atomic application",
+            "EvidenceDirectory: " + evidenceDirectory
+        }
+        .Concat(observations)
+        .Concat(failures.Select(item => "Failure: " + item)));
+
+    if (failures.Count == 0)
+    {
+        Console.WriteLine("Pipeline Review stale callback contract passed.");
+        Console.WriteLine(reportPath);
+        return 0;
+    }
+
+    Console.Error.WriteLine("Pipeline Review stale callback contract failed.");
+    foreach (string failure in failures)
+    {
+        Console.Error.WriteLine("- " + failure);
+    }
+    Console.Error.WriteLine(reportPath);
+    return 1;
+}
+
+static async Task<int> RunPipelineReviewExecutionContractAsync(string? requestedEvidenceDirectory)
+{
+    string evidenceDirectory = Path.GetFullPath(requestedEvidenceDirectory
+        ?? Path.Combine("D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev", "refactor-ovl05-review-" + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture)));
+    Directory.CreateDirectory(evidenceDirectory);
+    List<string> observations = new List<string>();
+    List<string> failures = new List<string>();
+
+    try
+    {
+        TaskCompletionSource<VisionToolResult> timeoutSource = new TaskCompletionSource<VisionToolResult>(TaskCreationOptions.RunContinuationsAsynchronously);
+        Task<VisionPipelineStepCompletion> timeoutTask = VisionPipelineExecutionService.WaitForStepCompletionStatusAsync(
+            timeoutSource.Task,
+            1,
+            CancellationToken.None);
+        await Task.Delay(100);
+        if (timeoutTask.IsCompleted)
+        {
+            failures.Add("Timeout status returned before the worker was drained.");
+        }
+
+        Mat timeoutImage = new Mat(2, 2, MatType.CV_8UC1, Scalar.White);
+        timeoutSource.SetResult(new VisionToolResult { Success = true, ResultImage = timeoutImage });
+        VisionPipelineStepCompletion timeout = await timeoutTask;
+        Require(timeout.Status == VisionPipelineStepCompletionStatus.TimedOut, "Timeout status was not distinguished from cancellation.");
+        Require(timeout.WorkerDrained && timeoutImage.IsDisposed, "Timeout did not report a drained worker and dispose the late image.");
+
+        using (CancellationTokenSource cancelSource = new CancellationTokenSource())
+        {
+            TaskCompletionSource<VisionToolResult> canceledSource = new TaskCompletionSource<VisionToolResult>(TaskCreationOptions.RunContinuationsAsynchronously);
+            Task<VisionPipelineStepCompletion> canceledTask = VisionPipelineExecutionService.WaitForStepCompletionStatusAsync(
+                canceledSource.Task,
+                60000,
+                cancelSource.Token);
+            cancelSource.Cancel();
+            await Task.Delay(10);
+            if (canceledTask.IsCompleted)
+            {
+                failures.Add("Cancellation status returned before the worker was drained.");
+            }
+
+            canceledSource.SetResult(new VisionToolResult { Success = true });
+            VisionPipelineStepCompletion canceled = await canceledTask;
+            Require(canceled.Status == VisionPipelineStepCompletionStatus.Canceled, "Cancellation status was not distinguished from timeout.");
+            Require(canceled.WorkerDrained, "Cancellation did not report a drained worker.");
+        }
+        observations.Add("completion-status: timeout and cancellation remain distinct until worker drain");
+
+        using (DisplayManagerService displayManager = new DisplayManagerService())
+        {
+            displayManager.CreateLayerDisplay(ImageSpaceFrame.TakeOwnership(new Bitmap(12, 8)), "Main");
+            VisionPipeline pipeline = CreateReviewExecutionContractPipeline();
+
+            using (OpenVisionPipelineReviewExecutionController invalidController =
+                new OpenVisionPipelineReviewExecutionController(displayManager, action => action()))
+            {
+                VisionPipeline invalidPipeline = CreateReviewExecutionContractPipeline();
+                invalidPipeline.Steps[0].Parameters["INVALID_XML"] = "\0";
+                bool planFailed = false;
+                try
+                {
+                    await invalidController.RunAsync(invalidPipeline, 1000, 7, 11);
+                }
+                catch (Exception)
+                {
+                    planFailed = true;
+                }
+
+                Require(planFailed, "Invalid pipeline did not fail during execution-plan creation.");
+                Require(!invalidController.IsRunning, "Execution-plan failure left IsRunning set.");
+            }
+            observations.Add("plan-failure: IsRunning restored after execution-plan creation exception");
+
+            List<Action> queuedCallbacks = new List<Action>();
+            int invocationCount = 0;
+            using (OpenVisionPipelineReviewExecutionController resetController =
+                new OpenVisionPipelineReviewExecutionController(displayManager, action =>
+                {
+                    if (Interlocked.Increment(ref invocationCount) == 1)
+                    {
+                        action();
+                        return;
+                    }
+
+                    lock (queuedCallbacks)
+                    {
+                        queuedCallbacks.Add(action);
+                    }
+                }))
+            {
+                OpenVisionPipelineReviewExecutionResult staleResult = await resetController.RunAsync(pipeline, 1000, 17, 23);
+                Require(staleResult.WasSuperseded, "Queued Review callbacks were not marked superseded.");
+                resetController.Reset();
+                Action[] callbacks;
+                lock (queuedCallbacks)
+                {
+                    callbacks = queuedCallbacks.ToArray();
+                }
+
+                foreach (Action callback in callbacks)
+                {
+                    callback();
+                }
+
+                Require(!resetController.TryGetSummary(pipeline.Steps[0], out _), "Reset allowed a stale Step result to repopulate summaries.");
+                using Bitmap resetSnapshot = resetController.AcquireCachedOutputSnapshot("Review_Output");
+                Require(resetSnapshot == null, "Reset allowed a stale output image to repopulate the cache.");
+            }
+            observations.Add("generation-guard: Reset invalidated queued Step and completion callbacks");
+
+            using (ManualResetEventSlim contextEntered = new ManualResetEventSlim(false))
+            using (ManualResetEventSlim releaseContext = new ManualResetEventSlim(false))
+            {
+                int duplicateInvocationCount = 0;
+                using (OpenVisionPipelineReviewExecutionController duplicateController =
+                    new OpenVisionPipelineReviewExecutionController(displayManager, action =>
+                    {
+                        if (Interlocked.Increment(ref duplicateInvocationCount) == 1)
+                        {
+                            contextEntered.Set();
+                            releaseContext.Wait();
+                        }
+
+                        action();
+                    }))
+                {
+                Task<OpenVisionPipelineReviewExecutionResult> firstRun = Task.Run(
+                    () => duplicateController.RunAsync(pipeline, 1000, 31, 41));
+                if (!contextEntered.Wait(5000))
+                {
+                    failures.Add("The duplicate-run probe did not reach the active execution boundary.");
+                }
+
+                Task<OpenVisionPipelineReviewExecutionResult> secondRun = duplicateController.RunAsync(pipeline, 1000, 32, 42);
+                bool duplicateBlocked = false;
+                try
+                {
+                    await secondRun;
+                }
+                catch (InvalidOperationException)
+                {
+                    duplicateBlocked = true;
+                }
+
+                if (!duplicateBlocked)
+                {
+                    failures.Add("A second Review run was not blocked while the first run was active.");
+                }
+
+                releaseContext.Set();
+                await firstRun;
+                }
+            }
+            observations.Add("duplicate-run: second Review invocation was rejected while the first was active");
+
+            using (OpenVisionPipelineReviewExecutionController disposeController =
+                new OpenVisionPipelineReviewExecutionController(displayManager, action => action()))
+            {
+                OpenVisionPipelineReviewExecutionResult result = await disposeController.RunAsync(pipeline, 1000, 51, 61);
+                Require(!result.WasSuperseded, "A completed Review run was unexpectedly superseded.");
+                await disposeController.DisposeAsync();
+                Require(!disposeController.IsRunning, "DisposeAsync returned while Review was still running.");
+            }
+            observations.Add("dispose: async disposal waits for controller completion and leaves no active run");
+        }
+    }
+    catch (Exception exception)
+    {
+        failures.Add(exception.GetBaseException().Message);
+    }
+
+    string reportPath = Path.Combine(evidenceDirectory, "pipeline-review-execution-contract.txt");
+    File.WriteAllLines(
+        reportPath,
+        new[]
+        {
+            "Result: " + (failures.Count == 0 ? "PASS" : "FAIL"),
+            "Contract: Review execution generation, cancellation, drain, and disposal",
+            "EvidenceDirectory: " + evidenceDirectory
+        }
+        .Concat(observations)
+        .Concat(failures.Select(item => "Failure: " + item)));
+
+    if (failures.Count == 0)
+    {
+        Console.WriteLine("Pipeline Review execution contract passed.");
+        Console.WriteLine(reportPath);
+        return 0;
+    }
+
+    Console.Error.WriteLine("Pipeline Review execution contract failed.");
+    foreach (string failure in failures)
+    {
+        Console.Error.WriteLine("- " + failure);
+    }
+    Console.Error.WriteLine(reportPath);
+    return 1;
+}
+
+static async Task<int> RunTcpControllerDisposalContractAsync(string? requestedEvidenceDirectory)
+{
+    string evidenceDirectory = Path.GetFullPath(requestedEvidenceDirectory
+        ?? Path.Combine("D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev", "refactor-ovl05-tcp-" + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture)));
+    Directory.CreateDirectory(evidenceDirectory);
+    List<string> observations = new List<string>();
+    List<string> failures = new List<string>();
+
+    try
+    {
+        string exchangeRoot = Path.Combine(evidenceDirectory, "exchange");
+        Directory.CreateDirectory(exchangeRoot);
+        int listenPort;
+        using (TcpListener probe = new TcpListener(IPAddress.Loopback, 0))
+        {
+            probe.Start();
+            listenPort = ((IPEndPoint)probe.LocalEndpoint).Port;
+        }
+
+        byte[] key = RandomNumberGenerator.GetBytes(32);
+        try
+        {
+            using (OpenVisionTcpIntegrationController controller =
+                new OpenVisionTcpIntegrationController(Dispatcher.CurrentDispatcher))
+            {
+                controller.LocalExchangeRoot = exchangeRoot;
+                controller.ListenAddress = "127.0.0.1";
+                controller.ListenPortText = listenPort.ToString(CultureInfo.InvariantCulture);
+                controller.PeerHost = "127.0.0.1";
+                controller.PeerPortText = (listenPort == 65535 ? 65534 : listenPort + 1).ToString(CultureInfo.InvariantCulture);
+                controller.SetSessionSharedKey(Convert.ToBase64String(key));
+                await controller.StartAsync();
+                Require(controller.IsListening, "TCP controller did not enter listening state.");
+
+                await controller.DisposeAsync();
+                Require(!controller.IsListening, "TCP controller remained listening after DisposeAsync.");
+                observations.Add("tcp-dispose: listening exchange stopped and disposed without UI-thread blocking");
+            }
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(key);
+        }
+    }
+    catch (Exception exception)
+    {
+        failures.Add(exception.GetBaseException().Message);
+    }
+
+    string reportPath = Path.Combine(evidenceDirectory, "tcp-controller-disposal-contract.txt");
+    File.WriteAllLines(
+        reportPath,
+        new[]
+        {
+            "Result: " + (failures.Count == 0 ? "PASS" : "FAIL"),
+            "Contract: TCP integration controller asynchronous disposal",
+            "EvidenceDirectory: " + evidenceDirectory
+        }
+        .Concat(observations)
+        .Concat(failures.Select(item => "Failure: " + item)));
+
+    if (failures.Count == 0)
+    {
+        Console.WriteLine("TCP controller disposal contract passed.");
+        Console.WriteLine(reportPath);
+        return 0;
+    }
+
+    Console.Error.WriteLine("TCP controller disposal contract failed.");
+    foreach (string failure in failures)
+    {
+        Console.Error.WriteLine("- " + failure);
+    }
+    Console.Error.WriteLine(reportPath);
+    return 1;
+}
+
+static VisionPipeline CreateReviewExecutionContractPipeline()
+{
+    VisionPipeline pipeline = new VisionPipeline { Name = "OVL-05 Review Execution Contract" };
+    pipeline.Steps.Add(VisionPipelineStepBuilder.FromArithmetic(
+        "Review Execution Arithmetic",
+        "ADD",
+        "Main",
+        "Main",
+        "Review_Output",
+        useConstantInput: false,
+        useColorConstant: false,
+        gray: 1,
+        b: 1,
+        g: 1,
+        r: 1,
+        offsetX: 0,
+        offsetY: 0));
+    return pipeline;
 }
 
 static int RunBitmapConverterContract(string? requestedEvidenceDirectory)
@@ -699,6 +1828,2031 @@ static int RunRecipeStoragePathContract(string? requestedEvidenceDirectory)
     }
 
     Console.Error.WriteLine("Recipe storage path contract failed.");
+    foreach (string failure in failures)
+    {
+        Console.Error.WriteLine("- " + failure);
+    }
+
+    Console.Error.WriteLine(reportPath);
+    return 1;
+}
+
+static int RunValidationSetDocumentOwnerContract(string? requestedEvidenceDirectory)
+{
+    string defaultEvidenceDirectory = Path.Combine(
+        "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev",
+        "ovl07_validation_document_owner_contract_"
+            + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture));
+    string evidenceDirectory = Path.GetFullPath(
+        requestedEvidenceDirectory ?? defaultEvidenceDirectory);
+    Directory.CreateDirectory(evidenceDirectory);
+    string dataRoot = Path.Combine(evidenceDirectory, "data");
+    Environment.SetEnvironmentVariable(AppPathService.DataRootEnvironmentVariable, dataRoot);
+
+    List<string> observations = new List<string>();
+    List<string> failures = new List<string>();
+    string recipeName = "ValidationOwnerContract";
+    string recipeDirectory = string.Empty;
+    string imagePath = Path.Combine(evidenceDirectory, "owner-contract.png");
+
+    try
+    {
+        using (Bitmap image = new Bitmap(2, 2))
+        {
+            image.Save(imagePath, ImageFormat.Png);
+        }
+
+        OpenVisionRecipeValidationSetDocumentOwner owner =
+            new OpenVisionRecipeValidationSetDocumentOwner();
+        Require(owner.TryLoad(recipeName, out string error), error);
+        Require(owner.StorageReady, "A missing validation-set document was not treated as ready storage.");
+        recipeDirectory = RecipeWorkspaceService.GetRecipeDirectoryPath(recipeName);
+        Require(owner.TryCreateSet("Owner Set"), "The document owner did not create a new set.");
+        Require(!owner.TryCreateSet("owner set"), "Duplicate set names were not rejected by the document owner.");
+        Require(owner.TrySave(recipeName, out error), error);
+        string storagePath = OpenVisionRecipeValidationSetStorage.GetPath(recipeName);
+        Require(File.Exists(storagePath), "The document owner did not persist validation-sets.xml.");
+        observations.Add("create/save: owner persisted one set");
+
+        OpenVisionRecipeValidationSetDocumentOwner reloaded =
+            new OpenVisionRecipeValidationSetDocumentOwner();
+        Require(reloaded.TryLoad(recipeName, out error), error);
+        OpenVisionRecipeValidationSetSelectionOwner selectionOwner =
+            new OpenVisionRecipeValidationSetSelectionOwner(reloaded);
+        selectionOwner.Refresh(
+            "Owner Set",
+            string.Empty,
+            string.Empty,
+            string.Empty,
+            string.Empty);
+        Require(selectionOwner.Options.Count == 1
+            && selectionOwner.Selected != null
+            && string.Equals(selectionOwner.Selected.Name, "Owner Set", StringComparison.Ordinal),
+            "The selection owner did not expose the saved set through its selection projection.");
+        Require(!selectionOwner.SelectSet(null)
+            && selectionOwner.Selected != null
+            && string.Equals(selectionOwner.Selected.Name, "Owner Set", StringComparison.Ordinal),
+            "The selection owner did not preserve a valid set selection when a bound ComboBox reported a transient null.");
+
+        Require(reloaded.TryAddImages(
+                "Owner Set",
+                new[] { imagePath },
+                OpenVisionRecipeValidationSetImage.ExpectedOk,
+                "owner contract",
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                out int added,
+                out int updated,
+                out int skipped,
+                out error),
+            error);
+        Require(added == 1 && updated == 0 && skipped == 0,
+            "The document owner did not add the validation image exactly once.");
+        Require(reloaded.TrySave(recipeName, out error), error);
+
+        OpenVisionRecipeValidationSetDocumentOwner afterAdd =
+            new OpenVisionRecipeValidationSetDocumentOwner();
+        Require(afterAdd.TryLoad(recipeName, out error), error);
+        OpenVisionRecipeValidationSetSelectionOwner afterAddSelectionOwner =
+            new OpenVisionRecipeValidationSetSelectionOwner(afterAdd);
+        afterAddSelectionOwner.Refresh(
+                "Owner Set",
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                imagePath);
+        OpenVisionRecipeValidationSetOption addedOption = afterAddSelectionOwner.Selected;
+        Require(addedOption != null
+            && addedOption.ImageCount == 1
+            && addedOption.ReadyCount == 1
+            && addedOption.OkCount == 1,
+            "The reloaded selection owner did not expose the persisted image state.");
+        Require(afterAddSelectionOwner.ImageRows.Count == 1
+            && afterAddSelectionOwner.SelectedImage != null
+            && string.Equals(afterAddSelectionOwner.SelectedImage.Path, Path.GetFullPath(imagePath), StringComparison.OrdinalIgnoreCase),
+            "The selection owner did not preserve the normalized image path.");
+        Require(!afterAddSelectionOwner.SelectImage(null)
+            && afterAddSelectionOwner.SelectedImage != null
+            && string.Equals(afterAddSelectionOwner.SelectedImage.Path, Path.GetFullPath(imagePath), StringComparison.OrdinalIgnoreCase),
+            "The selection owner did not preserve a valid image selection when a bound list reported a transient null.");
+        observations.Add("reload/add: selection owner preserved set and image projection");
+
+        Require(afterAdd.TryRemoveImage("Owner Set", imagePath),
+            "The document owner did not remove the selected validation image.");
+        Require(afterAdd.TrySave(recipeName, out error), error);
+        OpenVisionRecipeValidationSetDocumentOwner afterRemove =
+            new OpenVisionRecipeValidationSetDocumentOwner();
+        Require(afterRemove.TryLoad(recipeName, out error), error);
+        OpenVisionRecipeValidationSetSelectionOwner afterRemoveSelectionOwner =
+            new OpenVisionRecipeValidationSetSelectionOwner(afterRemove);
+        afterRemoveSelectionOwner.Refresh(
+                "Owner Set",
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                string.Empty);
+        OpenVisionRecipeValidationSetOption emptyOption = afterRemoveSelectionOwner.Selected;
+        Require(emptyOption != null && emptyOption.ImageCount == 0,
+            "The document owner did not persist image removal.");
+
+        Require(afterRemove.TryDeleteSet("Owner Set"),
+            "The document owner did not delete the selected validation set.");
+        Require(afterRemove.TrySave(recipeName, out error), error);
+        OpenVisionRecipeValidationSetDocumentOwner afterDelete =
+            new OpenVisionRecipeValidationSetDocumentOwner();
+        Require(afterDelete.TryLoad(recipeName, out error), error);
+        OpenVisionRecipeValidationSetSelectionOwner afterDeleteSelectionOwner =
+            new OpenVisionRecipeValidationSetSelectionOwner(afterDelete);
+        afterDeleteSelectionOwner.Refresh(
+            "Owner Set",
+            string.Empty,
+            string.Empty,
+            string.Empty,
+            string.Empty);
+        Require(!afterDelete.ContainsSet("Owner Set") && afterDeleteSelectionOwner.Options.Count == 0,
+            "The document and selection owners did not persist validation set deletion.");
+        observations.Add("remove/delete: owner persisted both mutations");
+    }
+    catch (Exception exception)
+    {
+        failures.Add("unexpected-contract-error: " + exception.GetBaseException().Message);
+    }
+
+    string reportPath = Path.Combine(evidenceDirectory, "validation_set_document_owner_contract.txt");
+    File.WriteAllLines(
+        reportPath,
+        new[]
+        {
+            "Result: " + (failures.Count == 0 ? "PASS" : "FAIL"),
+            "Contract: OVL-07 Validation Set document owner persistence and selection projection boundary",
+            "EvidenceDirectory: " + evidenceDirectory,
+            "DataRoot: " + dataRoot,
+            "RecipeDirectory: " + recipeDirectory
+        }
+        .Concat(observations)
+        .Concat(failures.Select(item => "Failure: " + item)));
+
+    if (failures.Count == 0)
+    {
+        Console.WriteLine("Validation Set document/selection owner contract passed.");
+        Console.WriteLine(reportPath);
+        return 0;
+    }
+
+    Console.Error.WriteLine("Validation Set document/selection owner contract failed.");
+    foreach (string failure in failures)
+    {
+        Console.Error.WriteLine("- " + failure);
+    }
+
+    Console.Error.WriteLine(reportPath);
+    return 1;
+}
+
+static int RunStepEditLoaderContract(string? requestedEvidenceDirectory)
+{
+    string defaultEvidenceDirectory = Path.Combine(
+        "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev",
+        "ovl07_step_edit_loader_contract_"
+            + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture));
+    string evidenceDirectory = Path.GetFullPath(
+        requestedEvidenceDirectory ?? defaultEvidenceDirectory);
+    Directory.CreateDirectory(evidenceDirectory);
+    string dataRoot = Path.Combine(evidenceDirectory, "data");
+    Environment.SetEnvironmentVariable(AppPathService.DataRootEnvironmentVariable, dataRoot);
+
+    List<string> observations = new List<string>();
+    List<string> failures = new List<string>();
+    string recipeName = "StepEditLoaderContract";
+    string recipeDirectory = string.Empty;
+
+    try
+    {
+        RecipeWorkspaceService.EnsureVisionWorkspace(recipeName);
+        recipeDirectory = RecipeWorkspaceService.GetRecipeDirectoryPath(recipeName);
+        VisionPipeline pipeline = new VisionPipeline { Name = "StepEditPipeline" };
+        VisionPipelineStep step = new VisionPipelineStep
+        {
+            Name = "Blob",
+            ToolType = "Blob",
+            Enabled = true,
+            InputLayer = "Main",
+            OutputLayer = "Blob_Output"
+        };
+        step.Parameters["USE_ROI"] = "false";
+        step.Parameters["USE_THRESHOLD"] = "true";
+        step.Parameters["MIN_AREA"] = "10";
+        step.Parameters["MAX_AREA"] = "100000";
+        pipeline.Steps.Add(step);
+        VisionPipelineStorage.Save(recipeName, pipeline);
+        VisionPipelineStorage.SaveActivePipelineName(recipeName, pipeline.Name);
+
+        OpenVisionRecipePipelineStepPreview preview = new OpenVisionRecipePipelineStepPreview(
+            1,
+            step,
+            OpenVisionRecipeLayerCard.CreateMissing);
+        OpenVisionRecipeStepEditLoader loader = new OpenVisionRecipeStepEditLoader();
+        OpenVisionRecipeStepEditLoadResult loaded = loader.Load(
+            recipeName,
+            pipeline.Name,
+            preview);
+        Require(loaded.Succeeded, loaded.Message);
+        Require(loaded.Pipeline != null && loaded.Pipeline.Steps.Count == 1,
+            "The Step Edit loader did not return the persisted pipeline.");
+        Require(loaded.Step != null
+            && string.Equals(loaded.Step.Name, "Blob", StringComparison.Ordinal)
+            && loaded.EditObject is BlobProperty,
+            "The Step Edit loader did not resolve and project the selected Blob Step.");
+        observations.Add("selected-step load: XML Step resolved and projected to BlobProperty");
+
+        OpenVisionRecipePipelineStepPreview relocatedPreview = new OpenVisionRecipePipelineStepPreview(
+            9,
+            step,
+            OpenVisionRecipeLayerCard.CreateMissing);
+        OpenVisionRecipeStepEditLoadResult relocated = loader.Load(
+            recipeName,
+            pipeline.Name,
+            relocatedPreview);
+        Require(relocated.Succeeded
+            && relocated.Step != null
+            && string.Equals(relocated.Step.Name, "Blob", StringComparison.Ordinal),
+            "The Step Edit loader did not use the stable Step identity when the preview index was stale.");
+        observations.Add("stale-index recovery: name/tool/output identity fallback preserved");
+
+        OpenVisionRecipeStepEditLoadResult activePipelineLoad = loader.Load(
+            recipeName,
+            string.Empty,
+            preview);
+        Require(activePipelineLoad.Succeeded
+            && string.Equals(activePipelineLoad.PipelineName, pipeline.Name, StringComparison.Ordinal),
+            "The Step Edit loader did not resolve the active pipeline when no pipeline was requested.");
+
+        OpenVisionRecipeStepEditLoadResult missingSelection = loader.Load(
+            recipeName,
+            pipeline.Name,
+            null);
+        Require(!missingSelection.Succeeded && !string.IsNullOrWhiteSpace(missingSelection.Message),
+            "The Step Edit loader did not reject a missing selected Step.");
+        observations.Add("boundary failures: active-pipeline fallback and missing-selection guard passed");
+    }
+    catch (Exception exception)
+    {
+        failures.Add("unexpected-contract-error: " + exception.GetBaseException().Message);
+    }
+    finally
+    {
+        if (!string.IsNullOrWhiteSpace(recipeDirectory))
+        {
+            RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+        }
+    }
+
+    string reportPath = Path.Combine(evidenceDirectory, "step_edit_loader_contract.txt");
+    File.WriteAllLines(
+        reportPath,
+        new[]
+        {
+            "Result: " + (failures.Count == 0 ? "PASS" : "FAIL"),
+            "Contract: OVL-07 Step Edit selected-Step load and PropertyGrid projection boundary",
+            "EvidenceDirectory: " + evidenceDirectory,
+            "DataRoot: " + dataRoot,
+            "RecipeDirectory: " + recipeDirectory
+        }
+        .Concat(observations)
+        .Concat(failures.Select(item => "Failure: " + item)));
+
+    if (failures.Count == 0)
+    {
+        Console.WriteLine("Step Edit loader contract passed.");
+        Console.WriteLine(reportPath);
+        return 0;
+    }
+
+    Console.Error.WriteLine("Step Edit loader contract failed.");
+    foreach (string failure in failures)
+    {
+        Console.Error.WriteLine("- " + failure);
+    }
+
+    Console.Error.WriteLine(reportPath);
+    return 1;
+}
+
+static int RunStepEditApplyOwnerContract(string? requestedEvidenceDirectory)
+{
+    string defaultEvidenceDirectory = Path.Combine(
+        "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev",
+        "ovl07_step_edit_apply_owner_contract_"
+            + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture));
+    string evidenceDirectory = Path.GetFullPath(
+        requestedEvidenceDirectory ?? defaultEvidenceDirectory);
+    Directory.CreateDirectory(evidenceDirectory);
+    string dataRoot = Path.Combine(evidenceDirectory, "data");
+    Environment.SetEnvironmentVariable(AppPathService.DataRootEnvironmentVariable, dataRoot);
+
+    List<string> observations = new List<string>();
+    List<string> failures = new List<string>();
+    string recipeName = "StepEditApplyOwnerContract";
+    string recipeDirectory = string.Empty;
+    const string pipelineName = "StepEditApplyPipeline";
+
+    VisionPipeline CreatePipeline(int minArea)
+    {
+        VisionPipeline pipeline = new VisionPipeline { Name = pipelineName };
+        VisionPipelineStep step = new VisionPipelineStep
+        {
+            Name = "Blob",
+            ToolType = "Blob",
+            Enabled = true,
+            InputLayer = "Main",
+            OutputLayer = "Blob_Output"
+        };
+        step.Parameters["USE_ROI"] = "false";
+        step.Parameters["USE_THRESHOLD"] = "true";
+        step.Parameters["MIN_AREA"] = minArea.ToString(CultureInfo.InvariantCulture);
+        step.Parameters["MAX_AREA"] = "100000";
+        pipeline.Steps.Add(step);
+        return pipeline;
+    }
+
+    void SaveBaseline(int minArea)
+    {
+        VisionPipelineStorage.Save(recipeName, CreatePipeline(minArea));
+    }
+
+    OpenVisionRecipeStepEditLoadResult LoadBaseline()
+    {
+        VisionPipeline persisted = VisionPipelineStorage.Load(recipeName, pipelineName);
+        VisionPipelineStep persistedStep = persisted.Steps[0];
+        OpenVisionRecipePipelineStepPreview preview = new OpenVisionRecipePipelineStepPreview(
+            1,
+            persistedStep,
+            OpenVisionRecipeLayerCard.CreateMissing);
+        return new OpenVisionRecipeStepEditLoader().Load(
+            recipeName,
+            pipelineName,
+            preview);
+    }
+
+    int ReadMinArea()
+    {
+        string path = RecipeWorkspaceService.GetVisionPipelinePath(recipeName, pipelineName);
+        Require(
+            VisionPipelineStorage.TryLoadFromFile(path, out VisionPipeline pipeline, out string message),
+            "The persisted pipeline could not be read: " + message);
+        Require(pipeline.Steps.Count > 0, "The persisted pipeline has no Step.");
+        if (!pipeline.Steps[0].Parameters.TryGetValue("MIN_AREA", out string? value))
+        {
+            throw new InvalidOperationException("The persisted Blob MIN_AREA parameter was missing.");
+        }
+
+        if (!int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int minArea))
+        {
+            throw new InvalidOperationException("The persisted Blob MIN_AREA parameter was invalid.");
+        }
+
+        return minArea;
+    }
+
+    try
+    {
+        RecipeWorkspaceService.EnsureVisionWorkspace(recipeName);
+        recipeDirectory = RecipeWorkspaceService.GetRecipeDirectoryPath(recipeName);
+
+        SaveBaseline(10);
+        OpenVisionRecipeStepEditLoadResult loaded = LoadBaseline();
+        Require(loaded.Succeeded && loaded.EditObject is BlobProperty,
+            "The apply-owner contract could not load a Blob edit object.");
+        BlobProperty successProperty = (BlobProperty)loaded.EditObject;
+        successProperty.MIN_AREA = 25;
+        OpenVisionRecipeStepEditApplyResult success = new OpenVisionRecipeStepEditApplyOwner().Apply(
+            recipeName,
+            pipelineName,
+            loaded.Pipeline,
+            loaded.Step,
+            successProperty);
+        Require(success.Succeeded && success.ValidationMessage.Contains("passed", StringComparison.OrdinalIgnoreCase),
+            "The Step Edit apply owner did not complete a successful round trip.");
+        Require(ReadMinArea() == 25, "The successful Step Edit apply did not persist MIN_AREA.");
+        observations.Add("success: ApplyProperty, save, and round-trip validation persisted the edited Step");
+
+        SaveBaseline(10);
+        loaded = LoadBaseline();
+        BlobProperty saveFailureProperty = (BlobProperty)loaded.EditObject;
+        saveFailureProperty.MIN_AREA = 30;
+        OpenVisionRecipeStepEditApplyOwner saveFailureOwner = new OpenVisionRecipeStepEditApplyOwner(
+            savePipeline: (_, __) => throw new InvalidOperationException("Forced save failure for owner contract."));
+        OpenVisionRecipeStepEditApplyResult saveFailure = saveFailureOwner.Apply(
+            recipeName,
+            pipelineName,
+            loaded.Pipeline,
+            loaded.Step,
+            saveFailureProperty);
+        Require(!saveFailure.Succeeded && !saveFailure.IsRoundTripValidationFailure,
+            "The Step Edit apply owner did not report the injected save failure.");
+        Require(ReadMinArea() == 10, "The injected save failure did not restore the previous pipeline.");
+        observations.Add("save failure: injected save exception restored the previous persisted Pipeline");
+
+        SaveBaseline(10);
+        loaded = LoadBaseline();
+        BlobProperty validationFailureProperty = (BlobProperty)loaded.EditObject;
+        validationFailureProperty.MIN_AREA = 35;
+        OpenVisionRecipeStepEditApplyOwner validationFailureOwner = new OpenVisionRecipeStepEditApplyOwner(
+            validateRoundTrip: (_, __) => new OpenVisionRecipeRoundTripValidationResult
+            {
+                Succeeded = false,
+                Message = "Forced round-trip validation failure for owner contract."
+            });
+        OpenVisionRecipeStepEditApplyResult validationFailure = validationFailureOwner.Apply(
+            recipeName,
+            pipelineName,
+            loaded.Pipeline,
+            loaded.Step,
+            validationFailureProperty);
+        Require(
+            !validationFailure.Succeeded
+            && validationFailure.IsRoundTripValidationFailure
+            && validationFailure.RestoreSucceeded,
+            "The Step Edit apply owner did not report and restore the injected round-trip failure.");
+        Require(ReadMinArea() == 10, "The injected round-trip failure did not restore the previous pipeline.");
+        observations.Add("round-trip failure: injected validation failure restored the previous persisted Pipeline");
+
+        SaveBaseline(10);
+        loaded = LoadBaseline();
+        OpenVisionRecipeStepEditApplyResult unsupported = new OpenVisionRecipeStepEditApplyOwner().Apply(
+            recipeName,
+            pipelineName,
+            loaded.Pipeline,
+            loaded.Step,
+            new object());
+        Require(!unsupported.Succeeded && !unsupported.IsRoundTripValidationFailure,
+            "The Step Edit apply owner accepted an unsupported edit object.");
+        Require(ReadMinArea() == 10, "The unsupported edit object changed the persisted pipeline.");
+        observations.Add("unsupported property: mapping rejection left the persisted Pipeline unchanged");
+    }
+    catch (Exception exception)
+    {
+        failures.Add("unexpected-contract-error: " + exception.GetBaseException().Message);
+    }
+    finally
+    {
+        if (!string.IsNullOrWhiteSpace(recipeDirectory))
+        {
+            RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+        }
+    }
+
+    string reportPath = Path.Combine(evidenceDirectory, "step_edit_apply_owner_contract.txt");
+    File.WriteAllLines(
+        reportPath,
+        new[]
+        {
+            "Result: " + (failures.Count == 0 ? "PASS" : "FAIL"),
+            "Contract: OVL-07 Step Edit apply persistence, validation, and rollback owner boundary",
+            "EvidenceDirectory: " + evidenceDirectory,
+            "DataRoot: " + dataRoot,
+            "RecipeDirectory: " + recipeDirectory
+        }
+        .Concat(observations)
+        .Concat(failures.Select(item => "Failure: " + item)));
+
+    if (failures.Count == 0)
+    {
+        Console.WriteLine("Step Edit apply owner contract passed.");
+        Console.WriteLine(reportPath);
+        return 0;
+    }
+
+    Console.Error.WriteLine("Step Edit apply owner contract failed.");
+    foreach (string failure in failures)
+    {
+        Console.Error.WriteLine("- " + failure);
+    }
+
+    Console.Error.WriteLine(reportPath);
+    return 1;
+}
+
+static int RunStepEditApplyProjectionContract(string? requestedEvidenceDirectory)
+{
+    string defaultEvidenceDirectory = Path.Combine(
+        "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev",
+        "ovl07_step_edit_apply_projection_contract_"
+            + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture));
+    string evidenceDirectory = Path.GetFullPath(
+        requestedEvidenceDirectory ?? defaultEvidenceDirectory);
+    Directory.CreateDirectory(evidenceDirectory);
+
+    List<string> observations = new List<string>();
+    List<string> failures = new List<string>();
+    try
+    {
+        VisionPipelineStep step = new VisionPipelineStep
+        {
+            Name = "Blob",
+            ToolType = "Blob",
+            Enabled = true,
+            InputLayer = "Main",
+            OutputLayer = "Blob_Output"
+        };
+        OpenVisionRecipePipelineStepPreview preview = new OpenVisionRecipePipelineStepPreview(
+            2,
+            step,
+            OpenVisionRecipeLayerCard.CreateMissing);
+        OpenVisionRecipeStepEditApplyProjectionOwner projectionOwner =
+            new OpenVisionRecipeStepEditApplyProjectionOwner();
+
+        OpenVisionRecipeStepEditApplyProjection success = projectionOwner.ProjectSuccess(
+            "ProjectionPipeline",
+            preview.Index,
+            preview,
+            "round-trip validation passed",
+            rerunValidationSet: false);
+        Require(success.Succeeded, "Successful Step Edit apply projection was not marked succeeded.");
+        Require(
+            (success.SelectedStepEditStatusText.IndexOf("XML 반영 완료", StringComparison.Ordinal) >= 0
+                || success.SelectedStepEditStatusText.IndexOf("Applied to XML", StringComparison.Ordinal) >= 0)
+            && success.SelectedStepEditStatusText.Contains("Step 2", StringComparison.Ordinal)
+            && (success.ShellStatusText.IndexOf("Step XML 반영 완료", StringComparison.Ordinal) >= 0
+                || success.ShellStatusText.IndexOf("Step XML apply complete", StringComparison.Ordinal) >= 0)
+            && success.CorrectedOutputReviewText.Contains("Good/Bad", StringComparison.Ordinal),
+            "Successful Step Edit apply status/review projection did not preserve its user-facing contract.");
+        observations.Add("success: pipeline/step/validation status and corrected-output review projected");
+
+        OpenVisionRecipeStepEditApplyProjection saveFailure = projectionOwner.ProjectFailure(
+            OpenVisionRecipeStepEditApplyResult.Failure("XML save failed: forced"));
+        Require(
+            !saveFailure.Succeeded
+            && saveFailure.SelectedStepEditStatusText.Contains("XML save failed", StringComparison.Ordinal)
+            && string.IsNullOrEmpty(saveFailure.ShellStatusText)
+            && string.IsNullOrEmpty(saveFailure.CorrectedOutputReviewText),
+            "Save failure projection changed the wrong status channel.");
+        observations.Add("save failure: Step Edit error stayed in the edit status channel");
+
+        OpenVisionRecipeStepEditApplyProjection restored = projectionOwner.ProjectFailure(
+            OpenVisionRecipeStepEditApplyResult.RoundTripFailure("validation failed", restoreSucceeded: true));
+        Require(
+            !restored.Succeeded
+            && (restored.ShellStatusText.IndexOf("기존 저장 상태 복원", StringComparison.Ordinal) >= 0
+                || restored.ShellStatusText.IndexOf("previous saved state restored", StringComparison.Ordinal) >= 0),
+            "Restored round-trip failure did not project the recovery status.");
+        observations.Add("round-trip restored: recovery status projected to Shell status");
+
+        OpenVisionRecipeStepEditApplyProjection restoreFailed = projectionOwner.ProjectFailure(
+            OpenVisionRecipeStepEditApplyResult.RoundTripFailure("validation failed", restoreSucceeded: false));
+        Require(
+            !restoreFailed.Succeeded
+            && (restoreFailed.ShellStatusText.IndexOf("복원 오류 확인 필요", StringComparison.Ordinal) >= 0
+                || restoreFailed.ShellStatusText.IndexOf("review the restore error", StringComparison.Ordinal) >= 0),
+            "Failed restore did not project the restore-error status.");
+        observations.Add("round-trip restore failure: restore-error status projected to Shell status");
+
+        OpenVisionRecipeStepEditApplyProjection unsupported = projectionOwner.ProjectFailure(
+            OpenVisionRecipeStepEditApplyResult.Failure("This step property set cannot be applied to XML."));
+        Require(
+            !unsupported.Succeeded
+            && unsupported.SelectedStepEditStatusText.Contains("cannot be applied to XML", StringComparison.Ordinal)
+            && string.IsNullOrEmpty(unsupported.ShellStatusText),
+            "Unsupported property projection changed the Shell status channel.");
+        observations.Add("unsupported property: mapper rejection remained an edit-status failure");
+    }
+    catch (Exception exception)
+    {
+        failures.Add("unexpected-contract-error: " + exception.GetBaseException().Message);
+    }
+
+    string reportPath = Path.Combine(evidenceDirectory, "step_edit_apply_projection_contract.txt");
+    File.WriteAllLines(
+        reportPath,
+        new[]
+        {
+            "Result: " + (failures.Count == 0 ? "PASS" : "FAIL"),
+            "Contract: OVL-07 Step Edit apply result/status/corrected-output projection owner boundary",
+            "EvidenceDirectory: " + evidenceDirectory
+        }
+        .Concat(observations)
+        .Concat(failures.Select(item => "Failure: " + item)));
+
+    if (failures.Count == 0)
+    {
+        Console.WriteLine("Step Edit apply projection contract passed.");
+        Console.WriteLine(reportPath);
+        return 0;
+    }
+
+    Console.Error.WriteLine("Step Edit apply projection contract failed.");
+    foreach (string failure in failures)
+    {
+        Console.Error.WriteLine("- " + failure);
+    }
+
+    Console.Error.WriteLine(reportPath);
+    return 1;
+}
+
+static int RunRecipeWorkspacePolicyContract(string? requestedEvidenceDirectory)
+{
+    string defaultEvidenceDirectory = Path.Combine(
+        "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev",
+        "ovl07_recipe_workspace_policy_contract_"
+            + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture));
+    string evidenceDirectory = Path.GetFullPath(
+        requestedEvidenceDirectory ?? defaultEvidenceDirectory);
+    Directory.CreateDirectory(evidenceDirectory);
+
+    List<string> observations = new List<string>();
+    List<string> failures = new List<string>();
+    try
+    {
+        OpenVisionRecipeWorkspaceUseCase workspaceOwner =
+            new OpenVisionRecipeWorkspaceUseCase();
+        string[] recipeNames = { "Default", "Recipe_A", "Recipe_B" };
+
+        Require(
+            workspaceOwner.CanCreate("  Recipe_C  "),
+            "Valid named Recipe create policy was rejected.");
+        Require(
+            workspaceOwner.CanCreate("   "),
+            "Blank named Recipe create policy was rejected.");
+        Require(
+            !workspaceOwner.CanCreate("Recipe/C"),
+            "Invalid named Recipe create policy was accepted.");
+        observations.Add("create: blank and valid names accepted; invalid path name rejected");
+
+        Require(
+            workspaceOwner.CanDuplicate(" Recipe_A ", string.Empty, recipeNames),
+            "Existing Recipe duplicate with an automatic name was rejected.");
+        Require(
+            workspaceOwner.CanDuplicate("Recipe_A", "Recipe_B", recipeNames),
+            "Valid duplicate name policy was rejected.");
+        Require(
+            !workspaceOwner.CanDuplicate("Missing", "Recipe_C", recipeNames),
+            "Missing source Recipe duplicate policy was accepted.");
+        Require(
+            !workspaceOwner.CanDuplicate("Recipe_A", "Bad/Name", recipeNames),
+            "Invalid duplicate name policy was accepted.");
+        observations.Add("duplicate: source membership and requested-name validation owned by workspace use case");
+
+        Require(
+            workspaceOwner.CanRename("Recipe_A", "Recipe_C", recipeNames),
+            "Valid Recipe rename policy was rejected.");
+        Require(
+            !workspaceOwner.CanRename("Recipe_A", "Recipe_B", recipeNames),
+            "Rename to an existing Recipe was accepted.");
+        Require(
+            !workspaceOwner.CanRename("Recipe_A", "Recipe_A", recipeNames),
+            "Rename to the same Recipe was accepted.");
+        Require(
+            !workspaceOwner.CanRename("Missing", "Recipe_C", recipeNames),
+            "Rename of a missing Recipe was accepted.");
+        observations.Add("rename: source, target validity, identity, and conflict policy preserved");
+
+        Require(
+            workspaceOwner.CanDelete("Recipe_A", recipeNames),
+            "Recipe delete policy was rejected when multiple Recipes exist.");
+        Require(
+            !workspaceOwner.CanDelete("Recipe_A", new[] { "Recipe_A" }),
+            "Last Recipe delete policy was accepted.");
+        Require(
+            !workspaceOwner.CanDelete("Missing", recipeNames),
+            "Missing Recipe delete policy was accepted.");
+        observations.Add("delete: existing selection and last-Recipe guard preserved");
+    }
+    catch (Exception exception)
+    {
+        failures.Add("unexpected-contract-error: " + exception.GetBaseException().Message);
+    }
+
+    string reportPath = Path.Combine(evidenceDirectory, "recipe_workspace_policy_contract.txt");
+    File.WriteAllLines(
+        reportPath,
+        new[]
+        {
+            "Result: " + (failures.Count == 0 ? "PASS" : "FAIL"),
+            "Contract: OVL-07 Recipe Manager lifecycle policy owner boundary",
+            "EvidenceDirectory: " + evidenceDirectory
+        }
+        .Concat(observations)
+        .Concat(failures.Select(item => "Failure: " + item)));
+
+    if (failures.Count == 0)
+    {
+        Console.WriteLine("Recipe workspace policy contract passed.");
+        Console.WriteLine(reportPath);
+        return 0;
+    }
+
+    Console.Error.WriteLine("Recipe workspace policy contract failed.");
+    foreach (string failure in failures)
+    {
+        Console.Error.WriteLine("- " + failure);
+    }
+
+    Console.Error.WriteLine(reportPath);
+    return 1;
+}
+
+static int RunRecipeWorkspaceLifecycleProjectionContract(string? requestedEvidenceDirectory)
+{
+    string defaultEvidenceDirectory = Path.Combine(
+        "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev",
+        "ovl07_recipe_workspace_lifecycle_projection_contract_"
+            + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture));
+    string evidenceDirectory = Path.GetFullPath(
+        requestedEvidenceDirectory ?? defaultEvidenceDirectory);
+    Directory.CreateDirectory(evidenceDirectory);
+
+    List<string> observations = new List<string>();
+    List<string> failures = new List<string>();
+    try
+    {
+        OpenVisionRecipeWorkspaceLifecycleProjectionOwner projectionOwner =
+            new OpenVisionRecipeWorkspaceLifecycleProjectionOwner();
+
+        bool HasStatus(OpenVisionRecipeWorkspaceLifecycleProjection projection, string english, string korean)
+        {
+            return projection.StatusText.Contains(english, StringComparison.Ordinal)
+                || projection.StatusText.Contains(korean, StringComparison.Ordinal);
+        }
+
+        OpenVisionRecipeWorkspaceLifecycleProjection created = projectionOwner.Project(
+            OpenVisionRecipeWorkspaceLifecycleOperation.Create,
+            OpenVisionRecipeWorkspaceResult.Success("Recipe_Create"));
+        Require(created.Succeeded, "Create success projection was not marked succeeded.");
+        Require(HasStatus(created, "Created:", "생성됨:"), "Create success status was not preserved.");
+        Require(created.RecipeName == "Recipe_Create", "Create result name was not preserved.");
+        observations.Add("create success: result name and localized status projected");
+
+        OpenVisionRecipeWorkspaceLifecycleProjection duplicated = projectionOwner.Project(
+            OpenVisionRecipeWorkspaceLifecycleOperation.Duplicate,
+            OpenVisionRecipeWorkspaceResult.Success("Recipe_Copy"));
+        Require(duplicated.Succeeded, "Duplicate success projection was not marked succeeded.");
+        Require(HasStatus(duplicated, "Duplicated:", "복제됨:"), "Duplicate success status was not preserved.");
+        Require(duplicated.RecipeName == "Recipe_Copy", "Duplicate result name was not preserved.");
+        observations.Add("duplicate success: result name and localized status projected");
+
+        OpenVisionRecipeWorkspaceLifecycleProjection renamed = projectionOwner.Project(
+            OpenVisionRecipeWorkspaceLifecycleOperation.Rename,
+            OpenVisionRecipeWorkspaceResult.Success("Recipe_Renamed"));
+        Require(renamed.Succeeded, "Rename success projection was not marked succeeded.");
+        Require(HasStatus(renamed, "Renamed:", "이름 변경됨:"), "Rename success status was not preserved.");
+        Require(renamed.RecipeName == "Recipe_Renamed", "Rename result name was not preserved.");
+        observations.Add("rename success: result name and localized status projected");
+
+        OpenVisionRecipeWorkspaceLifecycleProjection deleted = projectionOwner.Project(
+            OpenVisionRecipeWorkspaceLifecycleOperation.Delete,
+            OpenVisionRecipeWorkspaceResult.Success("Recipe_Fallback"),
+            "Recipe_Delete");
+        Require(deleted.Succeeded, "Delete success projection was not marked succeeded.");
+        Require(HasStatus(deleted, "Deleted:", "삭제됨:"), "Delete success status was not preserved.");
+        Require(deleted.StatusText.Contains("Recipe_Delete", StringComparison.Ordinal),
+            "Delete success status did not preserve the deleted recipe name.");
+        Require(deleted.RecipeName == "Recipe_Fallback", "Delete fallback result name was not preserved.");
+        observations.Add("delete success: deleted display name and fallback result name preserved");
+
+        OpenVisionRecipeWorkspaceLifecycleProjection duplicateFailure = projectionOwner.Project(
+            OpenVisionRecipeWorkspaceLifecycleOperation.Duplicate,
+            OpenVisionRecipeWorkspaceResult.Failure());
+        Require(!duplicateFailure.Succeeded, "Duplicate failure projection was marked succeeded.");
+        Require(HasStatus(duplicateFailure, "Duplicate failed.", "레시피 복제에 실패했습니다."),
+            "Duplicate failure status was not preserved.");
+
+        OpenVisionRecipeWorkspaceLifecycleProjection renameFailure = projectionOwner.Project(
+            OpenVisionRecipeWorkspaceLifecycleOperation.Rename,
+            OpenVisionRecipeWorkspaceResult.Failure());
+        Require(!renameFailure.Succeeded, "Rename failure projection was marked succeeded.");
+        Require(HasStatus(renameFailure, "Rename failed.", "이름 변경에 실패했습니다."),
+            "Rename failure status was not preserved.");
+
+        OpenVisionRecipeWorkspaceLifecycleProjection deleteFailure = projectionOwner.Project(
+            OpenVisionRecipeWorkspaceLifecycleOperation.Delete,
+            OpenVisionRecipeWorkspaceResult.Failure());
+        Require(!deleteFailure.Succeeded, "Delete failure projection was marked succeeded.");
+        Require(HasStatus(deleteFailure, "Delete failed.", "삭제에 실패했습니다."),
+            "Delete failure status was not preserved.");
+        observations.Add("duplicate/rename/delete failure: localized failure statuses projected");
+
+        OpenVisionRecipeWorkspaceLifecycleProjection createFailure = projectionOwner.Project(
+            OpenVisionRecipeWorkspaceLifecycleOperation.Create,
+            OpenVisionRecipeWorkspaceResult.Failure());
+        Require(!createFailure.Succeeded, "Create failure projection was marked succeeded.");
+        Require(string.IsNullOrEmpty(createFailure.StatusText),
+            "Create failure changed the existing silent failure behavior.");
+        observations.Add("create failure: silent failure behavior preserved");
+    }
+    catch (Exception exception)
+    {
+        failures.Add("unexpected-contract-error: " + exception.GetBaseException().Message);
+    }
+
+    string reportPath = Path.Combine(
+        evidenceDirectory,
+        "recipe_workspace_lifecycle_projection_contract.txt");
+    File.WriteAllLines(
+        reportPath,
+        new[]
+        {
+            "Result: " + (failures.Count == 0 ? "PASS" : "FAIL"),
+            "Contract: OVL-07 Recipe Manager lifecycle result/status projection owner boundary",
+            "EvidenceDirectory: " + evidenceDirectory
+        }
+        .Concat(observations)
+        .Concat(failures.Select(item => "Failure: " + item)));
+
+    if (failures.Count == 0)
+    {
+        Console.WriteLine("Recipe workspace lifecycle projection contract passed.");
+        Console.WriteLine(reportPath);
+        return 0;
+    }
+
+    Console.Error.WriteLine("Recipe workspace lifecycle projection contract failed.");
+    foreach (string failure in failures)
+    {
+        Console.Error.WriteLine("- " + failure);
+    }
+
+    Console.Error.WriteLine(reportPath);
+    return 1;
+}
+
+static int RunRecipeManagerSummaryProjectionContract(string? requestedEvidenceDirectory)
+{
+    string defaultEvidenceDirectory = Path.Combine(
+        "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev",
+        "ovl07_recipe_manager_summary_projection_contract_"
+            + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture));
+    string evidenceDirectory = Path.GetFullPath(
+        requestedEvidenceDirectory ?? defaultEvidenceDirectory);
+    Directory.CreateDirectory(evidenceDirectory);
+
+    List<string> observations = new List<string>();
+    List<string> failures = new List<string>();
+    try
+    {
+        OpenVisionRecipeManagerSummaryProjectionOwner projectionOwner =
+            new OpenVisionRecipeManagerSummaryProjectionOwner();
+        int layerCardRequests = 0;
+
+        VisionPipeline pipeline = new VisionPipeline { Name = "Pipeline_A" };
+        pipeline.Steps.Add(new VisionPipelineStep
+        {
+            Name = "Threshold_1",
+            ToolType = "Threshold",
+            InputLayer = "Main",
+            OutputLayer = "Output",
+            Enabled = true
+        });
+
+        OpenVisionRecipeManagerSummary summary = projectionOwner.Project(
+            new OpenVisionRecipeManagerSummaryProjectionRequest
+            {
+                RecipeName = "Recipe_A",
+                ActivePipelineName = "Pipeline_A",
+                PreviewPipelineName = "Pipeline_A",
+                PipelineCount = 2,
+                LastWriteTime = new DateTime(2026, 9, 7, 12, 30, 0),
+                XmlValid = true,
+                XmlMessage = string.Empty,
+                PipelinePath = "C:\\Recipe_A\\Pipeline_A.xml",
+                Pipeline = pipeline,
+                LayerCardProvider = layerName =>
+                {
+                    layerCardRequests++;
+                    return OpenVisionRecipeLayerCard.CreateMissing(layerName);
+                }
+            });
+
+        Require(summary.RecipeName == "Recipe_A", "Summary recipe name was not preserved.");
+        Require(summary.PipelineCount == 2, "Summary pipeline count was not preserved.");
+        Require(summary.StepCount == 1, "Summary Step count was not projected.");
+        Require(summary.XmlValid, "Valid XML state was not preserved.");
+        Require(summary.PipelinePreviewSteps.Count == 1, "Summary preview Step count was not projected.");
+        Require(layerCardRequests == 2, "Preview projection did not request input and output layer cards.");
+        Require(summary.DetailText.Contains("Pipelines: 2", StringComparison.Ordinal)
+            || summary.DetailText.Contains("파이프라인 수: 2", StringComparison.Ordinal),
+            "Summary detail did not preserve the pipeline count text.");
+        Require(summary.DetailText.Contains("Steps: 1", StringComparison.Ordinal)
+            || summary.DetailText.Contains("Step 수: 1", StringComparison.Ordinal),
+            "Summary detail did not preserve the Step count text.");
+        Require(summary.LlmXmlValidationReport.Contains("XML", StringComparison.Ordinal),
+            "Summary did not project the stored XML validation report.");
+        observations.Add("valid summary: identity, counts, detail, validation report, and layer previews projected");
+
+        OpenVisionRecipeManagerSummary invalidSummary = projectionOwner.Project(
+            new OpenVisionRecipeManagerSummaryProjectionRequest
+            {
+                RecipeName = "Recipe_B",
+                ActivePipelineName = "Pipeline_B",
+                PreviewPipelineName = "Pipeline_B",
+                PipelineCount = 1,
+                XmlValid = false,
+                XmlMessage = "invalid",
+                PipelinePath = "C:\\Recipe_B\\Pipeline_B.xml"
+            });
+        Require(!invalidSummary.XmlValid, "Invalid XML state was marked valid.");
+        Require(invalidSummary.PipelinePreviewSteps.Count == 0,
+            "Invalid summary unexpectedly projected pipeline preview Steps.");
+        Require(invalidSummary.LlmXmlValidationReport.Contains("NG", StringComparison.Ordinal),
+            "Invalid summary did not preserve the NG validation report.");
+        observations.Add("invalid summary: NG status and empty preview projected without a loaded pipeline");
+
+        string baseLibraryText = projectionOwner.ProjectLibrarySummary("Recipe library", 0, 0);
+        Require(baseLibraryText == "Recipe library", "Empty library summary changed the base label.");
+        string fullLibraryText = projectionOwner.ProjectLibrarySummary("Recipe library", 5, 5);
+        Require(fullLibraryText.Contains("Recipe library (5)", StringComparison.Ordinal),
+            "Full library summary did not preserve the total count.");
+        string filteredLibraryText = projectionOwner.ProjectLibrarySummary("Recipe library", 5, 2);
+        Require(filteredLibraryText.Contains("(2/5)", StringComparison.Ordinal),
+            "Filtered library summary did not preserve visible and total counts.");
+        observations.Add("library text: empty, full, and filtered count formats projected");
+    }
+    catch (Exception exception)
+    {
+        failures.Add("unexpected-contract-error: " + exception.GetBaseException().Message);
+    }
+
+    string reportPath = Path.Combine(
+        evidenceDirectory,
+        "recipe_manager_summary_projection_contract.txt");
+    File.WriteAllLines(
+        reportPath,
+        new[]
+        {
+            "Result: " + (failures.Count == 0 ? "PASS" : "FAIL"),
+            "Contract: OVL-07 Recipe Manager summary/library projection owner boundary",
+            "EvidenceDirectory: " + evidenceDirectory
+        }
+        .Concat(observations)
+        .Concat(failures.Select(item => "Failure: " + item)));
+
+    if (failures.Count == 0)
+    {
+        Console.WriteLine("Recipe Manager summary projection contract passed.");
+        Console.WriteLine(reportPath);
+        return 0;
+    }
+
+    Console.Error.WriteLine("Recipe Manager summary projection contract failed.");
+    foreach (string failure in failures)
+    {
+        Console.Error.WriteLine("- " + failure);
+    }
+
+    Console.Error.WriteLine(reportPath);
+    return 1;
+}
+
+static int RunRecipeManagerPipelineOptionProjectionContract(string? requestedEvidenceDirectory)
+{
+    string defaultEvidenceDirectory = Path.Combine(
+        "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev",
+        "ovl07_recipe_manager_pipeline_option_projection_contract_"
+            + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture));
+    string evidenceDirectory = Path.GetFullPath(
+        requestedEvidenceDirectory ?? defaultEvidenceDirectory);
+    Directory.CreateDirectory(evidenceDirectory);
+    string dataRoot = Path.Combine(evidenceDirectory, "data");
+    Environment.SetEnvironmentVariable(AppPathService.DataRootEnvironmentVariable, dataRoot);
+
+    List<string> observations = new List<string>();
+    List<string> failures = new List<string>();
+    string recipeName = "Smoke_RecipeManagerPipelineOption_"
+        + Guid.NewGuid().ToString("N").Substring(0, 12);
+    string recipeDirectory = string.Empty;
+
+    VisionPipeline CreatePipeline(string pipelineName)
+    {
+        VisionPipeline pipeline = new VisionPipeline { Name = pipelineName };
+        pipeline.Steps.Add(new VisionPipelineStep
+        {
+            Name = pipelineName + "_Threshold",
+            ToolType = "Threshold",
+            Enabled = true,
+            InputLayer = "Main",
+            OutputLayer = pipelineName + "_Output"
+        });
+        return pipeline;
+    }
+
+    try
+    {
+        RecipeWorkspaceService.EnsureVisionWorkspace(recipeName);
+        recipeDirectory = RecipeWorkspaceService.GetRecipeDirectoryPath(recipeName);
+        VisionPipelineStorage.Save(recipeName, CreatePipeline("Pipeline_A"));
+        VisionPipelineStorage.Save(recipeName, CreatePipeline("Pipeline_B"));
+        VisionPipelineStorage.SaveActivePipelineName(recipeName, "Pipeline_B");
+
+        OpenVisionRecipePipelineOptionProjectionOwner projectionOwner =
+            new OpenVisionRecipePipelineOptionProjectionOwner();
+        OpenVisionRecipePipelineOptionProjection projection = projectionOwner.Project(
+            new OpenVisionRecipePipelineOptionProjectionRequest
+            {
+                RecipeName = recipeName,
+                PipelineNames = new[] { "Pipeline_A", "Pipeline_B" },
+                ActivePipelineName = "Pipeline_B",
+                PreferredPipelineName = "Pipeline_A",
+                NormalizedPreferredPipelineName = "Pipeline_A",
+                PreviousSelectedPipelineName = "Pipeline_B"
+            });
+
+        Require(projection.Options.Count == 2, "Pipeline option projection changed the inventory count.");
+        Require(projection.Options[0].IsActive
+            && string.Equals(projection.Options[0].PipelineName, "Pipeline_B", StringComparison.OrdinalIgnoreCase),
+            "Pipeline option projection did not keep the active Pipeline first.");
+        Require(string.Equals(projection.Options[1].PipelineName, "Pipeline_A", StringComparison.OrdinalIgnoreCase),
+            "Pipeline option projection did not preserve deterministic name ordering.");
+        Require(string.Equals(projection.SelectedOption?.PipelineName, "Pipeline_A", StringComparison.OrdinalIgnoreCase),
+            "Preferred Pipeline selection was not preserved.");
+        Require(projection.Options.All(option => option.XmlValid),
+            "Stored valid Pipeline XML was not projected as valid options.");
+        observations.Add("inventory: stored Pipeline options projected with active-first/name ordering and valid XML state");
+
+        OpenVisionRecipePipelineOptionProjection previousSelection = projectionOwner.Project(
+            new OpenVisionRecipePipelineOptionProjectionRequest
+            {
+                RecipeName = recipeName,
+                PipelineNames = new[] { "Pipeline_A", "Pipeline_B" },
+                ActivePipelineName = "Pipeline_B",
+                PreferredPipelineName = string.Empty,
+                NormalizedPreferredPipelineName = "Pipeline",
+                PreviousSelectedPipelineName = "Pipeline_A"
+            });
+        Require(string.Equals(previousSelection.SelectedOption?.PipelineName, "Pipeline_A", StringComparison.OrdinalIgnoreCase),
+            "Previous selected Pipeline fallback was not preserved.");
+
+        OpenVisionRecipePipelineOptionProjection activeFallback = projectionOwner.Project(
+            new OpenVisionRecipePipelineOptionProjectionRequest
+            {
+                RecipeName = recipeName,
+                PipelineNames = new[] { "Pipeline_A", "Pipeline_B" },
+                ActivePipelineName = "Pipeline_B",
+                PreferredPipelineName = string.Empty,
+                NormalizedPreferredPipelineName = "Pipeline",
+                PreviousSelectedPipelineName = "Missing"
+            });
+        Require(string.Equals(activeFallback.SelectedOption?.PipelineName, "Pipeline_B", StringComparison.OrdinalIgnoreCase),
+            "Active Pipeline fallback was not preserved when the previous selection was absent.");
+        observations.Add("selection: preferred, previous, and active fallback order preserved");
+
+        IReadOnlyList<OpenVisionRecipePipelineOption> nameFilter = projectionOwner.Filter(
+            projection.Options,
+            " pipeline_a ");
+        Require(nameFilter.Count == 1
+            && string.Equals(nameFilter[0].PipelineName, "Pipeline_A", StringComparison.OrdinalIgnoreCase),
+            "Case-insensitive trimmed Pipeline name filtering changed.");
+        IReadOnlyList<OpenVisionRecipePipelineOption> statusFilter = projectionOwner.Filter(
+            projection.Options,
+            "xml ok");
+        Require(statusFilter.Count == 2, "Pipeline status/detail filtering changed.");
+        Require(projectionOwner.Filter(projection.Options, string.Empty).Count == 2,
+            "Empty Pipeline filter did not preserve the full option list.");
+        observations.Add("filter: trimmed name, status text, and empty-filter behavior preserved");
+
+        string emptySummary = projectionOwner.ProjectListSummary("Pipelines", 0, 0);
+        Require(emptySummary == "Pipelines", "Empty Pipeline summary changed the base label.");
+        string fullSummary = projectionOwner.ProjectListSummary("Pipelines", 2, 2);
+        Require(fullSummary.Contains("Pipelines (2)", StringComparison.Ordinal),
+            "Full Pipeline summary did not preserve the total count.");
+        string filteredSummary = projectionOwner.ProjectListSummary("Pipelines", 2, 1);
+        Require(filteredSummary.Contains("(1/2)", StringComparison.Ordinal),
+            "Filtered Pipeline summary did not preserve visible and total counts.");
+        observations.Add("summary: empty, full, and filtered Pipeline count formats projected");
+    }
+    catch (Exception exception)
+    {
+        failures.Add("unexpected-contract-error: " + exception.GetBaseException().Message);
+    }
+    finally
+    {
+        if (!string.IsNullOrWhiteSpace(recipeDirectory)
+            && !RecipeWorkspaceService.DeleteVisionWorkspace(recipeName))
+        {
+            failures.Add("Reserved smoke Recipe cleanup failed: " + recipeName);
+        }
+    }
+
+    string reportPath = Path.Combine(
+        evidenceDirectory,
+        "recipe_manager_pipeline_option_projection_contract.txt");
+    File.WriteAllLines(
+        reportPath,
+        new[]
+        {
+            "Result: " + (failures.Count == 0 ? "PASS" : "FAIL"),
+            "Contract: OVL-07 Recipe Manager Pipeline option projection owner boundary",
+            "EvidenceDirectory: " + evidenceDirectory,
+            "DataRoot: " + dataRoot,
+            "RecipeDirectory: " + recipeDirectory
+        }
+        .Concat(observations)
+        .Concat(failures.Select(item => "Failure: " + item)));
+
+    if (failures.Count == 0)
+    {
+        Console.WriteLine("Recipe Manager Pipeline option projection contract passed.");
+        Console.WriteLine(reportPath);
+        return 0;
+    }
+
+    Console.Error.WriteLine("Recipe Manager Pipeline option projection contract failed.");
+    foreach (string failure in failures)
+    {
+        Console.Error.WriteLine("- " + failure);
+    }
+
+    Console.Error.WriteLine(reportPath);
+    return 1;
+}
+
+static int RunRecipePipelineLifecycleProjectionContract(string? requestedEvidenceDirectory)
+{
+    string defaultEvidenceDirectory = Path.Combine(
+        "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev",
+        "ovl07_recipe_pipeline_lifecycle_projection_contract_"
+            + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture));
+    string evidenceDirectory = Path.GetFullPath(
+        requestedEvidenceDirectory ?? defaultEvidenceDirectory);
+    Directory.CreateDirectory(evidenceDirectory);
+
+    List<string> observations = new List<string>();
+    List<string> failures = new List<string>();
+    try
+    {
+        OpenVisionRecipePipelineLifecycleProjectionOwner projectionOwner =
+            new OpenVisionRecipePipelineLifecycleProjectionOwner();
+
+        bool HasStatus(
+            OpenVisionRecipePipelineLifecycleProjection projection,
+            string english,
+            string korean)
+        {
+            return projection.StatusText.Contains(english, StringComparison.Ordinal)
+                || projection.StatusText.Contains(korean, StringComparison.Ordinal);
+        }
+
+        OpenVisionRecipePipelineLifecycleProjection activated = projectionOwner.Project(
+            OpenVisionRecipePipelineLifecycleOperation.Activate,
+            OpenVisionRecipePipelineLifecycleResult.Success("Pipeline_Active", string.Empty));
+        Require(activated.Succeeded, "Activate success projection was not marked succeeded.");
+        Require(activated.PipelineName == "Pipeline_Active", "Activate result name was not preserved.");
+        Require(HasStatus(activated, "Active pipeline: Pipeline_Active", "활성 파이프라인: Pipeline_Active"),
+            "Activate status was not projected.");
+        observations.Add("activate success: result name and localized status projected");
+
+        const string duplicateDetail = "Duplicated pipeline 'Pipeline_A' to 'Pipeline_B'.";
+        OpenVisionRecipePipelineLifecycleProjection duplicated = projectionOwner.Project(
+            OpenVisionRecipePipelineLifecycleOperation.Duplicate,
+            OpenVisionRecipePipelineLifecycleResult.Success("Pipeline_B", duplicateDetail));
+        Require(duplicated.Succeeded, "Duplicate success projection was not marked succeeded.");
+        Require(duplicated.PipelineName == "Pipeline_B", "Duplicate result name was not preserved.");
+        Require(duplicated.StatusText == duplicateDetail, "Duplicate detail status changed.");
+
+        const string duplicateFailureDetail = "Target pipeline already exists.";
+        OpenVisionRecipePipelineLifecycleProjection duplicateFailure = projectionOwner.Project(
+            OpenVisionRecipePipelineLifecycleOperation.Duplicate,
+            OpenVisionRecipePipelineLifecycleResult.Failure(duplicateFailureDetail));
+        Require(!duplicateFailure.Succeeded, "Duplicate failure projection was marked succeeded.");
+        Require(duplicateFailure.PipelineName == string.Empty, "Duplicate failure exposed a Pipeline name.");
+        Require(duplicateFailure.StatusText == duplicateFailureDetail, "Duplicate failure detail changed.");
+        observations.Add("duplicate success/failure: storage detail and result name preserved");
+
+        const string renameDetail = "Renamed pipeline 'Pipeline_B' to 'Pipeline_C'.";
+        OpenVisionRecipePipelineLifecycleProjection renamed = projectionOwner.Project(
+            OpenVisionRecipePipelineLifecycleOperation.Rename,
+            OpenVisionRecipePipelineLifecycleResult.Success("Pipeline_C", renameDetail));
+        Require(renamed.Succeeded, "Rename success projection was not marked succeeded.");
+        Require(renamed.PipelineName == "Pipeline_C", "Rename result name was not preserved.");
+        Require(renamed.StatusText == renameDetail, "Rename detail status changed.");
+
+        const string deleteDetail = "Deleted pipeline 'Pipeline_C'.";
+        OpenVisionRecipePipelineLifecycleProjection deleted = projectionOwner.Project(
+            OpenVisionRecipePipelineLifecycleOperation.Delete,
+            OpenVisionRecipePipelineLifecycleResult.Success("Pipeline_Fallback", deleteDetail));
+        Require(deleted.Succeeded, "Delete success projection was not marked succeeded.");
+        Require(deleted.PipelineName == "Pipeline_Fallback", "Delete fallback name was not preserved.");
+        Require(deleted.StatusText == deleteDetail, "Delete detail status changed.");
+        observations.Add("rename/delete success: result names and storage detail preserved");
+
+        OpenVisionRecipePipelineLifecycleProjection sampleSuccess = projectionOwner.Project(
+            OpenVisionRecipePipelineLifecycleOperation.DuplicateFromSample,
+            OpenVisionRecipePipelineLifecycleResult.Success("Sample_Pipeline", string.Empty));
+        Require(sampleSuccess.Succeeded, "Sample duplicate success projection was not marked succeeded.");
+        Require(sampleSuccess.PipelineName == "Sample_Pipeline", "Sample duplicate result name was not preserved.");
+        Require(HasStatus(sampleSuccess, "Duplicated sample pipeline: Sample_Pipeline", "샘플 파이프라인 복제됨: Sample_Pipeline"),
+            "Sample duplicate success status was not projected.");
+
+        const string sampleFailureDetail = "Source pipeline XML was not found.";
+        OpenVisionRecipePipelineLifecycleProjection sampleFailure = projectionOwner.Project(
+            OpenVisionRecipePipelineLifecycleOperation.DuplicateFromSample,
+            OpenVisionRecipePipelineLifecycleResult.Failure(sampleFailureDetail));
+        Require(!sampleFailure.Succeeded, "Sample duplicate failure projection was marked succeeded.");
+        Require(sampleFailure.StatusText.Contains(sampleFailureDetail, StringComparison.Ordinal),
+            "Sample duplicate failure detail was not preserved.");
+        Require(HasStatus(sampleFailure, "Sample pipeline load failed: ", "샘플 파이프라인 로드 실패: "),
+            "Sample duplicate failure prefix was not projected.");
+        observations.Add("sample duplicate success/failure: localized prefix and result name preserved");
+    }
+    catch (Exception exception)
+    {
+        failures.Add("unexpected-contract-error: " + exception.GetBaseException().Message);
+    }
+
+    string reportPath = Path.Combine(
+        evidenceDirectory,
+        "recipe_pipeline_lifecycle_projection_contract.txt");
+    File.WriteAllLines(
+        reportPath,
+        new[]
+        {
+            "Result: " + (failures.Count == 0 ? "PASS" : "FAIL"),
+            "Contract: OVL-07 Pipeline lifecycle result/status projection owner boundary",
+            "EvidenceDirectory: " + evidenceDirectory
+        }
+        .Concat(observations)
+        .Concat(failures.Select(item => "Failure: " + item)));
+
+    if (failures.Count == 0)
+    {
+        Console.WriteLine("Recipe Pipeline lifecycle projection contract passed.");
+        Console.WriteLine(reportPath);
+        return 0;
+    }
+
+    Console.Error.WriteLine("Recipe Pipeline lifecycle projection contract failed.");
+    foreach (string failure in failures)
+    {
+        Console.Error.WriteLine("- " + failure);
+    }
+
+    Console.Error.WriteLine(reportPath);
+    return 1;
+}
+
+static int RunRecipeReviewBundleDryRunProjectionContract(string? requestedEvidenceDirectory)
+{
+    string defaultEvidenceDirectory = Path.Combine(
+        "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev",
+        "ovl07_recipe_review_bundle_dry_run_projection_contract_"
+            + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture));
+    string evidenceDirectory = Path.GetFullPath(
+        requestedEvidenceDirectory ?? defaultEvidenceDirectory);
+    Directory.CreateDirectory(evidenceDirectory);
+
+    List<string> observations = new List<string>();
+    List<string> failures = new List<string>();
+    try
+    {
+        OpenVisionRecipeReviewBundleDryRunProjectionOwner projectionOwner =
+            new OpenVisionRecipeReviewBundleDryRunProjectionOwner();
+
+        bool HasStatus(
+            OpenVisionRecipeReviewBundleDryRunProjection projection,
+            string english,
+            string korean)
+        {
+            return projection.StatusText.Contains(english, StringComparison.Ordinal)
+                || projection.StatusText.Contains(korean, StringComparison.Ordinal);
+        }
+
+        OpenVisionRecipeReviewBundleDryRunProjection integrityFailure = projectionOwner.Project(
+            inspectionSucceeded: false,
+            xmlReady: false);
+        Require(!integrityFailure.Succeeded, "Integrity failure projection was marked succeeded.");
+        Require(HasStatus(
+                integrityFailure,
+                "Review bundle dry-run NG. Nothing was imported.",
+                "검토 번들 dry-run NG. 가져오지 않았습니다."),
+            "Integrity failure status was not projected.");
+        observations.Add("integrity failure: NG status and false return preserved");
+
+        OpenVisionRecipeReviewBundleDryRunProjection reviewReady = projectionOwner.Project(
+            inspectionSucceeded: true,
+            xmlReady: true);
+        Require(reviewReady.Succeeded, "Review-ready projection was not marked succeeded.");
+        Require(HasStatus(
+                reviewReady,
+                "Review bundle dry-run OK. XML was loaded for review only; import, Preview, and Run were not executed.",
+                "검토 번들 dry-run OK. XML은 검토 화면에만 로드했으며 가져오기/Preview/Run은 실행하지 않았습니다."),
+            "Review-ready status was not projected.");
+        observations.Add("integrity OK/XML ready: review-only status and true return preserved");
+
+        OpenVisionRecipeReviewBundleDryRunProjection reviewFailure = projectionOwner.Project(
+            inspectionSucceeded: true,
+            xmlReady: false);
+        Require(reviewFailure.Succeeded, "Integrity-OK/XML-NG projection changed the existing return semantics.");
+        Require(HasStatus(
+                reviewFailure,
+                "Review bundle integrity is OK, but XML/dependency review is NG. Import, Preview, and Run were not executed.",
+                "검토 번들 무결성은 OK지만 XML/의존성 검토는 NG입니다. 가져오기/Preview/Run은 실행하지 않았습니다."),
+            "Integrity-OK/XML-NG status was not projected.");
+        observations.Add("integrity OK/XML NG: review failure status with true return preserved");
+    }
+    catch (Exception exception)
+    {
+        failures.Add("unexpected-contract-error: " + exception.GetBaseException().Message);
+    }
+
+    string reportPath = Path.Combine(
+        evidenceDirectory,
+        "recipe_review_bundle_dry_run_projection_contract.txt");
+    File.WriteAllLines(
+        reportPath,
+        new[]
+        {
+            "Result: " + (failures.Count == 0 ? "PASS" : "FAIL"),
+            "Contract: OVL-07 Review bundle dry-run result/status projection owner boundary",
+            "EvidenceDirectory: " + evidenceDirectory
+        }
+        .Concat(observations)
+        .Concat(failures.Select(item => "Failure: " + item)));
+
+    if (failures.Count == 0)
+    {
+        Console.WriteLine("Recipe Review bundle dry-run projection contract passed.");
+        Console.WriteLine(reportPath);
+        return 0;
+    }
+
+    Console.Error.WriteLine("Recipe Review bundle dry-run projection contract failed.");
+    foreach (string failure in failures)
+    {
+        Console.Error.WriteLine("- " + failure);
+    }
+
+    Console.Error.WriteLine(reportPath);
+    return 1;
+}
+
+static int RunPipelineReviewResultStatusProjectionContract(string? requestedEvidenceDirectory)
+{
+    string defaultEvidenceDirectory = Path.Combine(
+        "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev",
+        "ovl07_pipeline_review_result_status_projection_contract_"
+            + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture));
+    string evidenceDirectory = Path.GetFullPath(
+        requestedEvidenceDirectory ?? defaultEvidenceDirectory);
+    Directory.CreateDirectory(evidenceDirectory);
+
+    List<string> observations = new List<string>();
+    List<string> failures = new List<string>();
+    try
+    {
+        OpenVisionPipelineReviewResultStatusProjectionOwner projectionOwner =
+            new OpenVisionPipelineReviewResultStatusProjectionOwner();
+
+        bool HasText(string value, string english, string korean)
+        {
+            return value.Contains(english, StringComparison.Ordinal)
+                || value.Contains(korean, StringComparison.Ordinal);
+        }
+
+        void RequireStatus(
+            OpenVisionPipelineReviewResultStatusProjection projection,
+            string english,
+            string korean,
+            string description)
+        {
+            Require(
+                HasText(projection.ExecutionStateText, english, korean),
+                description + " execution status was not projected.");
+        }
+
+        OpenVisionPipelineReviewResultStatusProjection notRun = projectionOwner.Project(
+            OpenVisionPipelineReviewResultStatusKind.NotRun);
+        RequireStatus(notRun, "Not run", "실행 전", "Not-run");
+
+        OpenVisionPipelineReviewResultStatusProjection draining = projectionOwner.Project(
+            OpenVisionPipelineReviewResultStatusKind.Draining);
+        RequireStatus(draining, "Waiting for execution to stop", "종료 대기", "Draining");
+
+        OpenVisionPipelineReviewResultStatusProjection alreadyRunning = projectionOwner.Project(
+            OpenVisionPipelineReviewResultStatusKind.AlreadyRunning);
+        RequireStatus(alreadyRunning, "Already running", "이미 실행 중", "Already-running");
+
+        OpenVisionPipelineReviewResultStatusProjection noSteps = projectionOwner.Project(
+            OpenVisionPipelineReviewResultStatusKind.NoSteps);
+        RequireStatus(noSteps, "No steps", "Step 없음", "No-steps");
+
+        OpenVisionPipelineReviewResultStatusProjection validationErrors = projectionOwner.Project(
+            OpenVisionPipelineReviewResultStatusKind.ValidationErrors);
+        RequireStatus(validationErrors, "Validation errors", "검증 오류", "Validation-errors");
+        Require(
+            HasText(validationErrors.ResultSummaryText, "Validation error", "검증 오류"),
+            "Validation error result summary was not projected.");
+        Require(
+            HasText(validationErrors.ResultDetailText, "Fix validation errors before running review.", "리뷰 실행 전 검증 오류를 수정하십시오."),
+            "Validation error result detail was not projected.");
+
+        OpenVisionPipelineReviewResultStatusProjection started = projectionOwner.Project(
+            OpenVisionPipelineReviewResultStatusKind.Started);
+        RequireStatus(started, "Started", "시작됨", "Started");
+        Require(HasText(started.ResultSummaryText, "Running", "실행 중"), "Running result summary was not projected.");
+        Require(HasText(started.ResultDetailText, "Pipeline review execution in progress.", "Pipeline 리뷰 실행 중입니다."), "Running result detail was not projected.");
+
+        OpenVisionPipelineReviewResultStatusProjection superseded = projectionOwner.Project(
+            OpenVisionPipelineReviewResultStatusKind.Superseded);
+        RequireStatus(superseded, "Not run", "실행 전", "Superseded");
+
+        const string failureMessage = "synthetic review failure";
+        OpenVisionPipelineReviewResultStatusProjection failed = projectionOwner.Project(
+            OpenVisionPipelineReviewResultStatusKind.Failed,
+            errorMessage: failureMessage);
+        RequireStatus(failed, "Failed: " + failureMessage, "실패: " + failureMessage, "Failed");
+        Require(HasText(failed.ResultSummaryText, "Run failed", "실행 실패"), "Failed result summary was not projected.");
+        Require(failed.ResultDetailText == failureMessage, "Failed result detail changed.");
+
+        OpenVisionPipelineReviewResultStatusProjection completed = projectionOwner.Project(
+            OpenVisionPipelineReviewResultStatusKind.Completed,
+            stepResultCount: 3);
+        RequireStatus(completed, "Completed / 3 step results", "완료 / 3 Step 결과", "Completed");
+
+        OpenVisionPipelineReviewResultStatusProjection referenceChanged = projectionOwner.Project(
+            OpenVisionPipelineReviewResultStatusKind.ReferenceChanged);
+        RequireStatus(referenceChanged, "Reference changed / run review required", "참조 변경됨 / 리뷰 재실행 필요", "Reference-changed");
+        Require(HasText(referenceChanged.ResultSummaryText, "Reference saved", "참조 저장됨"), "Reference result summary was not projected.");
+
+        OpenVisionPipelineReviewResultStatusProjection runRequired = projectionOwner.Project(
+            OpenVisionPipelineReviewResultStatusKind.RunRequired);
+        RequireStatus(runRequired, "Not run", "실행 전", "Run-required");
+        Require(HasText(runRequired.ResultSummaryText, "Run review required", "리뷰 실행 필요"), "Run-required result summary was not projected.");
+        observations.Add("execution states: lifecycle, validation, failure, completion, reference, and run-required text preserved");
+
+        IReadOnlyList<VisionPipelineStep> emptySteps = Array.Empty<VisionPipelineStep>();
+        string emptyProgress = projectionOwner.ProjectProgress(emptySteps, null, isRunning: false, isStopping: false);
+        Require(HasText(emptyProgress, "No steps", "Step 없음"), "Empty Pipeline progress changed.");
+
+        VisionPipelineStep passedStep = new VisionPipelineStep
+        {
+            Name = "Review passed",
+            ToolType = "Blob",
+            InputLayer = "Main",
+            OutputLayer = "Review_Output",
+            Enabled = true
+        };
+        VisionPipelineStep failedStep = new VisionPipelineStep
+        {
+            Name = "Review failed",
+            ToolType = "Blob",
+            InputLayer = "Review_Output",
+            OutputLayer = "Review_Output_2",
+            Enabled = true
+        };
+        VisionPipelineStep disabledStep = new VisionPipelineStep
+        {
+            Name = "Review disabled",
+            ToolType = "Blob",
+            InputLayer = "Main",
+            OutputLayer = "Disabled_Output",
+            Enabled = false
+        };
+        List<VisionPipelineStep> steps = new List<VisionPipelineStep>
+        {
+            passedStep,
+            failedStep,
+            disabledStep
+        };
+        VisionPipelineStepResultSummary passedSummary = new VisionPipelineStepResultSummary
+        {
+            Success = true,
+            IsAcceptanceNg = false
+        };
+        VisionPipelineStepResultSummary failedSummary = new VisionPipelineStepResultSummary
+        {
+            Success = true,
+            IsAcceptanceNg = true
+        };
+        Func<VisionPipelineStep, VisionPipelineStepResultSummary> resolveSummary = step =>
+            ReferenceEquals(step, passedStep)
+                ? passedSummary
+                : ReferenceEquals(step, failedStep)
+                ? failedSummary
+                : null!;
+
+        string notRunProgress = projectionOwner.ProjectProgress(
+            steps,
+            step => null,
+            isRunning: false,
+            isStopping: false);
+        Require(HasText(notRunProgress, "Not run", "미실행"), "Unexecuted progress changed.");
+
+        string completedProgress = projectionOwner.ProjectProgress(
+            steps,
+            resolveSummary,
+            isRunning: false,
+            isStopping: false);
+        Require(completedProgress.Contains("OK 1", StringComparison.Ordinal), "OK progress count changed.");
+        Require(completedProgress.Contains("NG 1", StringComparison.Ordinal), "NG progress count changed.");
+        Require(completedProgress.Contains("WAIT 0", StringComparison.Ordinal)
+                || completedProgress.Contains("대기 0", StringComparison.Ordinal),
+            "WAIT progress count changed.");
+        Require(completedProgress.Contains("OFF 1", StringComparison.Ordinal), "OFF progress count changed.");
+
+        string runningProgress = projectionOwner.ProjectProgress(
+            steps,
+            resolveSummary,
+            isRunning: true,
+            isStopping: false);
+        Require(HasText(runningProgress, "Running...", "실행 중..."), "Running progress prefix changed.");
+
+        string stoppingProgress = projectionOwner.ProjectProgress(
+            steps,
+            resolveSummary,
+            isRunning: true,
+            isStopping: true);
+        Require(HasText(stoppingProgress, "Waiting for execution to stop", "종료 대기"), "Draining progress prefix changed.");
+        observations.Add("progress: empty, not-run, OK/NG/WAIT/OFF, running, and draining projections preserved");
+    }
+    catch (Exception exception)
+    {
+        failures.Add("unexpected-contract-error: " + exception.GetBaseException().Message);
+    }
+
+    string reportPath = Path.Combine(
+        evidenceDirectory,
+        "pipeline_review_result_status_projection_contract.txt");
+    File.WriteAllLines(
+        reportPath,
+        new[]
+        {
+            "Result: " + (failures.Count == 0 ? "PASS" : "FAIL"),
+            "Contract: OVL-07 Pipeline Review run-level result/status projection owner boundary",
+            "EvidenceDirectory: " + evidenceDirectory
+        }
+        .Concat(observations)
+        .Concat(failures.Select(item => "Failure: " + item)));
+
+    if (failures.Count == 0)
+    {
+        Console.WriteLine("Pipeline Review result/status projection contract passed.");
+        Console.WriteLine(reportPath);
+        return 0;
+    }
+
+    Console.Error.WriteLine("Pipeline Review result/status projection contract failed.");
+    foreach (string failure in failures)
+    {
+        Console.Error.WriteLine("- " + failure);
+    }
+
+    Console.Error.WriteLine(reportPath);
+    return 1;
+}
+
+static int RunPipelineReviewGuideResultProjectionContract(string? requestedEvidenceDirectory)
+{
+    string defaultEvidenceDirectory = Path.Combine(
+        "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev",
+        "ovl07_pipeline_review_guide_result_projection_contract_"
+            + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture));
+    string evidenceDirectory = Path.GetFullPath(
+        requestedEvidenceDirectory ?? defaultEvidenceDirectory);
+    Directory.CreateDirectory(evidenceDirectory);
+
+    List<string> observations = new List<string>();
+    List<string> failures = new List<string>();
+    try
+    {
+        OpenVisionPipelineReviewGuideResultProjectionOwner projectionOwner =
+            new OpenVisionPipelineReviewGuideResultProjectionOwner();
+        VisionPipelineStep step = new VisionPipelineStep
+        {
+            Name = "Threshold_Main",
+            ToolType = "Threshold",
+            InputLayer = "Main",
+            OutputLayer = "Threshold_Preview",
+            AcceptanceMetricName = "Score",
+            Enabled = true
+        };
+        VisionPipelineStep acceptanceStep = new VisionPipelineStep
+        {
+            Name = step.Name,
+            ToolType = step.ToolType,
+            InputLayer = step.InputLayer,
+            OutputLayer = step.OutputLayer,
+            Enabled = true
+        };
+        VisionPipelineValidationResult validationResult = new VisionPipelineValidationResult();
+        VisionPipelineSampleCatalogItem activeSample = new VisionPipelineSampleCatalogItem
+        {
+            SampleName = "Synthetic Good",
+            PairGroup = "SyntheticPair",
+            PairRole = "Good",
+            ExpectedMetricName = "Score",
+            ExpectedMetricMinimum = "0.5",
+            ExpectedMetricMaximum = "1.0"
+        };
+        VisionPipelineSampleCatalogItem counterpartSample = new VisionPipelineSampleCatalogItem
+        {
+            SampleName = "Synthetic Bad",
+            PairGroup = "SyntheticPair",
+            PairRole = "Bad",
+            ValidationMode = "ExpectedFailure",
+            ExpectedMetricName = "Score",
+            ExpectedMetricMinimum = "0.0",
+            ExpectedMetricMaximum = "0.4"
+        };
+        OpenVisionWorkspaceSamplePairDecisionGuide pairGuide =
+            new OpenVisionWorkspaceSamplePairDecisionGuide(
+                true,
+                "Synthetic pair summary",
+                "Synthetic pair metric",
+                "Synthetic pair checklist",
+                "Run the paired sample",
+                "Synthetic pair workflow",
+                "Synthetic pair review");
+
+        bool HasText(string value, params string[] expected)
+        {
+            return expected.Any(text => value?.Contains(text, StringComparison.Ordinal) == true);
+        }
+
+        OpenVisionPipelineReviewGuideResultProjectionRequest CreateRequest(
+            VisionPipelineStep requestStep,
+            VisionPipelineStepResultSummary? summary,
+            string statusText,
+            bool hasOutputImage,
+            bool includePair)
+        {
+            return new OpenVisionPipelineReviewGuideResultProjectionRequest
+            {
+                DisplayIndex = 1,
+                StepCount = 1,
+                Step = requestStep,
+                StatusText = statusText,
+                HasInputImage = true,
+                HasOutputImage = hasOutputImage,
+                Summary = summary,
+                ValidationResult = validationResult,
+                ExpectedInputLayer = requestStep?.InputLayer,
+                IsBranch = false,
+                InputWillBeProduced = false,
+                SamplePairGuide = includePair ? pairGuide : OpenVisionWorkspaceSamplePairDecisionGuide.Empty,
+                ActiveCatalogSample = includePair ? activeSample : null,
+                ActivePairCounterpartSample = includePair ? counterpartSample : null,
+                PreviewMode = PipelineFlowPreviewMode.Overlay,
+                ValidationStatusText = "Ready"
+            };
+        }
+
+        OpenVisionPipelineReviewGuideResultProjection missingResult = projectionOwner.ProjectSelected(
+            CreateRequest(step, null, "WAIT", hasOutputImage: false, includePair: false));
+        Require(
+            HasText(missingResult.ResultSummaryText, "Run review required", "리뷰 실행 필요"),
+            "Missing-result summary was not projected.");
+        Require(
+            HasText(missingResult.ResultDetailText, "No run result for selected step.", "선택 Step 실행 결과 없음."),
+            "Missing-result detail was not projected.");
+        Require(!string.IsNullOrWhiteSpace(missingResult.RunLogText), "Missing-result run log was empty.");
+        Require(!string.IsNullOrWhiteSpace(missingResult.GuideState.ResultDecisionText), "Missing-result guide decision was empty.");
+
+        VisionPipelineStepResultSummary okSummary = new VisionPipelineStepResultSummary
+        {
+            Index = 1,
+            Name = step.Name,
+            ToolType = step.ToolType,
+            InputLayer = step.InputLayer,
+            OutputLayer = step.OutputLayer,
+            Status = "OK",
+            Success = true,
+            HasResultImage = true,
+            ResultImageWidth = 512,
+            ResultImageHeight = 384,
+            ElapsedMilliseconds = 2.5,
+            Metrics = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Score"] = 0.75
+            }
+        };
+        OpenVisionPipelineReviewGuideResultProjection okResult = projectionOwner.ProjectSelected(
+            CreateRequest(step, okSummary, "OK", hasOutputImage: true, includePair: true));
+        Require(HasText(okResult.ResultSummaryText, "OK"), "OK result summary changed.");
+        Require(okResult.ResultDetailText.Contains("512x384", StringComparison.Ordinal), "OK image dimensions were not projected.");
+        Require(!string.IsNullOrWhiteSpace(okResult.GuideState.ResultDecisionText), "OK guide decision was empty.");
+        Require(HasText(okResult.PairActionText, "NG reference", "NG 기준"), "Pair action text changed.");
+        Require(!okResult.CanOpenPairAction, "Missing pair files were unexpectedly marked openable.");
+        Require(!string.IsNullOrWhiteSpace(okResult.PairMetricText), "Pair metric comparison was not projected.");
+
+        VisionPipelineStepResultSummary toolNgSummary = new VisionPipelineStepResultSummary
+        {
+            Index = 1,
+            Name = step.Name,
+            ToolType = step.ToolType,
+            Status = "NG",
+            Success = false,
+            IsToolError = true,
+            Message = "synthetic tool failure"
+        };
+        OpenVisionPipelineReviewGuideResultProjection toolNgResult = projectionOwner.ProjectSelected(
+            CreateRequest(step, toolNgSummary, "NG", hasOutputImage: false, includePair: false));
+        Require(HasText(toolNgResult.ResultSummaryText, "NG"), "Tool-NG result summary changed.");
+        Require(toolNgResult.ResultDetailText.Contains("synthetic tool failure", StringComparison.Ordinal), "Tool-NG detail changed.");
+
+        VisionPipelineStepResultSummary acceptanceNgSummary = new VisionPipelineStepResultSummary
+        {
+            Index = 1,
+            Name = acceptanceStep.Name,
+            ToolType = acceptanceStep.ToolType,
+            Status = "NG",
+            Success = true,
+            IsAcceptanceNg = true,
+            AcceptanceMessage = "synthetic acceptance failure"
+        };
+        OpenVisionPipelineReviewGuideResultProjection acceptanceNgResult = projectionOwner.ProjectSelected(
+            CreateRequest(acceptanceStep, acceptanceNgSummary, "NG", hasOutputImage: true, includePair: false));
+        Require(HasText(acceptanceNgResult.ResultSummaryText, "NG"), "Acceptance-NG result summary changed.");
+        Require(acceptanceNgResult.ResultDetailText.Contains("synthetic acceptance failure", StringComparison.Ordinal), "Acceptance-NG detail changed.");
+        Require(!string.IsNullOrWhiteSpace(acceptanceNgResult.GuideState.DetailText), "Acceptance-NG guide detail was empty.");
+
+        OpenVisionPipelineReviewGuideState validationGuide = projectionOwner.ProjectValidationErrorGuide(1, 1, step);
+        Require(
+            HasText(validationGuide.NextActionText, "Fix validation errors before review", "검증 오류"),
+            "Validation-error guide changed.");
+        OpenVisionPipelineReviewGuideState runningGuide = projectionOwner.ProjectRunningGuide(1, 1, step);
+        Require(
+            HasText(runningGuide.NextActionText, "Review is running", "리뷰 실행"),
+            "Running guide changed.");
+
+        observations.Add("missing-result, OK, tool-NG, acceptance-NG, validation-error, running, pair action, pair metric, and run-log projection preserved");
+    }
+    catch (Exception exception)
+    {
+        failures.Add("unexpected-contract-error: " + exception.GetBaseException().Message);
+    }
+
+    string reportPath = Path.Combine(
+        evidenceDirectory,
+        "pipeline_review_guide_result_projection_contract.txt");
+    File.WriteAllLines(
+        reportPath,
+        new[]
+        {
+            "Result: " + (failures.Count == 0 ? "PASS" : "FAIL"),
+            "Contract: OVL-07 Pipeline Review guide/result projection owner boundary",
+            "EvidenceDirectory: " + evidenceDirectory
+        }
+        .Concat(observations)
+        .Concat(failures.Select(item => "Failure: " + item)));
+
+    if (failures.Count == 0)
+    {
+        Console.WriteLine("Pipeline Review guide/result projection contract passed.");
+        Console.WriteLine(reportPath);
+        return 0;
+    }
+
+    Console.Error.WriteLine("Pipeline Review guide/result projection contract failed.");
+    foreach (string failure in failures)
+    {
+        Console.Error.WriteLine("- " + failure);
+    }
+
+    Console.Error.WriteLine(reportPath);
+    return 1;
+}
+
+static int RunPipelineReviewDomainEvidenceProjectionContract(string? requestedEvidenceDirectory)
+{
+    string defaultEvidenceDirectory = Path.Combine(
+        "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev",
+        "ovl07_pipeline_review_domain_evidence_projection_contract_"
+            + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture));
+    string evidenceDirectory = Path.GetFullPath(
+        requestedEvidenceDirectory ?? defaultEvidenceDirectory);
+    Directory.CreateDirectory(evidenceDirectory);
+
+    List<string> observations = new List<string>();
+    List<string> failures = new List<string>();
+    try
+    {
+        OpenVisionPipelineReviewDomainEvidenceProjectionOwner projectionOwner =
+            new OpenVisionPipelineReviewDomainEvidenceProjectionOwner();
+        List<VisionPipelineObjectResult> objectResults = new List<VisionPipelineObjectResult>
+        {
+            new VisionPipelineObjectResult { Number = 1, Accepted = true, Area = 25D }
+        };
+        List<VisionPipelineInstanceResult> instanceResults = new List<VisionPipelineInstanceResult>
+        {
+            new VisionPipelineInstanceResult { Number = 1, Accepted = false, MeanValue = 120D }
+        };
+        List<VisionPipelineGeometryFeatureResult> geometryResults = new List<VisionPipelineGeometryFeatureResult>
+        {
+            new VisionPipelineGeometryFeatureResult
+            {
+                SourceStep = "Line_Main",
+                FeatureName = "Start",
+                Kind = VisionPipelineGeometryKind.Point
+            }
+        };
+        Dictionary<string, double> metrics = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["Score"] = 0.82D
+        };
+        VisionPipelineStepResultSummary summary = new VisionPipelineStepResultSummary
+        {
+            ObjectResults = objectResults,
+            InstanceResults = instanceResults,
+            GeometryFeatures = geometryResults,
+            Metrics = metrics
+        };
+
+        VisionPipelineStep Step(string toolType)
+        {
+            return new VisionPipelineStep { ToolType = toolType };
+        }
+
+        OpenVisionPipelineReviewDomainEvidenceProjection blob = projectionOwner.Project(
+            Step("Blob"),
+            summary);
+        Require(blob.SupportsObjectResults, "Blob object evidence support was not projected.");
+        Require(!blob.SupportsInstanceResults, "Blob unexpectedly exposed instance evidence support.");
+        Require(!blob.SupportsGeometryResults, "Blob unexpectedly exposed geometry evidence support.");
+        Require(!blob.SupportsCircleEvidence, "Blob unexpectedly exposed circle evidence support.");
+        Require(!blob.SupportsMatcherDiagnostics, "Blob unexpectedly exposed matcher diagnostics support.");
+        Require(ReferenceEquals(blob.ObjectResults, objectResults), "Object evidence data was copied or lost.");
+        Require(ReferenceEquals(blob.InstanceResults, instanceResults), "Instance evidence data was copied or lost.");
+        Require(ReferenceEquals(blob.GeometryResults, geometryResults), "Geometry evidence data was copied or lost.");
+        Require(ReferenceEquals(blob.Metrics, metrics), "Metric evidence data was copied or lost.");
+
+        OpenVisionPipelineReviewDomainEvidenceProjection contour = projectionOwner.Project(
+            Step("Contour Tool"),
+            summary);
+        Require(contour.SupportsObjectResults, "Contour tool alias lost object evidence support.");
+
+        OpenVisionPipelineReviewDomainEvidenceProjection multiFixtureMean = projectionOwner.Project(
+            Step("MultiFixtureMean"),
+            summary);
+        Require(multiFixtureMean.SupportsInstanceResults, "MultiFixtureMean instance evidence support was not projected.");
+
+        OpenVisionPipelineReviewDomainEvidenceProjection geometry = projectionOwner.Project(
+            Step("Geometry_Measure"),
+            summary);
+        Require(geometry.SupportsGeometryResults, "Geometry_Measure geometry evidence support was not projected.");
+
+        OpenVisionPipelineReviewDomainEvidenceProjection circle = projectionOwner.Project(
+            Step("CircleGauge"),
+            summary);
+        Require(circle.SupportsGeometryResults, "CircleGauge geometry evidence support was not projected.");
+        Require(circle.SupportsCircleEvidence, "CircleGauge circle evidence support was not projected.");
+
+        OpenVisionPipelineReviewDomainEvidenceProjection matcher = projectionOwner.Project(
+            Step("EdgeTemplateMatching"),
+            summary);
+        Require(matcher.SupportsMatcherDiagnostics, "EdgeTemplateMatching diagnostics support was not projected.");
+
+        OpenVisionPipelineReviewDomainEvidenceProjection unsupported = projectionOwner.Project(
+            Step("Threshold"),
+            summary);
+        Require(!unsupported.SupportsObjectResults
+                && !unsupported.SupportsInstanceResults
+                && !unsupported.SupportsGeometryResults
+                && !unsupported.SupportsCircleEvidence
+                && !unsupported.SupportsMatcherDiagnostics,
+            "Unsupported tool unexpectedly exposed domain evidence support.");
+        Require(unsupported.CircleEvidence == null, "Unsupported tool changed circle evidence data.");
+        Require(unsupported.MatcherDiagnostics == null, "Unsupported tool changed matcher diagnostics data.");
+
+        observations.Add("Blob/Contour, MultiFixtureMean, Geometry_Measure, CircleGauge, EdgeTemplateMatching, unsupported tool, and evidence data identity preserved");
+    }
+    catch (Exception exception)
+    {
+        failures.Add("unexpected-contract-error: " + exception.GetBaseException().Message);
+    }
+
+    string reportPath = Path.Combine(
+        evidenceDirectory,
+        "pipeline_review_domain_evidence_projection_contract.txt");
+    File.WriteAllLines(
+        reportPath,
+        new[]
+        {
+            "Result: " + (failures.Count == 0 ? "PASS" : "FAIL"),
+            "Contract: OVL-07 Pipeline Review selected-Step domain evidence projection owner boundary",
+            "EvidenceDirectory: " + evidenceDirectory
+        }
+        .Concat(observations)
+        .Concat(failures.Select(item => "Failure: " + item)));
+
+    if (failures.Count == 0)
+    {
+        Console.WriteLine("Pipeline Review domain evidence projection contract passed.");
+        Console.WriteLine(reportPath);
+        return 0;
+    }
+
+    Console.Error.WriteLine("Pipeline Review domain evidence projection contract failed.");
+    foreach (string failure in failures)
+    {
+        Console.Error.WriteLine("- " + failure);
+    }
+
+    Console.Error.WriteLine(reportPath);
+    return 1;
+}
+
+static int RunRecipePipelineExchangeProjectionContract(string? requestedEvidenceDirectory)
+{
+    string defaultEvidenceDirectory = Path.Combine(
+        "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev",
+        "ovl07_recipe_pipeline_exchange_projection_contract_"
+            + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture));
+    string evidenceDirectory = Path.GetFullPath(
+        requestedEvidenceDirectory ?? defaultEvidenceDirectory);
+    Directory.CreateDirectory(evidenceDirectory);
+
+    List<string> observations = new List<string>();
+    List<string> failures = new List<string>();
+    try
+    {
+        OpenVisionRecipePipelineExchangeProjectionOwner projectionOwner =
+            new OpenVisionRecipePipelineExchangeProjectionOwner();
+
+        bool HasStatus(
+            OpenVisionRecipePipelineExchangeProjection projection,
+            string english,
+            string korean)
+        {
+            return projection.StatusText.Contains(english, StringComparison.Ordinal)
+                || projection.StatusText.Contains(korean, StringComparison.Ordinal);
+        }
+
+        OpenVisionRecipePipelineExchangeProjection imported = projectionOwner.Project(
+            OpenVisionRecipePipelineExchangeOperation.Import,
+            OpenVisionRecipePipelineExchangeResult.Success("Imported_Pipeline", string.Empty));
+        Require(imported.Succeeded, "Import success projection was not marked succeeded.");
+        Require(imported.PipelineName == "Imported_Pipeline", "Import result name was not preserved.");
+        Require(HasStatus(imported, "Imported XML: Imported_Pipeline", "XML 가져오기 완료: Imported_Pipeline"),
+            "Import status was not projected.");
+        observations.Add("import success: result name and localized status projected");
+
+        const string exportPath = "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\exchange\\Active_Pipeline.xml";
+        OpenVisionRecipePipelineExchangeProjection exported = projectionOwner.Project(
+            OpenVisionRecipePipelineExchangeOperation.Export,
+            OpenVisionRecipePipelineExchangeResult.Success("Active_Pipeline", exportPath));
+        Require(exported.Succeeded, "Export success projection was not marked succeeded.");
+        Require(exported.PipelineName == "Active_Pipeline", "Export result name was not preserved.");
+        Require(HasStatus(exported, "Exported XML: Active_Pipeline.xml", "XML 내보내기 완료: Active_Pipeline.xml"),
+            "Export status did not preserve the destination file name.");
+
+        const string exportFailureDetail = "Destination XML could not be written.";
+        OpenVisionRecipePipelineExchangeProjection exportFailure = projectionOwner.Project(
+            OpenVisionRecipePipelineExchangeOperation.Export,
+            OpenVisionRecipePipelineExchangeResult.Failure(exportFailureDetail));
+        Require(!exportFailure.Succeeded, "Export failure projection was marked succeeded.");
+        Require(exportFailure.PipelineName == string.Empty, "Export failure exposed a Pipeline name.");
+        Require(exportFailure.StatusText == exportFailureDetail, "Export failure detail changed.");
+        observations.Add("export success/failure: destination name and storage detail preserved");
+
+        const string reviewBundlePath = "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\exchange\\Active_Pipeline.review.zip";
+        OpenVisionRecipePipelineExchangeProjection bundle = projectionOwner.Project(
+            OpenVisionRecipePipelineExchangeOperation.ExportReviewBundle,
+            OpenVisionRecipePipelineExchangeResult.Success("Active_Pipeline", reviewBundlePath));
+        Require(bundle.Succeeded, "Review bundle success projection was not marked succeeded.");
+        Require(bundle.PipelineName == "Active_Pipeline", "Review bundle result name was not preserved.");
+        Require(HasStatus(bundle, "Exported review bundle: Active_Pipeline.review.zip", "검토 묶음 내보내기 완료: Active_Pipeline.review.zip"),
+            "Review bundle success status did not preserve the package file name.");
+
+        const string bundleFailureDetail = "Review bundle manifest could not be created.";
+        OpenVisionRecipePipelineExchangeProjection bundleFailure = projectionOwner.Project(
+            OpenVisionRecipePipelineExchangeOperation.ExportReviewBundle,
+            OpenVisionRecipePipelineExchangeResult.Failure(bundleFailureDetail));
+        Require(!bundleFailure.Succeeded, "Review bundle failure projection was marked succeeded.");
+        Require(bundleFailure.PipelineName == string.Empty, "Review bundle failure exposed a Pipeline name.");
+        Require(bundleFailure.StatusText.Contains(bundleFailureDetail, StringComparison.Ordinal),
+            "Review bundle failure detail was not preserved.");
+        Require(HasStatus(bundleFailure, "Review bundle export failed: ", "검토 묶음 내보내기 실패: "),
+            "Review bundle failure prefix was not projected.");
+        observations.Add("review bundle success/failure: localized path and failure prefix preserved");
+    }
+    catch (Exception exception)
+    {
+        failures.Add("unexpected-contract-error: " + exception.GetBaseException().Message);
+    }
+
+    string reportPath = Path.Combine(
+        evidenceDirectory,
+        "recipe_pipeline_exchange_projection_contract.txt");
+    File.WriteAllLines(
+        reportPath,
+        new[]
+        {
+            "Result: " + (failures.Count == 0 ? "PASS" : "FAIL"),
+            "Contract: OVL-07 Pipeline exchange/review result projection owner boundary",
+            "EvidenceDirectory: " + evidenceDirectory
+        }
+        .Concat(observations)
+        .Concat(failures.Select(item => "Failure: " + item)));
+
+    if (failures.Count == 0)
+    {
+        Console.WriteLine("Recipe Pipeline exchange projection contract passed.");
+        Console.WriteLine(reportPath);
+        return 0;
+    }
+
+    Console.Error.WriteLine("Recipe Pipeline exchange projection contract failed.");
     foreach (string failure in failures)
     {
         Console.Error.WriteLine("- " + failure);
@@ -1074,6 +4228,461 @@ static int RunPipelinePersistenceRecoveryContract(string? requestedEvidenceDirec
     }
     Console.Error.WriteLine(reportPath);
     return 1;
+}
+
+static int RunPipelinePersistenceProcessRecoveryContract(string? requestedEvidenceDirectory)
+{
+    string evidenceDirectory = Path.GetFullPath(
+        requestedEvidenceDirectory
+        ?? Path.Combine(
+            "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev",
+            "refactor-ovl06-process-recovery_"
+                + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture)));
+    Directory.CreateDirectory(evidenceDirectory);
+    string dataRoot = Path.Combine(evidenceDirectory, "data");
+    Environment.SetEnvironmentVariable(
+        AppPathService.DataRootEnvironmentVariable,
+        dataRoot,
+        EnvironmentVariableTarget.Process);
+
+    List<string> observations = new List<string>();
+    List<string> failures = new List<string>();
+    VisionPipelineLifecycleFailureStage[] stages =
+    {
+        VisionPipelineLifecycleFailureStage.AfterJournalPrepared,
+        VisionPipelineLifecycleFailureStage.AfterBackupCreated,
+        VisionPipelineLifecycleFailureStage.AfterTargetCreated,
+        VisionPipelineLifecycleFailureStage.AfterActivePointerUpdated,
+        VisionPipelineLifecycleFailureStage.AfterSourceRemoved,
+        VisionPipelineLifecycleFailureStage.AfterBackupRemoved
+    };
+    int cases = 0;
+    int recovered = 0;
+    int childLaunches = 0;
+    int childKills = 0;
+    long totalRecoveryMilliseconds = 0;
+    long maximumRecoveryMilliseconds = 0;
+
+    static bool IsRename(string operation)
+    {
+        return string.Equals(operation, "rename", StringComparison.OrdinalIgnoreCase);
+    }
+
+    void RunCase(string operation, VisionPipelineLifecycleFailureStage stage)
+    {
+        cases++;
+        string caseDirectory = Path.Combine(
+            evidenceDirectory,
+            operation + "-" + stage + "-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(caseDirectory);
+        string recipeName = "Smoke_PL0009_Process_"
+            + operation
+            + "_"
+            + stage
+            + "_"
+            + Guid.NewGuid().ToString("N").Substring(0, 12);
+        const string oldName = "PL0009_A";
+        const string newName = "PL0009_B";
+        string markerPath = Path.Combine(caseDirectory, "crash.marker");
+        Process? child = null;
+
+        try
+        {
+            RecipeWorkspaceService.EnsureVisionWorkspace(recipeName);
+            VisionPipelineStorage.Save(recipeName, new VisionPipeline { Name = oldName });
+            if (IsRename(operation))
+            {
+                VisionPipelineStorage.SaveActivePipelineName(recipeName, oldName);
+            }
+            else
+            {
+                VisionPipelineStorage.Save(recipeName, new VisionPipeline { Name = newName });
+                VisionPipelineStorage.SaveActivePipelineName(recipeName, oldName);
+            }
+
+            string oldPath = RecipeWorkspaceService.GetVisionPipelinePath(recipeName, oldName);
+            string newPath = RecipeWorkspaceService.GetVisionPipelinePath(recipeName, newName);
+            string oldHash = ComputeSha256(oldPath);
+            ProcessStartInfo startInfo = CreateVisionRecipeRunnerProcessStartInfo();
+            startInfo.ArgumentList.Add("--pipeline-persistence-process-recovery-probe");
+            startInfo.ArgumentList.Add("--operation");
+            startInfo.ArgumentList.Add(operation);
+            startInfo.ArgumentList.Add("--recipe-name");
+            startInfo.ArgumentList.Add(recipeName);
+            startInfo.ArgumentList.Add("--old-name");
+            startInfo.ArgumentList.Add(oldName);
+            startInfo.ArgumentList.Add("--new-name");
+            startInfo.ArgumentList.Add(newName);
+            startInfo.ArgumentList.Add("--stage");
+            startInfo.ArgumentList.Add(stage.ToString());
+            startInfo.ArgumentList.Add("--marker");
+            startInfo.ArgumentList.Add(markerPath);
+            startInfo.Environment[AppPathService.DataRootEnvironmentVariable] = dataRoot;
+
+            child = Process.Start(startInfo)
+                ?? throw new InvalidOperationException("Process recovery child could not be started.");
+            childLaunches++;
+            bool markerObserved = WaitForProcessRecoveryMarker(
+                markerPath,
+                child,
+                TimeSpan.FromSeconds(20));
+            string markerText = ReadProcessRecoveryMarker(
+                markerPath,
+                TimeSpan.FromSeconds(5));
+            if (!markerObserved || child.HasExited || !markerText.Contains("Ready=true", StringComparison.Ordinal))
+            {
+                string errorPath = markerPath + ".error";
+                string errorText = File.Exists(errorPath)
+                    ? File.ReadAllText(errorPath, Encoding.UTF8)
+                    : string.Empty;
+                throw new InvalidOperationException(
+                    "Process recovery child did not reach the crash boundary. "
+                    + markerText
+                    + errorText);
+            }
+
+            child.Kill(entireProcessTree: true);
+            childKills++;
+            Require(
+                child.WaitForExit(15000),
+                "Process recovery child did not terminate after the kill boundary.");
+            int childExitCode = child.ExitCode;
+
+            VisionPipelineStorage.ResetRuntimePersistenceStateForTest();
+            Stopwatch recoveryTimer = Stopwatch.StartNew();
+            string activeName = VisionPipelineStorage.LoadActivePipelineName(
+                recipeName,
+                oldName);
+            recoveryTimer.Stop();
+            long recoveryMilliseconds = recoveryTimer.ElapsedMilliseconds;
+            totalRecoveryMilliseconds += recoveryMilliseconds;
+            maximumRecoveryMilliseconds = Math.Max(
+                maximumRecoveryMilliseconds,
+                recoveryMilliseconds);
+
+            string fallbackName = newName;
+            bool priorState;
+            bool completedState;
+            if (IsRename(operation))
+            {
+                priorState = File.Exists(oldPath)
+                    && !File.Exists(newPath)
+                    && string.Equals(activeName, oldName, StringComparison.OrdinalIgnoreCase);
+                completedState = !File.Exists(oldPath)
+                    && File.Exists(newPath)
+                    && string.Equals(activeName, newName, StringComparison.OrdinalIgnoreCase)
+                    && SerializeHelper.TryLoadFromXmlFile(newPath, out VisionPipeline renamed)
+                    && renamed != null
+                    && string.Equals(renamed.Name, newName, StringComparison.OrdinalIgnoreCase);
+            }
+            else
+            {
+                string fallbackPath = RecipeWorkspaceService.GetVisionPipelinePath(
+                    recipeName,
+                    fallbackName);
+                priorState = File.Exists(oldPath)
+                    && File.Exists(fallbackPath)
+                    && string.Equals(activeName, oldName, StringComparison.OrdinalIgnoreCase);
+                completedState = !File.Exists(oldPath)
+                    && File.Exists(fallbackPath)
+                    && string.Equals(activeName, fallbackName, StringComparison.OrdinalIgnoreCase)
+                    && SerializeHelper.TryLoadFromXmlFile(fallbackPath, out VisionPipeline fallback)
+                    && fallback != null
+                    && string.Equals(fallback.Name, fallbackName, StringComparison.OrdinalIgnoreCase);
+            }
+
+            Require(
+                priorState || completedState,
+                "Recovery did not produce one valid prior or completed state.");
+            if (priorState)
+            {
+                Require(
+                    string.Equals(ComputeSha256(oldPath), oldHash, StringComparison.Ordinal),
+                    "Recovery changed the prior Pipeline bytes.");
+            }
+
+            string stateName = completedState ? newName : oldName;
+            Require(
+                VisionPipelineStorage.TryGetPersistenceState(
+                    recipeName,
+                    stateName,
+                    out VisionPipelinePersistenceState state)
+                && state.Kind == VisionPipelinePersistenceStateKind.LifecycleRecovered,
+                "Recovery state was not retained as LifecycleRecovered.");
+
+            string journalPath = RecipeWorkspaceService.GetVisionConfigPath(
+                recipeName,
+                "pipeline.lifecycle.json");
+            string pipelineDirectory = Path.GetDirectoryName(oldPath)
+                ?? throw new InvalidOperationException("Pipeline directory could not be resolved.");
+            Require(!File.Exists(journalPath), "Lifecycle journal remained after process recovery.");
+            Require(
+                Directory.GetFiles(pipelineDirectory, "." + oldName + ".lifecycle-*.bak").Length == 0,
+                "Lifecycle backup remained after process recovery.");
+            Require(
+                Directory.GetFiles(pipelineDirectory, ".pipeline.*.tmp").Length == 0,
+                "Atomic temporary file remained after process recovery.");
+
+            recovered++;
+            observations.Add(
+                operation
+                + "-"
+                + stage
+                + ": "
+                + (priorState ? "rolled back" : "completed")
+                + "; childExit="
+                + childExitCode.ToString(CultureInfo.InvariantCulture)
+                + "; recoveryMs="
+                + recoveryMilliseconds.ToString(CultureInfo.InvariantCulture));
+        }
+        catch (Exception exception)
+        {
+            failures.Add(operation + "-" + stage + ": " + exception.GetBaseException().Message);
+        }
+        finally
+        {
+            if (child != null)
+            {
+                try
+                {
+                    if (!child.HasExited)
+                    {
+                        child.Kill(entireProcessTree: true);
+                        childKills++;
+                        child.WaitForExit(5000);
+                    }
+                }
+                catch
+                {
+                    // Preserve the original failure; cleanup evidence is recorded below.
+                }
+
+                child.Dispose();
+            }
+
+            if (!RecipeWorkspaceService.DeleteVisionWorkspace(recipeName))
+            {
+                failures.Add("Process recovery workspace cleanup failed: " + recipeName);
+            }
+        }
+    }
+
+    foreach (VisionPipelineLifecycleFailureStage stage in stages)
+    {
+        RunCase("rename", stage);
+        if (stage != VisionPipelineLifecycleFailureStage.AfterTargetCreated)
+        {
+            RunCase("delete", stage);
+        }
+    }
+
+    double averageRecoveryMilliseconds = recovered == 0
+        ? 0D
+        : totalRecoveryMilliseconds / (double)recovered;
+    string reportPath = Path.Combine(
+        evidenceDirectory,
+        "pipeline_persistence_process_recovery_contract.txt");
+    File.WriteAllLines(
+        reportPath,
+        new[]
+        {
+            "Result: " + (failures.Count == 0 ? "PASS" : "FAIL"),
+            "Contract: PL-0009 process-boundary Pipeline lifecycle recovery",
+            "EvidenceDirectory: " + evidenceDirectory,
+            "DataRoot: " + dataRoot,
+            "Cases: " + cases.ToString(CultureInfo.InvariantCulture),
+            "Recovered: " + recovered.ToString(CultureInfo.InvariantCulture),
+            "ChildLaunches: " + childLaunches.ToString(CultureInfo.InvariantCulture),
+            "ChildKills: " + childKills.ToString(CultureInfo.InvariantCulture),
+            "AverageRecoveryMs: " + averageRecoveryMilliseconds.ToString("0.###", CultureInfo.InvariantCulture),
+            "MaximumRecoveryMs: " + maximumRecoveryMilliseconds.ToString(CultureInfo.InvariantCulture),
+            "RecoveryPolicy: journal-backed prior-state rollback or completed-state adoption",
+            "ProcessBoundary: child stopped after durable journal stage; parent reopened the same data root",
+            "Executable: " + (Environment.ProcessPath ?? Assembly.GetExecutingAssembly().Location),
+            "ExecutableSha256: " + ComputeSha256(Environment.ProcessPath ?? Assembly.GetExecutingAssembly().Location)
+        }
+        .Concat(observations)
+        .Concat(failures.Select(item => "Failure: " + item)));
+
+    if (failures.Count == 0)
+    {
+        Console.WriteLine("Pipeline persistence process recovery contract passed.");
+        Console.WriteLine(reportPath);
+        return 0;
+    }
+
+    Console.Error.WriteLine("Pipeline persistence process recovery contract failed.");
+    foreach (string failure in failures)
+    {
+        Console.Error.WriteLine("- " + failure);
+    }
+    Console.Error.WriteLine(reportPath);
+    return 1;
+}
+
+static int RunPipelinePersistenceProcessRecoveryProbe(string[] args)
+{
+    string operation = GetRawOptionValue(args, "--operation") ?? string.Empty;
+    string recipeName = GetRawOptionValue(args, "--recipe-name") ?? string.Empty;
+    string oldName = GetRawOptionValue(args, "--old-name") ?? string.Empty;
+    string newName = GetRawOptionValue(args, "--new-name") ?? string.Empty;
+    string stageText = GetRawOptionValue(args, "--stage") ?? string.Empty;
+    string markerPath = GetRawOptionValue(args, "--marker") ?? string.Empty;
+    string errorPath = markerPath + ".error";
+
+    if (string.IsNullOrWhiteSpace(operation)
+        || string.IsNullOrWhiteSpace(recipeName)
+        || string.IsNullOrWhiteSpace(oldName)
+        || string.IsNullOrWhiteSpace(newName)
+        || string.IsNullOrWhiteSpace(markerPath)
+        || !Enum.TryParse(
+            stageText,
+            ignoreCase: true,
+            out VisionPipelineLifecycleFailureStage stage))
+    {
+        return 2;
+    }
+
+    try
+    {
+        bool operationCompleted;
+        using (VisionPipelineStorage.BeginLifecycleFailureInjectionForTest(stage))
+        {
+            if (string.Equals(operation, "rename", StringComparison.OrdinalIgnoreCase))
+            {
+                operationCompleted = VisionPipelineStorage.TryRenamePipeline(
+                    recipeName,
+                    oldName,
+                    newName,
+                    out _);
+            }
+            else if (string.Equals(operation, "delete", StringComparison.OrdinalIgnoreCase))
+            {
+                operationCompleted = VisionPipelineStorage.TryDeletePipeline(
+                    recipeName,
+                    oldName,
+                    out _,
+                    out _);
+            }
+            else
+            {
+                File.WriteAllText(errorPath, "Unknown operation: " + operation, Encoding.UTF8);
+                return 2;
+            }
+        }
+
+        if (operationCompleted)
+        {
+            File.WriteAllText(
+                errorPath,
+                "Failure injection unexpectedly completed the operation.",
+                Encoding.UTF8);
+            return 3;
+        }
+
+        File.WriteAllText(
+            markerPath,
+            "Ready=true"
+                + Environment.NewLine
+                + "Operation=" + operation
+                + Environment.NewLine
+                + "Stage=" + stage
+                + Environment.NewLine
+                + "ProcessId=" + Environment.ProcessId,
+            Encoding.UTF8);
+        // ponytail: the child only waits for the parent kill boundary; no production path uses this wait.
+        Thread.Sleep(Timeout.Infinite);
+        return 0;
+    }
+    catch (Exception exception)
+    {
+        File.WriteAllText(
+            errorPath,
+            exception.GetBaseException().ToString(),
+            Encoding.UTF8);
+        return 1;
+    }
+}
+
+static ProcessStartInfo CreateVisionRecipeRunnerProcessStartInfo()
+{
+    string entryAssemblyPath = Assembly.GetEntryAssembly()?.Location
+        ?? throw new InvalidOperationException("Runner assembly path is unavailable.");
+    string processPath = Environment.ProcessPath
+        ?? throw new InvalidOperationException("Runner host path is unavailable.");
+    ProcessStartInfo startInfo;
+    bool isAppHost = entryAssemblyPath.EndsWith(".dll", StringComparison.OrdinalIgnoreCase)
+        && processPath.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
+        && string.Equals(
+            Path.GetFileNameWithoutExtension(processPath),
+            Path.GetFileNameWithoutExtension(entryAssemblyPath),
+            StringComparison.OrdinalIgnoreCase);
+    if (isAppHost)
+    {
+        startInfo = new ProcessStartInfo(processPath);
+    }
+    else if (entryAssemblyPath.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
+    {
+        startInfo = new ProcessStartInfo(processPath);
+        startInfo.ArgumentList.Add(entryAssemblyPath);
+    }
+    else
+    {
+        startInfo = new ProcessStartInfo(entryAssemblyPath);
+    }
+
+    startInfo.UseShellExecute = false;
+    startInfo.CreateNoWindow = true;
+    startInfo.WorkingDirectory = AppContext.BaseDirectory;
+    return startInfo;
+}
+
+static bool WaitForProcessRecoveryMarker(
+    string markerPath,
+    Process process,
+    TimeSpan timeout)
+{
+    Stopwatch stopwatch = Stopwatch.StartNew();
+    while (stopwatch.Elapsed < timeout)
+    {
+        if (File.Exists(markerPath))
+        {
+            return true;
+        }
+
+        if (process.HasExited)
+        {
+            return false;
+        }
+
+        Thread.Sleep(25);
+    }
+
+    return File.Exists(markerPath);
+}
+
+static string ReadProcessRecoveryMarker(string markerPath, TimeSpan timeout)
+{
+    Stopwatch stopwatch = Stopwatch.StartNew();
+    while (stopwatch.Elapsed < timeout)
+    {
+        try
+        {
+            return File.Exists(markerPath)
+                ? File.ReadAllText(markerPath, Encoding.UTF8)
+                : string.Empty;
+        }
+        catch (IOException)
+        {
+            Thread.Sleep(25);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            Thread.Sleep(25);
+        }
+    }
+
+    return string.Empty;
 }
 
 static void ExpectStoragePathRejected(
@@ -5695,6 +9304,635 @@ static async Task<int> RunObjectDimensionFilterContractAsync(string? evidenceDir
     return 1;
 }
 
+static async Task<int> RunObjectCandidateParityContractAsync(string? requestedEvidenceDirectory)
+{
+    string evidenceDirectory = Path.GetFullPath(
+        requestedEvidenceDirectory
+        ?? Path.Combine(
+            "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev",
+            "pl0010_c4_parity_" + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture)));
+    Directory.CreateDirectory(evidenceDirectory);
+
+    List<string> failures = new List<string>();
+    List<string> observations = new List<string>();
+    List<string> timingRows = new List<string>
+    {
+        "ToolType\tVariant\tCompletedObjectStepUpdates\tStepResultCount\tStepElapsedMs\tWallElapsedMs\tPersistedTotalMs"
+    };
+
+    using Mat source = CreateBlobContourAuditBaselineSource();
+    string sourcePath = Path.Combine(evidenceDirectory, "candidate_parity_source.png");
+    if (!Cv2.ImWrite(sourcePath, source))
+    {
+        failures.Add("Could not write the object-candidate parity source image.");
+    }
+
+    await VerifyObjectCandidateParityCaseAsync(
+        source,
+        "Blob",
+        "mask",
+        evidenceDirectory,
+        failures,
+        observations,
+        timingRows);
+
+    foreach (string toolType in new[] { "Blob", "Contour" })
+    {
+        await VerifyObjectCandidateParityCaseAsync(
+            source,
+            toolType,
+            "multi-roi",
+            evidenceDirectory,
+            failures,
+            observations,
+            timingRows);
+    }
+
+    await VerifyPublicCandidateSampleParityAsync(
+        evidenceDirectory,
+        failures,
+        observations,
+        timingRows);
+
+    string timingPath = Path.Combine(evidenceDirectory, "timing.tsv");
+    File.WriteAllLines(timingPath, timingRows, new UTF8Encoding(false));
+    string observationsPath = Path.Combine(evidenceDirectory, "observations.txt");
+    File.WriteAllLines(observationsPath, observations, new UTF8Encoding(false));
+    string completionPath = Path.Combine(evidenceDirectory, "completion.txt");
+    File.WriteAllLines(
+        completionPath,
+        new[]
+        {
+            failures.Count == 0 ? "Status=Complete" : "Status=Incomplete",
+            "Scope=PL-0010 C4 App pipeline candidate parity replay for Blob mask, Blob/Contour multi-ROI, object drawings, timing, Run History, and public Good/Bad samples.",
+            "Acceptance=One completed Blob/Contour Step update per execution; source-coordinate candidate rows, RegionIndex, applied limits, reject reasons, accepted metrics, and accepted drawings retained; Run History round-trip preserves timing and objects; public Good/Bad sample checks preserve expected outcomes.",
+            "Verification=Current Dev Runner and vendored SDK assemblies; no second audit Tool execution was introduced by this contract.",
+            "Evidence=" + sourcePath + "; " + timingPath + "; " + observationsPath,
+            "Boundary=This contract does not claim EXE/DPI/theme coverage or deployment/push/release authorization. SDK mask semantics are exercised for Blob; the SDK does not define Contour mask classification in this release."
+        }.Concat(failures.Select(failure => "Failure=" + failure)),
+        new UTF8Encoding(false));
+
+    if (failures.Count == 0)
+    {
+        Console.WriteLine("PL-0010 object-candidate parity contract passed.");
+        Console.WriteLine("Mask, multi-ROI, selection-ready drawings, timing, Run History, and public Good/Bad replay passed.");
+        Console.WriteLine("Evidence=" + evidenceDirectory);
+        return 0;
+    }
+
+    Console.Error.WriteLine("PL-0010 object-candidate parity contract failed.");
+    foreach (string failure in failures)
+    {
+        Console.Error.WriteLine("- " + failure);
+    }
+    Console.Error.WriteLine("Evidence=" + evidenceDirectory);
+    return 1;
+}
+
+static async Task VerifyObjectCandidateParityCaseAsync(
+    Mat source,
+    string toolType,
+    string variant,
+    string evidenceDirectory,
+    ICollection<string> failures,
+    ICollection<string> observations,
+    ICollection<string> timingRows)
+{
+    VisionPipeline pipeline = CreateObjectCandidateParityPipeline(toolType, variant);
+    string recipeName = "Smoke_PL0010_C4_" + toolType + "_" + variant + "_" + Guid.NewGuid().ToString("N");
+    DateTime startedAt = DateTime.Now;
+    Stopwatch wall = Stopwatch.StartNew();
+
+    try
+    {
+        using (VisionPipelineContext context = new VisionPipelineContext())
+        {
+            context.SetLayer(VisionRecipeRunner.DefaultInputLayer, source);
+            int completedObjectStepUpdates = 0;
+            using (VisionPipelineRunResult runResult = await VisionPipelineExecutionService.RunAsync(
+                pipeline,
+                context,
+                VisionRecipeRunner.DefaultStepTimeoutMilliseconds,
+                CancellationToken.None,
+                update =>
+                {
+                    if (update?.StepResult != null
+                        && IsBlobOrContourTool(update.Step?.ToolType))
+                    {
+                        completedObjectStepUpdates++;
+                    }
+                }))
+            {
+                wall.Stop();
+                VisionPipelineStepResult? stepResult = runResult.StepResults.SingleOrDefault();
+                if (stepResult == null)
+                {
+                    failures.Add($"{toolType}/{variant}: no Step result was produced.");
+                    return;
+                }
+
+                VisionPipelineStepResultSummary summary = VisionPipelineResultSummaryService.CreateStepSummary(1, stepResult);
+                IReadOnlyList<VisionPipelineObjectResult> rows = VisionPipelineObjectResultStore
+                    .Get(stepResult.ToolResult)
+                    .ToList();
+                int acceptedCount = rows.Count(item => item.Accepted);
+                int expectedAccepted = string.Equals(variant, "mask", StringComparison.OrdinalIgnoreCase) ? 4 : 5;
+                string expectedStage = string.Equals(toolType, "Blob", StringComparison.OrdinalIgnoreCase)
+                    ? "BlobLabeling"
+                    : "ContourExtraction";
+
+                if (!runResult.Success || stepResult.ToolResult?.Success != true || !summary.Success)
+                {
+                    failures.Add($"{toolType}/{variant}: pipeline execution did not pass. Message={summary.Message}");
+                }
+
+                if (completedObjectStepUpdates != 1)
+                {
+                    failures.Add($"{toolType}/{variant}: expected exactly one completed object Step update, actual {completedObjectStepUpdates}.");
+                }
+
+                if (runResult.StepResults.Count != 1)
+                {
+                    failures.Add($"{toolType}/{variant}: expected one Step result, actual {runResult.StepResults.Count}.");
+                }
+
+                if (rows.Count != 5 || acceptedCount != expectedAccepted)
+                {
+                    failures.Add($"{toolType}/{variant}: expected 5 candidate rows and {expectedAccepted} accepted, actual rows={rows.Count}, accepted={acceptedCount}.");
+                }
+
+                if (rows.Any(item => string.IsNullOrWhiteSpace(item.CandidateId)
+                    || item.NativeIndex < 0
+                    || item.RegionIndex < 0
+                    || string.IsNullOrWhiteSpace(item.GenerationStage)
+                    || !string.Equals(item.GenerationStage, expectedStage, StringComparison.Ordinal)
+                    || !string.Equals(item.CoordinateFrame, "SourceImage", StringComparison.Ordinal)
+                    || item.BoundsWidth <= 0
+                    || item.BoundsHeight <= 0
+                    || item.AppliedMinimumArea != 20
+                    || item.AppliedMaximumArea != 10000
+                    || item.AppliedMinimumWidth != 0
+                    || item.AppliedMaximumWidth != 1000
+                    || item.AppliedMinimumHeight != 0
+                    || item.AppliedMaximumHeight != 1000)
+                    || rows.Select(item => item.CandidateId).Distinct(StringComparer.Ordinal).Count() != rows.Count)
+                {
+                    failures.Add($"{toolType}/{variant}: candidate identity, source geometry, or applied-limit metadata was not retained.");
+                }
+
+                if (string.Equals(variant, "mask", StringComparison.OrdinalIgnoreCase))
+                {
+                    List<VisionPipelineObjectResult> masked = rows
+                        .Where(item => string.Equals(item.RejectReasonCode, "Masked", StringComparison.Ordinal))
+                        .ToList();
+                    if (!string.Equals(toolType, "Blob", StringComparison.OrdinalIgnoreCase)
+                        || masked.Count != 1
+                        || rows.Count(item => string.Equals(item.RejectReasonCode, "None", StringComparison.Ordinal)) != 4)
+                    {
+                        failures.Add($"{toolType}/{variant}: expected Blob mask candidate contract (one Masked row and four accepted rows).");
+                    }
+                    else
+                    {
+                        observations.Add($"{toolType}/{variant}: Masked candidate retained with source rectangle ({masked[0].BoundsX},{masked[0].BoundsY},{masked[0].BoundsWidth},{masked[0].BoundsHeight}).");
+                    }
+                }
+                else
+                {
+                    int[] regions = rows.Select(item => item.RegionIndex).Distinct().OrderBy(index => index).ToArray();
+                    if (!regions.SequenceEqual(new[] { 0, 1 })
+                        || rows.Any(item => !item.CandidateId.StartsWith(
+                            expectedStage + ":" + item.RegionIndex + ":",
+                            StringComparison.Ordinal))
+                        || !rows.Any(item => item.RegionIndex == 0 && item.BoundsX < 180)
+                        || !rows.Any(item => item.RegionIndex == 1 && item.BoundsX >= 180))
+                    {
+                        failures.Add($"{toolType}/{variant}: multi-ROI RegionIndex/ID/source-coordinate parity failed.");
+                    }
+                    else
+                    {
+                        observations.Add($"{toolType}/{variant}: RegionIndex 0/1 and source-coordinate geometry retained.");
+                    }
+                }
+
+                if (rows.Any(item => item.RegionIndex != 0 && string.Equals(variant, "mask", StringComparison.OrdinalIgnoreCase)))
+                {
+                    failures.Add($"{toolType}/{variant}: single-region mask case produced a non-zero RegionIndex.");
+                }
+
+                double resultCount = summary.Metrics.GetValueOrDefault(VisionPipelineKnownMetrics.ResultCount, -1D);
+                if (resultCount != expectedAccepted)
+                {
+                    failures.Add($"{toolType}/{variant}: ResultCount expected {expectedAccepted}, actual {resultCount:0.###}.");
+                }
+
+                int acceptedOverlayCount = stepResult.ToolResult?.Overlays?.Count(item =>
+                    item != null
+                    && item.Kind == VisionToolOverlayKind.Rectangle
+                    && string.Equals(item.Label, "Accepted object", StringComparison.Ordinal)) ?? 0;
+                if (acceptedOverlayCount != expectedAccepted)
+                {
+                    failures.Add($"{toolType}/{variant}: accepted drawing count expected {expectedAccepted}, actual {acceptedOverlayCount}.");
+                }
+
+                if (!summary.HasResultImage || summary.ResultImageWidth != source.Width || summary.ResultImageHeight != source.Height)
+                {
+                    failures.Add($"{toolType}/{variant}: result image dimensions did not remain {source.Width} x {source.Height}.");
+                }
+
+                double stepElapsedMilliseconds = stepResult.ToolResult?.Elapsed.TotalMilliseconds ?? -1D;
+                if (stepElapsedMilliseconds < 0D || double.IsNaN(stepElapsedMilliseconds))
+                {
+                    failures.Add($"{toolType}/{variant}: Step timing was not reported.");
+                }
+
+                string caseEvidenceDirectory = Path.Combine(
+                    evidenceDirectory,
+                    toolType.ToLowerInvariant(),
+                    variant);
+                Directory.CreateDirectory(caseEvidenceDirectory);
+                SaveObjectCandidateParityEvidence(
+                    source,
+                    rows,
+                    variant,
+                    Path.Combine(caseEvidenceDirectory, "candidate_drawing.png"));
+                File.WriteAllLines(
+                    Path.Combine(caseEvidenceDirectory, "candidate_rows.tsv"),
+                    new[]
+                    {
+                        "Number\tCandidateId\tRegionIndex\tNativeIndex\tAccepted\tArea\tX\tY\tWidth\tHeight\tAngle\tRejectReasonCode\tRejectReason\tAppliedMinArea\tAppliedMaxArea\tAppliedMinWidth\tAppliedMaxWidth\tAppliedMinHeight\tAppliedMaxHeight\tGenerationStage\tCoordinateFrame"
+                    }.Concat(rows.Select(item => string.Join(
+                        "\t",
+                        item.Number.ToString(CultureInfo.InvariantCulture),
+                        item.CandidateId,
+                        item.RegionIndex.ToString(CultureInfo.InvariantCulture),
+                        item.NativeIndex.ToString(CultureInfo.InvariantCulture),
+                        item.Accepted.ToString(CultureInfo.InvariantCulture),
+                        item.Area.ToString("0.###", CultureInfo.InvariantCulture),
+                        item.BoundsX.ToString(CultureInfo.InvariantCulture),
+                        item.BoundsY.ToString(CultureInfo.InvariantCulture),
+                        item.BoundsWidth.ToString(CultureInfo.InvariantCulture),
+                        item.BoundsHeight.ToString(CultureInfo.InvariantCulture),
+                        item.Angle.ToString("0.###", CultureInfo.InvariantCulture),
+                        item.RejectReasonCode,
+                        item.RejectReason,
+                        item.AppliedMinimumArea.ToString(CultureInfo.InvariantCulture),
+                        item.AppliedMaximumArea.ToString(CultureInfo.InvariantCulture),
+                        item.AppliedMinimumWidth.ToString(CultureInfo.InvariantCulture),
+                        item.AppliedMaximumWidth.ToString(CultureInfo.InvariantCulture),
+                        item.AppliedMinimumHeight.ToString(CultureInfo.InvariantCulture),
+                        item.AppliedMaximumHeight.ToString(CultureInfo.InvariantCulture),
+                        item.GenerationStage,
+                        item.CoordinateFrame))));
+
+                DateTime finishedAt = DateTime.Now;
+                string reportPath = VisionPipelineRunReportStorage.Save(
+                    recipeName,
+                    pipeline,
+                    runResult,
+                    startedAt,
+                    finishedAt,
+                    publishAllOutputs: false,
+                    runLabel: toolType + "-" + variant);
+                VisionPipelineRunReport? report = VisionPipelineRunReportStorage.Load(reportPath);
+                VisionPipelineStepRunReport? persistedStep = report?.Steps.SingleOrDefault();
+                if (report == null || persistedStep == null)
+                {
+                    failures.Add($"{toolType}/{variant}: Run History report did not round-trip.");
+                }
+                else
+                {
+                    if (report.TotalMilliseconds < 0D
+                        || persistedStep.ElapsedMilliseconds < 0D
+                        || persistedStep.Objects.Count != rows.Count
+                        || persistedStep.OverlayCount != (stepResult.ToolResult?.Overlays?.Count ?? 0)
+                        || persistedStep.Objects.Any(item => item.RegionIndex < 0
+                            || string.IsNullOrWhiteSpace(item.CandidateId)
+                            || !string.Equals(item.CoordinateFrame, "SourceImage", StringComparison.Ordinal)
+                            || item.AppliedMaximumArea != 10000))
+                    {
+                        failures.Add($"{toolType}/{variant}: Run History did not preserve timing, overlay, candidate, or applied-limit metadata.");
+                    }
+
+                    string persistedResultCount = persistedStep.Metrics
+                        .FirstOrDefault(item => string.Equals(item.Name, VisionPipelineKnownMetrics.ResultCount, StringComparison.OrdinalIgnoreCase))
+                        ?.Value.ToString("0.###", CultureInfo.InvariantCulture) ?? "missing";
+                    observations.Add($"{toolType}/{variant}: Run History rows={persistedStep.Objects.Count}, overlays={persistedStep.OverlayCount}, ResultCount={persistedResultCount}, elapsed={persistedStep.ElapsedMilliseconds:0.###}ms.");
+
+                    string runEvidenceDirectory = Path.Combine(caseEvidenceDirectory, "run-history");
+                    CopyRunDirectory(Path.GetDirectoryName(reportPath)!, runEvidenceDirectory);
+                }
+
+                timingRows.Add(string.Join(
+                    "\t",
+                    toolType,
+                    variant,
+                    completedObjectStepUpdates.ToString(CultureInfo.InvariantCulture),
+                    runResult.StepResults.Count.ToString(CultureInfo.InvariantCulture),
+                    stepElapsedMilliseconds.ToString("0.###", CultureInfo.InvariantCulture),
+                    wall.Elapsed.TotalMilliseconds.ToString("0.###", CultureInfo.InvariantCulture),
+                    (report?.TotalMilliseconds ?? -1D).ToString("0.###", CultureInfo.InvariantCulture)));
+            }
+        }
+    }
+    catch (Exception exception)
+    {
+        failures.Add($"{toolType}/{variant}: parity replay threw {exception.GetBaseException().Message}");
+    }
+    finally
+    {
+        RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+    }
+}
+
+static async Task VerifyPublicCandidateSampleParityAsync(
+    string evidenceDirectory,
+    ICollection<string> failures,
+    ICollection<string> observations,
+    ICollection<string> timingRows)
+{
+    string[] sampleNames =
+    {
+        "Public_Blob_Particles_Good",
+        "Public_Blob_Particles_Sparse_Bad",
+        "Public_Contour_Shapes_Good",
+        "Public_Contour_Shapes_Missing_Bad"
+    };
+    List<VisionPipelineSampleCatalogItem> samples = VisionPipelineSampleCatalogItem
+        .LoadRunnable(VisionPipelineSampleCatalogSourceKind.Public);
+
+    foreach (string sampleName in sampleNames)
+    {
+        VisionPipelineSampleCatalogItem? sample = samples.FirstOrDefault(item =>
+            string.Equals(item.SampleName, sampleName, StringComparison.OrdinalIgnoreCase));
+        if (sample == null)
+        {
+            failures.Add($"Public sample '{sampleName}' was not found in the runnable public catalog.");
+            continue;
+        }
+
+        string recipeName = "Smoke_PL0010_C4_Public_" + Guid.NewGuid().ToString("N");
+        try
+        {
+            VisionPipelineSampleCheckResult check = await VisionPipelineSampleCheckService
+                .RunSampleCheckWithReportSafeAsync(
+                    sample,
+                    pipelineXmlText: null,
+                    recipeName: recipeName,
+                    normalizeInputToGray: false,
+                    cancellationToken: CancellationToken.None);
+            if (!check.ExecutionCompleted || !check.Success)
+            {
+                failures.Add($"{sampleName}: public sample check failed. Status={check.Status}, Message={check.Message}");
+                continue;
+            }
+
+            VisionPipelineRunReport? report = string.IsNullOrWhiteSpace(check.RunReportPath)
+                ? null
+                : VisionPipelineRunReportStorage.Load(check.RunReportPath);
+            VisionPipelineStepRunReport? objectStep = report?.Steps
+                .LastOrDefault(step => IsBlobOrContourTool(step.ToolType) && step.Objects.Count > 0);
+            if (report == null || objectStep == null)
+            {
+                failures.Add($"{sampleName}: public sample report did not retain an object Step.");
+                continue;
+            }
+
+            bool expectedRawSuccess = !sample.ExpectsFailure;
+            if (report.Success != expectedRawSuccess || check.ActualSuccess != expectedRawSuccess)
+            {
+                failures.Add($"{sampleName}: expected raw outcome {(expectedRawSuccess ? "success" : "failure")}, actual report={report.Success}, check={check.ActualSuccess}.");
+            }
+
+            if (objectStep.Objects.Count == 0
+                || objectStep.Objects.Any(item => string.IsNullOrWhiteSpace(item.CandidateId)
+                    || item.RegionIndex != 0
+                    || item.NativeIndex < 0
+                    || !string.Equals(item.CoordinateFrame, "SourceImage", StringComparison.Ordinal)
+                    || string.IsNullOrWhiteSpace(item.GenerationStage))
+                || objectStep.Objects.Select(item => item.CandidateId).Distinct(StringComparer.Ordinal).Count() != objectStep.Objects.Count)
+            {
+                failures.Add($"{sampleName}: public sample report candidate identity/source-coordinate metadata was incomplete.");
+            }
+
+            if (objectStep.ElapsedMilliseconds < 0D
+                || report.TotalMilliseconds < 0D
+                || objectStep.OverlayCount <= 0
+                || string.IsNullOrWhiteSpace(report.SourceImageFile))
+            {
+                failures.Add($"{sampleName}: public sample report timing, drawing, or source-image evidence was incomplete.");
+            }
+            else
+            {
+                string reportDirectory = Path.GetDirectoryName(check.RunReportPath)!;
+                string sourceImagePath = Path.Combine(reportDirectory, report.SourceImageFile);
+                if (!File.Exists(sourceImagePath)
+                    || !VisionPipelineRunReportStorage.IsFileSha256Match(sourceImagePath, report.SourceImageSha256))
+                {
+                    failures.Add($"{sampleName}: public sample report source-image hash did not round-trip.");
+                }
+            }
+
+            VisionPipelineSampleExpectedMetric? resultCountExpectation = sample.ExpectedMetrics.FirstOrDefault(metric =>
+                string.Equals(metric.Name, VisionPipelineKnownMetrics.ResultCount, StringComparison.OrdinalIgnoreCase));
+            VisionPipelineMetricRunReport? resultCountMetric = objectStep.Metrics.FirstOrDefault(metric =>
+                string.Equals(metric.Name, VisionPipelineKnownMetrics.ResultCount, StringComparison.OrdinalIgnoreCase));
+            if (resultCountExpectation == null || resultCountMetric == null)
+            {
+                failures.Add($"{sampleName}: public sample ResultCount metric was not retained.");
+            }
+            else
+            {
+                if (double.TryParse(resultCountExpectation.Minimum, NumberStyles.Float, CultureInfo.InvariantCulture, out double minimum)
+                    && resultCountMetric.Value < minimum)
+                {
+                    failures.Add($"{sampleName}: ResultCount {resultCountMetric.Value:0.###} is below expected minimum {minimum:0.###}.");
+                }
+                if (double.TryParse(resultCountExpectation.Maximum, NumberStyles.Float, CultureInfo.InvariantCulture, out double maximum)
+                    && resultCountMetric.Value > maximum)
+                {
+                    failures.Add($"{sampleName}: ResultCount {resultCountMetric.Value:0.###} is above expected maximum {maximum:0.###}.");
+                }
+            }
+
+            string sampleEvidenceDirectory = Path.Combine(
+                evidenceDirectory,
+                "public",
+                SanitizeEvidenceFileName(sampleName));
+            CopyRunDirectory(Path.GetDirectoryName(check.RunReportPath)!, sampleEvidenceDirectory);
+            File.WriteAllText(
+                Path.Combine(sampleEvidenceDirectory, "sample-result.txt"),
+                string.Join(
+                    Environment.NewLine,
+                    "Sample=" + sampleName,
+                    "PairRole=" + sample.PairRole,
+                    "ExpectedFailure=" + sample.ExpectsFailure,
+                    "CheckStatus=" + check.Status,
+                    "CheckSuccess=" + check.Success,
+                    "ActualSuccess=" + check.ActualSuccess,
+                    "ReportSuccess=" + report.Success,
+                    "ResultCount=" + (resultCountMetric?.Value.ToString("0.###", CultureInfo.InvariantCulture) ?? "missing"),
+                    "ObjectRows=" + objectStep.Objects.Count.ToString(CultureInfo.InvariantCulture),
+                    "OverlayCount=" + objectStep.OverlayCount.ToString(CultureInfo.InvariantCulture),
+                    "ElapsedMs=" + objectStep.ElapsedMilliseconds.ToString("0.###", CultureInfo.InvariantCulture),
+                    "RunReport=" + check.RunReportPath));
+
+            observations.Add($"{sampleName}: outcome={(sample.ExpectsFailure ? "expected-NG" : "OK")}, ResultCount={resultCountMetric?.Value.ToString("0.###", CultureInfo.InvariantCulture) ?? "missing"}, object rows={objectStep.Objects.Count}, overlays={objectStep.OverlayCount}.");
+            timingRows.Add(string.Join(
+                "\t",
+                objectStep.ToolType,
+                "public:" + sampleName,
+                "n/a",
+                report.Steps.Count.ToString(CultureInfo.InvariantCulture),
+                objectStep.ElapsedMilliseconds.ToString("0.###", CultureInfo.InvariantCulture),
+                check.TotalMilliseconds.ToString("0.###", CultureInfo.InvariantCulture),
+                report.TotalMilliseconds.ToString("0.###", CultureInfo.InvariantCulture)));
+        }
+        catch (Exception exception)
+        {
+            failures.Add($"{sampleName}: public sample parity replay threw {exception.GetBaseException().Message}");
+        }
+        finally
+        {
+            RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+        }
+    }
+}
+
+static VisionPipeline CreateObjectCandidateParityPipeline(string toolType, string variant)
+{
+    VisionPipelineStep step = new VisionPipelineStep
+    {
+        Name = $"{toolType} {variant} candidate parity",
+        ToolType = toolType,
+        Enabled = true,
+        InputLayer = VisionRecipeRunner.DefaultInputLayer,
+        OutputLayer = toolType + "_CandidateParity"
+    };
+    step.Parameters["USE_THRESHOLD"] = "true";
+    step.Parameters["THRESHOLD_TYPES"] = "Binary";
+    step.Parameters["THRESHOLD"] = "100";
+    step.Parameters["USE_ADAPTIVE_THRESHOLD"] = "false";
+    step.Parameters["USE_BITWISENOT"] = "false";
+    step.Parameters["USE_ROI"] = "false";
+    step.Parameters["USE_MULTI_ROI"] = string.Equals(variant, "multi-roi", StringComparison.OrdinalIgnoreCase).ToString();
+    step.Parameters["MIN_AREA"] = "20";
+    step.Parameters["MAX_AREA"] = "10000";
+    step.Parameters["MIN_WIDTH"] = "0";
+    step.Parameters["MAX_WIDTH"] = "1000";
+    step.Parameters["MIN_HEIGHT"] = "0";
+    step.Parameters["MAX_HEIGHT"] = "1000";
+    if (string.Equals(variant, "mask", StringComparison.OrdinalIgnoreCase))
+    {
+        step.Parameters["USE_MASKING"] = "true";
+        step.Parameters["CvMASKS"] = "80,20,52,24";
+    }
+    else
+    {
+        step.Parameters["CvROIS"] = "0,0,180,140;180,0,180,140";
+    }
+
+    if (string.Equals(toolType, "Contour", StringComparison.OrdinalIgnoreCase))
+    {
+        step.Parameters["USE_DRAW_IMAGE"] = "true";
+        step.Parameters["DetectMode"] = "External";
+        step.Parameters["ApproximationModes"] = "ApproxSimple";
+    }
+
+    VisionPipeline pipeline = new VisionPipeline { Name = "PL0010 " + toolType + " " + variant + " candidate parity" };
+    pipeline.Steps.Add(step);
+    return pipeline;
+}
+
+static bool IsBlobOrContourTool(string? toolType)
+{
+    return string.Equals(toolType, "Blob", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(toolType, "Contour", StringComparison.OrdinalIgnoreCase);
+}
+
+static void SaveObjectCandidateParityEvidence(
+    Mat source,
+    IEnumerable<VisionPipelineObjectResult> rows,
+    string variant,
+    string outputPath)
+{
+    using Mat drawing = new Mat();
+    if (source.Channels() == 1)
+    {
+        Cv2.CvtColor(source, drawing, ColorConversionCodes.GRAY2BGR);
+    }
+    else
+    {
+        source.CopyTo(drawing);
+    }
+
+    if (string.Equals(variant, "mask", StringComparison.OrdinalIgnoreCase))
+    {
+        Cv2.Rectangle(drawing, new Rect(80, 20, 52, 24), new Scalar(255, 0, 255), 2, LineTypes.AntiAlias);
+        Cv2.PutText(drawing, "MASK", new OpenCvSharp.Point(81, 16), HersheyFonts.HersheySimplex, 0.45, new Scalar(255, 0, 255), 1, LineTypes.AntiAlias);
+    }
+    else
+    {
+        Cv2.Rectangle(drawing, new Rect(0, 0, 180, 140), new Scalar(255, 180, 0), 1, LineTypes.AntiAlias);
+        Cv2.Rectangle(drawing, new Rect(180, 0, 180, 140), new Scalar(255, 180, 0), 1, LineTypes.AntiAlias);
+        Cv2.PutText(drawing, "ROI 0", new OpenCvSharp.Point(6, 14), HersheyFonts.HersheySimplex, 0.42, new Scalar(255, 180, 0), 1, LineTypes.AntiAlias);
+        Cv2.PutText(drawing, "ROI 1", new OpenCvSharp.Point(186, 14), HersheyFonts.HersheySimplex, 0.42, new Scalar(255, 180, 0), 1, LineTypes.AntiAlias);
+    }
+
+    foreach (VisionPipelineObjectResult item in rows ?? Enumerable.Empty<VisionPipelineObjectResult>())
+    {
+        Scalar color = item.Accepted
+            ? new Scalar(0, 220, 0)
+            : new Scalar(0, 0, 255);
+        Cv2.Rectangle(
+            drawing,
+            new Rect(item.BoundsX, item.BoundsY, item.BoundsWidth, item.BoundsHeight),
+            color,
+            2,
+            LineTypes.AntiAlias);
+        string label = item.Accepted
+            ? $"{item.Number} OK R{item.RegionIndex}"
+            : $"{item.Number} {item.RejectReasonCode} R{item.RegionIndex}";
+        Cv2.PutText(
+            drawing,
+            label,
+            new OpenCvSharp.Point(item.BoundsX, Math.Max(13, item.BoundsY - 4)),
+            HersheyFonts.HersheySimplex,
+            0.34,
+            color,
+            1,
+            LineTypes.AntiAlias);
+    }
+
+    Cv2.PutText(
+        drawing,
+        "GREEN=accepted  RED=rejected  geometry=SourceImage",
+        new OpenCvSharp.Point(8, 134),
+        HersheyFonts.HersheySimplex,
+        0.34,
+        new Scalar(0, 220, 255),
+        1,
+        LineTypes.AntiAlias);
+    Cv2.ImWrite(outputPath, drawing);
+}
+
+static void CopyRunDirectory(string sourceDirectory, string destinationDirectory)
+{
+    Directory.CreateDirectory(destinationDirectory);
+    foreach (string filePath in Directory.EnumerateFiles(sourceDirectory, "*", SearchOption.TopDirectoryOnly))
+    {
+        File.Copy(filePath, Path.Combine(destinationDirectory, Path.GetFileName(filePath)), overwrite: true);
+    }
+}
+
+static string SanitizeEvidenceFileName(string value)
+{
+    char[] invalid = Path.GetInvalidFileNameChars();
+    string sanitized = new string((value ?? string.Empty)
+        .Select(character => invalid.Contains(character) ? '_' : character)
+        .ToArray());
+    return string.IsNullOrWhiteSpace(sanitized) ? "sample" : sanitized;
+}
+
 static async Task<int> RunBlobContourAuditBaselineAsync(string? requestedEvidenceDirectory)
 {
     string evidenceDirectory = Path.GetFullPath(
@@ -8173,6 +12411,20 @@ static async Task VerifyObjectDimensionFilterAsync(
         failures.Add($"{toolType}: Object Results Inspector did not retain exactly one accepted row.");
     }
 
+    if (step.ObjectResults.Any(item => string.IsNullOrWhiteSpace(item.CandidateId))
+        || step.ObjectResults.Select(item => item.CandidateId).Distinct(StringComparer.Ordinal).Count() != step.ObjectResults.Count
+        || step.ObjectResults.Any(item => item.NativeIndex < 0)
+        || step.ObjectResults.Any(item => string.IsNullOrWhiteSpace(item.GenerationStage)
+            || !string.Equals(item.CoordinateFrame, "SourceImage", StringComparison.Ordinal)))
+    {
+        failures.Add($"{toolType}: one-pass candidate identity/coordinate metadata was not retained.");
+    }
+
+    if (step.ObjectResults.Any(item => !item.Accepted && string.IsNullOrWhiteSpace(item.RejectReasonCode)))
+    {
+        failures.Add($"{toolType}: rejected candidate rows did not retain a stable reject reason code.");
+    }
+
     string[] expectedReasonPrefixes =
     {
         "Width 52 > MAX_WIDTH 30",
@@ -8208,10 +12460,12 @@ static async Task VerifyObjectDimensionFilterAsync(
             Path.Combine(
                 evidenceDirectory,
                 toolType.ToLowerInvariant() + "_object_dimension_filter_rows.tsv"),
-            new[] { "Number\tAccepted\tArea\tX\tY\tWidth\tHeight\tAngle\tRejectReason" }
+            new[] { "Number\tCandidateId\tNativeIndex\tAccepted\tArea\tX\tY\tWidth\tHeight\tAngle\tRejectReasonCode\tRejectReason\tGenerationStage\tCoordinateFrame" }
                 .Concat(step.ObjectResults.Select(item => string.Join(
                     "\t",
                     item.Number.ToString(CultureInfo.InvariantCulture),
+                    item.CandidateId,
+                    item.NativeIndex.ToString(CultureInfo.InvariantCulture),
                     item.Accepted.ToString(CultureInfo.InvariantCulture),
                     item.Area.ToString("0.###", CultureInfo.InvariantCulture),
                     item.BoundsX.ToString(CultureInfo.InvariantCulture),
@@ -8219,7 +12473,10 @@ static async Task VerifyObjectDimensionFilterAsync(
                     item.BoundsWidth.ToString(CultureInfo.InvariantCulture),
                     item.BoundsHeight.ToString(CultureInfo.InvariantCulture),
                     item.Angle.ToString("0.###", CultureInfo.InvariantCulture),
-                    item.RejectReason))));
+                    item.RejectReasonCode,
+                    item.RejectReason,
+                    item.GenerationStage,
+                    item.CoordinateFrame))));
     }
 
     if (string.Equals(toolType, "Blob", StringComparison.Ordinal))
@@ -8254,6 +12511,17 @@ static async Task VerifyObjectDimensionFilterAsync(
                 {
                     failures.Add($"Blob: saved Run History missed reject reason '{expected}'.");
                 }
+            }
+
+            List<VisionPipelineObjectRunReport> persistedObjects = report?.Steps.SingleOrDefault()?.Objects
+                ?? new List<VisionPipelineObjectRunReport>();
+            if (persistedObjects.Any(item => string.IsNullOrWhiteSpace(item.CandidateId)
+                || item.NativeIndex < 0
+                || string.IsNullOrWhiteSpace(item.RejectReasonCode)
+                && !item.Accepted
+                || !string.Equals(item.CoordinateFrame, "SourceImage", StringComparison.Ordinal)))
+            {
+                failures.Add("Blob: saved Run History missed one-pass candidate metadata.");
             }
         }
         finally
@@ -8557,6 +12825,7 @@ static async Task<int> RunBatchAsync(
             continue;
         }
 
+        string sourceSha256 = ComputeSha256(imagePath);
         using Mat sourceEvidence = source.Clone();
         using VisionRecipeRunResult result = await runner.RunAsync(xmlPath, source);
         completed++;
@@ -8565,13 +12834,12 @@ static async Task<int> RunBatchAsync(
             pipelinePasses++;
         }
 
-        string sourceSha256 = ComputeSha256(imagePath);
         string resultEvidencePath = string.Empty;
         string resultSha256 = string.Empty;
         string evidenceRunPath = string.Empty;
         if (evidencePath != null && evidencePipeline != null)
         {
-            string runName = CreateEvidenceDirectoryName(expected, imagePath);
+            string runName = CreateEvidenceDirectoryName(expected, imagePath, sourceSha256);
             evidenceRunPath = Path.Combine(evidencePath, "runs", runName);
             Directory.CreateDirectory(evidenceRunPath);
             string sourceSnapshotPath = Path.Combine(evidenceRunPath, "source" + Path.GetExtension(imagePath).ToLowerInvariant());
@@ -8646,14 +12914,18 @@ static async Task<int> RunBatchAsync(
             {
                 string stepOverlayPath = string.Empty;
                 if (!string.IsNullOrWhiteSpace(evidenceRunPath)
-                    && string.Equals(step.ToolType, "Matching", StringComparison.OrdinalIgnoreCase)
+                    && (string.Equals(step.ToolType, "Matching", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(step.ToolType, "EdgeBasedMatching", StringComparison.OrdinalIgnoreCase))
                     && evidencePipeline != null
                     && step.Index > 0
                     && step.Index <= evidencePipeline.Steps.Count)
                 {
+                    string overlaySuffix = string.Equals(step.ToolType, "EdgeBasedMatching", StringComparison.OrdinalIgnoreCase)
+                        ? "_edgebasedmatching_overlay.png"
+                        : "_matching_overlay.png";
                     stepOverlayPath = Path.Combine(
                         evidenceRunPath,
-                        step.Index.ToString("00", CultureInfo.InvariantCulture) + "_matching_overlay.png");
+                        step.Index.ToString("00", CultureInfo.InvariantCulture) + overlaySuffix);
                     SaveStepOverlayImage(source, step, evidencePipeline.Steps[step.Index - 1], stepOverlayPath);
                 }
 
@@ -8685,7 +12957,7 @@ static async Task<int> RunBatchAsync(
     return 0;
 }
 
-static string CreateEvidenceDirectoryName(string expected, string imagePath)
+static string CreateEvidenceDirectoryName(string expected, string imagePath, string sourceSha256)
 {
     string name = Path.GetFileNameWithoutExtension(imagePath);
     foreach (char invalidCharacter in Path.GetInvalidFileNameChars())
@@ -8693,7 +12965,8 @@ static string CreateEvidenceDirectoryName(string expected, string imagePath)
         name = name.Replace(invalidCharacter, '_');
     }
 
-    return expected + "_" + name;
+    string hashSuffix = sourceSha256.Length >= 12 ? sourceSha256[..12] : sourceSha256;
+    return expected + "_" + name + "_" + hashSuffix;
 }
 
 static string ComputeSha256(string path)
@@ -9094,10 +13367,52 @@ static void DrawRectangleOverlay(
     int right = Math.Clamp((int)Math.Round(overlay.BoundsX + overlay.BoundsWidth), x + 1, preview.Width);
     int bottom = Math.Clamp((int)Math.Round(overlay.BoundsY + overlay.BoundsHeight), y + 1, preview.Height);
     Rect bounds = new Rect(x, y, right - x, bottom - y);
+    float centerX = overlay.CenterX;
+    float centerY = overlay.CenterY;
+    if (float.IsNaN(centerX) || float.IsInfinity(centerX)
+        || float.IsNaN(centerY) || float.IsInfinity(centerY))
+    {
+        centerX = bounds.X + bounds.Width / 2F;
+        centerY = bounds.Y + bounds.Height / 2F;
+    }
 
-    Cv2.Rectangle(preview, bounds, color, thickness, LineTypes.AntiAlias);
-    DrawCross(preview, ClampPoint(preview, overlay.CenterX, overlay.CenterY), color, thickness);
+    if (Math.Abs(overlay.Angle) < 0.000001 || double.IsNaN(overlay.Angle) || double.IsInfinity(overlay.Angle))
+    {
+        Cv2.Rectangle(preview, bounds, color, thickness, LineTypes.AntiAlias);
+    }
+    else
+    {
+        double radians = -overlay.Angle * Math.PI / 180D;
+        float cos = (float)Math.Cos(radians);
+        float sin = (float)Math.Sin(radians);
+        float halfWidth = bounds.Width / 2F;
+        float halfHeight = bounds.Height / 2F;
+
+        OpenCvSharp.Point[] corners =
+        {
+            RotatePointAroundCenter(-halfWidth, -halfHeight, centerX, centerY, cos, sin),
+            RotatePointAroundCenter(halfWidth, -halfHeight, centerX, centerY, cos, sin),
+            RotatePointAroundCenter(halfWidth, halfHeight, centerX, centerY, cos, sin),
+            RotatePointAroundCenter(-halfWidth, halfHeight, centerX, centerY, cos, sin)
+        };
+        Cv2.Polylines(preview, new[] { corners }, true, color, thickness, LineTypes.AntiAlias);
+    }
+
+    DrawCross(preview, ClampPoint(preview, centerX, centerY), color, thickness);
     DrawLabel(preview, label, new OpenCvSharp.Point(bounds.X, Math.Max(14, bounds.Y - 5)), color, labelThickness);
+}
+
+static OpenCvSharp.Point RotatePointAroundCenter(
+    float x,
+    float y,
+    float centerX,
+    float centerY,
+    float cos,
+    float sin)
+{
+    return new OpenCvSharp.Point(
+        (int)Math.Round(centerX + x * cos - y * sin),
+        (int)Math.Round(centerY + x * sin + y * cos));
 }
 
 static void DrawLineOverlay(
@@ -9297,7 +13612,7 @@ foreach (VisionRecipeStepRunSummary step in result.Steps)
         {
             VisionRecipeOverlaySummary overlay = step.Overlays[overlayIndex];
             Console.WriteLine(
-                "  Overlay {0:000}: {1} Bounds=({2:0.#},{3:0.#},{4:0.#},{5:0.#}) Center=({6:0.#},{7:0.#}) Label={8}",
+                "  Overlay {0:000}: {1} Bounds=({2:0.#},{3:0.#},{4:0.#},{5:0.#}) Center=({6:0.#},{7:0.#}) Angle={8:0.###} Label={9}",
                 overlayIndex + 1,
                 overlay.Kind,
                 overlay.BoundsX,
@@ -9306,6 +13621,7 @@ foreach (VisionRecipeStepRunSummary step in result.Steps)
                 overlay.BoundsHeight,
                 overlay.CenterX,
                 overlay.CenterY,
+                overlay.Angle,
                 overlay.Label);
             if (string.Equals(overlay.Kind, "Line", StringComparison.OrdinalIgnoreCase))
             {

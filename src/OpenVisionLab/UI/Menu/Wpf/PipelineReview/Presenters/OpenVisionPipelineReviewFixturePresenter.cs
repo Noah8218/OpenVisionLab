@@ -46,7 +46,7 @@ namespace OpenVisionLab
         public static OpenVisionPipelineReviewFixtureState Create(
             VisionPipeline pipeline,
             Func<VisionPipelineStep, VisionPipelineStepResultSummary> resolveSummary,
-            Func<string, Bitmap> resolveLayerPreview,
+            Func<string, Bitmap> acquireLayerPreview,
             int preferredMeasurementIndex = -1)
         {
             IReadOnlyList<VisionPipelineStep> steps = pipeline?.Steps;
@@ -185,9 +185,9 @@ namespace OpenVisionLab
                 templatePreview = lineFixtureProducer
                     ? null
                     : TryLoadTemplatePreview(templateValue);
-                Bitmap source = resolveLayerPreview?.Invoke(producer.InputLayer);
-                Bitmap normalized = normalizeSummary?.Success == true
-                    ? resolveLayerPreview?.Invoke(normalize.OutputLayer)
+                using Bitmap source = acquireLayerPreview?.Invoke(producer.InputLayer);
+                using Bitmap normalized = normalizeSummary?.Success == true
+                    ? acquireLayerPreview?.Invoke(normalize.OutputLayer)
                     : null;
                 string sourceText = SafeText(producer.InputLayer, "-");
                 string normalizedText = SafeText(normalize.OutputLayer, "-");

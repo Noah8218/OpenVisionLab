@@ -5,6 +5,7 @@ using OpenCvSharp;
 using OpenVisionLab.ImageCanvas.CanvasShapes;
 using OpenVisionLab.ImageCanvas.Model;
 using OpenVisionLab.ImageCanvas.ViewModels;
+using OpenVisionLab.Property;
 using System;
 using System.Collections.Generic;
 using System.Drawing;

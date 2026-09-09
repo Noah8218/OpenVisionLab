@@ -20,6 +20,34 @@ namespace OpenVisionLab
         public VisionPipelineStepResult StepResult { get; set; }
     }
 
+    internal enum VisionPipelineStepCompletionStatus
+    {
+        Completed,
+        TimedOut,
+        Canceled
+    }
+
+    internal sealed class VisionPipelineStepCompletion
+    {
+        public VisionPipelineStepCompletion(
+            VisionPipelineStepCompletionStatus status,
+            bool workerDrained,
+            Exception drainException = null)
+        {
+            Status = status;
+            WorkerDrained = workerDrained;
+            DrainException = drainException;
+        }
+
+        public VisionPipelineStepCompletionStatus Status { get; }
+
+        public bool WorkerDrained { get; }
+
+        public Exception DrainException { get; }
+
+        public bool CompletedWithinDeadline => Status == VisionPipelineStepCompletionStatus.Completed;
+    }
+
     internal static class VisionPipelineExecutionService
     {
         private sealed class StepRuntimeValidationResult
@@ -211,21 +239,21 @@ namespace OpenVisionLab
                         : VisionPipelineArithmeticStep.IsArithmetic(runtimeStep)
                             ? VisionPipelineArithmeticStep.Execute(runtimeStep, input, context)
                             : ExecuteStep(runtimeStep, input));
-                bool completedWithinDeadline = await WaitForStepCompletionAsync(
+                VisionPipelineStepCompletion completion = await WaitForStepCompletionStatusAsync(
                     runTask,
                     stepTimeoutMilliseconds,
                     cancellationToken);
 
                 VisionToolResult toolResult;
-                if (!completedWithinDeadline)
+                if (!completion.CompletedWithinDeadline)
                 {
                     stepStopwatch.Stop();
 
-                    string message = cancellationToken.IsCancellationRequested
+                    string message = completion.Status == VisionPipelineStepCompletionStatus.Canceled
                         ? "Step canceled before completion."
                         : $"Step timeout after {stepTimeoutMilliseconds / 1000} seconds.";
                     toolResult = VisionToolResult.Failed(
-                        cancellationToken.IsCancellationRequested
+                        completion.Status == VisionPipelineStepCompletionStatus.Canceled
                             ? VisionToolErrorCode.StepCanceled
                             : VisionToolErrorCode.StepTimeout,
                         message,
@@ -452,18 +480,36 @@ namespace OpenVisionLab
             });
         }
 
-        internal static async Task<bool> WaitForStepCompletionAsync(
+        internal static async Task<VisionPipelineStepCompletion> WaitForStepCompletionStatusAsync(
             Task<VisionToolResult> runTask,
             int timeoutMilliseconds,
             CancellationToken cancellationToken)
         {
-            Task delayTask = Task.Delay(timeoutMilliseconds, cancellationToken);
-            Task completedTask = await Task.WhenAny(runTask, delayTask).ConfigureAwait(false);
-            if (completedTask == runTask)
+            if (runTask == null)
             {
-                return true;
+                throw new ArgumentNullException(nameof(runTask));
             }
 
+            if (runTask.IsCompleted)
+            {
+                return new VisionPipelineStepCompletion(
+                    VisionPipelineStepCompletionStatus.Completed,
+                    workerDrained: true);
+            }
+
+            Task delayTask = Task.Delay(timeoutMilliseconds, cancellationToken);
+            Task completedTask = await Task.WhenAny(runTask, delayTask).ConfigureAwait(false);
+            if (ReferenceEquals(completedTask, runTask))
+            {
+                return new VisionPipelineStepCompletion(
+                    VisionPipelineStepCompletionStatus.Completed,
+                    workerDrained: true);
+            }
+
+            VisionPipelineStepCompletionStatus status = cancellationToken.IsCancellationRequested
+                ? VisionPipelineStepCompletionStatus.Canceled
+                : VisionPipelineStepCompletionStatus.TimedOut;
+            Exception drainException = null;
             try
             {
                 VisionToolResult lateResult = await runTask.ConfigureAwait(false);
@@ -471,6 +517,7 @@ namespace OpenVisionLab
             }
             catch (Exception ex)
             {
+                drainException = ex;
                 OVLog.Write(
                     LogCategory.Vision,
                     LogLevel.Warning,
@@ -478,7 +525,19 @@ namespace OpenVisionLab
                     ex.GetBaseException().Message);
             }
 
-            return false;
+            return new VisionPipelineStepCompletion(status, workerDrained: true, drainException: drainException);
+        }
+
+        internal static async Task<bool> WaitForStepCompletionAsync(
+            Task<VisionToolResult> runTask,
+            int timeoutMilliseconds,
+            CancellationToken cancellationToken)
+        {
+            VisionPipelineStepCompletion completion = await WaitForStepCompletionStatusAsync(
+                runTask,
+                timeoutMilliseconds,
+                cancellationToken).ConfigureAwait(false);
+            return completion.CompletedWithinDeadline;
         }
 
         private static StepRuntimeValidationResult ValidateStepConfiguration(VisionPipelineStep step)

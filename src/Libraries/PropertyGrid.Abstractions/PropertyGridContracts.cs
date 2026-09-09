@@ -21,6 +21,10 @@ namespace OpenVisionLab.PropertyGrid
         public double EditorColumnMinWidth { get; set; } = 160;
         public bool ShowSearchBox { get; set; } = true;
 
+        // The application owns tool-specific classification. The bridge only applies the
+        // returned result to the generated row presentation.
+        public Func<object, string, bool> ChildParameterPredicate { get; set; }
+
         public static PropertyGridDisplayOptions ToolForm => new PropertyGridDisplayOptions
         {
             PropertyNameColumnWidth = 150,

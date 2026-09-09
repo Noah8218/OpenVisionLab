@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "locator-relative-blob-integration-recipe-v1",
+  "templateArtifactId": "locator-template",
+  "templatePath": "templates/Fixture_Locator_Synthetic_Template.png",
+  "searchRoi": "0,0,572,420",
+  "inspectionRoi": "320,180,60,50",
+  "referencePose": "120,100,0,1,572,420",
+  "scoreMinimum": "0.8",
+  "scoreMargin": "10",
+  "angleMinimum": "-5",
+  "angleMaximum": "5",
+  "scaleRatioMinimum": "0.8",
+  "scaleRatioMaximum": "1.8",
+  "minimumValidPixelRatio": "0.25",
+  "threshold": "170",
+  "minimumArea": "700",
+  "maximumArea": "1300",
+  "expectedCount": ""
+}
