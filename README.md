@@ -13,7 +13,7 @@ This project is maintained using explicit version numbers. The current value is 
 
 ### Recent version history
 
-#### `2.2.0-dev.1 (2026-09-09)
+#### `v2.2.0-dev.1` (2026-09-09)
 
 - Aligns the application, manual, and integration identity surfaces to one version.
 - Promotes the verified ImageCanvas, Image Compare, Recipe, Shell, PropertyGrid, Learn, and namespace ownership boundaries.
