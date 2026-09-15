@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "manualVersion": "2026-08-01",
-  "applicationVersion": "2.2.0-dev.1",
+  "applicationVersion": "2.2.0-dev.3",
   "title": "OpenVisionLab User Manual",
   "sections": [
     { "id": "first-start", "title": "1. First run", "path": "en/workflows/01_FIRST_START.md", "kind": "workflow" },

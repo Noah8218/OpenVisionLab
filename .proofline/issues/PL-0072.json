@@ -1,0 +1,182 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0072",
+    "aliases": [
+      "OPENVISIONLAB-2D014-PIXELPERMM-FINITE-20260915"
+    ],
+    "type": "bug",
+    "mode": "simple",
+    "title": "Fix PIXELPERMM unit and finite conversion contract",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "scheduled 2D task execution and source review",
+    "summary": "2D-014 identified that the legacy PIXELPERMM name represents mm/px at runtime, while positive-only checks allowed infinity and multiplication overflow could publish non-finite millimeter metrics.",
+    "refs": [
+      "C:\\Users\\USER\\Downloads\\OpenVisionLab_2D_tasks.json",
+      "docs\\contracts\\openvisionlab\\OPENVISIONLAB_TWO_POINT_SCALE_TEACHING_CONTRACT.md",
+      "docs\\admin\\OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "AGENTS.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "The existing legacy PIXELPERMM key remains unchanged and is documented as millimeters per pixel. VisionPipelineMetricEnrichmentService now owns finite-positive scale and finite-product conversion for overlay, geometry, circle, distance, and curve metrics; direct LineDistance, CurveBandProfile, GapEdgePair, PinArrayGap, and InspectionAlgorithm paths reuse that owner. Shared pipeline validation rejects non-finite or negative scale parameters while preserving PIXELPERMM=0 as intentional pixel-only state. Focused unit, overflow, XML, validator, acceptance, prevalidation, and Debug build evidence passed.",
+    "next_action": null
+  },
+  "problem": {
+    "claims": [
+      {
+        "id": "P1",
+        "state": "confirmed",
+        "text": "The previous ResolvePixelPerMm and direct metric paths used a positive-only check, so +Infinity could pass and finite scale multiplication could overflow to a non-finite mm metric.",
+        "evidence_refs": [
+          "E1"
+        ]
+      }
+    ],
+    "impact": "Invalid calibration could produce meaningless physical-unit results or misleading acceptance inputs instead of a clear pixel-only/invalid boundary."
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The public PIXELPERMM XML name and legacy mm/px meaning remain unchanged, and 100 px at 0.01 mm/px yields 1 mm across Line, Bounds, Circle, Geometry, Distance, and Curve metric families.",
+      "evidence_refs": [
+        "E2",
+        "E4"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "NaN, positive/negative infinity, zero, negative scales, and finite-product overflow publish no new millimeter metric; zero remains an intentional pixel-only state.",
+      "evidence_refs": [
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "The shared pipeline Validator rejects non-finite or negative PIXELPERMM, LeftPIXELPERMM, and RightPIXELPERMM values before execution while existing finite acceptance and prevalidation contracts remain passing.",
+      "evidence_refs": [
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "Legacy PIXELPERMM survives XML save/reopen without key or value migration.",
+      "evidence_refs": [
+        "E2"
+      ]
+    },
+    {
+      "id": "C5",
+      "text": "The changed application and smoke projects build with zero errors, the focused contract dispatch is runnable, and no Original repository or external system is mutated.",
+      "evidence_refs": [
+        "E5"
+      ]
+    },
+    {
+      "id": "C6",
+      "text": "Completion evidence records the current owners, actual call path, mutable-state writers, public/XML contract, shortest reading order, focused checks, and remaining runtime/UI boundary.",
+      "evidence_refs": [
+        "E1",
+        "E6"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0060"
+    }
+  ],
+  "context": [
+    {
+      "kind": "owner-map",
+      "location": "VisionPipelineMetricEnrichmentService owns shared pixel-to-mm conversion; VisionPipelineValidation owns pipeline admission; VisionPipelineLineDistanceTool, VisionPipelineCurveBandProfileTool, VisionPipelineGapEdgePairTool, VisionPipelinePinArrayGapTool, and InspectionAlgorithm reuse the conversion owner; SerializeHelper owns XML persistence."
+    },
+    {
+      "kind": "state-writer",
+      "location": "VisionPipelineStep.Parameters writes the serialized scale; tool execution writes VisionToolResult.Metrics; enrichment writes derived mm metrics; Validator writes only validation errors/warnings."
+    },
+    {
+      "kind": "reading-order",
+      "location": "VisionPipelineMetricEnrichmentService.cs -> VisionPipelineValidation.cs -> direct metric tool call sites -> VisionPipelineExecutionService.Enrich call -> PixelPerMmFiniteUnitContract.cs -> stable contract and current handoff."
+    },
+    {
+      "kind": "boundary",
+      "location": "This is a source/core and deterministic smoke contract. Actual WPF rendered calibration display, desktop EXE monitor placement, theme/DPI/input rows, camera/hardware qualification, and physical metrology certification remain unverified."
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "evidence-directory",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d014-pixelpermm-finite-unit-20260915",
+      "summary": "Focused conversion report, legacy XML round-trip, acceptance/prevalidation regression reports, and current Debug build outputs."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "review",
+      "location": "src/OpenVisionLab/Core/Pipeline/Validation/VisionPipelineMetricEnrichmentService.cs; src/OpenVisionLab/Core/Pipeline/Validation/VisionPipelineValidation.cs; src/OpenVisionLab/Core/Pipeline/Tools/VisionPipelineLineDistanceTool.cs; src/OpenVisionLab/Core/Pipeline/Tools/VisionPipelineCurveBandProfileTool.cs; src/OpenVisionLab/Core/Pipeline/Tools/VisionPipelineGapEdgePairTool.cs; src/OpenVisionLab/Core/Pipeline/Tools/VisionPipelinePinArrayGapTool.cs; src/OpenVisionLab/Core/Pipeline/Tools/InspectionAlgorithm.cs",
+      "observation": "Source review confirmed the legacy runtime meaning is mm/px and found positive-only scale checks plus direct multiplication in the shared enrichment and direct tool owners. The patch keeps the XML key, adds finite scale/product conversion once, and routes every identified direct conversion through it.",
+      "observed_at": "2026-09-15T17:24:45+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d014-pixelpermm-finite-unit-20260915/pixelpermm-finite-unit-contract.txt",
+      "observation": "The focused contract passed 5/0: 100 px at 0.01 mm/px converted Line/Bounds/Circle/Geometry/Distance/Curve metrics, invalid and overflow scales published no mm metric, Validator rejected non-finite/negative values while zero stayed pixel-only, and legacy XML round-tripped.",
+      "observed_at": "2026-09-15T17:24:45+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d014-pixelpermm-finite-unit-20260915/acceptance-finite/pipeline-acceptance-finite-contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d014-pixelpermm-finite-unit-20260915/prevalidation/pipeline-prevalidation-contract.txt",
+      "observation": "The existing finite acceptance contract passed 10/0 and the shared Runner prevalidation contract exited 0 after the scale validation change.",
+      "observed_at": "2026-09-15T17:24:45+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "artifact",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d014-pixelpermm-finite-unit-20260915/legacy-pixelpermm.xml",
+      "observation": "The saved XML contains the unchanged public PIXELPERMM key with value 0.01 and reopened successfully.",
+      "observed_at": "2026-09-15T17:24:45+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "build",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d014-pixelpermm-finite-unit-20260915/openvisionlab-release-build.log; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d014-pixelpermm-finite-unit-20260915/visionreciperunnersmoke-release-build.log; C:/Git/2D/Dev/bin/Debug/OpenVisionLab.dll; C:/Git/2D/Dev/tools/VisionRecipeRunnerSmoke/bin/Debug/net8.0-windows7.0/VisionRecipeRunnerSmoke.dll",
+      "observation": "OpenVisionLab Debug and Release builds completed with 0 warnings and 0 errors. VisionRecipeRunnerSmoke Debug and Release builds completed with 0 errors and 16 nullable warnings, including one in the new contract and the existing Preview equivalence warnings.",
+      "observed_at": "2026-09-15T17:28:16+09:00"
+    },
+    {
+      "id": "E6",
+      "kind": "review",
+      "location": "docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "observation": "The stable contract and live handoff record the mm/px meaning, finite/overflow behavior, owner map, smoke command, evidence path, and unverified UI/hardware boundary.",
+      "observed_at": "2026-09-15T17:24:45+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-15T17:28:16+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "Resolve the shared finite unit conversion boundary, route direct metric owners through it, validate non-finite/negative legacy scales, preserve zero pixel-only behavior and XML compatibility, and close after focused 5/0 plus regression/build evidence.",
+      "evidence_refs": [
+        "E2",
+        "E3",
+        "E4",
+        "E5",
+        "E6"
+      ]
+    }
+  ],
+  "created_at": "2026-09-15T17:24:45+09:00",
+  "updated_at": "2026-09-15T17:28:16+09:00"
+}

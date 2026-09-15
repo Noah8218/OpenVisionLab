@@ -232,18 +232,46 @@ namespace OpenVisionLab
                     LineTypes.AntiAlias);
             }
 
-            OpenCvSharp.Point labelPoint = new OpenCvSharp.Point(
-                Math.Clamp(profile.ScanStart.X + 4, 0, Math.Max(0, target.Width - 1)),
-                Math.Clamp(profile.ScanStart.Y - 5, 12, Math.Max(12, target.Height - 1)));
+            const string labelPrefix = "Profile ";
+            string label = labelPrefix + profile.LineName;
+            OpenCvSharp.Size textSize = Cv2.GetTextSize(label, HersheyFonts.HersheySimplex, 0.38, 1, out int baseline);
+            OpenCvSharp.Rect labelBounds = ResolveLineSignalLabelBounds(target.Size(), profile.ScanStart, profile.ScanEnd, textSize, baseline);
+            OpenCvSharp.Point labelPoint = new OpenCvSharp.Point(labelBounds.X, labelBounds.Y + textSize.Height);
             Cv2.PutText(
                 target,
-                "Profile " + profile.LineName,
+                label,
                 labelPoint,
                 HersheyFonts.HersheySimplex,
                 0.38,
                 scanColor,
                 1,
                 LineTypes.AntiAlias);
+        }
+
+        internal static OpenCvSharp.Rect ResolveLineSignalLabelBounds(
+            OpenCvSharp.Size imageSize,
+            OpenCvSharp.Point scanStart,
+            OpenCvSharp.Point scanEnd,
+            OpenCvSharp.Size textSize,
+            int baseline)
+        {
+            const int margin = 4;
+            const int lineGap = 6;
+            int width = Math.Min(Math.Max(1, textSize.Width), Math.Max(1, imageSize.Width - margin * 2));
+            int height = Math.Min(
+                Math.Max(1, textSize.Height + Math.Max(0, baseline)),
+                Math.Max(1, imageSize.Height - margin * 2));
+            int minX = Math.Min(scanStart.X, scanEnd.X);
+            int maxX = Math.Max(scanStart.X, scanEnd.X);
+            int preferredX = minX - lineGap - width;
+            if (preferredX < margin)
+            {
+                preferredX = maxX + lineGap;
+            }
+
+            int x = Math.Clamp(preferredX, margin, Math.Max(margin, imageSize.Width - margin - width));
+            int y = margin;
+            return new OpenCvSharp.Rect(x, y, width, height);
         }
 
         public static Mat CreateAffineTransformPreviewImage(Mat transformedImage, IEnumerable<VisionToolOverlay> overlays)

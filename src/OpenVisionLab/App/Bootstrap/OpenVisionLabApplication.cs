@@ -14,11 +14,6 @@ namespace OpenVisionLab
 
         public int Run(string[] args)
         {
-            if (TryRunEmbeddedSmoke(args))
-            {
-                return 0;
-            }
-
             using OpenVisionLabSingleInstanceGuard singleInstance =
                 OpenVisionLabSingleInstanceGuard.TryCreate(SingleInstanceMutexName);
 
@@ -35,6 +30,7 @@ namespace OpenVisionLab
             var application = Application.Current ?? new Application();
             ShutdownMode previousShutdownMode = application.ShutdownMode;
             OpenVisionStartupLoadingWindow startupLoadingWindow = null;
+            ApplicationRuntimeContext runtimeContext = null;
 
             try
             {
@@ -44,7 +40,7 @@ namespace OpenVisionLab
                 startupLoadingWindow = new OpenVisionStartupLoadingWindow();
                 startupLoadingWindow.ShowReady();
 
-                var runtimeContext = ApplicationRuntimeContext.CreateDefault();
+                runtimeContext = ApplicationRuntimeContext.CreateDefault();
                 runtimeContext.Global.RestoreLastRecipe();
                 runtimeContext.Global.System.ApplyLogConfig();
                 OVLog.Write(
@@ -96,10 +92,10 @@ namespace OpenVisionLab
                 };
                 shellWindow.ContentRendered += startupContentRendered;
 
-                application.Run(shellWindow);
+                int exitCode = application.Run(shellWindow);
 
                 OVLog.Write(LogCategory.System, LogLevel.Info, "Application shutdown.");
-                return 0;
+                return exitCode;
             }
             finally
             {
@@ -109,16 +105,13 @@ namespace OpenVisionLab
                 {
                     application.ShutdownMode = previousShutdownMode;
                 }
+
+                // The shell view releases only resources it owns. The default
+                // DisplayManager is process-scoped and is finalized here by the
+                // application bootstrap after the WPF dispatcher has stopped.
+                (runtimeContext?.DisplayManager as IDisposable)?.Dispose();
             }
         }
 
-        private static bool TryRunEmbeddedSmoke(string[] args)
-        {
-#if OPENVISIONLAB_EMBEDDED_SMOKE
-            return OpenVisionLabDirectSmokeRunner.TryRun(args);
-#else
-            return false;
-#endif
-        }
     }
 }

@@ -56,6 +56,52 @@
       ],
       "semanticSelectionRule": "The magenta lower edge must be the nearest sustained bright transition after the dark core immediately below the selected upper edge; a farther Hough edge is not the same-band boundary.",
       "contractDocument": "docs/OPENVISIONLAB_DARK_BAND_GAP_INTENT_SKILL.md"
+    },
+    {
+      "name": "Locator-relative Blob (Evidence constrained)",
+      "skillId": "locator-relative-blob-v1",
+      "status": "Phase E implementation/pilot; runtime qualification deferred",
+      "requiredOperatorInputs": [
+        "existing cropped locator template",
+        "one reviewed search ROI and one fixed reference-coordinate Blob ROI",
+        "reviewed x,y,angle,scale,imageWidth,imageHeight reference pose",
+        "score/margin/angle/scale/valid-pixel gates",
+        "Threshold and positive Blob area limits",
+        "optional exact ResultCount gate owned by the operator"
+      ],
+      "lockedToolFamily": [
+        "Matching",
+        "RotateScale",
+        "Threshold",
+        "Blob"
+      ],
+      "forbiddenTools": [
+        "per-image coordinate inference",
+        "multi-ROI",
+        "masking",
+        "perspective/homography",
+        "provider/browser automation"
+      ],
+      "unitBoundary": "pixel coordinates and px area only; no physical calibration claim",
+      "judgementBoundary": "measurement-only unless an operator-owned exact ResultCount gate is supplied; held-out qualification is separate",
+      "requiredParameters": [
+        "Matching NUM_MATCH=2 ambiguity gate",
+        "Matching NUM_MATCH=1 with USE_AS_FIXTURE_FRAME=true and FIXTURE_FRAME_NAME=LocatorFrame",
+        "RotateScale USE_FIXTURE_FRAME=true and FIXTURE_APPLY_MODE=NormalizeImage",
+        "Threshold DeviceAligned -> AlignedInspectionBinary",
+        "Blob fixed LocatorFrame ROI with USE_MULTI_ROI=false",
+        "source/template/overlay SHA-256 verified evidence packet"
+      ],
+      "requiredDrawings": [
+        "locator candidates and selected pose",
+        "normalized valid bounds/reference axes",
+        "fixed reference-coordinate ROI",
+        "threshold layer",
+        "selected Blob candidate geometry",
+        "named PASS/REJECT or MEASURE ONLY context"
+      ],
+      "semanticSelectionRule": "The LLM selects CandidateId only from a hash-verified evidence packet; deterministic compilation obtains the pose and keeps the reviewed Blob ROI fixed.",
+      "contractDocument": "docs/contracts/openvisionlab/OPENVISIONLAB_LOCATOR_RELATIVE_BLOB_INTENT_SKILL.md"
     }
   ],
   "xmlContract": {

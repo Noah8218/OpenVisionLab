@@ -13,6 +13,11 @@ internal static class Program
     {
         Console.OutputEncoding = Encoding.UTF8;
 
+        if (args.Length > 0 && string.Equals(args[0], "--read-assembly-metadata", StringComparison.Ordinal))
+        {
+            return AssemblyMetadataReader.Run(args.Skip(1).ToArray());
+        }
+
         string repoRoot = args.Length > 0 && !string.IsNullOrWhiteSpace(args[0])
             ? Path.GetFullPath(args[0])
             : FindRepoRoot(AppContext.BaseDirectory);
@@ -60,9 +65,28 @@ internal static class Program
     {
         string program = Read(repoRoot, @"src\OpenVisionLab\Program.cs");
         RequireContains(program, "OpenVisionShellHostWindow", "Application starts through the WPF shell.");
+        RequireContains(program, "return Environment.ExitCode;", "Embedded smoke result propagates to the process exit code.");
+
+        string application = Read(repoRoot, @"src\OpenVisionLab\App\Bootstrap\OpenVisionLabApplication.cs");
+        RequireNotContains(application, "TryRunEmbeddedSmoke", "Application bootstrap does not duplicate embedded smoke dispatch.");
 
         string shellHost = Read(repoRoot, @"src\OpenVisionLab\UI\Menu\Wpf\OpenVisionShellHostView.xaml.cs");
         RequireContains(shellHost, "SetDirectRunPending", "Pending state is surfaced by the WPF shell direct-run pending state.");
+
+        string shellInteractions = shellHost;
+        RequireNotContains(shellInteractions, "global.System.SaveConfig()", "Shell View interactions do not persist the selected Recipe directly.");
+        RequireContains(shellInteractions, "rememberWorkspaceImagePath: workspaceImageController.RememberWorkspaceImagePath", "Shell View forwards remembered workspace-image state to the Workspace owner.");
+        RequireContains(shellInteractions, "viewModel.RefreshToolReadiness", "Shell View forwards readiness refresh notifications to the ViewModel owner.");
+        RequireNotContains(shellInteractions, "OpenVisionNativeToolSettingsStore.Load", "Shell View interactions do not read tool readiness settings directly.");
+
+        string recipeController = Read(repoRoot, @"src\OpenVisionLab\UI\Menu\Wpf\Shell\Recipe\OpenVisionShellHostRecipeController.cs");
+        RequireContains(recipeController, "public void SwitchRuntimeRecipe", "Recipe selection persistence has a concrete Recipe controller owner.");
+        RequireContains(recipeController, "public bool SaveRuntimeRecipeTools", "Recipe tool persistence has a concrete Recipe controller owner.");
+        RequireContains(recipeController, "runtimeContext.Global?.Recipe?.SaveTools()", "Recipe controller preserves the existing tool-save contract.");
+        RequireNotContains(shellHost, "Global.Recipe.SaveTools()", "Shell composition does not call Recipe persistence directly.");
+
+        string workspaceImageController = Read(repoRoot, @"src\OpenVisionLab\UI\Menu\Wpf\Shell\Workspace\OpenVisionShellHostWorkspaceImageController.cs");
+        RequireContains(workspaceImageController, "public void RememberWorkspaceImagePath", "Remembered workspace-image persistence has a concrete Workspace image owner.");
 
         string documentController = Read(repoRoot, @"src\OpenVisionLab\UI\Menu\Wpf\Shell\Documents\OpenVisionShellHostDocumentController.cs");
         RequireContains(documentController, "ActivatePendingTool", "Pending tool state is represented by a WPF ViewModel.");
@@ -73,8 +97,10 @@ internal static class Program
 
         string commandCatalog = Read(repoRoot, @"src\OpenVisionLab\UI\Menu\Wpf\Shell\Commands\OpenVisionShellCommandCatalog.cs");
         RequireContains(commandCatalog, "PendingAlgorithmTool", "Algorithm tools without completed views are marked as pending work.");
+        RequireContains(commandCatalog, "public void RefreshToolReadiness", "Tool readiness policy has a concrete ViewModel owner.");
+        RequireContains(commandCatalog, "VisionPipelineArithmeticStep.RequiresInputLayerB", "Tool readiness owner preserves the Arithmetic input policy.");
 
-        string recipeCommandSurface = ReadSourceFamily(repoRoot, @"src\OpenVisionLab\UI\Menu\Wpf\OpenVisionShellHostRecipeCommandSurface.cs");
+        string recipeCommandSurface = ReadSourceFamily(repoRoot, @"src\OpenVisionLab\UI\Menu\Wpf\Recipe\CommandSurface\RecipeCommandSurface.cs");
         RequireNotContains(recipeCommandSurface, "public sealed class OpenVisionRecipeValidationSuiteScopeOption", "Recipe command surface no longer owns validation/review model declarations.");
         RequireNotContains(recipeCommandSurface, "public sealed class OpenVisionRecipeSampleRunSummary", "Recipe command surface no longer owns sample/batch model declarations.");
 
@@ -119,8 +145,9 @@ internal static class Program
         RequireNotContains(recipeCommandSurface, "private static string FormatDetailedStepDiff(", "Recipe command surface does not format detailed step diffs.");
         RequireNotContains(recipeCommandSurface, "private static string FormatParameterDiff(", "Recipe command surface does not format parameter diffs.");
         RequireNotContains(recipeCommandSurface, "private static int CountDependencyParameters(", "Recipe command surface does not count comparison dependency paths.");
-        RequireContains(recipeCommandSurface, "OpenVisionRecipePipelineComparisonPresenter.BuildDraftImportReview", "Recipe command surface delegates LLM draft review presentation.");
-        RequireContains(recipeCommandSurface, "OpenVisionRecipePipelineComparisonPresenter.BuildDraftDiffReview", "Recipe command surface delegates LLM draft diff presentation.");
+        RequireNotContains(recipeCommandSurface, "private string BuildLlmDraftReviewReport(", "Recipe command surface does not load active Pipeline XML for LLM draft review.");
+        RequireNotContains(recipeCommandSurface, "private string BuildLlmDraftDiffReport(", "Recipe command surface does not load active Pipeline XML for LLM draft diff review.");
+        RequireContains(recipeCommandSurface, "llmDraftReviewOwner.Build", "Recipe command surface delegates LLM draft review and active-Pipeline lookup.");
         RequireContains(recipeCommandSurface, "OpenVisionRecipePipelineComparisonPresenter.BuildVariantComparison", "Recipe command surface delegates active/selected pipeline comparison presentation.");
 
         string recipePipelineComparisonPresenter = Read(repoRoot, @"src\OpenVisionLab\UI\Menu\Wpf\Recipe\Review\OpenVisionRecipePipelineComparisonPresenter.cs");
@@ -129,6 +156,24 @@ internal static class Program
         RequireContains(recipePipelineComparisonPresenter, "BuildDraftDiffReview", "Recipe pipeline-comparison presenter formats LLM draft diff review.");
         RequireContains(recipePipelineComparisonPresenter, "BuildVariantComparison", "Recipe pipeline-comparison presenter formats active/selected pipeline comparison.");
         RequireContains(recipePipelineComparisonPresenter, "BuildPipelineDiffReport", "Recipe pipeline-comparison presenter owns step and parameter diff formatting.");
+
+        string recipeCommandHandlers = ReadSourceFamily(
+            repoRoot,
+            @"src\OpenVisionLab\UI\Menu\Wpf\Recipe\CommandSurface\RecipeCommandSurface.cs");
+        RequireNotContains(recipeCommandHandlers, "TryReadSelectedPipelineXml", "Recipe command handlers do not read PinArrayGap Pipeline XML directly.");
+        RequireNotContains(recipeCommandHandlers, "OpenVisionRecipePinArrayGapValidationRecordStorage.TrySave", "Recipe command handlers do not persist PinArrayGap identity directly.");
+        RequireNotContains(recipeCommandHandlers, "OpenVisionRecipePinArrayGapValidationRecordStorage.TryLoad", "Recipe command handlers do not load PinArrayGap identity directly.");
+        RequireNotContains(recipeCommandHandlers, "OpenVisionRecipePinArrayGapValidationRecordStorage.TryMatchesCurrent", "Recipe command handlers do not compare PinArrayGap identity directly.");
+        RequireContains(recipeCommandHandlers, "pinArrayGapValidationIdentityOwner.Freeze", "Recipe command handlers delegate PinArrayGap identity freezing.");
+        RequireContains(recipeCommandHandlers, "pinArrayGapValidationIdentityOwner.Evaluate", "Recipe command handlers delegate PinArrayGap identity evaluation.");
+
+        string pinArrayGapValidationIdentityOwner = Read(repoRoot, @"src\OpenVisionLab\UI\Menu\Wpf\Recipe\Validation\OpenVisionRecipePinArrayGapValidationIdentityOwner.cs");
+        RequireContains(pinArrayGapValidationIdentityOwner, "internal sealed class OpenVisionRecipePinArrayGapValidationIdentityOwner", "PinArrayGap identity workflow has an explicit owner.");
+        RequireContains(pinArrayGapValidationIdentityOwner, "OpenVisionRecipePinArrayGapValidationIdentityResult Freeze", "PinArrayGap identity owner exposes a freeze result contract.");
+        RequireContains(pinArrayGapValidationIdentityOwner, "OpenVisionRecipePinArrayGapValidationIdentityResult Evaluate", "PinArrayGap identity owner exposes an evaluation result contract.");
+        RequireContains(pinArrayGapValidationIdentityOwner, "OpenVisionRecipePinArrayGapValidationRecordStorage", "PinArrayGap identity owner reuses the existing persisted record owner.");
+        RequireContains(pinArrayGapValidationIdentityOwner, "TryGetFrozenSelectionNames", "PinArrayGap identity owner projects frozen split names for selection restoration.");
+        RequireNotContains(pinArrayGapValidationIdentityOwner, "System.Windows", "PinArrayGap identity owner is independent of WPF state.");
 
         RequireNotContains(recipeCommandSurface, "private string BuildPipelineSelectedStepOperatorContextText()", "Recipe command surface does not format selected-step operator context.");
         RequireNotContains(recipeCommandSurface, "private string BuildFailureReviewText()", "Recipe command surface does not format failed-step review guidance.");
@@ -202,9 +247,127 @@ internal static class Program
         RequireContains(recipeValidationSetPresenter, "BuildNextActionText", "Recipe validation-set presenter formats next action.");
         RequireContains(recipeValidationSetPresenter, "BuildSelectionSummaryText", "Recipe validation-set presenter formats selected-set summary.");
         RequireContains(recipeValidationSetPresenter, "BuildValidationSuiteSummaryText", "Recipe validation-set presenter formats Validation Suite summary.");
+        RequireContains(recipeValidationSetPresenter, "BuildFolderImageRegistrationError", "Recipe validation-set presenter formats folder-registration errors and empty-folder state.");
+        RequireContains(recipeValidationSetPresenter, "BuildEmptyFolderImageRegistrationStatus", "Recipe validation-set presenter formats empty-folder state.");
+        RequireContains(recipeValidationSetPresenter, "BuildImageRegistrationStatus", "Recipe validation-set presenter formats image-registration counts.");
+        RequireContains(recipeValidationSetPresenter, "BuildSaveErrorStatus", "Recipe validation-set presenter formats save failures.");
         RequireNotContains(recipeValidationSetPresenter, "OpenVisionRecipeValidationSetStorage.", "Recipe validation-set presenter does not persist validation sets.");
         RequireNotContains(recipeValidationSetPresenter, "VisionPipelineStorage.TryLoadFromFile(", "Recipe validation-set presenter does not load pipeline XML.");
         RequireNotContains(recipeValidationSetPresenter, "VisionPipelineExecutionService.RunAsync", "Recipe validation-set presenter does not execute a pipeline.");
+
+        string recipeValidationSetCommands = ReadSourceFamily(
+            repoRoot,
+            @"src\OpenVisionLab\UI\Menu\Wpf\Recipe\CommandSurface\RecipeCommandSurface.cs");
+        RequireNotContains(recipeValidationSetCommands, "폴더 이미지 등록 ERROR: ", "Validation-set command surface does not own folder-registration error wording.");
+        RequireNotContains(recipeValidationSetCommands, "No supported images were found directly in the selected folder.", "Validation-set command surface does not own empty-folder wording.");
+        RequireNotContains(recipeValidationSetCommands, "{0} 이미지: 추가 {1}, 갱신 {2}, 건너뜀 {3}", "Validation-set command surface does not own image-registration count wording.");
+        RequireNotContains(recipeValidationSetCommands, "operation + \" ERROR: \" + error", "Validation-set command surface does not own save-error wording.");
+        RequireContains(recipeValidationSetCommands, "OpenVisionRecipeValidationSetPresenter.BuildFolderImageRegistrationError", "Validation-set command surface delegates folder-registration status wording.");
+        RequireContains(recipeValidationSetCommands, "OpenVisionRecipeValidationSetPresenter.BuildEmptyFolderImageRegistrationStatus", "Validation-set command surface delegates empty-folder status wording.");
+        RequireContains(recipeValidationSetCommands, "OpenVisionRecipeValidationSetPresenter.BuildImageRegistrationStatus", "Validation-set command surface delegates image-registration count wording.");
+        RequireContains(recipeValidationSetCommands, "OpenVisionRecipeValidationSetPresenter.BuildSaveErrorStatus", "Validation-set command surface delegates save-error wording.");
+        RequireNotContains(recipeValidationSetCommands, "OpenVisionRecipePinArrayGapValidationRecordStorage.TryLoad", "Validation-set command surface does not load PinArrayGap identity records directly.");
+        RequireContains(recipeValidationSetCommands, "pinArrayGapValidationIdentityOwner.TryGetFrozenSelectionNames", "Validation-set command surface delegates frozen split-name restoration.");
+        string validationSetImageRowsRefresh = ExtractMethodBlock(
+            recipeValidationSetCommands,
+            "private void RefreshValidationSetImageRows()",
+            "Validation-set image-row refresh method remains discoverable.");
+        RequireNotContains(
+            validationSetImageRowsRefresh,
+            "NotifyValidationSetEvidenceChanged();",
+            "Validation-set image-row refresh does not duplicate evidence notifications.");
+        string selectedValidationSetSetter = ExtractMethodBlock(
+            recipeCommandSurface,
+            "public OpenVisionRecipeValidationSetOption SelectedValidationSetOption",
+            "Selected Validation Set projection setter remains discoverable.");
+        RequireContains(
+            selectedValidationSetSetter,
+            "NotifyValidationSetEvidenceChanged();",
+            "Selected Validation Set setter owns the single evidence notification projection.");
+        string validationSetOptionsRefresh = ExtractMethodBlock(
+            recipeValidationSetCommands,
+            "private void RefreshValidationSetOptions(",
+            "Validation-set options refresh method remains discoverable.");
+        int storageFailureBranch = validationSetOptionsRefresh.IndexOf(
+            "if (!storageReady)",
+            StringComparison.Ordinal);
+        int failureSummaryNotification = validationSetOptionsRefresh.IndexOf(
+            "OnPropertyChanged(nameof(ValidationSetSelectionSummaryText));",
+            storageFailureBranch < 0 ? 0 : storageFailureBranch,
+            StringComparison.Ordinal);
+        if (storageFailureBranch < 0 || failureSummaryNotification < storageFailureBranch)
+        {
+            Failures.Add(
+                "Validation-set storage failure branch does not notify the selection summary binding.");
+        }
+        RequireContains(
+            validationSetOptionsRefresh,
+            "RefreshCommandState();",
+            "Validation-set options refresh keeps command-state projection at the shared owner.");
+        RequireNotContains(
+            validationSetOptionsRefresh,
+            "OnPropertyChanged(nameof(ValidationSuiteSummaryText));",
+            "Validation-set options refresh does not duplicate the shared command-state summary notification.");
+
+        string refreshOptions = ExtractMethodBlock(
+            recipeCommandSurface,
+            "public void RefreshOptions()",
+            "RefreshOptions composite refresh method remains discoverable.");
+        RequireContains(
+            refreshOptions,
+            "SetSelectedRecipeName(current, refreshCommandState: false);",
+            "RefreshOptions batches nested command-state refreshes before its outer projection.");
+        RequireContains(
+            refreshOptions,
+            "RefreshCommandState();",
+            "RefreshOptions owns the final shared command-state projection for its composite path.");
+
+        string selectedRecipeNameSetter = ExtractMethodBlock(
+            recipeCommandSurface,
+            "private void SetSelectedRecipeName(",
+            "Selected recipe-name projection method remains discoverable.");
+        RequireContains(
+            selectedRecipeNameSetter,
+            "RefreshPipelineOptions(preferredPipelineName, refreshCommandState);",
+            "Selected recipe-name projection forwards the composite command-state policy to pipeline refresh.");
+        RequireContains(
+            selectedRecipeNameSetter,
+            "RefreshValidationSetOptions(refreshCommandState: refreshCommandState);",
+            "Selected recipe-name projection forwards the composite command-state policy to Validation Set refresh.");
+
+        string pipelineOptionsRefresh = ExtractMethodBlock(
+            recipeCommandSurface,
+            "private void RefreshPipelineOptions(",
+            "Pipeline options refresh method remains discoverable.");
+        RequireContains(
+            pipelineOptionsRefresh,
+            "if (refreshCommandState)",
+            "Pipeline options refresh can defer command-state projection for a composite refresh.");
+
+        RequireContains(
+            validationSetOptionsRefresh,
+            "if (refreshCommandState)",
+            "Validation Set refresh can defer command-state projection for a composite refresh.");
+        RequireContains(
+            recipeCommandSurface,
+            "NotifyOperatorReviewChanged(includeGuidedNextAction: !isRefreshingOptions);",
+            "Selected Recipe summary projection defers its overlapping guided-next-action notification during a composite refresh.");
+        string selectedRecentBatchRunOption = ExtractMethodBlock(
+            recipeCommandSurface,
+            "public OpenVisionRecipeBatchRunOption SelectedRecentBatchRunOption",
+            "Selected recent batch-run projection remains discoverable.");
+        RequireContains(
+            selectedRecentBatchRunOption,
+            "if (!isRefreshingOptions)",
+            "Selected recent batch-run projection defers overlapping rerun notifications during a composite refresh.");
+        RequireContains(
+            recipeCommandSurface,
+            "NotifyQualifiedSnapshotContextChanged(includePreflight: !isRefreshingOptions);",
+            "Qualified Snapshot preflight notification follows the composite refresh policy.");
+        RequireContains(
+            recipeCommandSurface,
+            "private void NotifyQualifiedSnapshotContextChanged(bool includePreflight = true)",
+            "Qualified Snapshot context notifier exposes the composite preflight policy.");
 
         RequireNotContains(recipeCommandSurface, "private string BuildPinGapIntentLatestRunText()", "Recipe command surface does not format Pin gap latest-run feedback.");
         RequireNotContains(recipeCommandSurface, "private string BuildPinGapIntentCalibrationReviewText()", "Recipe command surface does not format Pin gap calibration feedback.");
@@ -626,21 +789,10 @@ internal static class Program
             repoRoot,
             @"src\OpenVisionLab\UI\Menu\Wpf",
             "MENU WPF root retains only the explicit Shell composition boundary.",
-            "OpenVisionShellHostRecipeCommandSurface.cs",
-            "OpenVisionShellHostRecipeCommandSurface.Commands.cs",
-            "OpenVisionShellHostRecipeCommandSurface.Handlers.cs",
-            "OpenVisionShellHostRecipeCommandSurface.LlmXmlDraftWorkflow.cs",
-            "OpenVisionShellHostRecipeCommandSurface.PipelineExchange.cs",
-            "OpenVisionShellHostRecipeCommandSurface.PipelineLifecycle.cs",
-            "OpenVisionShellHostRecipeCommandSurface.QualifiedSnapshots.cs",
-            "OpenVisionShellHostRecipeCommandSurface.RecipeWorkspace.cs",
-            "OpenVisionShellHostRecipeCommandSurface.RunHistory.cs",
-            "OpenVisionShellHostRecipeCommandSurface.ValidationSets.cs",
             "OpenVisionShellHostView.xaml",
-            "OpenVisionShellHostView.xaml.cs",
-            "OpenVisionShellHostView.Interactions.cs");
+            "OpenVisionShellHostView.xaml.cs");
 
-        string recipeCommandSurface = ReadSourceFamily(repoRoot, @"src\OpenVisionLab\UI\Menu\Wpf\OpenVisionShellHostRecipeCommandSurface.cs");
+        string recipeCommandSurface = ReadSourceFamily(repoRoot, @"src\OpenVisionLab\UI\Menu\Wpf\Recipe\CommandSurface\RecipeCommandSurface.cs");
         RequireNotContains(recipeCommandSurface, "internal static class OpenVisionGuidedSetupCatalog", "Recipe command surface does not own the guided-setup catalog declaration.");
         RequireNotContains(recipeCommandSurface, "internal static class OpenVisionRecipeText", "Recipe command surface does not own recipe text localization.");
         RequireNotContains(recipeCommandSurface, "private string BuildLlmIntentSpecificPromptPacketText", "Recipe command surface does not own LLM prompt packet construction.");
@@ -831,7 +983,6 @@ internal static class Program
             "VisionToolSingleInputMatchingToolRuntime.cs",
             "VisionToolSingleInputPropertyToolController.cs",
             "VisionToolSingleInputPropertyToolRuntime.cs",
-            "VisionToolSingleInputPropertyToolShell.DockedInspectorLayoutController.cs",
             "VisionToolSingleInputPropertyToolShell.xaml",
             "VisionToolSingleInputPropertyToolShell.xaml.cs",
             "VisionToolSingleInputPropertyToolViewBase.cs",
@@ -844,7 +995,6 @@ internal static class Program
         RequireToolViewOwnerFiles(repoRoot, @"src\OpenVisionLab\UI\VisionTest\Wpf\Tooling\DoubleInput",
             "VisionToolDoubleInputCustomToolController.cs",
             "VisionToolDoubleInputCustomToolRuntime.cs",
-            "VisionToolDoubleInputCustomToolShell.DockedInspectorLayoutController.cs",
             "VisionToolDoubleInputCustomToolShell.xaml",
             "VisionToolDoubleInputCustomToolShell.xaml.cs",
             "VisionToolDoubleInputCustomToolViewBase.cs",
@@ -883,6 +1033,7 @@ internal static class Program
             "BinaryLearnPresenter.cs",
             "BinaryLearnView.xaml",
             "BinaryLearnView.xaml.cs",
+            "ColorHsvLearnPresenter.cs",
             "FeatureMatchingLearnPresenter.cs",
             "FoundationLearnPresenter.cs",
             "FoundationLearnView.xaml",
@@ -1449,7 +1600,7 @@ internal static class Program
         RequireContains(guidedSetupSpec, "Create Starter XML", "Guided setup spec defines an explicit starter XML action.");
         RequireContains(guidedSetupSpec, "Starter XML creation does not call Preview", "Guided setup spec requires no auto-run verification.");
         RequireContains(guidedSetupSpec, "DistanceMmAvg=0.224", "Guided setup spec records public Pin gap mm/px parity evidence.");
-        string recipeCommandSurface = ReadSourceFamily(repoRoot, @"src\OpenVisionLab\UI\Menu\Wpf\OpenVisionShellHostRecipeCommandSurface.cs");
+        string recipeCommandSurface = ReadSourceFamily(repoRoot, @"src\OpenVisionLab\UI\Menu\Wpf\Recipe\CommandSurface\RecipeCommandSurface.cs");
         string shellHostView = Read(repoRoot, @"src\OpenVisionLab\UI\Menu\Wpf\OpenVisionShellHostView.xaml");
         string screenshotSmoke = Read(repoRoot, @"tools\PipelineViewerScreenshotSmoke\Program.cs");
         string directSmokeRunner = Read(repoRoot, @"tools\OpenVisionLab.DirectSmokeRunner\OpenVisionLabDirectSmokeRunner.cs");
@@ -2866,6 +3017,14 @@ internal static class Program
 
     private static void CheckReleaseAndExternalPolicy(string repoRoot)
     {
+        string solution = Read(repoRoot, "OpenVisionLab.sln");
+        string applicationProject = Read(repoRoot, @"src\OpenVisionLab\OpenVisionLab.csproj");
+        string propertyGridProject = Read(repoRoot, @"src\Libraries\WpfPropertyGridBridge\WpfPropertyGridBridge.csproj");
+        RequireNotContains(solution, "|x86", "Solution does not advertise the unsupported x86 platform.");
+        RequireNotContains(applicationProject, "x86", "Application project does not advertise unsupported x86 output.");
+        RequireNotContains(propertyGridProject, "x86", "WPF PropertyGrid bridge does not advertise unsupported x86 output.");
+        RequireContains(applicationProject, "<PlatformTarget>x64</PlatformTarget>", "Application project keeps the supported x64 platform target.");
+
         string external = Read(repoRoot, @"docs\OPENVISIONLAB_EXTERNAL_REFERENCE_POLICY.md");
         RequireContains(external, @"dll\OpenVisionLab-Vision-SDK", "DLL reference policy covers vendored OpenVisionLab Vision SDK DLLs.");
         RequireContains(external, @"dll\OpenCVSharp", "DLL reference policy covers shared OpenCVSharp native runtime.");
@@ -2950,6 +3109,39 @@ internal static class Program
         {
             Failures.Add($"{description} Missing token: {token}");
         }
+    }
+
+    private static string ExtractMethodBlock(string source, string signature, string description)
+    {
+        int signatureIndex = source?.IndexOf(signature, StringComparison.Ordinal) ?? -1;
+        if (signatureIndex < 0)
+        {
+            Failures.Add($"{description} Missing signature: {signature}");
+            return string.Empty;
+        }
+
+        int openingBraceIndex = source.IndexOf('{', signatureIndex);
+        if (openingBraceIndex < 0)
+        {
+            Failures.Add($"{description} Missing opening brace: {signature}");
+            return string.Empty;
+        }
+
+        int depth = 0;
+        for (int index = openingBraceIndex; index < source.Length; index++)
+        {
+            if (source[index] == '{')
+            {
+                depth++;
+            }
+            else if (source[index] == '}' && --depth == 0)
+            {
+                return source.Substring(signatureIndex, index - signatureIndex + 1);
+            }
+        }
+
+        Failures.Add($"{description} Missing closing brace: {signature}");
+        return string.Empty;
     }
 
     private static void RequireContainsAny(string text, string description, params string[] tokens)
@@ -3527,7 +3719,7 @@ internal static class Program
 
     private static void CheckRuntimeDataRootOwnership(string repoRoot)
     {
-        string appPaths = Read(repoRoot, @"src\OpenVisionLab\Common\AppPathService.cs");
+        string appPaths = Read(repoRoot, @"src\OpenVisionLab\Common\Runtime\AppPathService.cs");
         RequireContains(
             appPaths,
             "OPENVISIONLAB_DATA_ROOT",
@@ -3570,6 +3762,18 @@ internal static class Program
             @"tools\TestReleaseDistribution.ps1");
         RequireContains(
             distributionCheck,
+            "--read-assembly-metadata",
+            "Release distribution reads assembly metadata through the .NET 8 metadata helper.");
+        RequireNotContains(
+            distributionCheck,
+            "[System.Reflection.Assembly]::LoadFrom",
+            "Release distribution does not execute-load the entry assembly in the PowerShell host.");
+        RequireNotContains(
+            distributionCheck,
+            "GetCustomAttributesData()",
+            "Release distribution does not use runtime custom-attribute reflection in the PowerShell host.");
+        RequireContains(
+            distributionCheck,
             "changed the immutable installation file",
             "Release launch verifies immutable installation files.");
         RequireContains(
@@ -3586,7 +3790,7 @@ internal static class Program
         string directory = Path.GetDirectoryName(path) ?? string.Empty;
         string fileName = Path.GetFileNameWithoutExtension(path);
         string[] paths = Directory.Exists(directory)
-            ? Directory.GetFiles(directory, fileName + "*.cs").OrderBy(item => item, StringComparer.OrdinalIgnoreCase).ToArray()
+            ? Directory.GetFiles(directory, "*.cs").OrderBy(item => item, StringComparer.OrdinalIgnoreCase).ToArray()
             : Array.Empty<string>();
         if (paths.Length == 0)
         {

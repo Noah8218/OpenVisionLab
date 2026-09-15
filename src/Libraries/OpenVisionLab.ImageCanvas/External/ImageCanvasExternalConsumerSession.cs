@@ -2,6 +2,8 @@ using OpenVisionLab.ImageCanvas.Canvas;
 using OpenVisionLab.ImageCanvas.CanvasShapes;
 using OpenVisionLab.ImageCanvas.OpenGLRendering;
 using OpenVisionLab.ImageCanvas.Overlays;
+using OpenVisionLab.ImageCanvas.Presentation;
+using OpenVisionLab.ImageCanvas.Rendering;
 using OpenVisionLab.ImageCanvas.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -108,8 +110,8 @@ namespace OpenVisionLab.ImageCanvas.External
 
 	/// <summary>
 	/// Small public boundary for a separate .NET 8 WPF consumer.
-	/// The existing ImageCanvasControl/ViewModel own rendering and native lifetime;
-	/// this session supplies a minimal WPF host and consumer-owned overlay metadata.
+	/// This session owns the ImageCanvas presentation/native lifetime, a minimal WPF
+	/// host, and consumer-owned overlay metadata; the ViewModel owns mutable ROI state.
 	/// Calls that touch the session must be made on the WPF UI dispatcher.
 	/// </summary>
 	public sealed class ImageCanvasExternalConsumerSession : IDisposable
@@ -131,6 +133,8 @@ namespace OpenVisionLab.ImageCanvas.External
 		}
 
 		private readonly RoiImageCanvasViewModel viewModel;
+		private readonly RoiImageCanvasPresentation presentation;
+		private readonly ImageCanvasControl imageViewer;
 		private readonly Grid hostView;
 		private readonly System.Windows.Forms.Integration.WindowsFormsHost nativeHost;
 		private readonly Dictionary<string, OverlayEntry> overlays = new(StringComparer.Ordinal);
@@ -145,6 +149,7 @@ namespace OpenVisionLab.ImageCanvas.External
 				throw new InvalidOperationException("ImageCanvas consumer sessions must be created on the WPF UI dispatcher.");
 			}
 
+			presentation = new RoiImageCanvasPresentation();
 			viewModel = new RoiImageCanvasViewModel(string.IsNullOrWhiteSpace(name) ? "ExternalImageCanvas" : name)
 			{
 				ShowGroupNames = false,
@@ -152,9 +157,11 @@ namespace OpenVisionLab.ImageCanvas.External
 				IsTeachingMode = false,
 				IsShowMeasure = false
 			};
-			viewModel.ImageViewer.AutoSize = false;
-			viewModel.ImageViewer.MinimumSize = System.Drawing.Size.Empty;
-			viewModel.ImageViewer.Dock = System.Windows.Forms.DockStyle.Fill;
+			presentation.Attach(viewModel);
+			imageViewer = presentation.Control;
+			imageViewer.AutoSize = false;
+			imageViewer.MinimumSize = System.Drawing.Size.Empty;
+			imageViewer.Dock = System.Windows.Forms.DockStyle.Fill;
 			if (viewModel.LoadedCommand?.CanExecute(null) == true)
 			{
 				viewModel.LoadedCommand.Execute(null);
@@ -164,7 +171,7 @@ namespace OpenVisionLab.ImageCanvas.External
 			{
 				HorizontalAlignment = HorizontalAlignment.Stretch,
 				VerticalAlignment = VerticalAlignment.Stretch,
-				Child = viewModel.ImageViewer
+				Child = imageViewer
 			};
 			hostView = new Grid
 			{
@@ -265,7 +272,7 @@ namespace OpenVisionLab.ImageCanvas.External
 				LineWidth = overlay.LineWidth
 			};
 
-			viewModel.ImageViewer.AddOverlay(
+			imageViewer.AddOverlay(
 				string.Empty,
 				overlay.Id,
 				rect,
@@ -273,7 +280,7 @@ namespace OpenVisionLab.ImageCanvas.External
 				EnumInspWindowType.Unit,
 				EnumItemType.Window);
 
-			CanvasOverlayItem item = viewModel.ImageViewer.GetOverlayByUniqueId(overlay.Id);
+			CanvasOverlayItem item = imageViewer.GetOverlayByUniqueId(overlay.Id);
 			if (item == null)
 			{
 				throw new InvalidOperationException("The ImageCanvas overlay was not created.");
@@ -283,7 +290,7 @@ namespace OpenVisionLab.ImageCanvas.External
 			item.Shape.IsChanged = true;
 			item.Shape.OnChanged?.Invoke();
 			overlays.Add(overlay.Id, new OverlayEntry(overlay, item, overlay.LineWidth));
-			viewModel.ImageViewer.RefreshGL();
+			imageViewer.RefreshGL();
 		}
 
 		/// <summary>
@@ -371,7 +378,7 @@ namespace OpenVisionLab.ImageCanvas.External
 				ClearSelection();
 			}
 
-			viewModel.ImageViewer.DeleteOverlay(id, string.Empty);
+			imageViewer.DeleteOverlay(id, string.Empty);
 			overlays.Remove(id);
 			return true;
 		}
@@ -388,7 +395,7 @@ namespace OpenVisionLab.ImageCanvas.External
 			entry.Item.IsVisible = visible;
 			entry.Item.Shape.IsChanged = true;
 			entry.Item.Shape.OnChanged?.Invoke();
-			viewModel.ImageViewer.RefreshGL();
+			imageViewer.RefreshGL();
 			return true;
 		}
 
@@ -446,7 +453,7 @@ namespace OpenVisionLab.ImageCanvas.External
 			EnsureUsable();
 			EnsureUiAccess();
 			EnsureNativeViewerReady();
-			CanvasViewState state = viewModel.ImageViewer.CaptureViewState();
+			CanvasViewState state = imageViewer.CaptureViewState();
 			if (float.IsNaN(state.Zoom) || float.IsInfinity(state.Zoom)
 				|| float.IsNaN(state.OffsetSize.Width) || float.IsInfinity(state.OffsetSize.Width)
 				|| float.IsNaN(state.OffsetSize.Height) || float.IsInfinity(state.OffsetSize.Height)
@@ -473,7 +480,7 @@ namespace OpenVisionLab.ImageCanvas.External
 				throw new ArgumentException("View state values must be finite and have a positive zoom.", nameof(state));
 			}
 
-			viewModel.ImageViewer.ApplyViewState(new CanvasViewState(state.Zoom, new SizeF(state.OffsetX, state.OffsetY)));
+			imageViewer.ApplyViewState(new CanvasViewState(state.Zoom, new SizeF(state.OffsetX, state.OffsetY)));
 		}
 
 		public void Dispose()
@@ -494,7 +501,9 @@ namespace OpenVisionLab.ImageCanvas.External
 			hostView.SizeChanged -= HostView_SizeChanged;
 			nativeHost.Child = null;
 			hostView.Children.Clear();
+			presentation.Detach(viewModel);
 			viewModel.Dispose();
+			presentation.Dispose();
 			overlays.Clear();
 			selectedOverlayId = null;
 			imageSize = DrawingSize.Empty;
@@ -509,7 +518,7 @@ namespace OpenVisionLab.ImageCanvas.External
 
 			foreach (string id in overlays.Keys.ToList())
 			{
-				viewModel.ImageViewer.DeleteOverlay(id, string.Empty);
+				imageViewer.DeleteOverlay(id, string.Empty);
 			}
 			overlays.Clear();
 		}
@@ -523,7 +532,7 @@ namespace OpenVisionLab.ImageCanvas.External
 			}
 			entry.Item.Shape.IsChanged = true;
 			entry.Item.Shape.OnChanged?.Invoke();
-			viewModel.ImageViewer.RefreshGL();
+			imageViewer.RefreshGL();
 		}
 
 		private void ValidateOverlay(ImageCanvasExternalOverlay overlay)
@@ -574,29 +583,29 @@ namespace OpenVisionLab.ImageCanvas.External
 				nativeHost.UpdateLayout();
 				hostView.UpdateLayout();
 			}
-			DrawingSize size = viewModel.ImageViewer.GetSize();
-			if (hostView.IsLoaded && viewModel.ImageViewer.IsHandleCreated && (size.Width <= 0 || size.Height <= 0)
+			DrawingSize size = imageViewer.GetSize();
+			if (hostView.IsLoaded && imageViewer.IsHandleCreated && (size.Width <= 0 || size.Height <= 0)
 				&& hostView.ActualWidth > 0 && hostView.ActualHeight > 0)
 			{
 				int width = Math.Max(1, (int)Math.Round(hostView.ActualWidth));
 				int height = Math.Max(1, (int)Math.Round(hostView.ActualHeight));
-				viewModel.ImageViewer.AutoSize = false;
-				viewModel.ImageViewer.SetBounds(0, 0, width, height);
-				var nativeViewer = viewModel.ImageViewer.GetOpenGLControl();
+				imageViewer.AutoSize = false;
+				imageViewer.SetBounds(0, 0, width, height);
+				var nativeViewer = imageViewer.GetOpenGLControl();
 				nativeViewer.AutoSize = false;
 				nativeViewer.SetBounds(0, 0, width, height);
 				nativeViewer.Dock = System.Windows.Forms.DockStyle.Fill;
-				viewModel.ImageViewer.PerformLayout();
-				size = viewModel.ImageViewer.GetSize();
+				imageViewer.PerformLayout();
+				size = imageViewer.GetSize();
 			}
-			if (!hostView.IsLoaded || !viewModel.ImageViewer.IsHandleCreated || size.Width <= 0 || size.Height <= 0)
+			if (!hostView.IsLoaded || !imageViewer.IsHandleCreated || size.Width <= 0 || size.Height <= 0)
 			{
 				throw new InvalidOperationException(
 					$"Host the ImageCanvas View and wait until it is loaded and laid out before loading images or overlays. "
-					+ $"View={hostView.ActualWidth:0.##}x{hostView.ActualHeight:0.##}, Canvas={viewModel.ImageViewer.Width}x{viewModel.ImageViewer.Height}, "
+					+ $"View={hostView.ActualWidth:0.##}x{hostView.ActualHeight:0.##}, Canvas={imageViewer.Width}x{imageViewer.Height}, "
 					+ $"Native={size.Width}x{size.Height}, Host={nativeHost.ActualWidth:0.##}x{nativeHost.ActualHeight:0.##} ({nativeHost.Width:0.##}x{nativeHost.Height:0.##}), "
 					+ $"HostVisibility={nativeHost.Visibility}, HostDesired={nativeHost.DesiredSize.Width:0.##}x{nativeHost.DesiredSize.Height:0.##}, "
-					+ $"Loaded={hostView.IsLoaded}, Handle={viewModel.ImageViewer.IsHandleCreated}.");
+					+ $"Loaded={hostView.IsLoaded}, Handle={imageViewer.IsHandleCreated}.");
 			}
 		}
 
@@ -621,14 +630,14 @@ namespace OpenVisionLab.ImageCanvas.External
 			int height = Math.Max(1, (int)Math.Round(hostView.ActualHeight));
 			nativeHost.Width = width;
 			nativeHost.Height = height;
-			viewModel.ImageViewer.AutoSize = false;
-			viewModel.ImageViewer.Dock = System.Windows.Forms.DockStyle.None;
-			viewModel.ImageViewer.SetBounds(0, 0, width, height);
-			var openGlControl = viewModel.ImageViewer.GetOpenGLControl();
+			imageViewer.AutoSize = false;
+			imageViewer.Dock = System.Windows.Forms.DockStyle.None;
+			imageViewer.SetBounds(0, 0, width, height);
+			var openGlControl = imageViewer.GetOpenGLControl();
 			openGlControl.AutoSize = false;
 			openGlControl.Dock = System.Windows.Forms.DockStyle.Fill;
 			openGlControl.SetBounds(0, 0, width, height);
-			viewModel.ImageViewer.PerformLayout();
+			imageViewer.PerformLayout();
 		}
 
 		private void EnsureUiAccess()

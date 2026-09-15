@@ -1,0 +1,169 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0030",
+    "aliases": [],
+    "type": "task",
+    "mode": "composite",
+    "title": "Move Sample Picker image preview decoding to the existing image factory",
+    "risk": "medium"
+  },
+  "origin": {
+    "kind": "user-request",
+    "summary": "The user requested that refactoring continue after the documented audit and asked whether the schedule is active.",
+    "refs": [
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "docs/reports/OPENVISIONLAB_PROJECT_READINESS_AND_REFACTOR_CONTRACT_20260913.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "PL-0030은 Sample Picker preview decoding을 기존 OpenVisionBitmapImagePreviewFactory로 이동하는 구조 변경과 최종 검증을 완료했다. ViewModel의 직접 File.Exists/BitmapImage/OnLoad/DecodePixelWidth coupling은 제거되었고 SelectedImageSource binding, 420px preview, missing/corrupt null, frozen lifetime은 유지되었다. Debug/Release contract와 solution/Smoke build, RefactorAudit, Readiness, DocumentationIndex, issue-ledger, diff check가 통과했다. 전체 WPF/hardware/native 행렬은 미검증으로 기록했다."
+  },
+  "objective": {
+    "summary": "Move Sample Picker path-backed preview decoding from the ViewModel to the existing concrete image preview factory without changing the binding contract or preview behavior.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev; do not modify C:\\Git\\2D\\Original.",
+      "Reuse OpenVisionBitmapImagePreviewFactory; do not add a new interface, manager, wrapper, registry, or Partial.",
+      "Preserve SelectedImageSource, missing/corrupt-path null behavior, 420-pixel decode width, OnLoad cache, and frozen ImageSource semantics.",
+      "Keep all evidence and generated test output on D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev.",
+      "Do not create or reactivate a recurring schedule for this bounded slice."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The report records the current and intended owner, caller path, dependency direction, mutable state writer, lifetime owner, and preserved binding contract.",
+      "evidence_refs": [
+        "E1"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "OpenVisionBitmapImagePreviewFactory owns the path-backed Sample Picker preview decode and OpenVisionWorkspaceSamplePickerViewModel no longer performs File.Exists or BitmapImage construction for SelectedImageSource; missing/corrupt paths still return null and valid previews remain OnLoad/frozen with 420-pixel decode width.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "A focused source contract, relevant Debug build, documentation index, issue-ledger validation, and targeted git diff check pass, while full WPF theme/DPI/input/monitor and hardware boundaries remain explicitly unverified.",
+      "evidence_refs": [
+        "E2",
+        "E3"
+      ]
+    }
+  ],
+  "milestones": [
+    {
+      "id": "M1",
+      "summary": "Freeze the Sample Picker preview owner and call-path proof.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M2",
+      "summary": "Move preview path decoding to the existing concrete image factory.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C2"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M3",
+      "summary": "Run focused proof, build, documentation, ledger, and diff checks.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C3"
+      ],
+      "issue_refs": []
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0029"
+    }
+  ],
+  "context": [
+    {
+      "kind": "source",
+      "location": "src\\OpenVisionLab\\UI\\Menu\\Wpf\\Workspace\\Samples\\OpenVisionWorkspaceSamplePickerViewModel.cs"
+    },
+    {
+      "kind": "existing-owner",
+      "location": "src\\OpenVisionLab\\UI\\Menu\\Wpf\\Viewer\\OpenVisionBitmapImagePreviewFactory.cs"
+    },
+    {
+      "kind": "caller",
+      "location": "src\\OpenVisionLab\\UI\\Menu\\Wpf\\Workspace\\Samples\\OpenVisionWorkspaceSamplePickerWindow.xaml"
+    },
+    {
+      "kind": "test-host",
+      "location": "tools\\VisionRecipeRunnerSmoke\\Program.cs"
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source",
+      "location": "docs\\reports\\OPENVISIONLAB_SAMPLE_PICKER_IMAGE_BOUNDARY_20260913.md; src\\OpenVisionLab\\UI\\Menu\\Wpf\\Workspace\\Samples\\OpenVisionWorkspaceSamplePickerViewModel.cs; src\\OpenVisionLab\\UI\\Menu\\Wpf\\Viewer\\OpenVisionBitmapImagePreviewFactory.cs",
+      "observation": "The proof report records the old and new owners, binding call path, selectedSample state writer, factory OnLoad/frozen lifetime, preserved SelectedImageSource contract, and absence of direct File.Exists/BitmapImage decode policy in the Sample Picker ViewModel.",
+      "observed_at": "2026-09-13T16:55:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\sample-picker-image-boundary-20260913\\workspace-sample-picker-image-boundary-contract.txt",
+      "observation": "WorkspaceSamplePickerImageBoundaryContract passed 6/6: old coupling absence, existing factory ownership, binding facade preservation, valid frozen preview, missing-path null, and corrupt-path null. VisionRecipeRunnerSmoke Debug build passed with 0 warnings and 0 errors.",
+      "observed_at": "2026-09-13T16:55:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\sample-picker-image-boundary-20260913\\phase-summary.txt",
+      "observation": "Debug/Release focused contracts passed 6/6, Smoke and solution builds passed with 0 warnings/errors, RefactorAudit passed with 54 Partial declarations and 0 project cycles, Readiness Debug/Release passed, DocumentationIndex reported IndexedPaths=299/Routes=17/RootRedirects=102, and targeted diff plus PL-0030 ledger validation passed.",
+      "observed_at": "2026-09-13T17:15:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-13T16:55:00+09:00",
+      "summary": "Sample Picker preview decode는 새 service가 아니라 기존 OpenVisionBitmapImagePreviewFactory로 이동한다. ViewModel의 SelectedImageSource facade와 null/420px/frozen semantics를 보존하고, factory에 optional TryCreateFromPath entry point만 추가한다.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "D2",
+      "kind": "decision",
+      "at": "2026-09-13T17:15:00+09:00",
+      "summary": "PL-0030의 M1 owner proof, M2 existing factory extraction, M3 final proof를 닫는다. 구조적으로 직접 ViewModel I/O가 제거되었고, 새 추상화 없이 기존 factory를 재사용했으며, 모든 선언된 focused/build/docs checks가 통과했다. 미검증 UI/hardware/legal 행렬은 범위 밖 증거로 남긴다.",
+      "evidence_refs": [
+        "E3"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-13T17:15:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "PL-0030의 세 completion criteria와 세 milestone이 모두 current evidence로 충족되어 resolved로 닫는다. 동일 owner는 새 defect, requirement, failed criterion, 또는 dependency boundary가 생기기 전에는 다시 열지 않는다."
+    }
+  ],
+  "created_at": "2026-09-13T16:40:00+09:00",
+  "updated_at": "2026-09-13T17:15:00+09:00"
+}

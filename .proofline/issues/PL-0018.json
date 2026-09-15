@@ -1,0 +1,286 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0018",
+    "aliases": [
+      "OPENVISIONLAB-JUNIOR-BURDEN-1-5-20260912"
+    ],
+    "type": "task",
+    "mode": "composite",
+    "title": "Reduce first-time developer burden across Shell, Recipe, Pipeline Review, verification tools, and structure",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "explicit user request and five-minute heartbeat schedule",
+    "summary": "The user requested sequential refactoring of the five areas identified as most burdensome to a first-time developer, without waiting indefinitely for user input or hardware-dependent verification.",
+    "refs": [
+      "docs/reports/OPENVISIONLAB_JUNIOR_WHOLE_REPOSITORY_REVIEW_20260911.md",
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "AGENTS.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "PL-0018 is complete. M1 Shell, M2 RecipeCommandSurface, M3 Pipeline Review, M4 verification-tool/product navigation, and M5 final MVVM/partial/folder/module audit were all evidenced. The only tracked documentation change is the concise product-versus-verification route plus the final reassessment report; no production C# or XAML changed. Existing concrete owners and contracts remain canonical. Remaining debt is the known RoiImageCanvasViewModel UI/IO coupling and unverified full WPF/device/long-run runtime rows."
+  },
+  "objective": {
+    "summary": "Sequentially reduce first-time developer navigation cost while preserving existing behavior, concrete owners, MVVM contracts, image/resource lifetime, and verification boundaries.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev; keep C:\\Git\\2D\\Original read-only.",
+      "Do not reopen resolved owners without a new reproducible defect, explicit requirement, failed criterion, or changed dependency boundary.",
+      "Do not add speculative Interface, Manager, Factory, Provider, EventBus, wrapper, folder, or manual partial layers.",
+      "Do not wait indefinitely for user input, camera, SDK, GPU, monitor, DPI, theme, or long-running native execution; record those limits as unverified.",
+      "Run only focused checks relevant to the current slice and store generated evidence under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev.",
+      "Do not run tag, release, deploy, or external push from the heartbeat."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "Each of the five slices has a recorded current owner, intended owner or no-change decision, actual call path, mutable-state writer, lifetime owner, and junior reading route.",
+      "evidence_refs": [
+        "E1",
+        "E3",
+        "E5",
+        "E7",
+        "E9"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "Any source change moves a real responsibility or fixes a reproduced defect; name-only, file-length-only, and duplicate abstraction changes are rejected.",
+      "evidence_refs": [
+        "E1",
+        "E3",
+        "E6",
+        "E7",
+        "E8",
+        "E10"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Every accepted source change passes its focused contract/test, required build, and static stale-coupling or ownership checks; skipped runtime boundaries are explicitly recorded.",
+      "evidence_refs": [
+        "E2",
+        "E4",
+        "E6",
+        "E8",
+        "E10"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "The final slice records the updated junior assessment, remaining technical debt, and a comparison with the pre-schedule burden findings.",
+      "evidence_refs": [
+        "E9",
+        "E10"
+      ]
+    }
+  ],
+  "milestones": [
+    {
+      "id": "M1",
+      "summary": "Shell composition owner/call-path/lifetime recheck and safe navigation improvement",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1",
+        "C2",
+        "C3",
+        "C4"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M2",
+      "summary": "RecipeCommandSurface independent-boundary audit and minimal proven improvement",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1",
+        "C2",
+        "C3",
+        "C4"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M3",
+      "summary": "Pipeline Review presentation/execution state and image-lifetime boundary audit",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1",
+        "C2",
+        "C3",
+        "C4"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M4",
+      "summary": "Verification-tool versus product-code boundary and developer navigation documentation",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1",
+        "C2",
+        "C3",
+        "C4"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M5",
+      "summary": "MVVM, manual partial, folder/module final audit and junior reassessment",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1",
+        "C2",
+        "C3",
+        "C4"
+      ],
+      "issue_refs": []
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0017"
+    }
+  ],
+  "context": [
+    {
+      "kind": "automation",
+      "location": "openvisionlab-2d-1-5; five-minute heartbeat attached to the current 2D task"
+    },
+    {
+      "kind": "source",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/OpenVisionShellHostView.xaml.cs; src/OpenVisionLab/UI/Menu/Wpf/Recipe/CommandSurface/RecipeCommandSurface.cs; src/OpenVisionLab/UI/Menu/Wpf/Documents/OpenVisionPipelineReviewDocument.cs"
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\junior-burden-1-5-20260912\\shell-recheck\\phase-summary.txt",
+      "observation": "The current Shell composition owner, call path, mutable-state writers, lifetime owners, preserved contracts, and junior reading route were recorded. The existing PL-0014 boundary remains sufficient; no new independent owner is justified.",
+      "observed_at": "2026-09-12T08:52:14+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\junior-burden-1-5-20260912\\shell-recheck\\phase-summary.txt",
+      "observation": "Invoke-RefactorAudit.ps1 -Verify returned REFACTOR_AUDIT=PASS with CSharpFiles=816, XamlFiles=60, PartialDeclarations=59, PartialTextMatches=2, ViewModelUiIoFiles=1, ProjectCycles=0, and ShellStorageCalls=0; git diff --check produced no output. Existing PL-0014 Debug/Release and focused Shell lifecycle/readiness evidence was reused because source behavior did not change.",
+      "observed_at": "2026-09-12T08:52:14+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\junior-burden-1-5-20260912\\recipe-command-surface-recheck\\phase-summary.txt",
+      "observation": "RecipeCommandSurface was confirmed as the binding-facing state and command owner. Existing execution session, step-edit session, pipeline exchange/lifecycle, validation, run-history, review, and qualified-snapshot owners already provide concrete boundaries. Shared bindings, callbacks, selection state, command-state notifications, and Shell lifetime prevent a safe mechanical split.",
+      "observed_at": "2026-09-12T09:01:30+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\junior-burden-1-5-20260912\\recipe-command-surface-recheck\\phase-summary.txt",
+      "observation": "The static region/field/dependency survey and direct persistence-owner search completed; git diff --check produced no output. Existing PL-0013/D4-D5 and PL-0015-PL-0017 Recipe/Review build and focused contract evidence remains applicable because this slice made no source change, and no new build was claimed.",
+      "observed_at": "2026-09-12T09:01:30+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\junior-burden-1-5-20260912\\pipeline-review-recheck\\phase-summary.txt",
+      "observation": "Pipeline Review owner map and shortest call path were confirmed: Document owns composition/selected state, ExecutionController owns run/cancel/summaries/cache, RevisionGate owns freshness, LayerImageOwner owns short-lived snapshots, ViewModel owns binding projections, and View owns UI-only interaction/display state. Existing contracts and lifetime boundaries remain explicit.",
+      "observed_at": "2026-09-12T09:15:00+09:00"
+    },
+    {
+      "id": "E6",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\junior-burden-1-5-20260912\\pipeline-review-recheck\\phase-summary.txt",
+      "observation": "Invoke-RefactorAudit.ps1 -Verify returned REFACTOR_AUDIT=PASS with CSharpFiles=816, XamlFiles=60, PartialDeclarations=59, PartialTextMatches=2, ViewModelUiIoFiles=1, ProjectCycles=0, and ShellStorageCalls=0; git diff --check produced no output. No source changed, so no new build or runtime PASS was claimed; existing R28 focused Debug/Release Pipeline Review evidence remains applicable.",
+      "observed_at": "2026-09-12T09:15:00+09:00"
+    },
+    {
+      "id": "E7",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\junior-burden-1-5-20260912\\verification-boundary-recheck\\phase-summary.txt",
+      "observation": "The product entry/execution path, headless contract runner, WPF screenshot runner, and conditional embedded DirectSmokeRunner were mapped. OpenVisionLabEnableEmbeddedSmokeRunner defaults false; only the opt-in build links smoke sources into the product, preserving the existing --smoke compatibility seam. No new source boundary was justified.",
+      "observed_at": "2026-09-12T09:30:00+09:00"
+    },
+    {
+      "id": "E8",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\junior-burden-1-5-20260912\\verification-boundary-recheck\\phase-summary.txt",
+      "observation": "docs/README.md received the concise product-versus-verification route. TestDocumentationIndex.ps1 passed (IndexedPaths=293, Routes=16, RootRedirects=102), Invoke-RefactorAudit.ps1 -Verify passed, and git diff --check reported no whitespace errors. No product C# or XAML changed; no build or runtime PASS was claimed.",
+      "observed_at": "2026-09-12T09:30:00+09:00"
+    },
+    {
+      "id": "E9",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\junior-burden-1-5-20260912\\final-audit\\phase-summary.txt",
+      "observation": "Final source-wide audit confirmed 816 C# files, 60 XAML files, 59 framework/cohesive partial declarations, 27 projects with 34 references and cycle 0, dense folders aligned with feature responsibility, and no manual business partial or unproven new owner. The final first-time developer route and remaining RoiImageCanvasViewModel debt are documented.",
+      "observed_at": "2026-09-12T09:55:00+09:00"
+    },
+    {
+      "id": "E10",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\junior-burden-1-5-20260912\\final-audit\\phase-summary.txt",
+      "observation": "Debug and Release solution builds completed with 0 warnings and 0 errors; Debug and Release OpenVisionReadinessCheck completed 13/13 OK; TestDocumentationIndex passed with IndexedPaths=294, Routes=16, RootRedirects=102; RefactorAudit passed; issue ledger validated; git diff --check found no whitespace errors. Runtime hardware/theme/DPI/long-run rows remain explicitly unverified.",
+      "observed_at": "2026-09-12T09:55:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-12T08:48:00+09:00",
+      "summary": "Use one heartbeat executor, one slice per run, no indefinite user or hardware wait, and close the automation after M1-M5 are evidenced.",
+      "evidence_refs": []
+    },
+    {
+      "id": "D2",
+      "kind": "decision",
+      "at": "2026-09-12T09:15:00+09:00",
+      "summary": "M3 found no reproducible Pipeline Review defect or new independent boundary. Preserve the existing execution, revision, image, binding, and UI owners; do not add a mechanical split or partial.",
+      "evidence_refs": [
+        "E5",
+        "E6"
+      ]
+    },
+    {
+      "id": "D3",
+      "kind": "decision",
+      "at": "2026-09-12T09:30:00+09:00",
+      "summary": "M4 confirmed the smoke/product boundary. Keep the conditional embedded runner for existing --smoke compatibility, preserve standalone verification clients, and add a concise docs/README navigation route instead of moving large files mechanically.",
+      "evidence_refs": [
+        "E7",
+        "E8"
+      ]
+    },
+    {
+      "id": "D4",
+      "kind": "decision",
+      "at": "2026-09-12T09:55:00+09:00",
+      "summary": "M5 found no failed MVVM, manual-partial, folder, project-cycle, image-lifetime, or ownership criterion. Preserve the existing concrete owners and close the five-area schedule with the known RoiImageCanvasViewModel follow-up and runtime verification limits recorded.",
+      "evidence_refs": [
+        "E9",
+        "E10"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-12T09:55:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "All five PL-0018 milestones are evidenced and the scheduled refactoring/reassessment is complete."
+    }
+  ],
+  "created_at": "2026-09-12T08:48:00+09:00",
+  "updated_at": "2026-09-12T09:55:00+09:00"
+}

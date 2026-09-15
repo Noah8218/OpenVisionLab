@@ -4,26 +4,35 @@ namespace OpenVisionLab
 {
     internal static class RecipeRuntimeStorage
     {
-        public static void Load(
+        public static bool Load(
             string recipeName,
             Func<DataState> dataAccessor,
             Action<DataState> dataSetter,
             Func<VisionToolRepository> visionToolAccessor)
         {
             VisionToolRepository visionTools = GetVisionTools(visionToolAccessor);
-            visionTools.LoadTools(recipeName);
+            if (!visionTools.LoadTools(recipeName))
+            {
+                return false;
+            }
 
             DataState data = GetData(dataAccessor).LoadConfig(recipeName);
             dataSetter(data);
+            return true;
         }
 
-        public static void Save(
+        public static bool Save(
             string recipeName,
             Func<DataState> dataAccessor,
             Func<VisionToolRepository> visionToolAccessor)
         {
-            GetVisionTools(visionToolAccessor).SaveTools(recipeName);
+            if (!GetVisionTools(visionToolAccessor).SaveTools(recipeName))
+            {
+                return false;
+            }
+
             GetData(dataAccessor).SaveConfig(recipeName);
+            return true;
         }
 
         private static DataState GetData(Func<DataState> dataAccessor)

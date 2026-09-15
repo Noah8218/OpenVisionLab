@@ -1,0 +1,128 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0090",
+    "aliases": [
+      "2D-032"
+    ],
+    "type": "task",
+    "mode": "simple",
+    "title": "Verify Blob and Contour candidate explanation matches one execution",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "scheduled-follow-up",
+    "summary": "2D-032 requires a focused contract for Blob/Contour candidate identity, acceptance, reject reason, applied limits, coordinate frame, and final result parity.",
+    "refs": [
+      "C:/Users/USER/Downloads/OpenVisionLab_2D_tasks.json#2D-032",
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      ".proofline/issues/PL-0089.json"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "2D-032 Blob/Contour candidate explanation and one-execution result parity is verified through the existing SDK candidate capture, filter, object-result, overlay, metric, and Run History owners; no relaxed rerun or candidate abstraction was added."
+  },
+  "objective": {
+    "summary": "Prove that Blob and Contour candidate explanations retain one execution snapshot's identity, accepted state, reject reason, applied limits, coordinate frame, final ResultCount/metrics, overlays, and Run History rows at ROI and dimension boundaries.",
+    "constraints": [
+      "Reuse TryCaptureSdkCandidates/CaptureCandidates, the existing Blob/Contour execution and filter owners, object result rows, overlays, metrics, and Run History; do not reimplement candidate collection or add a relaxed Tool rerun.",
+      "Use isolated deterministic synthetic fixtures under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev; preserve current candidate ordering/API and save/reopen semantics.",
+      "Do not touch Original, release, deploy, hardware, or external systems."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "Mixed accepted/rejected Blob and Contour candidates retain stable CandidateId, NativeIndex, RegionIndex, source-coordinate bounds, generation stage, and CoordinateFrame from one execution.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "Exact MIN/MAX area and width/height boundaries produce reject reasons and AppliedLimits consistent with the candidate values and accepted rows without changing ordering.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Multi-ROI and same-area candidates preserve region separation, deterministic ordering, final ResultCount/area metrics, accepted overlays, and Run History candidate rows from the same execution snapshot.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "Focused Debug/Release contract and documentation record the existing owner/call path and unverified WPF/render/DPI/hardware limits.",
+      "evidence_refs": [
+        "E2",
+        "E3",
+        "E4"
+      ]
+    }
+  ],
+  "relations": [],
+  "context": [],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d032-debug-20260916\\blob-contour-candidate-boundary-contract.txt",
+      "observation": "Debug Blob/Contour boundary contract passed for mixed accepted/rejected candidates, same-area targets across ROI 0/1, exact area and width/height boundaries, CandidateId/native/region identity, SourceImage geometry, reject code/text, AppliedLimits, final metrics, accepted overlays, deterministic repeat order, and Run History row parity.",
+      "observed_at": "2026-09-16T00:00:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d032-release-20260916\\blob-contour-candidate-boundary-contract.txt",
+      "observation": "Release Blob/Contour boundary contract passed with the same one-execution candidate, ROI, exact-limit, metric, overlay, deterministic-order, and Run History observations as Debug.",
+      "observed_at": "2026-09-16T00:00:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d032-debug-20260916\\focused",
+      "observation": "Focused object-candidate parity, object-dimension filter, expected-failure, and Preview/Run/Reopen regressions exited 0; the existing Blob/Contour parity contract retained mask/multi-ROI rows, accepted overlays, metrics, timing, and public Good/Bad replay.",
+      "observed_at": "2026-09-16T00:00:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "review",
+      "location": "docs/reports/OPENVISIONLAB_2D_BLOB_CONTOUR_CANDIDATE_BOUNDARY_20260916.md; docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "observation": "Documentation records the existing SDK candidate/object-result call path, exact boundary and same-snapshot semantics, next 2D-033 priority, and the unverified WPF EXE/theme/DPI/monitor/hardware limits.",
+      "observed_at": "2026-09-16T00:00:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-16T00:00:00+09:00",
+      "summary": "Close 2D-032 as a deterministic contract-only slice: retain the existing Blob/Contour SDK candidate and object-result owners, prove ROI/dimension boundary explanation parity with one execution snapshot, and leave WPF/runtime qualification outside this slice.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-16T00:00:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "All 2D-032 criteria have active Debug/Release boundary and focused regression evidence with durable documentation; the remaining WPF/runtime qualification is explicitly outside this slice."
+    }
+  ],
+  "created_at": "2026-09-16T00:00:00+09:00",
+  "updated_at": "2026-09-16T00:00:00+09:00"
+}

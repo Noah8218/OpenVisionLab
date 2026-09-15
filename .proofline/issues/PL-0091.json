@@ -1,0 +1,119 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0091",
+    "aliases": [
+      "2D-033"
+    ],
+    "type": "task",
+    "mode": "simple",
+    "title": "Verify Line, Length, and Mean degenerate-input finite-result contract",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "scheduled-follow-up",
+    "summary": "2D-033 requires a focused contract for Line/LineDistance/Mean normal values, polarity, empty or uniform inputs, no-edge and degenerate geometry, explicit units, and finite-result acceptance.",
+    "refs": [
+      "C:/Users/USER/Downloads/OpenVisionLab_2D_tasks.json#2D-033",
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      ".proofline/issues/PL-0090.json"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "2D-033 Line/Length/Mean degenerate-input and finite-result semantics are verified through the existing LineGauge, LineDistance, Mean, metric-enrichment, acceptance, overlay, and Runner owners; LineDistance now rejects zero/non-finite distances with an explicit existing failure reason and no new metrology module was added."
+  },
+  "objective": {
+    "summary": "Prove that Line/LineDistance and Mean publish finite, unit-explicit results for valid input and fail closed with an explicit reason for empty ROI, uniform/no-edge, zero-length, parallel, or coincident geometry instead of accepting NaN or Infinity.",
+    "constraints": [
+      "Reuse the existing LineGauge, VisionPipelineLineDistanceTool, VisionPipelineLineIntersectionTool, MeanTool, metric enrichment, acceptance, overlay, and Run History owners.",
+      "Do not add a new metrology module, correction algorithm, alternate measurement calculation, or relaxed rerun.",
+      "Use deterministic synthetic fixtures and write test evidence only under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev.",
+      "Do not touch Original, release, deploy, hardware, or external systems."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "Normal LineDistance and Mean fixtures produce finite published metrics, preserve declared pixel/mm or gray-value units, retain expected overlays, and keep positive/negative polarity or Mean type meaning explicit.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "Empty input/ROI, uniform or no-edge input, zero-length or parallel/coincident geometry, and failed detection do not publish NaN or Infinity as an accepted measurement; they return the existing failure or explicit non-measurement reason.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Focused Debug/Release contract and documentation record the existing owner, call path, mutable metric/result writers, finite-result boundary, and unverified WPF/render/DPI/monitor/hardware limits.",
+      "evidence_refs": [
+        "E2",
+        "E3",
+        "E4"
+      ]
+    }
+  ],
+  "relations": [],
+  "context": [],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d033-debug-20260916-run4\\line-length-mean-degenerate-contract.txt",
+      "observation": "Debug contract passed normal LineDistance with finite DistancePx/DistanceMm metrics and overlays, inverted-source opposite polarity, normal Mean finite MeanValueMin/Max/Avg, uniform dark Mean acceptance rejection, empty Mean input/ROI validation, uniform/no-edge LineDistance failure, and coincident same-line failure with a positive-finite geometry reason and no non-finite metrics.",
+      "observed_at": "2026-09-16T00:00:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d033-release-20260916-run1\\line-length-mean-degenerate-contract.txt",
+      "observation": "Release contract passed with the same normal, polarity, Mean, empty-input/ROI, no-edge, same-line, finite-metric, and explicit-failure observations as Debug.",
+      "observed_at": "2026-09-16T00:00:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d033-debug-20260916-focused-*; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d033-release-20260916-focused-*",
+      "observation": "Focused Debug and Release expected-failure (8/8), Preview/Run/Reopen (Mean, Blob, Contour, Matching, Line), and PixelPerMm finite-unit (5/5) contracts all exited 0 after the LineDistance guard.",
+      "observed_at": "2026-09-16T00:00:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "review",
+      "location": "docs/reports/OPENVISIONLAB_2D_LINE_LENGTH_MEAN_DEGENERATE_20260916.md; docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "observation": "Documentation records the current owner/call path, the positive-finite LineDistance boundary, finite Mean/acceptance semantics, unverified WPF/render/DPI/monitor/hardware boundary, PL-0091 closure, and next 2D-034 priority.",
+      "observed_at": "2026-09-16T00:00:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-16T00:00:00+09:00",
+      "summary": "Close 2D-033 as a bounded core/Runner contract slice: keep the existing LineGauge/LineDistance/Mean owners, filter LineDistance to positive finite distances before metric aggregation, preserve existing pixel/mm and Mean acceptance semantics, and leave WPF/runtime/hardware qualification outside this slice.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-16T00:00:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "All PL-0091 criteria have active Debug/Release contract, focused regression, and durable documentation evidence; WPF/runtime/hardware qualification remains explicitly outside this slice."
+    }
+  ],
+  "created_at": "2026-09-16T00:00:00+09:00",
+  "updated_at": "2026-09-16T00:00:00+09:00"
+}

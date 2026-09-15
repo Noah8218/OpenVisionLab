@@ -37,10 +37,13 @@ namespace OpenVisionLab
         public string ToolType { get; set; } = string.Empty;
         public bool Enabled { get; set; }
         public bool Skipped { get; set; }
+        public bool Executed { get; set; }
+        public string ExecutionState { get; set; } = string.Empty;
         public string InputLayer { get; set; } = string.Empty;
         public string OutputLayer { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
         public bool ToolSuccess { get; set; }
+        public bool AcceptanceEvaluated { get; set; }
         public bool AcceptancePassed { get; set; }
         public string AcceptanceMessage { get; set; } = string.Empty;
         public double ElapsedMilliseconds { get; set; }
@@ -390,10 +393,13 @@ namespace OpenVisionLab
                 ToolType = step?.ToolType ?? string.Empty,
                 Enabled = step?.Enabled == true,
                 Skipped = stepResult?.Skipped == true,
+                Executed = summary.Executed,
+                ExecutionState = summary.ExecutionState,
                 InputLayer = step?.InputLayer ?? string.Empty,
                 OutputLayer = step?.OutputLayer ?? string.Empty,
                 Status = summary.Status,
                 ToolSuccess = toolResult?.Success == true,
+                AcceptanceEvaluated = summary.Executed && step?.UseAcceptance == true,
                 AcceptancePassed = stepResult?.AcceptancePassed == true,
                 AcceptanceMessage = stepResult?.AcceptanceMessage ?? string.Empty,
                 ElapsedMilliseconds = summary.ElapsedMilliseconds,
@@ -451,10 +457,13 @@ namespace OpenVisionLab
                 ToolType = summary.ToolType,
                 Enabled = summary.Enabled,
                 Skipped = summary.Skipped,
+                Executed = summary.Executed,
+                ExecutionState = summary.ExecutionState,
                 InputLayer = summary.InputLayer,
                 OutputLayer = summary.OutputLayer,
                 Status = summary.Status,
                 ToolSuccess = summary.ToolSuccess,
+                AcceptanceEvaluated = summary.Executed && pipelineStep?.UseAcceptance == true,
                 AcceptancePassed = summary.AcceptancePassed,
                 AcceptanceMessage = summary.AcceptanceMessage,
                 ElapsedMilliseconds = summary.ElapsedMilliseconds,

@@ -1,0 +1,280 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0021",
+    "aliases": [
+      "OPENVISIONLAB-VIEW-OWNER-REFACTOR-20260912"
+    ],
+    "type": "task",
+    "mode": "composite",
+    "title": "Reduce first-time contributor burden in oversized WPF View code",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "explicit user request for continuous scheduled refactoring",
+    "summary": "The user requested sequential refactoring of Views that feel overloaded to a first-time contributor, without waiting for optional input, while preserving existing behavior and verification boundaries.",
+    "refs": [
+      "PL-0020",
+      "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\junior-first-open-20260912\\first-contributor-audit.md",
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "PL-0021 resolved: M1 Pipeline Review layout owner, M2 Pipeline Review image/resource lifetime owner, M3 Shell Recipe Manager panel drag owner, and M4 final MVVM/partial/folder/call-path/build audit are verified for the source and focused-runtime scope. Debug and Release builds, focused WPF smoke, readiness, contracts, documentation index, refactor audit, and diff checks passed. Full WPF theme/DPI/monitor/input, camera/SDK/GPU, production hardware, and long-running native qualification remain explicitly unverified. No commit or push was performed."
+  },
+  "objective": {
+    "summary": "Reduce the amount of unrelated UI lifecycle, mutable layout state, and resource ownership that a developer must read inside oversized WPF Views, using concrete existing responsibility owners or the smallest new concrete owner only where independent state and lifetime are demonstrated.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev; keep C:\\Git\\2D\\Original read-only.",
+      "Do not wait indefinitely for user input, hardware, camera, SDK, GPU, monitor, DPI, theme, or long-running native evidence; record those boundaries as unverified.",
+      "Preserve XAML names, binding contracts, public event contracts, explicit Preview/Run behavior, image ownership, cancellation, and shutdown semantics.",
+      "Do not add interfaces, managers, factories, providers, event buses, forwarding wrappers, or manual partial files without a demonstrated replacement or lifetime/test seam.",
+      "Do not reopen completed owners or mechanically split files by line count alone; each slice must move a real responsibility or record a no-change decision.",
+      "Use one bounded milestone per heartbeat and store generated evidence under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\view-owner-refactor-20260912.",
+      "Do not commit, push, tag, release, deploy, or modify C:\\Git\\2D\\Original from the scheduled work."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "Every milestone records the current owner, intended owner, actual call path, mutable-state writer, lifetime/release owner, preserved XAML/public contract, and shortest reading route.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E4",
+        "E5",
+        "E6",
+        "E7",
+        "E8",
+        "E9"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "Each accepted source change moves a real responsibility or removes coupling from the View; file movement, region edits, and name-only wrappers do not count.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E4",
+        "E5",
+        "E6",
+        "E7",
+        "E8",
+        "E9"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Each accepted source change passes the focused build and directly related contract/smoke/static checks, with runtime UI and hardware limits explicitly marked unverified when not executed.",
+      "evidence_refs": [
+        "E2",
+        "E3",
+        "E5",
+        "E7",
+        "E9"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "The final milestone records the remaining oversized View boundaries, completed owner changes, verification evidence, and a first-contributor assessment without claiming unrun runtime coverage.",
+      "evidence_refs": [
+        "E8",
+        "E9"
+      ]
+    }
+  ],
+  "milestones": [
+    {
+      "id": "M1",
+      "summary": "Pipeline Review layout and UI lifecycle state owner",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M2",
+      "summary": "Pipeline Review image preview/resource lifetime owner",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M3",
+      "summary": "Shell View UI-only interaction boundaries recheck and minimal extraction where proven",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M4",
+      "summary": "Final MVVM, partial, folder, call-path, build, and first-contributor audit",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1",
+        "C3",
+        "C4"
+      ],
+      "issue_refs": []
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0020"
+    }
+  ],
+  "context": [
+    {
+      "kind": "report",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\junior-first-open-20260912\\first-contributor-audit.md"
+    },
+    {
+      "kind": "owner-registry",
+      "location": "docs/admin/CODEBASE_STRUCTURE.md"
+    },
+    {
+      "kind": "live-status",
+      "location": "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md"
+    },
+    {
+      "kind": "source",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/Views/OpenVisionPipelineReviewView.xaml.cs"
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\view-owner-refactor-20260912\\m1-layout-owner\\phase-summary.txt",
+      "observation": "OpenVisionPipelineReviewLayoutController now owns compact layout, details/step-flow state, row sizing, visibility, toggle visuals and localized tooltips. OpenVisionPipelineReviewView handlers are thin adapters and the View still owns event subscription/unsubscription.",
+      "observed_at": "2026-09-12T12:45:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\view-owner-refactor-20260912\\m1-layout-owner\\phase-summary.txt",
+      "observation": "Debug solution build passed with 0 warnings and 0 errors; VisionUiContractCheck passed; PipelineViewerScreenshotSmoke command-line contract passed with 10 checks; focused wpf_shell_host_pipeline_review_image_first_compact passed with layout/text/internal errors 0; Invoke-RefactorAudit passed with 817 C# files, 59 partial declarations, zero project cycles and zero Shell storage calls; git diff --check passed.",
+      "observed_at": "2026-09-12T12:45:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\view-owner-refactor-20260912\\m1-layout-owner\\documentation-index.txt",
+      "observation": "CODEBASE_STRUCTURE.md and OPENVISIONLAB_CURRENT_HANDOFF.md record the new owner, call path, mutable state, lifetime owner, reading route, and M2 boundary; TestDocumentationIndex passed and git diff --check passed after the documentation update.",
+      "observed_at": "2026-09-12T13:00:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\view-owner-refactor-20260912\\m2-image-lifetime\\phase-summary.txt",
+      "observation": "The View no longer declares or disposes the Pipeline Review Bitmap/diagnostic resource fields. OpenVisionPipelineReviewImageResourceOwner is the only replacement and release owner, while the View remains the UI adapter.",
+      "observed_at": "2026-09-12T13:20:00+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\view-owner-refactor-20260912\\m2-image-lifetime\\phase-summary.txt",
+      "observation": "Debug solution build passed with 0 warnings and 0 errors; VisionUiContractCheck, screenshot runner contract (10/10), focused Pipeline Review WPF screenshot smoke, OpenVisionReadinessCheck, Invoke-RefactorAudit -Verify, source owner check, and git diff --check passed. Existing screenshot-tool nullable warning is pre-existing; full WPF theme/DPI/monitor/hardware/long-run checks remain unverified.",
+      "observed_at": "2026-09-12T13:20:00+09:00"
+    },
+    {
+      "id": "E6",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\view-owner-refactor-20260912\\m3-shell-ui\\phase-summary.txt",
+      "observation": "OpenVisionShellHostView no longer stores panel drag fields, captures the mouse, or implements offset clamping. OpenVisionShellHostRecipePanelDragController owns those operations and is disposed by the existing lifecycle controller.",
+      "observed_at": "2026-09-12T13:45:00+09:00"
+    },
+    {
+      "id": "E7",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\view-owner-refactor-20260912\\m3-shell-ui\\phase-summary.txt",
+      "observation": "Debug solution build passed with 0 warnings and 0 errors; Recipe Manager Summary and Shell Window Chrome focused WPF screenshots passed with layout/text/internal errors zero; readiness, refactor audit, documentation index, source ownership check, and git diff --check passed. Full WPF input/theme/DPI/monitor/hardware/long-run coverage remains unverified.",
+      "observed_at": "2026-09-12T13:45:00+09:00"
+    },
+    {
+      "id": "E8",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\view-owner-refactor-20260912\\m4-final-audit\\phase-summary.txt",
+      "observation": "The final audit records the startup route, all three completed owner changes, remaining canonical owners, MVVM/code-behind classification, 59 protected partial declarations, 27 projects, 34 references, zero cycles, folder placement, known debt, and first-contributor reading route.",
+      "observed_at": "2026-09-12T14:20:00+09:00"
+    },
+    {
+      "id": "E9",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\view-owner-refactor-20260912\\m4-final-audit\\phase-summary.txt",
+      "observation": "Solution Debug and Release builds passed with 0 warnings and 0 errors; TestDocumentationIndex, VisionUiContractCheck, screenshot runner contract 10/10, OpenVisionReadinessCheck, Invoke-RefactorAudit -Verify, focused Pipeline Review and Recipe Manager WPF screenshots, monitor topology capture, and git diff --check passed. Unrun full UI/theme/DPI/hardware/long-run rows remain explicitly unverified.",
+      "observed_at": "2026-09-12T14:20:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-12T12:45:00+09:00",
+      "summary": "M1 moved the independent Pipeline Review layout state and visual policy into OpenVisionPipelineReviewLayoutController. The View remains responsible for XAML event forwarding and unsubscribe lifetime; no additional abstraction or partial was added.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "D2",
+      "kind": "decision",
+      "at": "2026-09-12T13:20:00+09:00",
+      "summary": "M2 proved a real resource lifetime boundary. A concrete image resource owner now clones/replaces/disposes the five View-held resources; no interface, manager, factory, partial, or duplicate rendering layer was added.",
+      "evidence_refs": [
+        "E4",
+        "E5"
+      ]
+    },
+    {
+      "id": "D3",
+      "kind": "decision",
+      "at": "2026-09-12T13:45:00+09:00",
+      "summary": "M3 proved an independent UI interaction boundary in the Shell View: panel drag has its own mutable state, pointer-capture lifetime, clamp policy, and existing test callback. A small concrete controller was added; Recipe workflow/navigation was intentionally left with existing owners.",
+      "evidence_refs": [
+        "E6",
+        "E7"
+      ]
+    },
+    {
+      "id": "D4",
+      "kind": "decision",
+      "at": "2026-09-12T14:20:00+09:00",
+      "summary": "All PL-0021 milestones have a recorded owner map and current verification evidence. The remaining Shell composition and known UI/path technical debt do not justify another mechanical View split without a new defect or independent boundary; close this bounded refactor and preserve the owner map for later work.",
+      "evidence_refs": [
+        "E8",
+        "E9"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-12T14:20:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "All PL-0021 required milestones and completion criteria are satisfied for the documented source/focused-runtime scope; pause the single heartbeat executor and retain unverified runtime rows as explicit boundaries."
+    }
+  ],
+  "created_at": "2026-09-12T12:20:00+09:00",
+  "updated_at": "2026-09-12T14:20:00+09:00"
+}

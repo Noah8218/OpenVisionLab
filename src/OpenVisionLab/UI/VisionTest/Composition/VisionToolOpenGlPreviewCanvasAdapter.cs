@@ -6,7 +6,6 @@ using OpenVisionLab.ImageCanvas.OpenGLRendering;
 using OpenVisionLab.ImageCanvas.ViewModels;
 using OpenVisionLab.ImageCanvas.Views;
 using System.Drawing;
-using System.Linq;
 using System.Windows;
 
 namespace OpenVisionLab.Composition
@@ -24,7 +23,6 @@ namespace OpenVisionLab.Composition
                 ShowGroupNames = false,
                 ShowRoiItemNames = false
             };
-            ConfigureHostedImageViewer();
 
             View = new RoiImageCanvasView
             {
@@ -36,7 +34,7 @@ namespace OpenVisionLab.Composition
 
         public FrameworkElement View { get; }
 
-        public int TextureTileCount => canvasViewModel.ImageViewer.TextureAreas.Values.Sum(items => items?.Count ?? 0);
+        public int TextureTileCount => canvasViewModel.TextureTileCount;
 
         public void LoadImage(Bitmap image, string textureName)
         {
@@ -71,7 +69,7 @@ namespace OpenVisionLab.Composition
                 LineWidth = isSelected ? 2.6f : 1.4f
             };
 
-            canvasViewModel.ImageViewer.AddOverlay(
+            canvasViewModel.AddOverlay(
                 string.Empty,
                 groupType,
                 rect,
@@ -82,12 +80,12 @@ namespace OpenVisionLab.Composition
 
         public void DeleteOverlay(string overlayId)
         {
-            canvasViewModel.ImageViewer.DeleteOverlay(overlayId, string.Empty);
+            canvasViewModel.DeleteOverlay(overlayId);
         }
 
         public void Refresh()
         {
-            canvasViewModel.ImageViewer.RefreshGL();
+            canvasViewModel.RefreshCanvas();
         }
 
         public void Dispose()
@@ -98,17 +96,10 @@ namespace OpenVisionLab.Composition
             if (View is RoiImageCanvasView canvasView)
             {
                 canvasView.DataContext = null;
+                canvasView.Dispose();
             }
 
             canvasViewModel.Dispose();
-        }
-
-        private void ConfigureHostedImageViewer()
-        {
-            // Tool previews live beside WPF comboboxes; keep the native OpenGL HWND inside its WPF slot.
-            canvasViewModel.ImageViewer.AutoSize = false;
-            canvasViewModel.ImageViewer.MinimumSize = System.Drawing.Size.Empty;
-            canvasViewModel.ImageViewer.Dock = System.Windows.Forms.DockStyle.Fill;
         }
 
         private static EnumInspWindowType ToCanvasOverlayKind(VisionToolPreviewOverlayKind overlayKind)

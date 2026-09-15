@@ -1,0 +1,155 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0064",
+    "aliases": [
+      "OPENVISIONLAB-2D006-PREVIEW-RESULT-INVALIDATION-20260915"
+    ],
+    "type": "bug",
+    "mode": "simple",
+    "title": "Invalidate the current native Preview after a failed rerun",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "scheduled 2D task execution and source review",
+    "summary": "The 2D plan identifies that a successful native Preview can leave HasPreviewResult true when the next Preview fails. The bounded change must invalidate only the current result while preserving the existing output layer and normal Preview/Run routing.",
+    "refs": [
+      "C:\\Users\\USER\\Downloads\\OpenVisionLab_2D_Audit_and_Plan.md",
+      "C:\\Users\\USER\\Downloads\\OpenVisionLab_2D_tasks.json",
+      "AGENTS.md",
+      "C:\\Users\\USER\\.codex\\docs\\WPF_UI_UX_RULES.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "OpenVisionNativeToolDocument now invalidates the current native Preview and clears the existing result-review state before every single-input or arithmetic attempt. Failed reruns retain the previous output layer only as a non-current artifact, while a valid retry restores current validity. Debug/Release desktop smoke, input-change invalidation, viewer reopen, and Line signal regression all pass."
+  },
+  "problem": {
+    "claims": [
+      {
+        "id": "P1",
+        "state": "reported",
+        "text": "OpenVisionNativeToolDocument.ApplyPreviewExecutionResult handles a failed Preview by setting status but does not clear HasPreviewResult, allowing the prior successful result to remain current after a failed rerun.",
+        "evidence_refs": [
+          "E1"
+        ]
+      }
+    ],
+    "impact": "A user can mistake an older output image for the failed attempt and downstream shell actions can continue to treat the stale output as a valid current Preview."
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "Every native single-input and arithmetic Preview attempt invalidates the current Preview state before execution; a successful rerun restores HasPreviewResult=true and a failed rerun leaves it false without incrementing PreviewRunCount.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "After success followed by a missing-template or equivalent execution failure, the existing output image may remain as a previous artifact but is not treated as the current result; status clearly reports Preview failure and the shell does not route it as a successful Preview.",
+      "evidence_refs": [
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "The existing input-change invalidation, Line signal evidence behavior, output viewer reopen path, and layer/routing contracts remain intact.",
+      "evidence_refs": [
+        "E2",
+        "E3",
+        "E4"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "The affected OpenVisionLab embedded smoke build and Debug/Release app builds pass; actual desktop smoke evidence records the selected monitor and fresh before/after screenshots under the D: evidence root.",
+      "evidence_refs": [
+        "E2",
+        "E3",
+        "E5"
+      ]
+    }
+  ],
+  "relations": [],
+  "context": [
+    {
+      "kind": "owner-map",
+      "location": "OpenVisionNativeToolDocument.RunPreview/RunArithmeticPreview -> OpenVisionNativePreviewExecutionController -> ApplyPreviewExecutionResult -> HasPreviewResult/LastStatusText"
+    },
+    {
+      "kind": "state-writer",
+      "location": "OpenVisionNativeToolDocument owns HasPreviewResult and PreviewRunCount; ShellToolTestFacade and OpenVisionNativeToolWindowController read the validity to route direct result state."
+    },
+    {
+      "kind": "reading-order",
+      "location": "OpenVisionNativeToolDocument.RunPreview -> RunArithmeticPreview -> ApplyPreviewExecutionResult -> OpenVisionShellHostToolWindowController.HasDisplayablePreviewResult -> DirectSmokeRunner"
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "review",
+      "location": "src\\OpenVisionLab\\UI\\Menu\\Wpf\\NativeTools\\Documents\\OpenVisionNativeToolDocument.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Tooling\\SingleInput\\VisionToolSingleInputPropertyToolViewBase.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Tooling\\SingleInput\\VisionToolSingleInputMatchingToolController.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\ToolViews\\LineToolWpfView.xaml.cs",
+      "observation": "RunPreview and RunArithmeticPreview call the existing ClearPreviewResult owner before execution. ClearPreviewResult sets HasPreviewResult=false, clears the existing single-input result review through the property/custom view owner, and preserves the Line-specific signal-evidence cleanup. ApplyPreviewExecutionResult increments PreviewRunCount and restores HasPreviewResult=true only after a successful result is published; the shell validity route continues to read HasPreviewResult.",
+      "observed_at": "2026-09-15T12:53:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d006-preview-validity-20260915\\runtime-debug-final\\report.txt; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d006-preview-validity-20260915\\runtime-debug-final\\preview-validity-before-failure.png; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d006-preview-validity-20260915\\runtime-debug-final\\preview-validity-after-failure.png; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d006-preview-validity-20260915\\runtime-debug-final\\preview-validity-recovery.png; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d006-preview-validity-20260915\\runtime-debug-final\\preview-validity-after-input-change.png; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d006-preview-validity-20260915\\runtime-debug-final\\preview-validity-previous-viewer.png",
+      "observation": "The actual Debug desktop smoke passed. It exercised success -> missing-template failure -> viewer reopen -> valid retry -> input change: PreviewRunCount was 0 -> 1 -> 1 -> 2, HasPreviewResult was false after failure and input change, the previous Matching_Preview image remained available but was not current, the failure status contained Preview NG, and the previous viewer reopened without restoring validity. The report records DISPLAY2 bounds and window intersection for both shell and tool windows.",
+      "observed_at": "2026-09-15T12:51:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d006-preview-validity-20260915\\runtime-release-final\\report.txt; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d006-preview-validity-20260915\\runtime-release-final\\preview-validity-before-failure.png; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d006-preview-validity-20260915\\runtime-release-final\\preview-validity-after-failure.png; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d006-preview-validity-20260915\\runtime-release-final\\preview-validity-recovery.png; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d006-preview-validity-20260915\\runtime-release-final\\preview-validity-after-input-change.png; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d006-preview-validity-20260915\\runtime-release-final\\preview-validity-previous-viewer.png",
+      "observation": "The actual Release desktop smoke passed the same success, failed rerun, previous-viewer, valid-retry, and input-change cases with PreviewRunCount 0 -> 1 -> 1 -> 2, current-result invalidation, retained previous output, Preview NG status, and monitor intersection evidence on DISPLAY2.",
+      "observed_at": "2026-09-15T12:52:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d006-preview-validity-20260915\\runtime-line-pins-final\\report.txt",
+      "observation": "The existing Release line-pins-measure desktop smoke passed after the shared validity change. It retained Line_Preview success, result review and measured value, signal cue auto-dismiss, manual signal inspector evidence, and unchanged preview/layer/routing side effects; monitor evidence again records DISPLAY2 intersection.",
+      "observed_at": "2026-09-15T12:53:00+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "build",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d006-preview-validity-20260915\\app-debug-embedded-build-final.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d006-preview-validity-20260915\\app-release-embedded-build-final.log",
+      "observation": "OpenVisionLab Debug and Release builds with the embedded Direct Smoke runner completed with exit code 0, warnings 0, and errors 0 after the final source change.",
+      "observed_at": "2026-09-15T12:52:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-15T12:53:00+09:00",
+      "summary": "Reuse the existing OpenVisionNativeToolDocument validity owner and existing ClearResultReview contracts. Do not delete or overwrite the previous output layer; mark only the current Preview invalid and let a valid retry restore it.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E4",
+        "E5"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-15T12:53:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "Preview validity is now cleared before every native attempt, failed reruns are fail-closed without deleting the previous layer, valid retry and input-change transitions are covered, and focused Debug/Release WPF regressions pass."
+    }
+  ],
+  "created_at": "2026-09-15T12:30:00+09:00",
+  "updated_at": "2026-09-15T12:53:00+09:00"
+}

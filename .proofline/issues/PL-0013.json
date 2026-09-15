@@ -1,0 +1,433 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0013",
+    "aliases": [
+      "OPENVISIONLAB-PARTIAL-STRUCTURE-20260911"
+    ],
+    "type": "task",
+    "mode": "composite",
+    "title": "Structure OpenVisionLab partial types by proven responsibility",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "user request",
+    "summary": "The user explicitly requested a scheduled, continuing effort to structure all partial types so the project is easier to follow without waiting for user or hardware input.",
+    "refs": [
+      "docs/reports/OPENVISIONLAB_PARTIAL_STRUCTURE_PLAN_20260911.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "PL-0013 resolved: D0/D1 inventory correction, D2 Shell TestSurface, D3 OpenGL concrete renderers, D4 Recipe concrete facade, and D5 protected partial closure are verified.",
+    "updated_at": "2026-09-11T13:20:00+09:00",
+    "summary": "PL-0013 resolved. The final protected set is 59 generated/framework/XAML declarations (56+2+1), manual workflow partial declarations are 0, and literal smoke matches are reported separately as 2."
+  },
+  "objective": {
+    "summary": "Make every existing partial declaration understandable and responsibility-oriented, extracting only independently owned behavior while preserving observable behavior and existing contracts.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev and preserve the existing dirty worktree.",
+      "Do not modify C:\\Git\\2D\\Original, commit, push, tag, release, or deploy as part of this issue.",
+      "Do not delete generated/framework partials or merge cohesive same-lifetime partials mechanically.",
+      "Do not add one-implementation interfaces, forwarding wrappers, generic managers, or speculative factories.",
+      "Preserve XAML bindings, public/test facades, serialization, SDK contracts, event order, and Dispose order.",
+      "Do not wait indefinitely for UI, camera, hardware, or user input; record those boundaries as unverified.",
+      "Run focused source checks and the smallest relevant Debug/Release build after each structural slice."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "All current partial declarations have an inventory entry naming file, type, project, namespace, category, caller, mutable-state writer, lifetime/dispose owner, and binding/public contract impact.",
+      "evidence_refs": [
+        "E1",
+        "E12"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "Every proposed extraction has a current owner, intended owner, call path, dependency direction, state/data flow, and focused proof; candidates without a real boundary are recorded as no-change.",
+      "evidence_refs": [
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Each implemented extraction changes a real responsibility or dependency boundary, removes stale coupling from the former owner, and preserves observable contracts.",
+      "evidence_refs": [
+        "E5",
+        "E9",
+        "E10",
+        "E11"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "Every implemented slice passes the relevant Debug/Release build, focused contract or smoke check, stale-coupling search, and git diff whitespace check.",
+      "evidence_refs": [
+        "E3",
+        "E6",
+        "E9",
+        "E10",
+        "E11"
+      ]
+    },
+    {
+      "id": "C5",
+      "text": "A final report records the retained generated/cohesive partials, moved responsibilities, old/new call paths, build/test evidence, and runtime boundaries that remain unverified.",
+      "evidence_refs": [
+        "E4",
+        "E6",
+        "E11",
+        "E12"
+      ]
+    },
+    {
+      "id": "C6",
+      "text": "The completion design names the current and intended owner, call path, mutable-state writer, lifetime/release owner, and binding/public/test contract for every remaining manual family and protected framework family.",
+      "evidence_refs": [
+        "E7"
+      ]
+    },
+    {
+      "id": "C7",
+      "text": "The final implementation removes manual partial declarations from OpenGlDrawing, Recipe CommandSurface, and Shell TestHooks without changing existing public, XAML, Recipe XML, OpenGL, or smoke contracts.",
+      "evidence_refs": [
+        "E11",
+        "E12"
+      ]
+    },
+    {
+      "id": "C8",
+      "text": "The final audit reports compiled declarations separately from literal partial text matches and closes with the protected framework set plus focused build/test evidence.",
+      "evidence_refs": [
+        "E12"
+      ]
+    }
+  ],
+  "milestones": [
+    {
+      "id": "M1",
+      "summary": "Inventory, classify, and validate all current partial declarations and extraction candidates.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1",
+        "C2"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M2",
+      "summary": "Apply each proven concrete ownership change in bounded verified slices.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C3",
+        "C4"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M3",
+      "summary": "Complete the final partial map and verification report.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C5"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M4",
+      "summary": "Freeze the completion design for every remaining manual and protected partial family.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C6"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M5",
+      "summary": "Correct declaration/text inventory and remove smoke-contract false positives from the audit output.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C8"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M6",
+      "summary": "Extract Shell TestSurface, OpenGL renderers, and Recipe CommandSurface facade in bounded verified slices.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C3",
+        "C4",
+        "C7"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M7",
+      "summary": "Close protected partial map and final structural verification.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C5",
+        "C8"
+      ],
+      "issue_refs": []
+    }
+  ],
+  "relations": [],
+  "context": [
+    {
+      "kind": "plan",
+      "location": "docs/reports/OPENVISIONLAB_PARTIAL_STRUCTURE_PLAN_20260911.md"
+    },
+    {
+      "kind": "audit",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\current-self-review-20260911"
+    },
+    {
+      "kind": "structure",
+      "location": "docs/admin/CODEBASE_STRUCTURE.md"
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "report",
+      "location": "docs/reports/OPENVISIONLAB_PARTIAL_STRUCTURE_PLAN_20260911.md",
+      "summary": "Execution plan and final bounded-slice history for the partial structure program."
+    },
+    {
+      "kind": "report",
+      "location": "docs/reports/OPENVISIONLAB_PARTIAL_STRUCTURE_PROOF_20260911.md",
+      "summary": "Owner and call-path proof for retained and consolidated partial families."
+    },
+    {
+      "kind": "design",
+      "location": "docs/reports/OPENVISIONLAB_PARTIAL_STRUCTURE_COMPLETION_DESIGN_20260911.md",
+      "summary": "Design-first completion plan with protected contracts and verification gates."
+    },
+    {
+      "kind": "evidence",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structure-p3-20260911",
+      "summary": "Historical P3 implementation inventory and stale-path evidence."
+    },
+    {
+      "kind": "evidence",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structure-d1-20260911",
+      "summary": "Declaration-aware audit and owner-map evidence from D0/D1."
+    },
+    {
+      "kind": "evidence",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structure-d2-20260911",
+      "summary": "Shell TestSurface extraction evidence from D2."
+    },
+    {
+      "kind": "evidence",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structure-d3-20260911",
+      "summary": "OpenGL concrete renderer ownership and public-signature evidence from D3."
+    },
+    {
+      "kind": "design-evidence",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structure-d3-design-20260911",
+      "summary": "OpenGL renderer design inventory and protected ownership evidence."
+    },
+    {
+      "kind": "evidence",
+      "location": "D:\\\\OpenVisionLab-TestData\\\\OpenVisionLab_Dev\\\\partial-structure-d4-20260911",
+      "summary": "Recipe concrete facade implementation, source-body comparison, and focused verification evidence from D4."
+    },
+    {
+      "kind": "evidence",
+      "location": "D:\\\\OpenVisionLab-TestData\\\\OpenVisionLab_Dev\\\\partial-structure-d5-20260911",
+      "summary": "Final protected partial inventory, owner map, audit, readiness, documentation, and stale-path evidence from D5."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "repository-inspection",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structure-p1-20260911\\partial-inventory.csv; partial-groups.csv; partial-owner-map.csv; summary.txt",
+      "observation": "A source/tools inventory excluding bin and obj found 108 actual partial declarations across 65 partial types. 58 declarations were classified as generated/framework or XAML contracts and 50 as cohesive same-lifetime composition. Two additional raw partial tokens were smoke-contract strings and were recorded separately as non-declaration matches.",
+      "observed_at": "2026-09-11T00:00:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "repository-inspection",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structure-p2-20260911\\p2-owner-proof.md; p2-decisions.csv; summary.txt",
+      "observation": "P2 rechecked 12 cohesive partial families. The recipe command surface shares binding and execution state; the dock workspace shares one AvalonDock manager; Pipeline Review events share document state and Dispose subscriptions; Shell/TestHooks share the public smoke contract and private owners; ImageCanvas/ROI/OpenGL/docking/tool shells share native or visual lifetimes. Zero independently owned extraction boundaries were proven.",
+      "observed_at": "2026-09-11T01:20:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "test",
+      "location": "C:\\Git\\2D\\Dev\\OpenVisionLab.sln; tools\\RefactorAudit\\Invoke-RefactorAudit.ps1; tools\\TestDocumentationIndex.ps1; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structure-p2-20260911",
+      "observation": "dotnet build OpenVisionLab.sln --configuration Debug --no-restore passed with 0 warnings and 0 errors; Release passed with 0 warnings and 0 errors. TestDocumentationIndex passed with IndexedPaths=287, Routes=16, RootRedirects=102. Invoke-RefactorAudit.ps1 -Verify passed with CSharpFiles=847, XamlFiles=60, PartialDeclarations=110, ViewModelUiIoFiles=1, ProjectCycles=0, ShellStorageCalls=0. git diff --check reported no whitespace errors; only existing LF/CRLF conversion warnings.",
+      "observed_at": "2026-09-11T01:35:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "repository-inspection",
+      "location": "C:\\Git\\2D\\Dev\\docs\\reports\\OPENVISIONLAB_PARTIAL_STRUCTURE_PLAN_20260911.md; C:\\Git\\2D\\Dev\\docs\\reports\\OPENVISIONLAB_PARTIAL_STRUCTURE_PROOF_20260911.md; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structure-p1-20260911; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structure-p2-20260911",
+      "observation": "The final map records all 108 actual partial declarations across 65 types, classifies generated/framework versus cohesive same-lifetime composition, records current and intended owners, call paths, mutable-state writers, lifetime/release owners, and contract impact, and documents the no-change decisions for every reviewed cohesive family.",
+      "observed_at": "2026-09-11T01:45:00+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "repository-change",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structure-p3-20260911\\partial-inventory-after.csv; partial-owner-map-after.csv; owner-proof-after.md; stale-path-search.log",
+      "observation": "The reopened source pass merged the manual partials for DockedLayerOrchestrator, DockWorkspaceController, docking gesture, ROI ViewModel, Pipeline Review event parts, Shell interactions, and the two Tool Shell layout controllers into their concrete owners. Recipe CommandSurface moved to Recipe/CommandSurface with responsibility-named files. Current owner, call path, state writer, lifetime owner, and protected contracts are recorded in owner-proof-after.md. No stale deleted source/tool path remains.",
+      "observed_at": "2026-09-11T00:51:18.454Z"
+    },
+    {
+      "id": "E6",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structure-p3-20260911\\build-debug.log; build-release.log; build-smoke-release.log; smoke; readiness.log; refactor-audit.log; documentation-index.log; diff-check.log",
+      "observation": "OpenVisionLab.sln Debug and Release builds passed with 0 warnings and 0 errors. VisionRecipeRunnerSmoke Release build passed. OpenVisionReadinessCheck passed all contracts in Debug and Release. Pipeline Review document revision, Recipe run-history orchestration, and Shell Recipe basic-lifecycle smoke contracts passed in Debug and Release. Refactor audit passed with CSharpFiles=822, XamlFiles=60, PartialDeclarations=80, ProjectCycles=0, ShellStorageCalls=0. DocumentationIndex passed; git diff --check returned no whitespace errors (only existing LF/CRLF conversion warnings).",
+      "observed_at": "2026-09-11T00:51:18.454Z"
+    },
+    {
+      "id": "E7",
+      "kind": "repository-inspection",
+      "location": "C:\\Git\\2D\\Dev\\docs\\reports\\OPENVISIONLAB_PARTIAL_STRUCTURE_COMPLETION_DESIGN_20260911.md; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structure-design-20260911\\design-inventory.txt",
+      "observation": "The completion design reopens the remaining manual families and records their current owner, intended owner, call path, mutable-state writer, lifetime/release owner, existing binding/public/test contract, protected framework set, implementation order, and focused verification gates. The current declaration-only recheck is 78 compiled partial declarations plus two smoke-contract literal matches; the final target is 59 protected declarations and zero manual partial families.",
+      "observed_at": "2026-09-11T02:15:00+09:00"
+    },
+    {
+      "id": "E8",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structure-d1-20260911\\source-survey-summary.txt; partial-text-matches.csv; partial-inventory-declarations.csv; partial-owner-map-declarations.csv; declaration-summary.txt; C:\\Git\\2D\\Dev\\tools\\RefactorAudit\\Invoke-RefactorAudit.ps1",
+      "observation": "D0/D1 completed. The refactor audit now anchors partial declaration matching to C# declaration lines and reports literal matches separately. Invoke-RefactorAudit.ps1 -Verify passed with CSharpFiles=822, XamlFiles=60, PartialDeclarations=78, PartialTextMatches=2, ViewModelUiIoFiles=1, ProjectCycles=0, ShellStorageCalls=0. The corrected declaration inventory and owner map contain 78 rows: XAML contract 56, generated/framework 2, native control composition 1, Recipe command surface 9, rendering composition 9, and test contract 1.",
+      "observed_at": "2026-09-11T02:35:00+09:00"
+    },
+    {
+      "id": "E9",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structure-d2-20260911\\build-debug.log; build-release.log; readiness.log; runtime-stability\\runtime_stability_contract.txt; audit\\audit-console.txt; structural-contract.txt",
+      "observation": "D2 Shell TestSurface extraction verified. The manual OpenVisionShellHostView.TestHooks.cs partial was removed; the concrete TestSurface owns the test contract through explicit bindings and the root retains compatibility forwarders. Debug and Release solution builds passed with 0 warnings/errors, OpenVisionReadinessCheck passed, runtime-stability contract passed, and RefactorAudit passed with PartialDeclarations=77, PartialTextMatches=2, ProjectCycles=0, ShellStorageCalls=0. Desktop WPF visual runtime states and monitor/DPI coverage were not run in this slice. A source contract comparison also matched all 301 prior TestHooks declarations to root compatibility references and TestSurface members, with the deleted partial path absent.",
+      "observed_at": "2026-09-11T12:11:27+09:00"
+    },
+    {
+      "id": "E10",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structure-d3-20260911\\build-imagecanvas-debug.log; build-solution-debug.log; build-solution-release.log; build-vision-smoke-debug.log; build-vision-smoke-release.log; runtime-debug-current; runtime-release-current; readiness-debug.log; readiness-release.log; signature-contract.txt; audit\\audit-console.txt",
+      "observation": "D3 OpenGL partial structure is verified. Nine old OpenGlDrawing partial files now have concrete renderer/state owners behind OpenGlDrawing.cs. The public signature comparison matched all 83 original methods with zero missing or unexpected signatures; ZoomFactor and FontGlyphCount contracts remain. ImageCanvas and solution Debug/Release builds, VisionRecipeRunnerSmoke Debug/Release builds, runtime stability Debug/Release contracts, ReadinessCheck Debug/Release, and RefactorAudit passed. The audit reports PartialDeclarations=68, PartialTextMatches=2, ProjectCycles=0, ShellStorageCalls=0. GPU-backed visual rendering and monitor/DPI coverage were not run.",
+      "observed_at": "2026-09-11T12:24:58+09:00"
+    },
+    {
+      "id": "E11",
+      "kind": "test",
+      "location": "D:\\\\OpenVisionLab-TestData\\\\OpenVisionLab_Dev\\\\partial-structure-d4-20260911",
+      "observation": "D4 verified the Recipe CommandSurface concrete facade. Eight former partial bodies and the existing root core matched whitespace/region/partial-normalized SHA-256 tokens. OpenVisionLab.sln and VisionRecipeRunnerSmoke Debug/Release builds passed with 0 warnings/errors; ReadinessCheck Debug/Release passed after switching moved-file checks to the current source family; Debug Recipe focused contracts passed 24/24 including the 12-case execution-session contract in a copied D: runtime; Release focused contracts passed 23/23. Refactor audit passed with CSharpFiles=815, XamlFiles=60, PartialDeclarations=59, PartialTextMatches=2, ProjectCycles=0, ShellStorageCalls=0; documentation index and git diff check passed. Actual WPF/GPU/camera/SDK runtime remains unverified.",
+      "observed_at": "2026-09-11T13:00:00+09:00"
+    },
+    {
+      "id": "E12",
+      "kind": "test",
+      "location": "D:\\\\OpenVisionLab-TestData\\\\OpenVisionLab_Dev\\\\partial-structure-d5-20260911",
+      "observation": "D5 final closure verified the protected inventory and no-manual-partial boundary. Inventory PASS: 59 declarations = WPF/XAML 56 + ImageCanvas native/designer 2 + Settings generated 1; ManualPartialDeclarations=0; PartialTextMatches=2. RefactorAudit passed with CSharpFiles=815, XamlFiles=60, PartialDeclarations=59, PartialTextMatches=2, ProjectCycles=0, ShellStorageCalls=0. ReadinessCheck Debug/Release and DocumentationIndex passed; stale manual paths and declarations were absent; git diff check had no whitespace errors. D4 Solution/Smoke Debug/Release builds and focused Recipe contracts remained passing. Runtime WPF/GPU/camera/SDK/long-running native boundaries remain unverified.",
+      "observed_at": "2026-09-11T13:20:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-11T01:20:00+09:00",
+      "summary": "P2 proof retains generated/framework and cohesive partials. No concrete extraction is admitted because every reviewed family shares mutable state, native/UI lifetime, or an existing public/test contract.",
+      "evidence_refs": [
+        "E2"
+      ]
+    },
+    {
+      "id": "D2",
+      "kind": "decision",
+      "at": "2026-09-11T01:35:00+09:00",
+      "summary": "After P2 no-change proof, Debug/Release solution builds and source/documentation audits passed. Keep the current owners and retain the heartbeat only to detect a newly opened boundary.",
+      "evidence_refs": [
+        "E3"
+      ]
+    },
+    {
+      "id": "D3",
+      "kind": "decision",
+      "at": "2026-09-11T00:51:18.454Z",
+      "summary": "The user explicitly reopened the closed no-change boundary and required the existing partials to be structured in source. The implementation therefore allowed minimal same-owner consolidation and folder organization while preserving contracts.",
+      "evidence_refs": [
+        "E5"
+      ]
+    },
+    {
+      "id": "D4",
+      "kind": "decision",
+      "at": "2026-09-11T00:51:18.454Z",
+      "summary": "Protected families remain explicit: XAML/generated/designer, OpenGL rendering composition, Recipe shared-state partials, Shell test hooks, and smoke contracts. No speculative abstraction or user/hardware wait was added.",
+      "evidence_refs": [
+        "E5",
+        "E6"
+      ]
+    },
+    {
+      "id": "D5",
+      "kind": "decision",
+      "at": "2026-09-11T02:15:00+09:00",
+      "summary": "The user reopened the protected-family closure and requested design before implementation. The same automation continues with D0/D1; no duplicate automation is created and no user/UI/hardware wait is introduced.",
+      "evidence_refs": [
+        "E7"
+      ]
+    },
+    {
+      "id": "D6",
+      "kind": "decision",
+      "at": "2026-09-11T02:35:00+09:00",
+      "summary": "D0/D1 are verified. Literal smoke contract text remains intentionally present but is no longer counted as a compiled partial declaration. The next single slice is D2 Shell TestSurface extraction.",
+      "evidence_refs": [
+        "E8"
+      ]
+    },
+    {
+      "id": "D7",
+      "kind": "decision",
+      "at": "2026-09-11T12:11:27+09:00",
+      "summary": "D2 is verified. TestHooks behavior now has a concrete TestSurface owner, existing public/internal test names are preserved by root compatibility forwarding, and no Shell state or lifetime was duplicated. Continue automatically with D3 OpenGL renderer ownership.",
+      "evidence_refs": [
+        "E9"
+      ]
+    },
+    {
+      "id": "D8",
+      "kind": "decision",
+      "at": "2026-09-11T12:24:58+09:00",
+      "summary": "D3 is verified. OpenGL implementation responsibilities now have concrete renderer owners while the public OpenGlDrawing façade and existing context/display-list ownership remain. Continue automatically with D4 Recipe CommandSurface ownership.",
+      "evidence_refs": [
+        "E10"
+      ]
+    },
+    {
+      "id": "D9",
+      "kind": "decision",
+      "at": "2026-09-11T13:00:00+09:00",
+      "summary": "D4 is verified. Recipe CommandSurface now has one concrete facade with responsibility regions; existing workflow owners retain independent state and file/Recipe/Pipeline actions. All Recipe partial declarations and stale source/tool paths are gone. D5 protected declaration closure remains.",
+      "evidence_refs": [
+        "E11"
+      ]
+    },
+    {
+      "id": "D10",
+      "kind": "decision",
+      "at": "2026-09-11T13:20:00+09:00",
+      "summary": "D5 is verified and PL-0013 is complete. The final protected set is 59 generated/framework/XAML declarations, no manual partial remains, stale Recipe/OpenGL/TestHooks paths are absent, and final source/build/static/documentation checks passed. Close the single heartbeat; do not create a continuation automation.",
+      "evidence_refs": [
+        "E12"
+      ]
+    }
+  ],
+  "created_at": "2026-09-11T00:00:00+09:00",
+  "updated_at": "2026-09-11T14:03:00+09:00"
+}

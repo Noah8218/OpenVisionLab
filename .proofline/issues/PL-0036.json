@@ -1,0 +1,144 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0036",
+    "aliases": [],
+    "type": "task",
+    "mode": "simple",
+    "title": "Retain Morphology Tool Partial after concrete owner audit",
+    "risk": "low"
+  },
+  "origin": {
+    "kind": "user-request",
+    "summary": "The user requested that Partial refactoring continue in scheduled cycles and that each remaining Partial be structurally reviewed rather than mechanically deleted or split.",
+    "refs": [
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "docs/reports/OPENVISIONLAB_PARTIAL_STRUCTURAL_ELIMINATION_PLAN_20260913.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "MorphologyToolWpfView.xaml.cs를 no-change 구조 감사로 재확인했다. View Partial은 XAML/composition adapter로 유지되고, presenter/ViewModel/interaction/kernel/base가 property, mutable/settings, interaction, input, preview/lifetime 경계를 각각 소유한다. 새 독립 state/lifetime/test seam이 없어 production split은 만들지 않았으며, Debug/Release contract/build와 Morphology WPF smoke가 통과했다."
+  },
+  "objective": {
+    "summary": "Audit MorphologyToolWpfView's Partial structure and retain it only if existing concrete owners already provide the necessary state, interaction, persistence, and lifetime boundaries without a new split.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev; do not modify C:\\Git\\2D\\Original.",
+      "Do not add a service, interface, manager, wrapper, forwarding Partial, or ViewModel split for file length alone.",
+      "Preserve MorphologyToolWpfView XAML names, property binding facade, Learn action, preview path, and DisposeView lifetime.",
+      "Keep test outputs and evidence under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev.",
+      "Do not commit, push, tag, release, deploy, or mutate the Original repository."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The proof report records current/intended owners, caller path, mutable-state writer, lifetime owner, binding/public contract, shortest reading order, and the reason no production split is justified.",
+      "evidence_refs": [
+        "E1"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "The source contract proves that the View Partial has no direct persistence/file-dialog/algorithm-construction coupling and that existing presenter, ViewModel, interaction, kernel, factory, and base lifetime owners are wired.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Focused Debug/Release contracts and builds plus relevant WPF smoke pass; broader theme/DPI/input/camera/SDK/GPU/native runtime remains explicitly unverified.",
+      "evidence_refs": [
+        "E2",
+        "E3"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0035"
+    }
+  ],
+  "context": [
+    {
+      "kind": "source",
+      "location": "src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\ToolViews\\MorphologyToolWpfView.xaml.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Tooling\\PropertyGrid\\VisionToolParameterPresenters.cs; src\\OpenVisionLab\\UI\\VisionTest\\ViewModels\\MorphologyToolViewModel.cs"
+    },
+    {
+      "kind": "composition-owner",
+      "location": "src\\OpenVisionLab\\UI\\Menu\\Wpf\\NativeTools\\Documents\\OpenVisionNativeCustomToolFactory.cs; src\\OpenVisionLab\\UI\\VisionTest\\Composition\\VisionToolCompositionService.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Tooling\\SingleInput\\VisionToolSingleInputCustomToolViewBase.cs"
+    },
+    {
+      "kind": "test-host",
+      "location": "tools\\VisionRecipeRunnerSmoke\\MorphologyToolPartialBoundaryContract.cs; tools\\PipelineViewerScreenshotSmoke\\Program.cs"
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "screenshot",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\morphology-tool-partial-retention-20260914\\wpf-smoke\\wpf_filter_morphology_layout_guard.png",
+      "summary": "Fresh docked Morphology Tool WPF layout smoke screenshot on the detected single monitor."
+    },
+    {
+      "kind": "screenshot",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\morphology-tool-partial-retention-20260914\\wpf-smoke\\manual_morphology_tool_ui.png",
+      "summary": "Fresh standalone Morphology Tool WPF screenshot on the detected single monitor."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source",
+      "location": "docs\\reports\\OPENVISIONLAB_MORPHOLOGY_TOOL_PARTIAL_RETENTION_20260914.md; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\ToolViews\\MorphologyToolWpfView.xaml.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Tooling\\PropertyGrid\\VisionToolParameterPresenters.cs; src\\OpenVisionLab\\UI\\VisionTest\\ViewModels\\MorphologyToolViewModel.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Behaviors\\VisionToolMorphologyInteractionController.cs",
+      "observation": "MorphologyToolWpfView remains a cohesive XAML/composition adapter. The presenter, ViewModel, interaction controller, kernel controller, factory, and base View provide concrete property, mutable/settings, interaction, input, creation, and lifetime owners; no direct persistence/dialog/algorithm-construction coupling exists in the View Partial.",
+      "observed_at": "2026-09-14T01:38:54+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\morphology-tool-partial-retention-20260914\\debug\\morphology-tool-partial-boundary-contract.txt; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\morphology-tool-partial-retention-20260914\\release\\morphology-tool-partial-boundary-contract.txt",
+      "observation": "MorphologyToolPartialBoundaryContract passed 6/6 in Debug and Release, proving retained owner wiring and no-change coupling checks.",
+      "observed_at": "2026-09-14T01:38:54+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\morphology-tool-partial-retention-20260914",
+      "observation": "VisionRecipeRunnerSmoke Debug/Release builds passed with 0 warnings/errors; PipelineViewerScreenshotSmoke x64 Debug had 0 errors and two pre-existing MSB3270 warnings; one-monitor Morphology layout and standalone UI smoke passed with fresh PNGs. Broader UI/native matrices remain unverified.",
+      "observed_at": "2026-09-14T01:38:54+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-14T01:38:54+09:00",
+      "summary": "MorphologyToolWpfView Partial은 required XAML/composition adapter이고, 기존 presenter/ViewModel/interaction/kernel/base가 독립 책임과 lifetime을 이미 제공한다. 새 seam 없이 분리하면 wrapper나 중복 상태가 되므로 no-change로 유지한다.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "D2",
+      "kind": "decision",
+      "at": "2026-09-14T01:38:54+09:00",
+      "summary": "PL-0036의 세 completion criteria가 현재 증거로 충족되어 resolved로 닫는다. 전체 theme/DPI/input, camera/SDK/GPU 및 long-running native runtime은 이 slice의 검증 범위가 아니다.",
+      "evidence_refs": [
+        "E3"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-14T01:38:54+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "The Morphology Partial retained-owner audit found no independent boundary that justified a production split; focused source/build/WPF evidence was recorded. Do not reopen without a new requirement, reproducible defect, failed criterion, or changed dependency/lifetime boundary."
+    }
+  ],
+  "created_at": "2026-09-14T01:38:54+09:00",
+  "updated_at": "2026-09-14T01:38:54+09:00"
+}

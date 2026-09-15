@@ -47,7 +47,7 @@ dll\
 
 - 알고리즘, Property 모델, Pipeline 런타임과 결과 모델은 OpenVisionLab Vision SDK 3.0이 소유합니다.
 - OpenVisionLab은 SDK 3.0의 `OpenVisionLab.Core`, `OpenVisionLab.Vision2D`, `OpenVisionLab.Vision2D.Blob` 네임스페이스를 사용합니다.
-- `System.Drawing.Bitmap`과 `OpenCvSharp.Mat` 사이의 UI 변환은 SDK가 아니라 OpenVisionLab의 `Common\BitmapImageConverter.cs`가 소유합니다.
+- `System.Drawing.Bitmap`과 `OpenCvSharp.Mat` 사이의 UI 변환은 SDK가 아니라 OpenVisionLab의 `Common\Imaging\BitmapImageConverter.cs`가 소유합니다.
 - 구형 `Lib.Common.dll`, `Lib.OpenCV.dll`, `Lib.OpenCV.Blob.dll`, `OpenCvSharp.Extensions.dll`, `dll\Library-Noah` 폴더를 다시 추가하지 않습니다.
 - 네이티브 `OpenCvSharpExtern.dll`은 `dll\OpenCVSharp\`에서 한 번만 공유합니다.
 

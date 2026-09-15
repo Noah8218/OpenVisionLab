@@ -27,6 +27,7 @@ namespace OpenVisionLab
         private string deltaText = "Delta[-]";
         private MediaBrush swatchBrush = MediaBrushes.Black;
         private int gridColumns = 2;
+        private readonly ImageCompareDirectoryPolicy directoryPolicy = new ImageCompareDirectoryPolicy();
 
         public ImageCompareViewModel()
         {
@@ -94,11 +95,15 @@ namespace OpenVisionLab
             private set => SetField(ref gridColumns, value);
         }
 
+        internal string InitialImageDirectory => directoryPolicy.ResolveInitialDirectory();
+
         public void LoadImages(params string[] imagePaths)
         {
             string[] validPaths = NormalizeImagePaths(imagePaths);
             int slotCount = Math.Max(MinimumCompareImages, validPaths.Length);
             ResetSlots(slotCount);
+
+            directoryPolicy.RememberImageDirectory(validPaths);
 
             for (int index = 0; index < validPaths.Length; index++)
             {
@@ -165,6 +170,46 @@ namespace OpenVisionLab
             DeltaText = ResolveDeltaText(slot, x, y, gv);
             SwatchBrush = new SolidColorBrush(System.Windows.Media.Color.FromRgb(color.R, color.G, color.B));
             SwatchBrush.Freeze();
+        }
+
+        internal static bool TryMapDisplayedPoint(
+            int pixelWidth,
+            int pixelHeight,
+            double hostWidth,
+            double hostHeight,
+            double pointX,
+            double pointY,
+            out int x,
+            out int y)
+        {
+            x = -1;
+            y = -1;
+            if (pixelWidth <= 0 || pixelHeight <= 0 || hostWidth <= 0 || hostHeight <= 0)
+            {
+                return false;
+            }
+
+            double scale = Math.Min(hostWidth / pixelWidth, hostHeight / pixelHeight);
+            if (scale <= 0 || double.IsInfinity(scale) || double.IsNaN(scale))
+            {
+                return false;
+            }
+
+            double displayWidth = pixelWidth * scale;
+            double displayHeight = pixelHeight * scale;
+            double offsetX = (hostWidth - displayWidth) / 2.0;
+            double offsetY = (hostHeight - displayHeight) / 2.0;
+            double imageX = (pointX - offsetX) / scale;
+            double imageY = (pointY - offsetY) / scale;
+
+            if (imageX < 0 || imageY < 0 || imageX >= pixelWidth || imageY >= pixelHeight)
+            {
+                return false;
+            }
+
+            x = Math.Max(0, Math.Min(pixelWidth - 1, (int)Math.Floor(imageX)));
+            y = Math.Max(0, Math.Min(pixelHeight - 1, (int)Math.Floor(imageY)));
+            return true;
         }
 
         public void ResetStatus()

@@ -79,13 +79,15 @@ namespace OpenVisionLab
                     rightResult.Exception);
             }
 
-            List<LineSegment2D> distanceLines = CreateDistanceLines(leftTool, rightTool);
+            List<LineSegment2D> distanceLines = CreateDistanceLines(leftTool, rightTool)
+                .Where(line => line != null && line.Distance() > 0D && IsFinite(line.Distance()))
+                .ToList();
             if (distanceLines.Count == 0)
             {
                 stopwatch.Stop();
                 return VisionToolResult.Failed(
                     VisionToolErrorCode.LineGaugeEdgeNotFound,
-                    "LineDistance found edge points but could not create distance lines. Check ROI, projection direction, polarity, POINT_RANGE, and VER_PRJ_DIR.",
+                    "LineDistance found no positive finite distance. Check ROI, projection direction, polarity, POINT_RANGE, and VER_PRJ_DIR; coincident or parallel lines are not measurable.",
                     stopwatch.Elapsed);
             }
 
@@ -229,7 +231,26 @@ namespace OpenVisionLab
             return source.Clone();
         }
 
-        private double PixelPerMm => leftProperty.PIXELPERMM > 0 ? leftProperty.PIXELPERMM : rightProperty.PIXELPERMM;
+        private double PixelPerMm
+        {
+            get
+            {
+                if (!IsFinite(leftProperty.PIXELPERMM)
+                    || !IsFinite(rightProperty.PIXELPERMM)
+                    || leftProperty.PIXELPERMM < 0D
+                    || rightProperty.PIXELPERMM < 0D)
+                {
+                    return 0D;
+                }
+
+                return leftProperty.PIXELPERMM > 0D ? leftProperty.PIXELPERMM : rightProperty.PIXELPERMM;
+            }
+        }
+
+        private static bool IsFinite(double value)
+        {
+            return !double.IsNaN(value) && !double.IsInfinity(value);
+        }
 
         private Dictionary<string, double> CreateMetrics(
             List<LineSegment2D> distanceLines,
@@ -260,13 +281,10 @@ namespace OpenVisionLab
                 [VisionPipelineKnownMetrics.ResultImageChannels] = resultImage.Channels()
             };
 
-            if (pixelPerMm > 0)
-            {
-                metrics[VisionPipelineKnownMetrics.DistanceMmMin] = metrics[VisionPipelineKnownMetrics.DistancePxMin] * pixelPerMm;
-                metrics[VisionPipelineKnownMetrics.DistanceMmMax] = metrics[VisionPipelineKnownMetrics.DistancePxMax] * pixelPerMm;
-                metrics[VisionPipelineKnownMetrics.DistanceMmAvg] = metrics[VisionPipelineKnownMetrics.DistancePxAvg] * pixelPerMm;
-                metrics[VisionPipelineKnownMetrics.DistanceMmRange] = metrics[VisionPipelineKnownMetrics.DistancePxRange] * pixelPerMm;
-            }
+            VisionPipelineMetricEnrichmentService.AddConvertedMetric(metrics, VisionPipelineKnownMetrics.DistancePxMin, VisionPipelineKnownMetrics.DistanceMmMin, pixelPerMm);
+            VisionPipelineMetricEnrichmentService.AddConvertedMetric(metrics, VisionPipelineKnownMetrics.DistancePxMax, VisionPipelineKnownMetrics.DistanceMmMax, pixelPerMm);
+            VisionPipelineMetricEnrichmentService.AddConvertedMetric(metrics, VisionPipelineKnownMetrics.DistancePxAvg, VisionPipelineKnownMetrics.DistanceMmAvg, pixelPerMm);
+            VisionPipelineMetricEnrichmentService.AddConvertedMetric(metrics, VisionPipelineKnownMetrics.DistancePxRange, VisionPipelineKnownMetrics.DistanceMmRange, pixelPerMm);
 
             return metrics;
         }
@@ -391,26 +409,73 @@ namespace OpenVisionLab
             Scalar distanceColor = new Scalar(0, 0, 255);
             Scalar labelColor = new Scalar(0, 255, 0);
             double pixelPerMm = PixelPerMm;
+            List<OpenCvSharp.Rect> occupiedLabelBounds = new List<OpenCvSharp.Rect>();
 
             for (int i = 0; i < distanceLines.Count; i++)
             {
                 LineSegment2D line = distanceLines[i];
                 Cv2.Line(resultImage, line.Start, line.End, distanceColor, 1, LineTypes.AntiAlias);
 
-                if (i % 2 != 0 && distanceLines.Count > 16)
+                double distance = line.Distance();
+                string text = VisionPipelineMetricEnrichmentService.TryConvertPixelToMillimeters(distance, pixelPerMm, out double distanceMm)
+                    ? $"{distanceMm:0.###} mm"
+                    : $"{distance:0.#} px";
+                OpenCvSharp.Size textSize = Cv2.GetTextSize(text, HersheyFonts.HersheySimplex, 0.35, 1, out int baseline);
+                if (!TryResolveDistanceLabelBounds(resultImage.Size(), line, textSize, baseline, occupiedLabelBounds, out OpenCvSharp.Rect labelBounds))
                 {
                     continue;
                 }
 
-                double distance = line.Distance();
-                string text = pixelPerMm > 0
-                    ? $"{distance * pixelPerMm:0.###} mm"
-                    : $"{distance:0.#} px";
-                OpenCvSharp.Point labelPoint = new OpenCvSharp.Point(
-                    Math.Min(line.Start.X, line.End.X) + 4,
-                    Math.Min(line.Start.Y, line.End.Y) - 2);
+                occupiedLabelBounds.Add(labelBounds);
+                OpenCvSharp.Point labelPoint = new OpenCvSharp.Point(labelBounds.X, labelBounds.Y + textSize.Height);
                 Cv2.PutText(resultImage, text, labelPoint, HersheyFonts.HersheySimplex, 0.35, labelColor, 1, LineTypes.AntiAlias);
             }
+        }
+
+        internal static bool TryResolveDistanceLabelBounds(
+            OpenCvSharp.Size imageSize,
+            LineSegment2D line,
+            OpenCvSharp.Size textSize,
+            int baseline,
+            IReadOnlyCollection<OpenCvSharp.Rect> occupiedBounds,
+            out OpenCvSharp.Rect labelBounds)
+        {
+            const int margin = 4;
+            const int lineGap = 6;
+            const int labelGap = 2;
+            int width = Math.Max(1, textSize.Width);
+            int height = Math.Max(1, textSize.Height + Math.Max(0, baseline));
+            int centerY = (line.Start.Y + line.End.Y) / 2;
+            int top = centerY - textSize.Height / 2;
+            int right = Math.Max(line.Start.X, line.End.X) + lineGap;
+            int left = Math.Min(line.Start.X, line.End.X) - lineGap - width;
+
+            foreach (int x in new[] { right, left })
+            {
+                OpenCvSharp.Rect candidate = new OpenCvSharp.Rect(x, top, width, height);
+                if (candidate.X < margin
+                    || candidate.Y < margin
+                    || candidate.Right > imageSize.Width - margin
+                    || candidate.Bottom > imageSize.Height - margin
+                    || occupiedBounds.Any(existing => IntersectsWithGap(candidate, existing, labelGap)))
+                {
+                    continue;
+                }
+
+                labelBounds = candidate;
+                return true;
+            }
+
+            labelBounds = default;
+            return false;
+        }
+
+        private static bool IntersectsWithGap(OpenCvSharp.Rect first, OpenCvSharp.Rect second, int gap)
+        {
+            return first.X < second.Right + gap
+                && first.Right + gap > second.X
+                && first.Y < second.Bottom + gap
+                && first.Bottom + gap > second.Y;
         }
 
         private static PointF ToPointF(OpenCvSharp.Point point)

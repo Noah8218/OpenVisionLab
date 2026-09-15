@@ -50,12 +50,12 @@ dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU" `
   -p:OpenVisionLabEnableEmbeddedSmokeRunner=true
 
 $process = Start-Process `
-  -FilePath "C:\Git\OpenVisionLab_Dev\bin\Debug\OpenVisionLab.exe" `
+  -FilePath "C:\Git\2D\Dev\bin\Debug\OpenVisionLab.exe" `
   -ArgumentList @(
     "--smoke",
     "tutorial-captures",
     "--output",
-    "C:\Git\OpenVisionLab_Dev\artifacts\tutorial_current_exe_YYYYMMDD"
+    "D:\OpenVisionLab-TestData\OpenVisionLab_Dev\tutorial_current_exe_YYYYMMDD"
   ) `
   -PassThru `
   -Wait
@@ -83,8 +83,8 @@ if ($process.ExitCode -ne 0) {
 캡처가 성공하면 최신 캡처를 문서 자산 폴더로 복사합니다.
 
 ```powershell
-$capture = "C:\Git\OpenVisionLab_Dev\artifacts\tutorial_current_exe_YYYYMMDD"
-$current = "C:\Git\OpenVisionLab_Dev\docs\assets\tutorial\current"
+$capture = "D:\OpenVisionLab-TestData\OpenVisionLab_Dev\tutorial_current_exe_YYYYMMDD"
+$current = "C:\Git\2D\Dev\docs\assets\tutorial\current"
 
 New-Item -ItemType Directory -Force -Path $current | Out-Null
 Copy-Item "$capture\01_main_workspace_current.png" "$current\main_workspace_current.png" -Force
@@ -103,17 +103,17 @@ Learn 문서에 들어가는 알고리즘 결과 근거 이미지는 UI smoke �
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File "tools\RunVisionSampleCatalog.ps1" `
   -CatalogPath "docs\samples\OpenVisionLab.PublicSampleCatalog.csv" `
-  -OutputDir "artifacts\public_sample_catalog_YYYYMMDD_learn_evidence" `
+  -OutputDir "D:\OpenVisionLab-TestData\OpenVisionLab_Dev\public_sample_catalog_YYYYMMDD_learn_evidence" `
   -SkipRestore
 
 powershell -NoProfile -ExecutionPolicy Bypass -File "tools\RunVisionSampleCatalog.ps1" `
   -CatalogPath "docs\samples\OpenVisionLab.ProductSampleCatalog.csv" `
-  -OutputDir "artifacts\product_sample_catalog_YYYYMMDD_learn_evidence" `
+  -OutputDir "D:\OpenVisionLab-TestData\OpenVisionLab_Dev\product_sample_catalog_YYYYMMDD_learn_evidence" `
   -SkipRestore
 
 powershell -NoProfile -ExecutionPolicy Bypass -File "tools\SyncPublicLearnEvidenceImages.ps1" `
-  -CatalogArtifactDir "artifacts\public_sample_catalog_YYYYMMDD_learn_evidence" `
-  -ProductCatalogArtifactDir "artifacts\product_sample_catalog_YYYYMMDD_learn_evidence"
+  -CatalogArtifactDir "D:\OpenVisionLab-TestData\OpenVisionLab_Dev\public_sample_catalog_YYYYMMDD_learn_evidence" `
+  -ProductCatalogArtifactDir "D:\OpenVisionLab-TestData\OpenVisionLab_Dev\product_sample_catalog_YYYYMMDD_learn_evidence"
 ```
 
 동기화되는 주요 결과 이미지:

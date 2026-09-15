@@ -315,7 +315,7 @@ static IntegrationHandoffV2 CreateHandoff(
         DateTimeOffset.UtcNow,
         new IntegrationApplicationIdentity(
             IntegrationApplicationIds.MachineStudio,
-            "2.2.0-dev.1",
+            "2.2.0-dev.3",
             "1111111111111111111111111111111111111111",
             IntegrationSourceState.Clean),
         context);

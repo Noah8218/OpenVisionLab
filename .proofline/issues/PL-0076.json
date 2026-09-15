@@ -1,0 +1,226 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0076",
+    "aliases": [
+      "OPENVISIONLAB-2D018-XML-ROUNDTRIP-20260915"
+    ],
+    "type": "task",
+    "mode": "simple",
+    "title": "Verify current/default/unit/locale Pipeline XML round-trip",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "scheduled 2D task execution and source review",
+    "summary": "2D-018 requires current values, omitted defaults, units, and locale text to retain inspection meaning after Pipeline XML save and reopen.",
+    "refs": [
+      "C:\\Users\\USER\\Downloads\\OpenVisionLab_2D_tasks.json",
+      "docs\\contracts\\openvisionlab\\OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md",
+      "docs\\admin\\OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "AGENTS.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "Final source rebuilds confirm the 2D-018 contract remains passing with 0 errors; the 16 nullable warnings are pre-existing warnings in other smoke contracts and are outside this slice."
+  },
+  "objective": {
+    "summary": "Verify that current Pipeline XML values and effective omitted defaults round-trip across supported cultures, units, UTF-16/Korean text, and invariant validation without reopening the completed schema gate.",
+    "constraints": [
+      "Reuse SerializeHelper, VisionPipelineStepBuilder, VisionPipelineStepPropertyMapper, VisionPipelineAppToolFactory, VisionPipelineValidator, and VisionRecipeRunner.",
+      "Keep semantic identity and byte identity as separate checks; do not require a new serializer or XML format.",
+      "Keep test artifacts and logs on D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev.",
+      "Do not modify C:\\Git\\2D\\Original or perform commit, push, release, deployment, or external communication."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "Saving and reopening representative Pipeline XML under ko-KR, en-US, and de-DE preserves typed parameters, booleans/enums, PIXELPERMM, acceptance validation, Korean identity/template text, and culture-independent bytes.",
+      "evidence_refs": [
+        "E2",
+        "E3",
+        "E6",
+        "E7"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "Omitted Blob parameters retain their source omission while the existing PropertyGrid mapper produces the same effective defaults as an explicitly authored default set.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E6",
+        "E7"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "A comma-decimal value and an invalid enum remain inspectable as XML but are rejected by invariant validation and Runner admission before native execution.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E6",
+        "E7"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "Correctly declared UTF-16 XML with Korean identity/template path reopens without semantic loss, and the existing public sample corpus remains compatible.",
+      "evidence_refs": [
+        "E2",
+        "E3",
+        "E4",
+        "E6",
+        "E7"
+      ]
+    },
+    {
+      "id": "C5",
+      "text": "VisionRecipeRunnerSmoke Debug/Release builds and the focused round-trip contract pass; PL-0075 schema, recipe-load recovery, layer/reference invariant, and public sample XML regressions pass.",
+      "evidence_refs": [
+        "E2",
+        "E3",
+        "E4",
+        "E6",
+        "E7"
+      ]
+    },
+    {
+      "id": "C6",
+      "text": "Completion evidence records owner, call path, mutable-state writer, public contract, shortest reading order, focused checks, and remaining runtime/UI boundaries.",
+      "evidence_refs": [
+        "E1",
+        "E5"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0075"
+    }
+  ],
+  "context": [
+    {
+      "kind": "owner-map",
+      "location": "SerializeHelper owns XML read/write; VisionPipelineStepBuilder and VisionPipelineStepPropertyMapper own typed/property projection; VisionPipelineAppToolFactory owns effective app-tool defaults; VisionPipelineValidator and VisionRecipeRunner own invariant admission. VisionPipeline and Step.Parameters remain the mutable model writers."
+    },
+    {
+      "kind": "call-path",
+      "location": "Pipeline XML -> SerializeHelper -> VisionPipelineStepBuilder/PropertyGrid mapper/app-tool defaults -> VisionPipelineValidator -> VisionRecipeRunner admission."
+    },
+    {
+      "kind": "public-contract",
+      "location": "Existing SaveXmlFile/TryLoad, mapper projection, validator errors, and Runner validation exception behavior are retained; no new serializer, XML format, or UI state was introduced."
+    },
+    {
+      "kind": "reading-order",
+      "location": "src/OpenVisionLab/Common/Persistence/SerializeHelper.cs -> src/OpenVisionLab/Core/Pipeline/Definition/VisionPipelineStepBuilder.cs -> src/OpenVisionLab/UI/Menu/Wpf/Recipe/PropertyGrid/VisionPipelineStepPropertyMapper.cs and VisionPipelineObjectInspectionPropertyAdapter.cs -> src/OpenVisionLab/Core/Pipeline/Definition/VisionPipelineAppToolFactory.cs -> src/OpenVisionLab/Core/Pipeline/Validation/VisionPipelineValidation.cs -> tools/VisionRecipeRunnerSmoke/PipelineXmlRoundTripCompatibilityContract.cs."
+    },
+    {
+      "kind": "boundary",
+      "location": "In-process Debug/Release contracts and public sample XML were checked. Desktop EXE/WPF click path, themes/layouts/DPI/input, camera/hardware, physical calibration, release/publication, and Original repository remain unverified/out of scope. The generated bin\\Debug\\RECIPE empty default Pipeline still reports the pre-existing Pipeline has no steps failure."
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "evidence-directory",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d018-xml-roundtrip-20260915-debug",
+      "summary": "Debug build log, focused 4/0 round-trip contract, and fixture XML."
+    },
+    {
+      "kind": "evidence-directory",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d018-xml-roundtrip-20260915-release",
+      "summary": "Release build log and focused 4/0 round-trip contract."
+    },
+    {
+      "kind": "evidence-directory",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d018-regression-schema-20260915; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d018-regression-recovery-20260915; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d018-regression-layers-20260915",
+      "summary": "PL-0075 schema, recipe-load recovery, and layer/reference regression reports."
+    },
+    {
+      "kind": "evidence-directory",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d018-public-samples-valid-20260915",
+      "summary": "RecipeXmlCompatibilityCheck log for 13 XML roots and 106 docs/samples/public files."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "review",
+      "location": "src/OpenVisionLab/Common/Persistence/SerializeHelper.cs; src/OpenVisionLab/Core/Pipeline/Definition/VisionPipelineStepBuilder.cs; src/OpenVisionLab/UI/Menu/Wpf/Recipe/PropertyGrid/VisionPipelineStepPropertyMapper.cs; src/OpenVisionLab/Core/Pipeline/Definition/VisionPipelineAppToolFactory.cs; src/OpenVisionLab/Core/Pipeline/Validation/VisionPipelineValidation.cs",
+      "observation": "Source review confirmed invariant numeric/boolean/enum parsing, existing omitted default values, string preservation for template/identity paths, and the shared Validator/Runner admission path. No new serializer or format was needed.",
+      "observed_at": "2026-09-15T19:18:27+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d018-xml-roundtrip-20260915-debug/pipeline-xml-roundtrip-compatibility-contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d018-xml-roundtrip-20260915-debug/build-smoke-debug.log",
+      "observation": "Debug smoke build completed with 0 warnings and 0 errors; the focused current/default/unit/locale contract passed 4/0, covering ko-KR/en-US/de-DE, omitted Blob defaults, correctly declared UTF-16/Korean path, malformed culture separator, invalid enum, and pre-execution blocking.",
+      "observed_at": "2026-09-15T19:18:27+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d018-xml-roundtrip-20260915-release/pipeline-xml-roundtrip-compatibility-contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d018-xml-roundtrip-20260915-release/build-smoke-release.log",
+      "observation": "Release smoke build completed with 0 warnings and 0 errors; the same focused current/default/unit/locale contract passed 4/0.",
+      "observed_at": "2026-09-15T19:18:27+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d018-regression-schema-20260915/pipeline-xml-schema-compatibility-contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d018-regression-recovery-20260915/recipe-load-recovery-contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d018-regression-layers-20260915/pipeline-layer-reference-invariant-contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d018-public-samples-valid-20260915/recipe-xml-compatibility-check.log",
+      "observation": "Focused regressions passed: PL-0075 schema 7/0, recipe-load recovery 8/0, layer/reference invariant passed, and RecipeXmlCompatibilityCheck passed all 13 XML roots and 106 public sample XML files. The separate generated empty default Pipeline scan remains the known Pipeline has no steps baseline failure.",
+      "observed_at": "2026-09-15T19:18:27+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "review",
+      "location": "docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md; tools/VisionRecipeRunnerSmoke/PipelineXmlRoundTripCompatibilityContract.cs; tools/VisionRecipeRunnerSmoke/Program.cs",
+      "observation": "Stable contract, current handoff, smoke dispatch, and the focused contract record the round-trip rules, owner/call path, verification commands, evidence locations, next 2D-019 boundary, and the runtime/UI limits.",
+      "observed_at": "2026-09-15T19:18:27+09:00"
+    },
+    {
+      "id": "E6",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d018-xml-roundtrip-20260915-debug/pipeline-xml-roundtrip-compatibility-contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d018-xml-roundtrip-20260915-debug/build-smoke-debug.log",
+      "observation": "Final Debug rebuild completed with 0 errors and 16 existing nullable warnings in other smoke contracts; the new 2D-018 round-trip contract passed 4/0. The warning set contains no PipelineXmlRoundTripCompatibilityContract warnings after its nullability cleanup.",
+      "observed_at": "2026-09-15T19:23:21+09:00",
+      "supersedes": [
+        "E2"
+      ]
+    },
+    {
+      "id": "E7",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d018-xml-roundtrip-20260915-release/pipeline-xml-roundtrip-compatibility-contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d018-xml-roundtrip-20260915-release/build-smoke-release.log",
+      "observation": "Final Release rebuild completed with 0 errors and 16 existing nullable warnings in other smoke contracts; the new 2D-018 round-trip contract passed 4/0. The warning set contains no PipelineXmlRoundTripCompatibilityContract warnings after its nullability cleanup.",
+      "observed_at": "2026-09-15T19:23:21+09:00",
+      "supersedes": [
+        "E3"
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-15T19:18:27+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "Close 2D-018 after source review, Debug/Release round-trip contracts, focused XML regressions, public sample compatibility, and durable handoff updates.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E4",
+        "E5"
+      ]
+    }
+  ],
+  "created_at": "2026-09-15T19:18:27+09:00",
+  "updated_at": "2026-09-15T19:23:21+09:00"
+}

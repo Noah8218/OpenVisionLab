@@ -2,10 +2,59 @@
 
 This file defines the working agreement for Codex in this repository.
 
+## User-Directed Refactoring Program Boundary — 2026-09-08
+
+- The user explicitly authorized a current-code survey, evidence-backed
+  priority order, junior-developer modularity assessment, objective completion
+  gates, and a terminating 5-minute heartbeat for the remaining refactoring
+  program. The operating contract is
+  `docs/reports/OPENVISIONLAB_REFACTOR_PROGRAM_AUDIT_20260908.md`.
+- The attached `C:\Users\USER\Downloads\OpenVisionLab_Implementation_Tasks_604c7fb.md`
+  is a historical candidate specification. Reconcile it with current source,
+  Handoff, stable contracts, and focused checks; do not treat it as proof that
+  a candidate remains open.
+- Each scheduled run may complete one independently verifiable slice only.
+  It must read the completed-owner registry, preserve existing dirty work,
+  reuse existing owners, run focused verification, and update the Handoff.
+  Parallel models/agents, overlapping runs, speculative wrappers, and
+  partial-only splits are prohibited.
+- The heartbeat must stop itself when the completion gates pass or when an
+  external blocker needs user input. It must never perform commit, push,
+  Original, release, deployment, or unrelated cleanup work.
+- Do not reopen a completed owner merely because a file is long, a historical
+  list names it, or another model prefers a different structure. Reopening
+  requires a reproduced current defect, changed explicit requirement, or
+  demonstrated responsibility conflict.
+- Read `docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md`,
+  `docs/reports/OPENVISIONLAB_REFACTOR_PROGRAM_AUDIT_20260908.md`,
+  `docs/reports/OPENVISIONLAB_REFACTOR_SURVEY_20260908.md`, and the relevant
+  completion report before selecting the next slice.
+
+## Completed Refactoring Boundaries — No Duplicate Work
+
+- Before proposing a structural change, read the completed-owner registry in
+  `docs/admin/CODEBASE_STRUCTURE.md` and the relevant completion report, then
+  confirm the actual current call path. Reuse a completed owner by default.
+- Do not split, rename, relocate, wrap or redesign an already-refactored owner
+  merely because a new model prefers another structure, the file is long, a
+  historical plan lists it, or more cleanup appears possible.
+- Reopen a completed boundary only for a reproduced current defect, a changed
+  explicit requirement, or a demonstrated responsibility/dependency conflict.
+  Before editing, record the prior closure, new code/reproduction/test evidence,
+  why a change inside the existing owner is insufficient, the smallest new
+  boundary, preserved contracts and the focused acceptance check.
+- A general “continue” or “large-scale refactor” request does not cancel this
+  evidence requirement. Extracting a different responsibility still left in a
+  Window does not authorize repartitioning its already-extracted modules.
+- Keep one implementation owner per changed file. Parallel agents must have
+  disjoint outputs; integrate shared callers/docs once and avoid duplicate runs.
+- On completion, register the resulting owner and evidence. Do not create an
+  implicit next task to revisit the same boundary without new evidence.
+
 ## Work Location
 
-- Primary implementation and verification work starts in `C:\Git\OpenVisionLab_Dev`.
-- `C:\Git\OpenVisionLab` is the original OpenVisionLab repository that receives reviewed, stabilized changes from Dev.
+- Primary implementation and verification work starts in `C:\Git\2D\Dev`.
+- `C:\Git\2D\Original` is the original OpenVisionLab repository that receives reviewed, stabilized changes from Dev.
 - Do not bulk-copy Dev over the original repository. Move changes by reviewed patch, cherry-pick, or import.
 - Do not run `git push` unless the user explicitly requests `PUSH`.
 
@@ -73,7 +122,7 @@ This file defines the working agreement for Codex in this repository.
 - Do not use an LLM as a per-image production detector, tune a recipe per image, weaken frozen gates to raise coverage, or infer semantic correctness from execution count alone.
 - Keep `OuterCornerIntersection` experimental and outside default recommendations until independent physical-boundary evidence qualifies it.
 - For an explicitly authorized image-validation task, freeze the recipe and corpus first, retain drawings/metrics/hashes/fail-closed reasons, use the deterministic review queue, bound correction cycles, and reserve held-out data until the candidate is frozen.
-- Historical P-number decisions and scoped evidence belong in `docs/reports`, `docs/admin/OPENVISIONLAB_NEXT_SESSION_HANDOFF.md`, and the archived handoff. Find them through `docs/LLM_DOCUMENT_INDEX.json`; do not duplicate them in this file.
+- Historical P-number decisions and scoped evidence belong in `docs/reports` and `docs/admin/archive`. Find them through `docs/LLM_DOCUMENT_INDEX.json`; do not duplicate them in this file.
 - Live product status and the absence or presence of an active priority belong only to `docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md`.
 
 ## Rule-Based-First Development Order
@@ -114,7 +163,7 @@ This file defines the working agreement for Codex in this repository.
 
 At the start of a new OpenVisionLab chat, after a handoff, or whenever the user asks to continue project work, do not jump directly into narrow code or UI fixes. First rebuild the product context from current evidence.
 
-- Work in `C:\Git\OpenVisionLab_Dev`.
+- Work in `C:\Git\2D\Dev`.
 - Run `git status --short` and `git log --oneline -5` before interpreting the current state.
 - Start from the LLM-oriented document entrypoint and its machine-readable routes:
   - `AGENTS.md`
@@ -166,7 +215,7 @@ For OpenVisionLab changes, run the smallest meaningful set from the list below:
 
 ```powershell
 dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"
-dotnet run --project tools\OpenVisionReadinessCheck\OpenVisionReadinessCheck.csproj -c Debug -- "C:\Git\OpenVisionLab_Dev"
+dotnet run --project tools\OpenVisionReadinessCheck\OpenVisionReadinessCheck.csproj -c Debug -- "C:\Git\2D\Dev"
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\TestExternalReferences.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\TestPublicSampleAssets.ps1
 ```

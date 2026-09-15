@@ -59,7 +59,7 @@ The retained SDK files are:
 - dll/OpenVisionLab-Vision-SDK/OpenCvSharp.Blob.dll
 
 They are from OpenVisionLab Vision SDK 3.0.0, source commit
-ba0055b713e0bf434b9d0a7fd3f4b0e445c1f982, and are distributed under the MIT
+f4f0c0dc8bee5b7a849ae6eb66a5307bed4b8a6b, and are distributed under the MIT
 License. Source: https://github.com/Noah8218/OpenVisionLab-Vision-SDK
 
 Copyright (c) 2026 최노아(Noah-Choi).

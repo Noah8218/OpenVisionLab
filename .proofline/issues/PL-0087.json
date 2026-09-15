@@ -1,0 +1,120 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0087",
+    "aliases": [
+      "2D-029"
+    ],
+    "type": "task",
+    "mode": "simple",
+    "title": "Verify Gray BGR BGRA and 16-bit input meaning separation",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "scheduled-follow-up",
+    "summary": "2D-029 requires a source and contract comparison of UI display loading versus Runner inspection input for Gray/BGR/BGRA/16-bit images.",
+    "refs": [
+      "C:/Users/USER/Downloads/OpenVisionLab_2D_tasks.json#2D-029",
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      ".proofline/issues/PL-0086.json"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "2D-029 is complete. The sample-check Runner now preserves source depth for preflight, rejects non-8-bit or undecodable inspection files before calculation, and continues supported 8-bit Gray/BGR/BGRA through the existing BitmapImageConverter. ImageCanvas 16-bit downscale and BGRA alpha removal remain display-only and are covered by a separate contract."
+  },
+  "objective": {
+    "summary": "Make the current UI display versus Runner inspection input contract explicit for Gray, BGR, BGRA, and 16-bit images, preserving supported pixel meaning and rejecting unsupported inspection depth before calculation.",
+    "constraints": [
+      "Reuse BitmapImageConverter for Runner input and CanvasImageLoader for display input; do not add a new normalization service or algorithm.",
+      "Do not infer 16-bit inspection support or silently downscale Runner inputs; display conversion remains a display-only boundary.",
+      "Use isolated evidence under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev; do not touch Original, release, deploy, hardware, or external systems."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "Runner conversion preserves supported 8-bit Gray/BGR/BGRA pixel values and channel meaning, while a 16-bit Bitmap input is rejected explicitly before a Mat is returned.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "The ImageCanvas display loader's 16-bit downscale and BGRA-to-BGR behavior is proven as display-only, with no claim that the inspection Runner accepts or normalizes those values.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E4"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Focused Debug/Release contracts and documentation record the two owners, call paths, supported/unsupported formats, and the unverified WPF/runtime boundary.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ]
+    }
+  ],
+  "relations": [],
+  "context": [],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "test",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d029-debug-20260915/input-format-meaning-final/input_format_meaning_contract.txt",
+      "observation": "Debug executable contract passed all cases: 8-bit Gray/BGR/BGRA pixel meaning, 16-bit Runner rejection before calculation, damaged decode rejection, and display-only 16-bit/alpha mapping.",
+      "observed_at": "2026-09-15T23:39:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d029-release-20260915/input-format-meaning-final/input_format_meaning_contract.txt",
+      "observation": "Release executable contract passed the same Gray/BGR/BGRA, 16-bit rejection, damaged decode, and display-only mapping cases.",
+      "observed_at": "2026-09-15T23:41:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "test",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d029-debug-20260915/bitmap-converter-regression/bitmap_converter_contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d029-release-20260915/bitmap-converter-regression/bitmap_converter_contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d029-debug-20260915/preview-run-reopen-regression/preview-run-reopen-equivalence.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d029-release-20260915/preview-run-reopen-regression/preview-run-reopen-equivalence.txt",
+      "observation": "The existing converter regression passed 5/5 in Debug and Release. Preview/Run/Reopen regression passed Mean, Blob, Contour, Matching, and Line in both configurations.",
+      "observed_at": "2026-09-15T23:42:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "inspection",
+      "location": "docs/reports/OPENVISIONLAB_2D_INPUT_FORMAT_MEANING_20260915.md; docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md; src/OpenVisionLab/Core/Pipeline/Execution/VisionPipelineSampleCheckService.cs",
+      "observation": "The report, stable contract, and handoff record the Runner/display owners, call paths, supported/unsupported formats, preflight change, D: evidence, and the unverified WPF/runtime boundary.",
+      "observed_at": "2026-09-15T23:45:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-15T23:45:00+09:00",
+      "summary": "Keep BitmapImageConverter and CanvasImageLoader as their existing owners. Add only a source-depth/decode preflight in VisionPipelineSampleCheckService so display-only 16-bit/alpha mapping cannot silently become Runner input normalization.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-15T23:45:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "All 2D-029 criteria are satisfied by Debug/Release input-format contracts, existing converter and Preview/Run/Reopen regressions, and documented owner/runtime boundaries."
+    }
+  ],
+  "created_at": "2026-09-15T23:31:15+09:00",
+  "updated_at": "2026-09-15T23:45:00+09:00"
+}

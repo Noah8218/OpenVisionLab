@@ -102,9 +102,21 @@ internal static class Program
         using VisionRecipeRunResult referenceResult = await runner.RunAsync(referencePipeline, referenceImage);
         using VisionRecipeRunResult shiftedResult = await runner.RunAsync(fixturePipelinePath, shiftedImage);
         using VisionRecipeRunResult unfixturedResult = await runner.RunAsync(unfixturedPipeline, shiftedImage);
-        using VisionRecipeRunResult missingFrameResult = await runner.RunAsync(missingFramePipeline, referenceImage);
-        using VisionRecipeRunResult multiRoiResult = await runner.RunAsync(multiRoiPipeline, referenceImage);
-        using VisionRecipeRunResult duplicateFrameResult = await runner.RunAsync(duplicateFramePipeline, referenceImage);
+        await AssertFixtureConfigurationFailureAsync(
+            () => runner.RunAsync(missingFramePipeline, referenceImage),
+            "Missing fixture frame must fail closed.",
+            "MissingFrame",
+            "fixture frame");
+        await AssertFixtureConfigurationFailureAsync(
+            () => runner.RunAsync(multiRoiPipeline, referenceImage),
+            "Fixture multi-ROI must fail closed.",
+            "multi-ROI",
+            "CvROIS");
+        await AssertFixtureConfigurationFailureAsync(
+            () => runner.RunAsync(duplicateFramePipeline, referenceImage),
+            "Duplicate fixture frame must fail closed.",
+            "duplicate",
+            "fixture frame");
 
         string publicPipelinePath = Path.GetFullPath(Path.Combine(
             "docs",
@@ -139,9 +151,6 @@ internal static class Program
         Assert(referenceResult.Success, "Reference fixture run must pass.");
         Assert(shiftedResult.Success, "Shifted fixture run must pass.");
         Assert(!unfixturedResult.Success, "Shifted run without fixture must fail the downstream ROI inspection.");
-        AssertFixtureConfigurationFailure(missingFrameResult, "Missing fixture frame must fail closed.");
-        AssertFixtureConfigurationFailure(multiRoiResult, "Fixture multi-ROI must fail closed.");
-        AssertFixtureConfigurationFailure(duplicateFrameResult, "Duplicate fixture frame must fail closed.");
         Assert(publicGoodResult.Success, "Public shifted Fixture Good sample must pass.");
         Assert(!publicBadResult.Success, "Public shifted Fixture Bad sample must fail at the pad inspection.");
         Assert(
@@ -184,9 +193,9 @@ internal static class Program
             "ReferenceRun: " + referenceResult.SummaryText,
             "ShiftedFixtureRun: " + shiftedResult.SummaryText,
             "ShiftedWithoutFixtureRun: " + unfixturedResult.SummaryText,
-            "MissingFrameRun: " + missingFrameResult.SummaryText,
-            "MultiRoiRun: " + multiRoiResult.SummaryText,
-            "DuplicateFrameRun: " + duplicateFrameResult.SummaryText,
+            "MissingFrameRun: pre-validation rejection verified",
+            "MultiRoiRun: pre-validation rejection verified",
+            "DuplicateFrameRun: pre-validation rejection verified",
             "PublicGoodRun: " + publicGoodResult.SummaryText,
             "PublicBadRun: " + publicBadResult.SummaryText,
             "PublicGoodWithoutFixtureRun: " + publicNoFixtureResult.SummaryText,
@@ -1869,8 +1878,10 @@ internal static class Program
         Assert(
             !VisionPipelineValidator.Validate(missingDimensions, new[] { "Main" }).Success,
             "NormalizeImage pipeline validation must reject missing taught dimensions.");
-        using VisionRecipeRunResult missingDimensionsResult = await runner.RunAsync(missingDimensions, reference);
-        AssertFixtureConfigurationFailure(missingDimensionsResult, "NormalizeImage without taught dimensions must fail closed.");
+        await AssertFixtureConfigurationFailureAsync(
+            () => runner.RunAsync(missingDimensions, reference),
+            "NormalizeImage without taught dimensions must fail closed.",
+            "requires taught reference image width and height");
 
         VisionPipeline wrongDimensions = CreateSimilarityNormalizationPipeline(
             templatePath,
@@ -1878,8 +1889,10 @@ internal static class Program
             height,
             referenceX,
             referenceY);
-        using VisionRecipeRunResult wrongDimensionsResult = await runner.RunAsync(wrongDimensions, reference);
-        AssertFixtureConfigurationFailure(wrongDimensionsResult, "NormalizeImage with a source/reference size mismatch must fail closed.");
+        await AssertFixtureConfigurationFailureAsync(
+            () => runner.RunAsync(wrongDimensions, reference),
+            "NormalizeImage with a source/reference size mismatch must fail closed.",
+            "reference");
 
         VisionPipeline invalidCoverage = CreateSimilarityNormalizationPipeline(
             templatePath,
@@ -1891,8 +1904,10 @@ internal static class Program
         Assert(
             !VisionPipelineValidator.Validate(invalidCoverage, new[] { "Main" }).Success,
             "NormalizeImage pipeline validation must reject an invalid valid-pixel gate.");
-        using VisionRecipeRunResult invalidCoverageResult = await runner.RunAsync(invalidCoverage, reference);
-        AssertFixtureConfigurationFailure(invalidCoverageResult, "NormalizeImage with an invalid valid-pixel gate must fail closed.");
+        await AssertFixtureConfigurationFailureAsync(
+            () => runner.RunAsync(invalidCoverage, reference),
+            "NormalizeImage with an invalid valid-pixel gate must fail closed.",
+            "FIXTURE_MIN_VALID_PIXEL_RATIO");
 
         VisionPipeline fixedRotateScale = new VisionPipeline { Name = "FixedRotateScaleCompatibility" };
         VisionPipelineStep fixedStep = new VisionPipelineStep
@@ -2895,5 +2910,24 @@ internal static class Program
             string.Equals(result.FirstFailedErrorName, "InvalidParameter", StringComparison.Ordinal)
                 || string.Equals(result.FirstFailedErrorName, "InvalidRoi", StringComparison.Ordinal),
             message + " Error=" + result.FirstFailedErrorName);
+    }
+
+    private static async Task AssertFixtureConfigurationFailureAsync(
+        Func<Task<VisionRecipeRunResult>> run,
+        string message,
+        params string[] validationTokens)
+    {
+        try
+        {
+            using VisionRecipeRunResult result = await run();
+            AssertFixtureConfigurationFailure(result, message);
+        }
+        catch (VisionPipelineValidationException exception)
+        {
+            Assert(
+                exception.Errors.Any(error => validationTokens.Any(token =>
+                    error.Contains(token, StringComparison.OrdinalIgnoreCase))),
+                message + " Validation=" + string.Join(" | ", exception.Errors));
+        }
     }
 }

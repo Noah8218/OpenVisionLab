@@ -1,0 +1,144 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0038",
+    "aliases": [],
+    "type": "task",
+    "mode": "simple",
+    "title": "Retain Feature Matching Tool View XAML Partial after concrete owner audit",
+    "risk": "low"
+  },
+  "origin": {
+    "kind": "user-request",
+    "summary": "The user requested that Partial refactoring continue in scheduled cycles and that each remaining Partial be structurally reviewed rather than mechanically deleted or split.",
+    "refs": [
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "docs/reports/OPENVISIONLAB_PARTIAL_STRUCTURAL_ELIMINATION_PLAN_20260913.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "FeatureMatchingToolWpfView.xaml.cs를 factory/composition/ViewModel/shared matching runtime/base lifetime까지 추적한 no-change 구조 감사로 확인했다. View는 XAML/composition adapter, FeatureMatchingToolViewModel은 mutable property/template policy, shared matching controller/runtime은 PropertyGrid/preview/review/event/lifetime, factory와 base는 creation/release를 소유한다. 새 독립 seam이 없어 production split은 만들지 않았으며, Debug/Release contract/build와 Feature Matching WPF smoke가 통과했다."
+  },
+  "objective": {
+    "summary": "Audit the Feature Matching Tool View XAML Partial and retain it only when existing concrete owners already provide the necessary state, workflow, binding, test, and lifetime boundaries without a new split.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev; do not modify C:\\Git\\2D\\Original.",
+      "Do not add a service, interface, manager, wrapper, forwarding Partial, or ViewModel split for file length alone.",
+      "Preserve FeatureMatchingToolWpfView XAML names, Learn Feature action/topic, template status, property/preview/result facade, creation path, and DisposeView lifetime.",
+      "Keep test outputs and evidence under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev.",
+      "Do not commit, push, tag, release, deploy, or mutate the Original repository."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The proof report records current/intended owners, caller path, mutable-state writer, lifetime owner, binding/public/test contract, shortest reading order, and the reason no production split is justified.",
+      "evidence_refs": [
+        "E1"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "The source contract proves that the Feature Matching View Partial has no misplaced direct persistence/dialog/algorithm coupling and that the existing ViewModel, matching controller/runtime, presenter callbacks, factory/composition, and base lifetime owners are wired.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Focused Debug/Release contracts and builds, relevant Feature Matching WPF smoke, readiness, structural audit, documentation index, issue validation, and diff checks pass; broader UI/native/hardware matrices remain explicitly unverified.",
+      "evidence_refs": [
+        "E2",
+        "E3"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0037"
+    }
+  ],
+  "context": [
+    {
+      "kind": "source",
+      "location": "src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\ToolViews\\FeatureMatchingToolWpfView.xaml(.cs); src\\OpenVisionLab\\UI\\VisionTest\\ViewModels\\FeatureMatchingToolViewModel.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Tooling\\SingleInput\\VisionToolSingleInputMatchingToolController.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Tooling\\PropertyGrid\\VisionToolMatchingPropertyRuntime.cs"
+    },
+    {
+      "kind": "composition-owner",
+      "location": "src\\OpenVisionLab\\UI\\Menu\\Wpf\\NativeTools\\Documents\\OpenVisionNativePropertyGridToolFactory.cs; src\\OpenVisionLab\\UI\\VisionTest\\Composition\\VisionToolCompositionService.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Tooling\\SingleInput\\VisionToolSingleInputPropertyToolViewBase.cs"
+    },
+    {
+      "kind": "test-host",
+      "location": "tools\\VisionRecipeRunnerSmoke\\FeatureMatchingPartialBoundaryContract.cs; tools\\PipelineViewerScreenshotSmoke\\Program.cs"
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "screenshot",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\feature-matching-partial-retention-20260914\\wpf-feature-matching\\wpf_shell_host_feature_matching_tool.png",
+      "summary": "Fresh full Feature Matching shell WPF smoke screenshot on the detected single monitor."
+    },
+    {
+      "kind": "geometry",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\feature-matching-partial-retention-20260914\\monitor-geometry\\monitor-window-geometry.json",
+      "summary": "Fresh smoke process window geometry with one visible window intersecting the selected monitor."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source",
+      "location": "docs\\reports\\OPENVISIONLAB_FEATURE_MATCHING_PARTIAL_RETENTION_20260914.md; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\ToolViews\\FeatureMatchingToolWpfView.xaml(.cs); src\\OpenVisionLab\\UI\\VisionTest\\ViewModels\\FeatureMatchingToolViewModel.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Tooling\\SingleInput\\VisionToolSingleInputMatchingToolController.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Tooling\\PropertyGrid\\VisionToolMatchingPropertyRuntime.cs",
+      "observation": "The Feature Matching View Partial is a XAML/composition adapter without direct persistence, dialog, or algorithm coupling; the ViewModel owns mutable property/template policy; shared matching controller/runtime own event, PropertyGrid, preview, result-review, preset and disposal state; factory/composition/base own creation and release. No independent state/lifetime/test seam justifies a new Partial or wrapper.",
+      "observed_at": "2026-09-14T02:28:38+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\feature-matching-partial-retention-20260914\\feature-matching-partial-boundary-contract.txt; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\feature-matching-partial-retention-20260914\\feature-matching-contract-release.txt",
+      "observation": "FeatureMatchingPartialBoundaryContract passed 9/9 in Debug and Release, proving retained owner wiring, XAML binding/test contracts, direct-coupling absence in the View, presenter callback routing, shared runtime/controller ownership, factory/composition creation, and base release ownership.",
+      "observed_at": "2026-09-14T02:28:38+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\feature-matching-partial-retention-20260914",
+      "observation": "VisionRecipeRunnerSmoke Debug/Release builds passed with 0 warnings/errors; PipelineViewerScreenshotSmoke x64 Debug passed with 0 errors and two pre-existing MSB3270 warnings; dynamic monitor detection reported one DISPLAY2 screen at 1920x1080; a fresh smoke process window probe recorded one visible top-level window at Left=182,Top=182,Right=1782,Bottom=1082 intersecting the selected monitor; the Feature Matching WPF smoke target passed with a fresh 1600x900 PNG. OpenVisionReadinessCheck Debug/Release passed all 13 checks, RefactorAudit passed with CSharpFiles=832, XamlFiles=57, PartialDeclarations=54, ProjectCycles=0, and ShellStorageCalls=0, DocumentationIndex passed with IndexedPaths=307, PL-0038 schema/closure validation passed, and git diff --check passed. Native file-dialog interaction and full UI/native matrices remain unverified.",
+      "observed_at": "2026-09-14T02:28:38+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-14T02:28:38+09:00",
+      "summary": "Feature Matching Tool View is a required XAML composition boundary. Existing ViewModel, presenter callbacks, shared matching controller/runtime, factory/composition, and base lifetime owners already form the necessary seams; a mechanical split would add a wrapper or duplicate state, so the Partial is retained without production changes.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "D2",
+      "kind": "decision",
+      "at": "2026-09-14T02:28:38+09:00",
+      "summary": "PL-0038 is resolved only after the repository readiness, structural, documentation, issue, and diff checks pass. Broader theme/DPI/input/native/hardware runtime remains outside this slice.",
+      "evidence_refs": [
+        "E3"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-14T02:28:38+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "The Feature Matching Tool View Partial audit found no independent boundary that justified a production split; focused source/build/WPF evidence was recorded. Do not reopen without a new requirement, reproducible defect, failed criterion, or changed dependency/lifetime boundary."
+    }
+  ],
+  "created_at": "2026-09-14T02:28:38+09:00",
+  "updated_at": "2026-09-14T02:28:38+09:00"
+}

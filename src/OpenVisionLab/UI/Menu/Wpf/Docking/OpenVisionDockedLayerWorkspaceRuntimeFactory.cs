@@ -5,10 +5,10 @@ namespace OpenVisionLab
 {
     internal static class OpenVisionDockedLayerWorkspaceRuntimeFactory
     {
-        public static OpenVisionShellHostDockedLayerWorkspaceComposition CreateComposition(
+        public static ShellDockedLayerWorkspaceComposition CreateComposition(
             OpenVisionDockedLayerWorkspaceRuntimeOptions options)
         {
-            return new OpenVisionShellHostDockedLayerWorkspaceComposition(Create(options));
+            return new ShellDockedLayerWorkspaceComposition(Create(options));
         }
 
         public static IOpenVisionDockedLayerWorkspace Create(OpenVisionDockedLayerWorkspaceRuntimeOptions options)

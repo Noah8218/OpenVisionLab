@@ -140,6 +140,45 @@ namespace OpenVisionLab
                 + " | SHA-256 " + shortHash;
         }
 
+        internal static string BuildConfusionMatrixText(OpenVisionRecipeBatchRunOption option)
+        {
+            if (option == null || string.IsNullOrWhiteSpace(option.SummaryPath))
+            {
+                return OpenVisionRecipeText.Local(
+                    "저장된 실행을 선택하면 혼동행렬을 표시합니다.",
+                    "Select a saved run to show the confusion matrix.");
+            }
+
+            VisionPipelineBatchConfusionMatrix matrix = option.ConfusionMatrix;
+            return OpenVisionRecipeText.Local("혼동행렬(Positive=OK): ", "Confusion matrix (positive=OK): ")
+                + "TP " + matrix.TruePositiveCount.ToString(CultureInfo.InvariantCulture)
+                + " · TN " + matrix.TrueNegativeCount.ToString(CultureInfo.InvariantCulture)
+                + " · FP " + matrix.FalsePositiveCount.ToString(CultureInfo.InvariantCulture)
+                + " · FN " + matrix.FalseNegativeCount.ToString(CultureInfo.InvariantCulture)
+                + " | "
+                + OpenVisionRecipeText.Local("평가 ", "evaluated ")
+                + matrix.EvaluatedCount.ToString(CultureInfo.InvariantCulture)
+                + "/"
+                + matrix.InputSampleCount.ToString(CultureInfo.InvariantCulture)
+                + " · "
+                + OpenVisionRecipeText.Local("실행 오류 ", "execution errors ")
+                + matrix.ExecutionErrorCount.ToString(CultureInfo.InvariantCulture)
+                + " · "
+                + OpenVisionRecipeText.Local("미실행 ", "not run ")
+                + matrix.NotRunCount.ToString(CultureInfo.InvariantCulture)
+                + " · unknown "
+                + matrix.UnknownLabelCount.ToString(CultureInfo.InvariantCulture)
+                + " | "
+                + OpenVisionRecipeText.Local("정확도 ", "accuracy ")
+                + matrix.AccuracyText
+                + " · "
+                + OpenVisionRecipeText.Local("미검률 ", "false-accept rate ")
+                + matrix.FalseAcceptRateText
+                + " · "
+                + OpenVisionRecipeText.Local("과검률 ", "false-reject rate ")
+                + matrix.FalseRejectRateText;
+        }
+
         internal static string BuildNgFilterSummaryText(
             OpenVisionRecipeBatchRunOption option,
             bool showNgOnly)
@@ -316,9 +355,15 @@ namespace OpenVisionLab
             IReadOnlyList<OpenVisionRecipeBatchRunComparisonRow> rows)
         {
             rows = rows ?? Array.Empty<OpenVisionRecipeBatchRunComparisonRow>();
-            string analyticsPrefix = string.IsNullOrWhiteSpace(current?.AnalyticsText)
-                ? string.Empty
-                : current.AnalyticsText + Environment.NewLine;
+            string analyticsPrefix = string.Empty;
+            if (current != null && !string.IsNullOrWhiteSpace(current.SummaryPath))
+            {
+                analyticsPrefix = BuildConfusionMatrixText(current) + Environment.NewLine;
+                if (!string.IsNullOrWhiteSpace(current.AnalyticsText))
+                {
+                    analyticsPrefix += current.AnalyticsText + Environment.NewLine;
+                }
+            }
             string performanceComparison = BuildPerformanceComparisonText(current, resolvedBaseline);
             if (!string.IsNullOrWhiteSpace(performanceComparison))
             {

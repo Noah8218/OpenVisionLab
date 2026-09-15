@@ -7,27 +7,36 @@ the images and measurements behind each OK/NG decision.
 
 ## Version
 
-Current version: `v2.2.0-dev.1`
+Current version: `v2.2.0-dev.3`
 
-This project is maintained using explicit version numbers. The current value is a development candidate; it keeps the existing Recipe/XML and explicit Preview/Run contracts while the ownership refactors are verified.
+This project is maintained using explicit version numbers. The current value
+is a development candidate; it keeps the existing Recipe/XML and explicit
+Preview/Run contracts while the ownership refactors are verified.
 
 ### Recent version history
 
+#### `v2.2.0-dev.3` (2026-09-16)
+
+- Hardens Pipeline Review, Recipe switching, N-image verification, docking,
+  Tool interaction, workspace restoration, storage recovery, and execution
+  provenance for clearer deterministic workflows.
+- Adds bounded 2D integration evidence, output-allocation preflight guards,
+  and current Dev verification records without making LLM support a runtime
+  prerequisite.
+
+#### `v2.2.0-dev.2` (2026-09-10)
+
+- Organizes the Docking.Controls source by contracts, models, documents,
+  workspace, guides, layer docking, converters, and Views.
+- Preserves namespaces, XAML bindings, ResourceDictionary behavior, and the
+  existing Image → Layer → Tool → Inspection → Pipeline → Recipe → Result → Review flow.
+
 #### `v2.2.0-dev.1` (2026-09-09)
 
-- Aligns the application, manual, and integration identity surfaces to one version.
-- Promotes the verified ImageCanvas, Image Compare, Recipe, Shell, PropertyGrid, Learn, and namespace ownership boundaries.
-
-#### `v2.2.0-dev` (2026-09-01)
-
-- Adds authenticated TCP exchange for immutable 2D integration transactions.
-- Keeps acknowledgement, inspection execution, and result publication
-  explicit; receiving bytes never runs an inspection automatically.
-
-#### `v2.1.0-rc.3` (2026-08-26)
-
-- Public release-candidate baseline for the deterministic 2D inspection
-  workbench and its explicit Preview/Run workflow.
+- Aligns the application, manual, and integration identity surfaces to one
+  version.
+- Promotes the verified ImageCanvas, Image Compare, Recipe, Shell,
+  PropertyGrid, Learn, and namespace ownership boundaries.
 
 ## Quick Overview
 
@@ -102,6 +111,39 @@ and review the detected objects and drawings from the final Step.
 Preview and Run are always explicit user actions. These recordings use public
 example images to demonstrate the workflow; production use requires validation
 with representative application data.
+
+## Start Here: Choose the Project
+
+Open `OpenVisionLab.sln` for normal development. Set **OpenVisionLab** as the
+startup project and use `Debug` / `Any CPU`; the product starts through
+`src/OpenVisionLab/Program.cs`, then
+`src/OpenVisionLab/App/Bootstrap/OpenVisionLabApplication.cs`, and finally
+`OpenVisionShellHostWindow`. Do not choose a verification tool as the F5
+startup project.
+
+The solution lists the product and shared library projects. Other `.csproj`
+files under `tools/` are standalone verification entry points, so they are
+opened or run by their project path when a specific check is needed.
+
+| Work you are doing | Project or folder to open | First code to read |
+| --- | --- | --- |
+| Run or change the product workflow, Shell, Recipe, or Pipeline | `src/OpenVisionLab/OpenVisionLab.csproj` | `Program.cs` -> `App/Bootstrap/OpenVisionLabApplication.cs` -> `UI/Menu/Wpf/` or `Core/Recipe/` / `Core/Pipeline/` |
+| Change image layers, leases, or layer display state | `src/Libraries/OpenVisionLab.ImageSpace.Core/` and `src/Libraries/OpenVisionLab.Display.Core/` | `ImageSpaceService.cs` and the display owner listed in `docs/admin/CODEBASE_STRUCTURE.md` |
+| Change image canvas, ROI input, or canvas persistence | `src/Libraries/OpenVisionLab.ImageCanvas/` | `View/`, `ViewModel/`, and `RoiInteraction/` |
+| Change shared PropertyGrid contracts or WPF adaptation | `src/Libraries/PropertyGrid.Abstractions/` or `src/Libraries/WpfPropertyGridBridge/` | `PropertyGridContracts.cs` -> `WpfPropertyGridAdapter.cs` |
+| Change shared pipeline, docking, logging, or localization controls | the matching project under `src/Libraries/` | its `View/`, `ViewModel/`, or `Services/` owner |
+| Run a structural or feature check | the matching project under `tools/` | `tools/OpenVisionReadinessCheck/`, `tools/VisionRecipeRunnerSmoke/`, or `tools/PipelineViewerScreenshotSmoke/` |
+
+The shortest code-reading route is
+`AGENTS.md` -> `docs/README.md` ->
+`docs/admin/CODEBASE_STRUCTURE.md` -> the stable contract for the feature ->
+the owner named in that structure document. From PowerShell, the baseline
+commands are:
+
+```powershell
+dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"
+dotnet run --project "tools/OpenVisionReadinessCheck/OpenVisionReadinessCheck.csproj" -c Debug -- "$PWD"
+```
 
 ## Build From A Fresh GitHub Clone
 

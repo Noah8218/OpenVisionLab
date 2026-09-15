@@ -1,0 +1,252 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0029",
+    "aliases": [
+      "OPENVISIONLAB-PROJECT-READINESS-AND-REFACTOR-20260913"
+    ],
+    "type": "task",
+    "mode": "composite",
+    "title": "Document the current project audit and execute bounded refactoring",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "explicit user request to document the audit and continue refactoring",
+    "summary": "The user requested a durable project analysis document, implementation based on that document, one scheduled continuation, and a final re-review against the original request.",
+    "refs": [
+      "current user request",
+      "docs/reports/OPENVISIONLAB_PROJECT_READINESS_AND_REFACTOR_CONTRACT_20260913.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "PL-0029의 M1 문서화, M2 RecipeDialogAdapter 문자열 수정, M3 focused proof와 PL-0028 retained-boundary 연계, M4 최초 요청 최종 대조가 완료되었다. 통합 보고서·문서 index·owner/navigation 증거와 Debug/Release/readiness/contract/UI smoke 결과가 기록되었고, 미검증 runtime·hardware·법적 재배포 범위는 명시적으로 남겼다. 최종 대조 후 openvisionlab-2d 예약은 중지하며 대체 예약은 만들지 않는다."
+  },
+  "objective": {
+    "summary": "Turn the current project audit into a durable, indexed refactor contract, implement the smallest proven improvements, verify each boundary, and stop the single heartbeat after a final review.",
+    "constraints": [
+      "Work only in C:\\\\Git\\\\2D\\\\Dev; keep C:\\\\Git\\\\2D\\\\Original unchanged.",
+      "Do not duplicate or reopen PL-0028 Partial boundaries without new evidence.",
+      "Preserve XAML, binding, public API, Recipe/XML, Preview/Run, image/native lifetime, and shutdown contracts.",
+      "Prefer existing concrete owners; do not add one-implementation interfaces, wrappers, managers, registries, or speculative partials.",
+      "Defer optional user questions and record external rights, hardware, and deployment prerequisites without pretending they are verified.",
+      "When all criteria and the final initial-request review are complete, pause the existing heartbeat and create no replacement schedule."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The integrated audit/refactor contract exists under docs/reports and is reachable from the documentation routing index.",
+      "evidence_refs": [
+        "E1",
+        "E5"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "The first independent refactor slice repairs RecipeDialogAdapter visible Korean strings while preserving delegate signatures, dialog result semantics, and existing owner resolution.",
+      "evidence_refs": [
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Focused source checks and the smallest relevant build or contract run prove the changed boundary; unrun runtime/UI rows are explicitly recorded.",
+      "evidence_refs": [
+        "E3",
+        "E4",
+        "E5",
+        "E6",
+        "E7"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "The final report rechecks the original request, names completed and unverified areas, and the heartbeat is paused with no replacement schedule.",
+      "evidence_refs": [
+        "E8",
+        "E9"
+      ]
+    }
+  ],
+  "milestones": [
+    {
+      "id": "M1",
+      "summary": "Document and route the current audit",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1"
+      ],
+      "issue_refs": [],
+      "evidence_refs": []
+    },
+    {
+      "id": "M2",
+      "summary": "Repair the first user-visible localization boundary",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C2"
+      ],
+      "issue_refs": [],
+      "evidence_refs": []
+    },
+    {
+      "id": "M3",
+      "summary": "Run focused proof and continue only to an independently owned next boundary",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C3"
+      ],
+      "issue_refs": [],
+      "evidence_refs": []
+    },
+    {
+      "id": "M4",
+      "summary": "Re-review the original request and stop scheduled continuation",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C4"
+      ],
+      "issue_refs": [],
+      "evidence_refs": []
+    }
+  ],
+  "relations": [],
+  "context": [
+    {
+      "kind": "report",
+      "location": "docs/reports/OPENVISIONLAB_PROJECT_READINESS_AND_REFACTOR_CONTRACT_20260913.md"
+    },
+    {
+      "kind": "report",
+      "location": "docs/reports/OPENVISIONLAB_JUNIOR_WHOLE_REPOSITORY_REVIEW_20260911.md"
+    },
+    {
+      "kind": "report",
+      "location": "docs/reports/OPENVISIONLAB_JUNIOR_BURDEN_REASSESSMENT_20260912.md"
+    },
+    {
+      "kind": "report",
+      "location": "docs/reports/OPENVISIONLAB_WPF_VIEW_MVVM_PORTABILITY_AUDIT_20260913.md"
+    },
+    {
+      "kind": "report",
+      "location": "docs/reports/OPENVISIONLAB_PARTIAL_RESPONSIBILITY_REVIEW_20260913.md"
+    },
+    {
+      "kind": "source",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/Shell/Recipe/RecipeDialogAdapter.cs"
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "evidence-root",
+      "location": "D:\\\\OpenVisionLab-TestData\\\\OpenVisionLab_Dev\\\\junior-project-audit-20260913",
+      "summary": "Existing Visual Studio, runtime, documentation, and DLL audit evidence"
+    },
+    {
+      "kind": "evidence-root",
+      "location": "D:\\\\OpenVisionLab-TestData\\\\OpenVisionLab_Dev\\\\mvvm-view-audit-20260913",
+      "summary": "Existing MVVM and View portability audit evidence"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "documentation",
+      "location": "docs/reports/OPENVISIONLAB_PROJECT_READINESS_AND_REFACTOR_CONTRACT_20260913.md",
+      "observation": "The integrated audit/refactor contract was added under docs/reports, a dedicated documentation-index route and reference were added, TestDocumentationIndex passed with IndexedPaths=298, Routes=17, RootRedirects=102, and PL-0029 validated as v2.",
+      "observed_at": "2026-09-13T15:26:00.5368321+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "source",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/Shell/Recipe/RecipeDialogAdapter.cs",
+      "observation": "The visible Korean Recipe, Pipeline, file-dialog, validation-set, and delete-confirmation strings were repaired. The existing ConfirmDeleteRecipe, ConfirmDeletePipeline, ConfirmDeleteValidationSet delegate signatures and owner provider remain unchanged. The focused source contract reported RECIPE_DIALOG_LOCALIZATION_CONTRACT=PASS|checks=5 and the known mojibake search returned no matches.",
+      "observed_at": "2026-09-13T15:26:00.5368321+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "test",
+      "location": "D:\\\\OpenVisionLab-TestData\\\\OpenVisionLab_Dev\\\\project-readiness-refactor-20260913\\\\r1-recipe-dialog\\\\recipe-dialog-localization-contract.txt",
+      "observation": "The RecipeDialogLocalizationContract passed 5/5 after a successful VisionRecipeRunnerSmoke Debug build with 0 warnings and 0 errors.",
+      "observed_at": "2026-09-13T15:26:00.5368321+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "verification",
+      "location": "C:\\\\Git\\\\2D\\\\Dev",
+      "observation": "Targeted git diff --check returned no whitespace errors; DocumentationIndex and PL-0029 validation both passed after the R1 change.",
+      "observed_at": "2026-09-13T15:26:00.5368321+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "review",
+      "location": "docs/reports/OPENVISIONLAB_PROJECT_READINESS_AND_REFACTOR_CONTRACT_20260913.md",
+      "observation": "R2 AppPathService를 현재 소스, OPENVISIONLAB_RUNTIME_DATA_ROOT_V1_CONTRACT.md, BuildCleanRuntime.ps1과 대조했다. DEBUG 기본값은 빌드 출력 루트이고 동일 루트에서는 Release migration을 실행하지 않으며, 별도 stale-state fresh-F5 재현 전에는 새 경로 abstraction을 추가하지 않기로 기록했다.",
+      "observed_at": "2026-09-13T15:32:15+09:00"
+    },
+    {
+      "id": "E6",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\apppath-boundary-contract_20260913_153423\\app-path-boundary-contract.txt",
+      "observation": "AppPathBoundaryContract passed 8/8. Valid runtime and installation paths stayed within their roots; traversal, rooted external runtime path, capture title, and test config escape attempts were rejected.",
+      "observed_at": "2026-09-13T15:34:50+09:00"
+    },
+    {
+      "id": "E7",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m29-image-compare-retention\\phase-summary.txt",
+      "observation": "The ImageCompareWindow retained-boundary review passed static source assertions, ImageCompare directory/resource contracts, standalone Debug build, and wpf_image_compare UI smoke. No independent extraction seam was proven and the runtime/UI limits were recorded.",
+      "observed_at": "2026-09-13T15:55:20+09:00"
+    },
+    {
+      "id": "E8",
+      "kind": "review",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m4-final-audit\\phase-summary.txt; docs\\reports\\OPENVISIONLAB_PROJECT_READINESS_AND_REFACTOR_CONTRACT_20260913.md",
+      "observation": "The final phase summary rechecks all original request dimensions: documentation inventory and cleanup candidates, solution/Visual Studio start route and representative execution, mixed MVVM/WPF-native ownership, DLL dependency and redistribution boundary, and completed/unverified scope. It records passed final audits and states that no replacement schedule is created after the heartbeat stops.",
+      "observed_at": "2026-09-13T16:22:00+09:00"
+    },
+    {
+      "id": "E9",
+      "kind": "automation",
+      "location": "Codex automation_update: openvisionlab-2d",
+      "observation": "automation_update mode=delete returned 'Deleted automation in the app' with automationId=openvisionlab-2d, deleteStatus=deleted, and no replacement automation was created.",
+      "observed_at": "2026-09-13T16:25:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-13T16:22:00+09:00",
+      "summary": "최초 요청을 문서·소스·실행 증거와 다시 대조했다. 문서 inventory/routing/정리 후보, Visual Studio/solution route와 대표 WPF smoke, 혼합 MVVM owner 경계, DLL dependency/licensing 보류, 미검증 runtime/legal 범위를 통합 보고서에 확정하고, 최종 후 openvisionlab-2d heartbeat를 중지한다.",
+      "evidence_refs": [
+        "E8"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-13T16:22:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "통합 문서와 최초 요청 재대조 기준을 충족했다. 예약 중지는 별도 external schedule mutation으로 수행하며, 새 예약은 만들지 않는다."
+    },
+    {
+      "id": "D2",
+      "kind": "decision",
+      "at": "2026-09-13T16:25:00+09:00",
+      "summary": "최종 원장 기록 후 `openvisionlab-2d` heartbeat를 삭제했다. 삭제 응답은 deleteStatus=deleted였고 대체 automation은 만들지 않았다.",
+      "evidence_refs": [
+        "E9"
+      ]
+    }
+  ],
+  "created_at": "2026-09-13T15:14:32.1528949+09:00",
+  "updated_at": "2026-09-13T16:25:00+09:00"
+}

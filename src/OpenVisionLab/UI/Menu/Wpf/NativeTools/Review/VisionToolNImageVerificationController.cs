@@ -576,26 +576,7 @@ namespace OpenVisionLab
 
         private static BitmapImage LoadBitmap(string path)
         {
-            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
-            {
-                return null;
-            }
-
-            try
-            {
-                using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                BitmapImage image = new BitmapImage();
-                image.BeginInit();
-                image.CacheOption = BitmapCacheOption.OnLoad;
-                image.StreamSource = stream;
-                image.EndInit();
-                image.Freeze();
-                return image;
-            }
-            catch
-            {
-                return null;
-            }
+            return OpenVisionBitmapImagePreviewFactory.TryCreateFromPath(path, decodePixelWidth: 0);
         }
 
         private void RefreshState()

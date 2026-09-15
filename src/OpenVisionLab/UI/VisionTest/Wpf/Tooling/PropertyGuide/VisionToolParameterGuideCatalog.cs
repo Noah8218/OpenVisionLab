@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
+using System.Reflection;
 
 namespace OpenVisionLab
 {
@@ -734,7 +735,7 @@ namespace OpenVisionLab
                 return null;
             }
 
-            PropertyDescriptor descriptor = TypeDescriptor.GetProperties(selectedObject)[propertyName];
+            PropertyDescriptor descriptor = GetPropertyDescriptor(selectedObject, propertyName);
             if (descriptor == null)
             {
                 return null;
@@ -904,7 +905,7 @@ namespace OpenVisionLab
             }
 
             PropertyDescriptor activeDescriptor =
-                TypeDescriptor.GetProperties(selectedObject)[definition.ActiveWhenPropertyName];
+                GetPropertyDescriptor(selectedObject, definition.ActiveWhenPropertyName);
             if (activeDescriptor == null)
             {
                 return string.Empty;
@@ -941,6 +942,33 @@ namespace OpenVisionLab
                 CultureInfo.CurrentCulture,
                 T("VisionTool.ParameterGuide.InactiveFormat"),
                 activePropertyName);
+        }
+
+        private static PropertyDescriptor GetPropertyDescriptor(object selectedObject, string propertyName)
+        {
+            PropertyDescriptor descriptor = TypeDescriptor.GetProperties(selectedObject)[propertyName];
+            if (descriptor != null)
+            {
+                return descriptor;
+            }
+
+            PropertyInfo property = selectedObject.GetType().GetProperty(
+                propertyName,
+                BindingFlags.Instance | BindingFlags.Public);
+            if (property == null)
+            {
+                return null;
+            }
+
+            Attribute[] attributes = property
+                .GetCustomAttributes(typeof(Attribute), true)
+                .OfType<Attribute>()
+                .ToArray();
+            return TypeDescriptor.CreateProperty(
+                selectedObject.GetType(),
+                property.Name,
+                property.PropertyType,
+                attributes);
         }
 
         private static string ResolveUnit(string propertyName)

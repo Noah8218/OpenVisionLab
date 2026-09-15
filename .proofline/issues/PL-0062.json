@@ -1,0 +1,148 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0062",
+    "aliases": [
+      "OPENVISIONLAB-2D004-RECIPE-SNAPSHOT-20260915"
+    ],
+    "type": "bug",
+    "mode": "simple",
+    "title": "Capture recipe bytes once for execution provenance",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "scheduled 2D task execution and source review",
+    "summary": "The 2D plan identified separate recipe deserialization, byte hashing, and text reads as a provenance race. The scheduled cycle authorized a bounded fix that keeps one captured byte generation as the execution and provenance source.",
+    "refs": [
+      "C:\\Users\\USER\\Downloads\\OpenVisionLab_2D_Audit_and_Plan.md",
+      "C:\\Users\\USER\\Downloads\\OpenVisionLab_2D_tasks.json",
+      "AGENTS.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "VisionRecipeRunner now reads a recipe file once into bytes, deserializes the same bytes, and passes them into VisionPipelineExecutionPlan. SerializeHelper supports byte-backed XML deserialization, including BOM-aware UTF-8 and UTF-16, while the execution plan hashes and retains those exact original bytes. Focused Debug/Release contracts and solution builds pass.",
+    "next_action": null
+  },
+  "problem": {
+    "claims": [
+      {
+        "id": "P1",
+        "state": "confirmed",
+        "text": "The file-based VisionRecipeRunner path previously deserialized a recipe and then read the same path again for bytes and text, allowing provenance to describe a different file generation under replacement.",
+        "evidence_refs": [
+          "E1"
+        ]
+      }
+    ],
+    "impact": "A result could pair execution from one recipe generation with a hash or XML snapshot from another, weakening reproducibility and review evidence."
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The file-based Runner captures recipe bytes exactly once, does not perform a second text read or file deserialization, and deserializes from the captured bytes.",
+      "evidence_refs": [
+        "E1"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "UTF-8 BOM, UTF-8 non-BOM, and UTF-16 recipe bytes deserialize correctly; the execution plan retains the exact original bytes and its original SHA-256 equals those bytes for both A and B generations.",
+      "evidence_refs": [
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Invalid XML bytes and an invalid recipe file fail before pipeline execution rather than producing a result.",
+      "evidence_refs": [
+        "E3"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "OpenVisionLab and VisionRecipeRunnerSmoke build cleanly in Debug and Release, and existing cancellation, failure-lifetime, and finite-acceptance regression contracts remain passing.",
+      "evidence_refs": [
+        "E4"
+      ]
+    },
+    {
+      "id": "C5",
+      "text": "The change keeps the existing recipe XML format, execution owner, result contract, and SDK/DLL provenance boundary unchanged.",
+      "evidence_refs": [
+        "E1",
+        "E4"
+      ]
+    }
+  ],
+  "relations": [],
+  "context": [
+    {
+      "kind": "owner-map",
+      "location": "VisionRecipeRunner.RunAsync(file) -> SerializeHelper.TryLoadFromXmlBytes -> VisionPipelineExecutionPlan.Create(bytes) -> VisionRecipeRunResult.ExecutionProvenance/OriginalPipelineXmlBytes"
+    },
+    {
+      "kind": "state-writer",
+      "location": "VisionPipelineExecutionPlan stores the original byte snapshot and writes OriginalPipelineSha256 into VisionPipelineExecutionProvenance; VisionRecipeRunResult projects those existing fields."
+    },
+    {
+      "kind": "reading-order",
+      "location": "VisionRecipeRunner.RunAsync(file) -> SerializeHelper.TryLoadFromXmlBytes -> VisionPipelineExecutionPlan.Create -> RecipeFileSnapshotContract"
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "evidence-root",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d004-recipe-snapshot-20260915",
+      "summary": "Debug/Release app and smoke builds, six-case recipe snapshot contracts, full solution builds, and cancellation/failure-lifetime/finite-acceptance regression logs."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "review",
+      "location": "src\\OpenVisionLab\\Core\\Pipeline\\Execution\\VisionRecipeRunner.cs; src\\OpenVisionLab\\Common\\Persistence\\SerializeHelper.cs; src\\OpenVisionLab\\Core\\Pipeline\\Execution\\VisionPipelineExecutionPlan.cs; tools\\VisionRecipeRunnerSmoke\\RecipeFileSnapshotContract.cs",
+      "observation": "The file overload contains one File.ReadAllBytes(recipeXmlPath) capture, passes those bytes to SerializeHelper.TryLoadFromXmlBytes, and no longer calls File.ReadAllText(recipeXmlPath) or TryLoadFromXmlFile(recipeXmlPath). The execution plan uses byte-backed deserialization when text is absent and retains the same bytes for hashing and result provenance. The source contract passed the one-read/static ownership assertions.",
+      "observed_at": "2026-09-15T11:45:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d004-recipe-snapshot-20260915\\contract-final3-debug\\recipe-file-snapshot-contract.txt; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d004-recipe-snapshot-20260915\\contract-final3-release\\recipe-file-snapshot-contract.txt",
+      "observation": "The focused recipe-file-snapshot contract passed 6/0 in Debug and Release. It covered one-read source ownership, UTF-8 BOM/non-BOM, UTF-16, exact original bytes and SHA-256, and sequential A/B generation identity/provenance pairing.",
+      "observed_at": "2026-09-15T11:45:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d004-recipe-snapshot-20260915\\contract-final3-debug\\recipe-file-snapshot-contract.txt; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d004-recipe-snapshot-20260915\\contract-final3-release\\recipe-file-snapshot-contract.txt",
+      "observation": "The contract rejected malformed XML bytes and an invalid recipe file before execution, retaining a load error and producing no run result.",
+      "observed_at": "2026-09-15T11:45:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "build",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d004-recipe-snapshot-20260915\\app-debug-build.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d004-recipe-snapshot-20260915\\app-release-build.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d004-recipe-snapshot-20260915\\runner-debug-build-contract-final2.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d004-recipe-snapshot-20260915\\runner-release-build-contract-final2.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d004-recipe-snapshot-20260915\\solution-debug-build.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d004-recipe-snapshot-20260915\\solution-release-build.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d004-recipe-snapshot-20260915\\pipeline-cancellation-result-contract-debug\\run.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d004-recipe-snapshot-20260915\\pipeline-cancellation-result-contract-release\\run.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d004-recipe-snapshot-20260915\\pipeline-failure-lifetime-contract-debug\\run.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d004-recipe-snapshot-20260915\\pipeline-failure-lifetime-contract-release\\run.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d004-recipe-snapshot-20260915\\pipeline-acceptance-finite-contract-debug\\run.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d004-recipe-snapshot-20260915\\pipeline-acceptance-finite-contract-release\\run.log",
+      "observation": "OpenVisionLab and VisionRecipeRunnerSmoke Debug/Release builds plus full solution Debug/Release builds completed with exit code 0, warnings 0, and errors 0. Existing cancellation passed 5/0, failure-lifetime passed 7/0, and finite-acceptance passed 10/0 in both configurations.",
+      "observed_at": "2026-09-15T11:45:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-15T11:45:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "The one-read byte snapshot owner, encoding-aware deserialization, exact provenance hash, invalid-input fail-closed behavior, focused contracts, and Debug/Release regression gates are complete. Full RC distribution verification remains the separate PL-0061 blocked boundary.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ]
+    }
+  ],
+  "created_at": "2026-09-15T11:45:00+09:00",
+  "updated_at": "2026-09-15T11:45:00+09:00"
+}

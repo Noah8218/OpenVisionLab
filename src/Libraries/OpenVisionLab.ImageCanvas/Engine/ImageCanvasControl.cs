@@ -1,9 +1,9 @@
 using OpenVisionLab.ImageCanvas;
-using OpenVisionLab.ImageCanvas.Model;
 using OpenVisionLab.ImageCanvas.Canvas;
 using OpenVisionLab.ImageCanvas.CanvasShapes;
-using OpenVisionLab.ImageCanvas.Overlays;
+using OpenVisionLab.ImageCanvas.Model;
 using OpenVisionLab.ImageCanvas.OpenGLRendering;
+using OpenVisionLab.ImageCanvas.Overlays;
 using SharpGL;
 using SharpGL.Enumerations;
 using System;
@@ -22,6 +22,8 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 {
 	public partial class ImageCanvasControl : UserControl
 	{
+		#region Core
+
 		#region Events
 		public event EventHandler<OpenVisionLab.ImageCanvas.Canvas.CanvasRenderEventArgs> Draw;
 		public event EventHandler Resized = delegate { };
@@ -2224,6 +2226,201 @@ namespace OpenVisionLab.ImageCanvas.Rendering
 
 			_shapesViewPort = concurrentBag.ToList();
 		}
+		#endregion
+
+		#endregion
+
+		#region View State
+
+		public void FitToRect(RectangleF rect)
+		{
+			SetZoomValue(rect);
+			UpdateView(rect);
+		}
+
+		public void ZoomToFit()
+		{
+			if (_fitRect.IsEmpty) return;
+			SetZoomValue(_fitRect);
+			UpdateView(_fitRect);
+		}
+
+		public CanvasViewState CaptureViewState()
+		{
+			return new CanvasViewState(_zoom, _offsetSize);
+		}
+
+		public void ApplyViewState(CanvasViewState viewState)
+		{
+			if (viewState == null) { return; }
+
+			_zoom = viewState.Zoom;
+			_offsetSize = viewState.OffsetSize;
+			Reshape();
+			RefreshGL();
+		}
+
+		public void ZoomAt(Point mousePos, int delta)
+		{
+			float oldZoom = UpdateZoom(delta);
+			if (oldZoom == 0) { return; }
+
+			AdjustOffsetForZoom(mousePos, oldZoom);
+			Reshape();
+			RefreshGL();
+		}
+
+		public void UpdateView(RectangleF rect)
+		{
+			Reshape();
+			Move(new PointF(rect.Left + rect.Width / 2, rect.Y + rect.Height / 2));
+		}
+
+		private new void Move(PointF pt)
+		{
+			_aspectRatio = ((float)openGLControl.Width) / openGLControl.Height;
+			_xSpan = _zoom;
+			_ySpan = _zoom;
+
+			if (_aspectRatio > 1)
+			{
+				_xSpan *= _aspectRatio;
+			}
+			else
+			{
+				_ySpan /= _aspectRatio;
+			}
+
+			_offsetSize.Width = _xSpan / 2 - pt.X;
+			_offsetSize.Height = _ySpan / 2 - pt.Y;
+			openGLControl.Refresh();
+		}
+
+		private void SetZoomValue(RectangleF rect)
+		{
+			float scaleWidth = (float)openGLControl.Width / rect.Width;
+			float scaleHeight = (float)openGLControl.Height / rect.Height;
+			float zoomFactor = 1.1f;
+
+			if (scaleHeight < scaleWidth)
+			{
+				_zoom = rect.Height * zoomFactor;
+			}
+			else
+			{
+				_zoom = rect.Height * (rect.Width / rect.Height) * zoomFactor;
+			}
+		}
+
+		private void ResetMousePositions()
+		{
+			PreMousePos = new Point();
+			PostMousePos = new Point();
+		}
+
+		private void DragViewMovement(MouseEventArgs e)
+		{
+			Point currentImagePos = GetCurrentCanvasPosition(e.X, e.Y);
+			float dx = currentImagePos.X - _preMousePos.X;
+			float dy = currentImagePos.Y - _preMousePos.Y;
+			_offsetSize.Width += dx;
+			_offsetSize.Height += dy;
+		}
+
+		public void PanToKeepPointAtMouse(PointF anchorPoint, Point mousePos)
+		{
+			PointF currentPoint = GetCurrentCanvasPositionF(mousePos.X, mousePos.Y);
+			_offsetSize.Width += currentPoint.X - anchorPoint.X;
+			_offsetSize.Height += currentPoint.Y - anchorPoint.Y;
+			Reshape();
+			RefreshGL();
+		}
+
+		public float UpdateZoom(int delta)
+		{
+			float oldZoom = _zoom;
+			if (float.IsNaN(oldZoom))
+			{
+				return 0;
+			}
+
+			_zoom *= (delta < 0) ? 1.20F : 0.80F;
+			if (_zoom <= 0.0f)
+			{
+				_zoom = MIN_ZOOM_SCALE;
+			}
+
+			_zoom = (float)Math.Round((decimal)_zoom, 3);
+			OpenGlDrawing.ZoomFactor = ZoomScale;
+
+			return oldZoom;
+		}
+
+		public void AdjustOffsetForZoom(Point mousePos, float oldZoom)
+		{
+			float oldImageX = mousePos.X * (oldZoom / GetControlMinSize());
+			float oldImageY = (mousePos.Y - openGLControl.Size.Height) * (oldZoom / GetControlMinSize());
+			float newImageX = mousePos.X * (_zoom / GetControlMinSize());
+			float newImageY = (mousePos.Y - openGLControl.Size.Height) * (_zoom / GetControlMinSize());
+
+			_offsetSize.Width += newImageX - oldImageX;
+			_offsetSize.Height += oldImageY - newImageY;
+		}
+
+		public PointF GetRoundPointF(PointF pt, int digit = 1)
+		{
+			PointF result = pt;
+			result.X = (float)Math.Round(result.X, digit);
+			result.Y = (float)Math.Round(result.Y, digit);
+
+			return result;
+		}
+
+		public PointF GetCurrentCanvasPositionF(int mouseLocationX, int mouseLocationY)
+		{
+			PointF canvasPos = new PointF(
+				mouseLocationX * _zoom / GetControlMinSize() - _offsetSize.Width,
+				(openGLControl.Size.Height - mouseLocationY) * _zoom / GetControlMinSize() - _offsetSize.Height);
+			return new PointF(canvasPos.X, canvasPos.Y);
+		}
+
+		public PointF GetScreenPosFromPixelCoordf(int pixelX, int pixelY)
+		{
+			float scale = GetControlMinSize() / _zoom;
+			float screenX = (pixelX + 0.5F + _offsetSize.Width) * scale;
+			float screenY = openGLControl.Size.Height - ((pixelY + 0.5F + _offsetSize.Height) * scale);
+
+			return new PointF(screenX, screenY);
+		}
+
+		public Point GetCurrentCanvasPosition(int mouseLocationX, int mouseLocationY)
+		{
+			Point canvasPos = new Point(
+				(int)(mouseLocationX * _zoom / GetControlMinSize() - _offsetSize.Width),
+				(int)((openGLControl.Size.Height - mouseLocationY) * _zoom / GetControlMinSize() - _offsetSize.Height));
+			return new Point(canvasPos.X, canvasPos.Y);
+		}
+
+		public PointF ConvertOpenGlToImagePoint(PointF openGlPoint)
+		{
+			RectangleF imageBounds = CalculateBoundingRectangle(_textureAreas);
+			if (imageBounds.Width <= 0 || imageBounds.Height <= 0)
+			{
+				return openGlPoint;
+			}
+
+			return new PointF(openGlPoint.X - imageBounds.Left, imageBounds.Bottom - openGlPoint.Y);
+		}
+
+		public Point GetScreenPosFromPixelCoord(int pixelX, int pixelY)
+		{
+			float scale = GetControlMinSize() / _zoom;
+			int screenX = (int)Math.Floor((pixelX + 0.5F + _offsetSize.Width) * scale);
+			int screenY = (int)Math.Floor(openGLControl.Size.Height - ((pixelY + 0.5F + _offsetSize.Height) * scale));
+
+			return new Point(screenX, screenY);
+		}
+
 		#endregion
 	}
 }

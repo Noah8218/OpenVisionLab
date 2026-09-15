@@ -1,0 +1,185 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0078",
+    "aliases": [
+      "OPENVISIONLAB-2D020-EXTERNAL-ASSET-RECONNECTION-20260915"
+    ],
+    "type": "task",
+    "mode": "simple",
+    "title": "Verify external asset identification and explicit reconnection",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "scheduled 2D task execution and source review",
+    "summary": "2D-020 requires moved, missing, damaged, and same-name external assets to be distinguished before a Recipe is reopened or adopted on another machine.",
+    "refs": [
+      "C:\\Users\\USER\\Downloads\\OpenVisionLab_2D_tasks.json",
+      "docs\\contracts\\openvisionlab\\OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md",
+      "docs\\admin\\OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "AGENTS.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "The existing review-bundle and qualification owners already provide the required asset safety boundary. A focused isolated contract now proves missing, SHA-matched relocation, same-name content mismatch, explicit copy/save, source-byte preservation, and qualified working-copy hash ownership; no duplicate bundle or snapshot implementation was added."
+  },
+  "objective": {
+    "summary": "Verify 2D-020 against the current asset review and qualification implementations and preserve the smallest explicit reconnection workflow.",
+    "constraints": [
+      "Reuse OpenVisionRecipeReviewBundleExporter, OpenVisionRecipeReviewBundleInspector, OpenVisionRecipeDependencyReviewService, QualifiedRecipeSnapshotPreflight, QualifiedRecipeSnapshotStore, and QualifiedRecipeSnapshotWorkingCopyService.",
+      "Do not add a second asset bundle, recursive replacement search, silent same-name adoption, or automatic Preview/Run.",
+      "Use only isolated fixtures and D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev evidence; do not modify user assets or C:\\Git\\2D\\Original.",
+      "Do not commit, push, release, deploy, or perform external communication."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The existing bundle path distinguishes Found, RelocationCandidate, Missing, and ContentMismatch, and dependency review identifies the affected Step and parameter while keeping unresolved states blocking.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "A relocation candidate is not auto-applied. After an explicit XML path decision, the existing copy/save path adopts the verified bytes into a data-relative Recipe path, preserves the source, changes the saved Pipeline content hash, and does not execute Preview/Run.",
+      "evidence_refs": [
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "The existing qualification path rejects missing or SHA-mismatched dependencies, archives/verifies dependency bytes, and restores them only through a verified new working copy.",
+      "evidence_refs": [
+        "E1",
+        "E4"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "Debug and Release smoke builds and focused/regression contracts pass, including the existing qualification smoke.",
+      "evidence_refs": [
+        "E2",
+        "E3",
+        "E4"
+      ]
+    },
+    {
+      "id": "C5",
+      "text": "Stable contract, current handoff, smoke dispatch, owner/call path, reading order, evidence, and remaining runtime/UI boundaries are recorded for the next scheduled slice.",
+      "evidence_refs": [
+        "E5"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0077"
+    }
+  ],
+  "context": [
+    {
+      "kind": "owner-map",
+      "location": "Review bundle exporter writes the path/size/SHA manifest; inspector classifies path states; dependency review owns Step/parameter rows and explicit copy; qualification preflight/store/working-copy own archived dependency verification and new-Recipe restoration."
+    },
+    {
+      "kind": "call-path",
+      "location": "Review bundle selection -> TryInspect -> dependency review -> explicit XML path update -> copyDependencies/import -> VisionPipelineStorage.Save; qualified portability is snapshot preflight -> store archive/verify -> working-copy restore."
+    },
+    {
+      "kind": "public-contract",
+      "location": "Missing/relocation/content-mismatch states remain blocking; dry review never rewrites XML, copies assets, imports, or runs Preview/Run. Qualified working copies are new Recipes and do not inherit qualification or Run History."
+    },
+    {
+      "kind": "reading-order",
+      "location": "OpenVisionRecipeReviewBundleExporter.cs -> OpenVisionRecipeReviewBundleInspector.cs -> OpenVisionRecipeDependencyReviewService.cs -> RecipeCommandSurface.cs -> QualifiedRecipeSnapshotPreflight.cs -> QualifiedRecipeSnapshotStore.cs -> QualifiedRecipeSnapshotWorkingCopyService.cs -> RecipeExternalAssetReconnectionContract.cs."
+    },
+    {
+      "kind": "boundary",
+      "location": "Isolated source/in-process contracts and qualification smoke passed. Desktop WPF/EXE click path, rendered candidate confirmation, ACL/read-permission failure, themes/layouts/DPI/input, hardware, field qualification, release/publication, and Original repository remain unverified or out of scope."
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "evidence-directory",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d020-asset-reconnection-20260915-debug/contract-final4",
+      "summary": "Debug focused external asset reconnection contract report and isolated fixture."
+    },
+    {
+      "kind": "evidence-directory",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d020-asset-reconnection-20260915-release/contract-final",
+      "summary": "Release focused external asset reconnection contract report and isolated fixture."
+    },
+    {
+      "kind": "evidence-directory",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d020-asset-reconnection-20260915-debug/regression-review-bundle; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d020-asset-reconnection-20260915-debug/regression-persistence",
+      "summary": "Existing review-bundle projection and persistence execution gate regressions."
+    },
+    {
+      "kind": "evidence-directory",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d020-asset-reconnection-20260915-release/qualification",
+      "summary": "Release QualifiedRecipeSnapshotSmoke build and run evidence."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "review",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/Recipe/Review/OpenVisionRecipeReviewBundleExporter.cs; src/OpenVisionLab/UI/Menu/Wpf/Recipe/Review/OpenVisionRecipeReviewBundleInspector.cs; src/OpenVisionLab/UI/Menu/Wpf/Recipe/Review/OpenVisionRecipeDependencyReviewService.cs; src/OpenVisionLab/Core/Recipe/Qualification/QualifiedRecipeSnapshotPreflight.cs; src/OpenVisionLab/Core/Recipe/Qualification/QualifiedRecipeSnapshotStore.cs; src/OpenVisionLab/Core/Recipe/Qualification/QualifiedRecipeSnapshotWorkingCopyService.cs",
+      "observation": "Source review confirmed that the existing owners record dependency path/size/SHA, classify current/moved/missing/content-mismatch states, identify Step/parameter impact, block unresolved dependencies, preserve explicit import/copy boundaries, and independently verify/archive qualification dependencies for working copies.",
+      "observed_at": "2026-09-15T20:07:16+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d020-asset-reconnection-20260915-debug/build-smoke-debug-final3.log; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d020-asset-reconnection-20260915-debug/contract-final4/recipe-external-asset-reconnection-contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d020-asset-reconnection-20260915-debug/regression-review-bundle/contract.log; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d020-asset-reconnection-20260915-debug/regression-persistence/contract.log",
+      "observation": "Debug VisionRecipeRunnerSmoke build completed with 0 errors and the existing 16 nullable warnings outside this slice. The focused external-asset contract passed 17/0; review-bundle projection passed; persistence execution gate passed 9/0.",
+      "observed_at": "2026-09-15T20:08:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d020-asset-reconnection-20260915-release/build-smoke-release-final.log; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d020-asset-reconnection-20260915-release/contract-final/recipe-external-asset-reconnection-contract.txt",
+      "observation": "Release VisionRecipeRunnerSmoke build completed with 0 errors and the existing 16 nullable warnings outside this slice. The focused external-asset contract passed 17/0.",
+      "observed_at": "2026-09-15T20:04:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d020-asset-reconnection-20260915-release/qualification/build.log; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d020-asset-reconnection-20260915-release/qualification/run.log",
+      "observation": "Release QualifiedRecipeSnapshotSmoke built successfully and completed with qualified_recipe_snapshot_core=OK, producing a verified snapshot and revision snapshot in the isolated D-drive fixture.",
+      "observed_at": "2026-09-15T20:05:00+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "review",
+      "location": "docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md; tools/VisionRecipeRunnerSmoke/RecipeExternalAssetReconnectionContract.cs; tools/VisionRecipeRunnerSmoke/Program.cs",
+      "observation": "The stable contract, current handoff, smoke dispatch, focused contract, owner/call path, reading order, next 2D-021 boundary, and unverified runtime/UI limits were recorded.",
+      "observed_at": "2026-09-15T20:09:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-15T20:09:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "Close 2D-020 after current-owner review, isolated Debug/Release asset-state contracts, qualification smoke, regressions, and durable handoff updates.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E4",
+        "E5"
+      ]
+    }
+  ],
+  "created_at": "2026-09-15T20:09:00+09:00",
+  "updated_at": "2026-09-15T20:09:00+09:00"
+}

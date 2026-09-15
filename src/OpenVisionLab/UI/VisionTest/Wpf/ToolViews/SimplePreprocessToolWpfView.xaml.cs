@@ -17,6 +17,7 @@ namespace OpenVisionLab
         public SimplePreprocessToolWpfView()
         {
             InitializeComponent();
+            signalInspector.SetExportAction(VisionToolSignalEvidenceExporter.ExportTsv);
             AttachToolController(
                 string.Empty,
                 parameterContentHost,

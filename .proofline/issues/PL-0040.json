@@ -1,0 +1,164 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0040",
+    "aliases": [],
+    "type": "task",
+    "mode": "composite",
+    "title": "Move Threshold Tool suggestion workflow out of the View Partial",
+    "risk": "low"
+  },
+  "origin": {
+    "kind": "user-request",
+    "summary": "The user requested that Partial refactoring continue in scheduled cycles and that remaining Partial responsibilities be corrected structurally rather than mechanically split or deleted.",
+    "refs": [
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "docs/reports/OPENVISIONLAB_PARTIAL_STRUCTURAL_ELIMINATION_PLAN_20260913.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "ThresholdToolWpfView의 teaching-suggestion workflow 조정을 WPF-free ThresholdToolSuggestionController로 이동하고, 분석/Undo policy는 기존 VisionToolThresholdSuggestionSession, parameter writer는 기존 VisionToolThresholdInteractionController에 유지했다. Debug/Release contract/build와 Threshold WPF/CVR-07 smoke가 통과했다."
+  },
+  "objective": {
+    "summary": "Remove the multi-step Threshold suggestion orchestration from ThresholdToolWpfView.xaml.cs while preserving the existing XAML automation contract, evidence/status/marker projection, no-execution Analyze path, ApplySignalMarkerValue path, stale validation, and Undo behavior.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev; do not modify C:\\Git\\2D\\Original.",
+      "Reuse VisionToolThresholdSuggestionSession and VisionToolThresholdInteractionController; add only the concrete workflow controller seam justified by the View's multi-step responsibility.",
+      "Do not add a Window/control reference, persistence, file I/O, duplicate analyzer, forwarding Partial, or new ViewModel.",
+      "Preserve ThresholdToolWpfView.xaml names, automation IDs, binding/test facade, Learn flow, and base disposal ownership.",
+      "Preserve Analyze selection-only behavior, Use/Undo parameter mutation and debounced Preview scheduling, evidence IDs, status messages, and stale/AlreadyCurrent semantics.",
+      "Keep test outputs and evidence under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev.",
+      "Do not commit, push, tag, release, deploy, or mutate the Original repository."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The proof report records current/intended owners, actual call path, mutable-state writers, lifetime owner, binding/public/test contract, shortest reading order, and the reuse decision.",
+      "evidence_refs": ["E1"]
+    },
+    {
+      "id": "C2",
+      "text": "ThresholdToolWpfView no longer owns the suggestion session orchestration body; ThresholdToolSuggestionController owns the workflow projection without WPF control dependencies, while the existing session and interaction controller remain the policy and parameter owners.",
+      "evidence_refs": ["E1", "E2"]
+    },
+    {
+      "id": "C3",
+      "text": "Focused Debug/Release contracts and builds, Threshold WPF smoke, CVR-07 suggestion smoke, monitor geometry, repository readiness/audit, documentation index, issue validation, and diff checks pass; broader UI/native matrices remain explicitly unverified.",
+      "evidence_refs": ["E2", "E3"]
+    }
+  ],
+  "milestones": [
+    {
+      "id": "M1",
+      "summary": "Trace Threshold View Partial, suggestion session/analyzer, interaction controller, ViewModel/presenter, factory/composition, XAML binding/test facade, and release owners.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": ["C1"],
+      "issue_refs": []
+    },
+    {
+      "id": "M2",
+      "summary": "Move only the suggestion workflow orchestration and UI projection to ThresholdToolSuggestionController, retaining existing session and interaction owners.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": ["C2"],
+      "issue_refs": []
+    },
+    {
+      "id": "M3",
+      "summary": "Run focused source/build/WPF/CVR-07/monitor and repository hygiene proof and record durable evidence.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": ["C3"],
+      "issue_refs": []
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0039"
+    }
+  ],
+  "context": [
+    {
+      "kind": "source",
+      "location": "src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\ToolViews\\ThresholdToolWpfView.xaml(.cs); src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Tooling\\Threshold\\ThresholdToolSuggestionController.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Tooling\\Threshold\\VisionToolThresholdSuggestionSession.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Behaviors\\VisionToolThresholdInteractionController.cs"
+    },
+    {
+      "kind": "composition-owner",
+      "location": "src\\OpenVisionLab\\UI\\VisionTest\\ViewModels\\ThresholdToolViewModel.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Tooling\\PropertyGrid\\VisionToolParameterPresenters.cs; src\\OpenVisionLab\\UI\\VisionTest\\Composition\\VisionToolCompositionService.cs; src\\OpenVisionLab\\UI\\Menu\\Wpf\\NativeTools\\Documents\\OpenVisionNativePropertyGridToolFactory.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Tooling\\SingleInput\\VisionToolSingleInputCustomToolViewBase.cs"
+    },
+    {
+      "kind": "test-host",
+      "location": "tools\\VisionRecipeRunnerSmoke\\ThresholdSuggestionSessionContract.cs; tools\\PipelineViewerScreenshotSmoke\\Program.cs; tools\\RunUiPrecheck.ps1"
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "screenshot",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\threshold-suggestion-controller-20260914\\ui-precheck\\wpf_shell_host_threshold_tool.png",
+      "summary": "Fresh 1600x900 Threshold Tool WPF smoke screenshot after moving suggestion orchestration out of the View Partial."
+    },
+    {
+      "kind": "screenshot",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\threshold-suggestion-controller-20260914\\monitor-cvr07\\monitor-window-smoke-output\\cvr07_threshold_suggestion.png",
+      "summary": "Fresh CVR-07 Threshold suggestion analyze/use/Undo runtime screenshot."
+    },
+    {
+      "kind": "geometry",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\threshold-suggestion-controller-20260914\\monitor-cvr07\\monitor-window-geometry.json",
+      "summary": "Fresh CVR-07 smoke process geometry with a visible window intersecting the detected monitor."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source",
+      "location": "docs\\reports\\OPENVISIONLAB_THRESHOLD_TOOL_PARTIAL_BOUNDARY_20260914.md; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\ToolViews\\ThresholdToolWpfView.xaml.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Tooling\\Threshold\\ThresholdToolSuggestionController.cs",
+      "observation": "The View Partial now routes Analyze/Use/Undo and availability changes through ThresholdToolSuggestionController. The controller has no WPF type dependency, delegates analysis/stale/Undo policy to VisionToolThresholdSuggestionSession, and delegates parameter mutation to VisionToolThresholdInteractionController. ViewModel, presenter, evidence/marker View, composition, and base lifetime owners remain unchanged.",
+      "observed_at": "2026-09-14T03:31:15+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\threshold-suggestion-controller-20260914\\debug\\threshold-suggestion-session-contract.txt; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\threshold-suggestion-controller-20260914\\release\\threshold-suggestion-session-contract.txt",
+      "observation": "ThresholdSuggestionSessionContract passed 7/7 in Debug and Release, proving View-to-controller routing, WPF-free controller ownership, existing session delegation, and preserved analysis/Use/Undo/stale/non-Basic behavior.",
+      "observed_at": "2026-09-14T03:31:15+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\threshold-suggestion-controller-20260914",
+      "observation": "VisionRecipeRunnerSmoke Debug/Release builds passed with 0 warnings/errors; PipelineViewerScreenshotSmoke Debug build passed with 0 errors and one pre-existing nullable warning; Threshold WPF precheck and CVR-07 smoke passed check=OK with layout/text/internal all zero; dynamic monitor probing recorded one DISPLAY2 1920x1080 monitor and one intersecting visible window for both targets. Repository readiness, RefactorAudit, DocumentationIndex, issue validation, and diff checks are recorded in this evidence root. Full theme/DPI/input/native/hardware runtime remains unverified.",
+      "observed_at": "2026-09-14T03:31:15+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-14T03:31:15+09:00",
+      "summary": "The View contained an independently testable multi-step suggestion workflow boundary. The existing session already owns policy and the existing interaction controller already owns parameter mutation, so a small WPF-free concrete controller is the narrowest boundary; no new interface, service, or Partial is justified.",
+      "evidence_refs": ["E1", "E2"]
+    },
+    {
+      "id": "D2",
+      "kind": "decision",
+      "at": "2026-09-14T03:31:15+09:00",
+      "summary": "PL-0040 is resolved only after focused Debug/Release contract/build, Threshold WPF and CVR-07 runtime smoke, monitor geometry, repository gates, documentation, issue validation, and diff checks pass. Broader UI/native matrices remain outside this slice.",
+      "evidence_refs": ["E3"]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-14T03:31:15+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "The Threshold suggestion workflow moved to a WPF-free concrete controller with the existing session and interaction owners retained. Focused source/build/runtime evidence was recorded. Do not reopen this boundary without a new requirement, reproducible defect, failed criterion, or changed dependency/lifetime boundary."
+    }
+  ],
+  "created_at": "2026-09-14T03:20:00+09:00",
+  "updated_at": "2026-09-14T03:31:15+09:00"
+}

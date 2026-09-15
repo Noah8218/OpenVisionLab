@@ -1,0 +1,164 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0041",
+    "aliases": [],
+    "type": "task",
+    "mode": "composite",
+    "title": "Move Line Tool sample property policy out of the View Partial",
+    "risk": "low"
+  },
+  "origin": {
+    "kind": "user-request",
+    "summary": "The user requested that Partial refactoring continue in scheduled cycles and that remaining Partial responsibilities be corrected structurally rather than mechanically split or deleted.",
+    "refs": [
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "docs/reports/OPENVISIONLAB_PARTIAL_STRUCTURAL_ELIMINATION_PLAN_20260913.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "LineToolWpfView의 ApplySampleLinePair 안에 있던 전체 common OpenCV/Line property 복사 정책을 기존 VisionPipelineLinePropertyAdapter로 이동했다. View의 sample 후속 순서와 PL-0027 persistence owner는 유지되며, Debug/Release contract/build와 Line/Recipe Line Pair WPF smoke가 통과했다."
+  },
+  "objective": {
+    "summary": "Remove the concrete LineGauge sample-property projection body from LineToolWpfView.xaml.cs while preserving the existing A/B sample dispatch, property values, defensive ROI/mask list-copy semantics, persistence callback, binding/test facade, and View lifetime.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev; do not modify C:\\Git\\2D\\Original.",
+      "Reuse VisionPipelineLinePropertyAdapter, the existing LineToolPresenter persistence seam, and existing interaction/preview owners; do not add a service, interface, manager, wrapper, or forwarding Partial.",
+      "Preserve LineToolWpfView.xaml names, PropertyGrid bindings, sample A/B dispatch, purpose selection, persistence, overlay, summary, result review, signal evidence, and public/test facade.",
+      "Preserve every common OpenCV/Line assignment, CvROIS/CvMASKS defensive copies, and post-copy callback order without adding Preview execution.",
+      "Do not reopen the completed PL-0027 persistence boundary.",
+      "Keep test outputs and evidence under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev.",
+      "Do not commit, push, tag, release, deploy, or mutate the Original repository."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The proof report records current/intended owners, actual call path, mutable-state writers, lifetime owner, binding/public/test contract, shortest reading order, and the reuse decision.",
+      "evidence_refs": ["E1"]
+    },
+    {
+      "id": "C2",
+      "text": "LineToolWpfView no longer owns the sample property copy body; VisionPipelineLinePropertyAdapter owns the complete common/Line projection and defensive list copies while the existing presenter, ViewModel, interaction, preview, persistence, and composition owners remain intact.",
+      "evidence_refs": ["E1", "E2"]
+    },
+    {
+      "id": "C3",
+      "text": "Focused Debug/Release contracts and builds, Line WPF smoke, Recipe Line Pair sample smoke, monitor geometry, repository readiness/audit, documentation index, issue validation, and diff checks pass; broader UI/native matrices remain explicitly unverified.",
+      "evidence_refs": ["E2", "E3"]
+    }
+  ],
+  "milestones": [
+    {
+      "id": "M1",
+      "summary": "Trace Line View Partial, sample caller, existing line adapter, ViewModel/presenter, persistence seam, interaction/preview, binding/test facade, factory/composition, and release owners.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": ["C1"],
+      "issue_refs": []
+    },
+    {
+      "id": "M2",
+      "summary": "Move the complete sample A/B property projection to VisionPipelineLinePropertyAdapter without changing callback order, values, or list ownership.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": ["C2"],
+      "issue_refs": []
+    },
+    {
+      "id": "M3",
+      "summary": "Run focused source/build/WPF/monitor and repository hygiene proof and record durable evidence.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": ["C3"],
+      "issue_refs": []
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0040"
+    }
+  ],
+  "context": [
+    {
+      "kind": "source",
+      "location": "src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\ToolViews\\LineToolWpfView.xaml(.cs); src\\OpenVisionLab\\UI\\Menu\\Wpf\\Recipe\\PropertyGrid\\VisionPipelineLinePropertyAdapter.cs; src\\OpenVisionLab\\UI\\Menu\\Wpf\\NativeTools\\Documents\\OpenVisionNativeToolDocument.cs"
+    },
+    {
+      "kind": "composition-owner",
+      "location": "src\\OpenVisionLab\\UI\\VisionTest\\ViewModels\\LineToolViewModel.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Tooling\\Presentation\\LineToolPresenter.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Behaviors\\LineToolInteractionController.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Tooling\\Preview\\LineToolPreviewController.cs; src\\OpenVisionLab\\UI\\Menu\\Wpf\\NativeTools\\Documents\\OpenVisionNativeCustomToolFactory.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Tooling\\SingleInput\\VisionToolSingleInputPropertyToolViewBase.cs"
+    },
+    {
+      "kind": "test-host",
+      "location": "tools\\VisionRecipeRunnerSmoke\\LineToolPartialBoundaryContract.cs; tools\\VisionRecipeRunnerSmoke\\LineToolPersistenceBoundaryContract.cs; tools\\PipelineViewerScreenshotSmoke\\Program.cs; tools\\RunUiPrecheck.ps1"
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "screenshot",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\line-tool-partial-boundary-20260914\\ui-precheck\\wpf_shell_host_line_tool.png",
+      "summary": "Fresh 1600x900 Line Tool WPF smoke screenshot after moving sample property projection out of the View Partial."
+    },
+    {
+      "kind": "screenshot",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\line-tool-partial-boundary-20260914\\ui-precheck\\wpf_shell_host_recipe_line_pair_properties.png",
+      "summary": "Fresh Recipe Line Pair PropertyGrid sample-loading screenshot covering the ApplySampleLinePair caller path."
+    },
+    {
+      "kind": "geometry",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\line-tool-partial-boundary-20260914\\monitor-line-retry\\monitor-window-geometry.json",
+      "summary": "Fresh sequential Line Tool smoke process geometry with a visible window intersecting the detected monitor."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source",
+      "location": "docs\\reports\\OPENVISIONLAB_LINE_TOOL_PARTIAL_BOUNDARY_20260914.md; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\ToolViews\\LineToolWpfView.xaml.cs; src\\OpenVisionLab\\UI\\Menu\\Wpf\\Recipe\\PropertyGrid\\VisionPipelineLinePropertyAdapter.cs",
+      "observation": "The Line View Partial no longer contains CopyLineProperty or target field assignments. It delegates both A/B sample projections to the existing Line pipeline adapter, which owns the complete common/Line mapping and defensive ROI/mask list copies. The existing Line View callback order, presenter persistence seam, ViewModel mutable state, interaction/preview, creation, and base lifetime remain unchanged.",
+      "observed_at": "2026-09-14T03:49:16+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\line-tool-partial-boundary-20260914\\debug\\line-tool-partial-boundary-contract.txt; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\line-tool-partial-boundary-20260914\\release\\line-tool-partial-boundary-contract.txt",
+      "observation": "LineToolPartialBoundaryContract passed 4/4 in Debug and Release, proving View-to-adapter routing, complete mapping, sample caller/composition preservation, representative values, and defensive list ownership.",
+      "observed_at": "2026-09-14T03:49:16+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\line-tool-partial-boundary-20260914",
+      "observation": "VisionRecipeRunnerSmoke Debug/Release builds passed with 0 warnings/errors; PipelineViewerScreenshotSmoke Debug build passed with 0 errors and one pre-existing nullable warning; Line Tool, Line Measure, Line Intersection, and Recipe Line Pair WPF prechecks passed check=OK with layout/text/internal all zero; sequential monitor probing recorded one DISPLAY2 1920x1080 monitor and one intersecting visible window for Line Tool and Recipe Line Pair. The first parallel Line probe was discarded because shared localization fixture contention produced no window. Repository readiness, RefactorAudit, DocumentationIndex, issue validation, and diff checks are recorded in this evidence root. Full theme/DPI/input/native/hardware runtime remains unverified.",
+      "observed_at": "2026-09-14T03:49:16+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-14T03:49:16+09:00",
+      "summary": "The View contained an independently testable sample property projection body while VisionPipelineLinePropertyAdapter already owned the same Line property family and pipeline conversion. The existing adapter is the smallest concrete owner; no new service, interface, mapper, or Partial is justified.",
+      "evidence_refs": ["E1", "E2"]
+    },
+    {
+      "id": "D2",
+      "kind": "decision",
+      "at": "2026-09-14T03:49:16+09:00",
+      "summary": "PL-0041 is resolved only after focused Debug/Release contract/build, Line and Recipe Line Pair runtime smoke, sequential monitor geometry, repository gates, documentation, issue validation, and diff checks pass. Broader UI/native matrices remain outside this slice.",
+      "evidence_refs": ["E3"]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-14T03:49:16+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "The Line sample property projection moved to the existing pipeline adapter while the View's WPF composition and previously completed persistence boundary remained intact. Focused source/build/runtime evidence was recorded. Do not reopen this boundary without a new requirement, reproducible defect, failed criterion, or changed dependency/lifetime boundary."
+    }
+  ],
+  "created_at": "2026-09-14T03:44:00+09:00",
+  "updated_at": "2026-09-14T03:49:16+09:00"
+}

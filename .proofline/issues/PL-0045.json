@@ -1,0 +1,153 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0045",
+    "aliases": [],
+    "type": "task",
+    "mode": "simple",
+    "title": "Retain Filter Tool Partial after concrete owner audit",
+    "risk": "low"
+  },
+  "origin": {
+    "kind": "user-request",
+    "summary": "The user requested that Partial refactoring continue in scheduled cycles and that each remaining Partial be structurally reviewed rather than mechanically deleted or split.",
+    "refs": [
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "docs/reports/OPENVISIONLAB_PARTIAL_STRUCTURAL_ELIMINATION_PLAN_20260913.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "FilterToolWpfView.xaml.cs의 no-change 구조 감사가 완료되었다. View Partial은 required XAML/custom-tool adapter로 유지되고, interaction/kernel/text/guide/shared single-input runtime/factory/document/registry/base가 editor state, presentation, preview, binding, persistence/routing, creation, and lifetime을 각각 소유한다. 독립 seam이 없어 production split은 만들지 않았으며, focused source/build/WPF/monitor and documentation evidence가 통과했다."
+  },
+  "objective": {
+    "summary": "Audit FilterToolWpfView's Partial structure and retain it only if existing concrete owners already provide editor, preview, persistence, binding, routing, and lifetime boundaries without a new split.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev; do not modify C:\\Git\\2D\\Original.",
+      "Do not add a service, interface, manager, wrapper, forwarding Partial, or ViewModel split for file length alone.",
+      "Preserve FilterToolWpfView XAML names, Learn contract, layer/preview/Add Pipeline facades, settings persistence, and DisposeView lifetime.",
+      "Keep test outputs and evidence under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev.",
+      "Do not commit, push, tag, release, deploy, or mutate the Original repository."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The proof report records current/intended owners, caller path, mutable-state writer, lifetime owner, binding/public/test contract, shortest reading order, and the reason no production split is justified.",
+      "evidence_refs": [
+        "E1"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "The source contract proves that the View Partial has no direct persistence/file-dialog/algorithm coupling and that existing interaction, kernel, text/guide, single-input runtime, factory/document, registry, and base lifetime owners are wired.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Focused Debug/Release contracts and builds plus Filter WPF smoke and dynamic monitor geometry pass; broader theme/DPI/input/camera/SDK/GPU/native runtime remains explicitly unverified.",
+      "evidence_refs": [
+        "E2",
+        "E3",
+        "E4"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0044"
+    }
+  ],
+  "context": [
+    {
+      "kind": "source",
+      "location": "src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\ToolViews\\FilterToolWpfView.xaml(.cs); src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Behaviors\\VisionToolFilterInteractionController.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Behaviors\\VisionToolKernelSizeController.cs"
+    },
+    {
+      "kind": "composition-owner",
+      "location": "src\\OpenVisionLab\\UI\\VisionTest\\ViewModels\\FilterToolViewModel.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Tooling\\PropertyGrid\\VisionToolParameterPresenters.cs; src\\OpenVisionLab\\UI\\Menu\\Wpf\\NativeTools\\Documents\\OpenVisionNativeCustomToolFactory.cs"
+    },
+    {
+      "kind": "test-host",
+      "location": "tools\\VisionRecipeRunnerSmoke\\FilterToolPartialBoundaryContract.cs; tools\\PipelineViewerScreenshotSmoke\\Program.cs; tools\\RunUiPrecheck.ps1"
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "screenshot",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\filter-tool-partial-retention-20260914\\ui-precheck\\wpf_filter_morphology_layout_guard.png",
+      "summary": "Fresh Filter/Morphology layout guard WPF smoke screenshot."
+    },
+    {
+      "kind": "geometry",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\filter-tool-partial-retention-20260914\\monitor\\monitor-window-geometry.json",
+      "summary": "Dynamic monitor/window geometry for the Filter smoke."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source",
+      "location": "docs\\reports\\OPENVISIONLAB_FILTER_TOOL_PARTIAL_RETENTION_20260914.md; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\ToolViews\\FilterToolWpfView.xaml.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Behaviors\\VisionToolFilterInteractionController.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Behaviors\\VisionToolKernelSizeController.cs",
+      "observation": "FilterToolWpfView remains a required XAML/custom-tool adapter. Existing interaction, kernel, text, guide, presenter/ViewModel, shared single-input runtime, factory/document, registry, and base owners provide concrete editor, presentation, preview, binding, persistence/routing, creation, and lifetime boundaries. The View has no direct settings store, dialog, System.IO, OpenCvSharp, or algorithm construction coupling.",
+      "observed_at": "2026-09-14T05:24:20+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\filter-tool-partial-retention-20260914\\debug\\filter-tool-partial-boundary-contract.txt; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\filter-tool-partial-retention-20260914\\release\\filter-tool-partial-boundary-contract.txt",
+      "observation": "FilterToolPartialBoundaryContract passed 9/9 in Debug and Release. VisionRecipeRunnerSmoke Debug and Release builds passed with 0 warnings/errors.",
+      "observed_at": "2026-09-14T05:24:20+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\filter-tool-partial-retention-20260914",
+      "observation": "Filter-focused WPF smoke and dynamic monitor/window probing are recorded here; broader UI and native matrices remain unverified.",
+      "observed_at": "2026-09-14T05:24:20+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\filter-tool-partial-retention-20260914\\ui-precheck\\ui_precheck_report.md; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\filter-tool-partial-retention-20260914\\monitor\\monitor-window-geometry.json",
+      "observation": "RunUiPrecheck passed wpf_filter_morphology_layout_guard and wpf_openvision_learn_filtering with check=OK, layout/text/internal counts zero, and fresh PNGs. Dynamic monitor probing recorded DISPLAY2 1920x1080 with one visible intersecting smoke window. Broader UI and native matrices remain unverified.",
+      "observed_at": "2026-09-14T05:24:20+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-14T05:24:20+09:00",
+      "summary": "FilterToolWpfView Partial은 required XAML/custom-tool adapter이며, Filter interaction/kernel/text/guide, presenter/ViewModel, shared single-input runtime, factory/document, registry/base owners가 독립 책임과 lifetime을 이미 제공한다. 새 seam 없이 분리하면 forwarding wrapper나 중복 상태가 되므로 no-change로 유지한다.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "D2",
+      "kind": "decision",
+      "at": "2026-09-14T05:24:20+09:00",
+      "summary": "PL-0045의 세 completion criteria가 현재 source, contract, build, WPF smoke, monitor, and documentation evidence로 충족되어 resolved로 닫는다. 전체 theme/DPI/input, native dialog, camera/SDK/GPU 및 long-running native runtime은 이 slice의 검증 범위가 아니다.",
+      "evidence_refs": [
+        "E3",
+        "E4"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-14T05:24:20+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "The Filter Tool Partial retained-owner audit found no independent boundary that justified a production split; focused source/build/WPF/monitor/documentation evidence was recorded. Do not reopen without a new requirement, reproducible defect, failed criterion, or changed dependency/lifetime boundary."
+    }
+  ],
+  "created_at": "2026-09-14T05:24:20+09:00",
+  "updated_at": "2026-09-14T05:24:20+09:00"
+}

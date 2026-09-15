@@ -1,6 +1,5 @@
 using Microsoft.Win32;
 using System;
-using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -11,6 +10,7 @@ namespace OpenVisionLab
     public partial class VisionToolSignalInspectorView : UserControl
     {
         private VisionToolSignalEvidence evidence;
+        private Action<VisionToolSignalEvidence, string> exportAction;
 
         public VisionToolSignalInspectorView()
         {
@@ -35,6 +35,11 @@ namespace OpenVisionLab
         internal int AdvisoryMarkerCount => plotSurface.AdvisoryMarkerCount;
 
         internal VisionToolSignalEvidence CurrentEvidence => evidence;
+
+        internal void SetExportAction(Action<VisionToolSignalEvidence, string> action)
+        {
+            exportAction = action ?? throw new ArgumentNullException(nameof(action));
+        }
 
         internal string GetAttribute(string name)
         {
@@ -109,12 +114,7 @@ namespace OpenVisionLab
 
         internal void ExportForTest(string path)
         {
-            if (evidence == null)
-            {
-                throw new InvalidOperationException("No current signal evidence is available.");
-            }
-
-            VisionToolSignalEvidenceExporter.ExportTsv(evidence, path);
+            ExportEvidence(path);
         }
 
         private void ResetButton_Click(object sender, RoutedEventArgs e)
@@ -140,8 +140,23 @@ namespace OpenVisionLab
             };
             if (dialog.ShowDialog(Window.GetWindow(this)) == true)
             {
-                VisionToolSignalEvidenceExporter.ExportTsv(evidence, dialog.FileName);
+                ExportEvidence(dialog.FileName);
             }
+        }
+
+        private void ExportEvidence(string path)
+        {
+            if (evidence == null)
+            {
+                throw new InvalidOperationException("No current signal evidence is available.");
+            }
+
+            if (exportAction == null)
+            {
+                throw new InvalidOperationException("Signal evidence export is not configured.");
+            }
+
+            exportAction(evidence, path);
         }
 
         private void PlotSurface_CursorValueChanged(object sender, string value)

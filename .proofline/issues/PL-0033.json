@@ -1,0 +1,169 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0033",
+    "aliases": [],
+    "type": "task",
+    "mode": "composite",
+    "title": "Move ROI Image Canvas path policy to the existing directory-policy owner",
+    "risk": "low"
+  },
+  "origin": {
+    "kind": "user-request",
+    "summary": "The user requested that Partial refactoring continue in scheduled cycles and that remaining responsibilities be corrected structurally.",
+    "refs": [
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "docs/reports/OPENVISIONLAB_PARTIAL_STRUCTURAL_ELIMINATION_PLAN_20260913.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "RoiImageCanvasViewModel의 파일명 추출과 기본 PNG 저장 이름 정책을 기존 ImageCanvasDirectoryPolicy로 이동했다. ViewModel의 Mat/ROI/OpenGL/input/timer 상태와 수명 소유권은 유지했으며, 새 Partial이나 추상화는 추가하지 않았다. Debug/Release 계약·빌드와 정적 검증이 통과했고 WPF/native runtime은 미검증으로 남겼다."
+  },
+  "objective": {
+    "summary": "Move the pure image-name and default-save-name policy out of RoiImageCanvasViewModel into the existing ImageCanvasDirectoryPolicy while preserving the public canvas facade, mutable state, resource lifetime, and dialog/save behavior.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev; do not modify C:\\Git\\2D\\Original.",
+      "Reuse ImageCanvasDirectoryPolicy; do not add a service, interface, wrapper, registry, or Partial.",
+      "Preserve RoiImageCanvasViewModel bindings, LoadImage/SaveCurrentImage contracts, Mat ownership, input-controller lifetime, and dialog semantics.",
+      "Keep test outputs and evidence under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev.",
+      "Do not commit, push, tag, release, deploy, or mutate the Original repository."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The proof report records current and intended owners, the call path, mutable-state writer, lifetime owner, binding/public contract, shortest reading order, and matching test.",
+      "evidence_refs": [
+        "E1"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "ImageCanvasDirectoryPolicy owns image-name extraction and default-save-name sanitization, and RoiImageCanvasViewModel delegates both paths without a System.IO path import or private duplicate policy.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Focused Debug/Release contracts, relevant Debug/Release builds, readiness, structural audit, documentation index, and diff checks pass; WPF/native runtime limits are explicitly recorded.",
+      "evidence_refs": [
+        "E2",
+        "E3"
+      ]
+    }
+  ],
+  "milestones": [
+    {
+      "id": "M1",
+      "summary": "Freeze the ROI Image Canvas caller, mutable-state, binding, and lifetime contract.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M2",
+      "summary": "Move pure image-name and default-save-name policy to ImageCanvasDirectoryPolicy without changing the ViewModel facade.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C2"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M3",
+      "summary": "Run focused Debug/Release proof and record durable evidence and navigation documentation.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C3"
+      ],
+      "issue_refs": []
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0032"
+    }
+  ],
+  "context": [
+    {
+      "kind": "source",
+      "location": "src\\Libraries\\OpenVisionLab.ImageCanvas\\ViewModel\\RoiImageCanvasViewModel.cs"
+    },
+    {
+      "kind": "owner",
+      "location": "src\\Libraries\\OpenVisionLab.ImageCanvas\\Util\\ImageCanvasDirectoryPolicy.cs"
+    },
+    {
+      "kind": "view-contract",
+      "location": "src\\Libraries\\OpenVisionLab.ImageCanvas\\View\\RoiImageCanvasView.xaml.cs"
+    },
+    {
+      "kind": "test-host",
+      "location": "tools\\VisionRecipeRunnerSmoke\\RoiImageCanvasPathPolicyContract.cs"
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source",
+      "location": "docs\\reports\\OPENVISIONLAB_ROI_IMAGE_CANVAS_PATH_POLICY_BOUNDARY_20260914.md; src\\Libraries\\OpenVisionLab.ImageCanvas\\Util\\ImageCanvasDirectoryPolicy.cs; src\\Libraries\\OpenVisionLab.ImageCanvas\\ViewModel\\RoiImageCanvasViewModel.cs",
+      "observation": "ImageCanvasDirectoryPolicy owns ResolveImageName and CreateDefaultSaveFileName. The ViewModel delegates both LoadImage name assignments and the save-dialog default name, while keeping _currentImageName, Mat, ImageViewer, input controllers, timer, bindings, and Dispose ownership.",
+      "observed_at": "2026-09-14T00:30:50+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\roi-image-canvas-path-policy-20260914\\roi-image-canvas-path-policy-contract.txt",
+      "observation": "RoiImageCanvasPathPolicyContract passed 6/6 in Debug and Release. Existing RoiImageCanvasBoundaryContract also passed 6/6 in both configurations.",
+      "observed_at": "2026-09-14T00:30:50+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\roi-image-canvas-path-policy-20260914",
+      "observation": "VisionRecipeRunnerSmoke and OpenVisionLab.sln Debug/Release builds passed with 0 warnings/errors; OpenVisionReadinessCheck Debug/Release, RefactorAudit -Verify, TestDocumentationIndex, and git diff --check passed.",
+      "observed_at": "2026-09-14T00:30:50+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-14T00:30:50+09:00",
+      "summary": "RoiImageCanvasViewModel의 공유 Mat/ROI/OpenGL/input/timer 상태와 수명을 새 모듈로 분리할 독립 seam은 확인되지 않았으므로 기존 owner는 유지한다. 순수 파일명 정책만 이미 존재하는 ImageCanvasDirectoryPolicy로 이동하고 새 추상화는 만들지 않는다.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "D2",
+      "kind": "decision",
+      "at": "2026-09-14T00:30:50+09:00",
+      "summary": "PL-0033의 세 completion criteria와 세 milestone이 현재 증거로 충족되어 resolved로 닫는다. WPF visual/theme/DPI/monitor/input, OpenGL, hardware/native runtime은 이 소스 slice의 검증 범위가 아니다.",
+      "evidence_refs": [
+        "E3"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-14T00:30:50+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "Owner proof, concrete responsibility move, focused Debug/Release verification, and durable documentation completed. Do not reopen this owner without a new requirement, reproducible defect, failed criterion, or changed dependency boundary."
+    }
+  ],
+  "created_at": "2026-09-14T00:30:50+09:00",
+  "updated_at": "2026-09-14T00:30:50+09:00"
+}

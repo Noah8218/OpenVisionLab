@@ -1,0 +1,144 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0037",
+    "aliases": [],
+    "type": "task",
+    "mode": "simple",
+    "title": "Retain Edge Based Matching and Auto MPoint XAML Partials after concrete owner audit",
+    "risk": "low"
+  },
+  "origin": {
+    "kind": "user-request",
+    "summary": "The user requested that Partial refactoring continue in scheduled cycles and that each remaining Partial be structurally reviewed rather than mechanically deleted or split.",
+    "refs": [
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "docs/reports/OPENVISIONLAB_PARTIAL_STRUCTURAL_ELIMINATION_PLAN_20260913.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "EdgeBasedMatchingToolWpfView.xaml.cs와 AutoMPointTeachingPanel.xaml.cs를 no-change 구조 감사로 확인했다. View는 XAML/composition adapter, Panel은 presentation/localization View Partial로 남고, AutoMPointTeachingController는 teaching mutable state/event/dialog/algorithm workflow, AutoMPointHtmlReportExporter는 report file-I/O, 기존 matching controller/base/factory는 property/preview/creation/lifetime을 소유한다. 새 독립 seam이 없어 production split은 만들지 않았으며, Debug/Release contract/build와 Edge Based Matching WPF smoke가 통과했다."
+  },
+  "objective": {
+    "summary": "Audit the Edge Based Matching and Auto MPoint XAML Partials and retain them only when existing concrete owners already provide the necessary state, workflow, report, binding, and lifetime boundaries without a new split.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev; do not modify C:\\Git\\2D\\Original.",
+      "Do not add a service, interface, manager, wrapper, forwarding Partial, or ViewModel split for file length alone.",
+      "Preserve EdgeBasedMatchingToolWpfView and AutoMPointTeachingPanel XAML names, automation IDs, property/preview facade, Auto MPoint teaching workflow, report export path, and DisposeView lifetime.",
+      "Keep test outputs and evidence under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev.",
+      "Do not commit, push, tag, release, deploy, or mutate the Original repository."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The proof report records current/intended owners, caller path, mutable-state writer, lifetime owner, binding/public/test contract, shortest reading order, and the reason no production split is justified.",
+      "evidence_refs": [
+        "E1"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "The source contract proves that the Edge Based Matching View and Auto MPoint Panel Partials have no misplaced direct algorithm/file coupling and that the existing controller, exporter, factory, composition, and base lifetime owners are wired.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Focused Debug/Release contracts and builds, relevant Edge Based Matching WPF smoke, readiness, structural audit, documentation index, issue validation, and diff checks pass; broader UI/native/hardware matrices remain explicitly unverified.",
+      "evidence_refs": [
+        "E2",
+        "E3"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0036"
+    }
+  ],
+  "context": [
+    {
+      "kind": "source",
+      "location": "src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\ToolViews\\EdgeBasedMatchingToolWpfView.xaml.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\ToolViews\\AutoMPointTeachingPanel.xaml(.cs); src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Tooling\\Review\\AutoMPointTeachingController.cs"
+    },
+    {
+      "kind": "composition-owner",
+      "location": "src\\OpenVisionLab\\UI\\Menu\\Wpf\\NativeTools\\Documents\\OpenVisionNativePropertyGridToolFactory.cs; src\\OpenVisionLab\\UI\\VisionTest\\Composition\\VisionToolCompositionService.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Tooling\\SingleInput\\VisionToolSingleInputPropertyToolViewBase.cs"
+    },
+    {
+      "kind": "test-host",
+      "location": "tools\\VisionRecipeRunnerSmoke\\EdgeBasedMatchingPartialBoundaryContract.cs; tools\\PipelineViewerScreenshotSmoke\\Program.cs"
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "screenshot",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\edge-based-mpoint-partial-retention-20260914\\wpf-smoke\\wpf_shell_host_edge_based_matching_tool.png",
+      "summary": "Fresh full Edge Based Matching shell WPF smoke screenshot on the detected single monitor."
+    },
+    {
+      "kind": "screenshot",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\edge-based-mpoint-partial-retention-20260914\\wpf-smoke\\wpf_shell_host_edge_based_matching_auto_mpoint.png",
+      "summary": "Fresh Auto MPoint teaching/guide WPF smoke screenshot on the detected single monitor."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source",
+      "location": "docs\\reports\\OPENVISIONLAB_EDGE_BASED_MATCHING_PARTIAL_RETENTION_20260914.md; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\ToolViews\\EdgeBasedMatchingToolWpfView.xaml.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\ToolViews\\AutoMPointTeachingPanel.xaml(.cs); src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Tooling\\Review\\AutoMPointTeachingController.cs",
+      "observation": "The Edge Based Matching View composes the existing matching controller, verification guide, and Auto MPoint panel; the panel is presentation/localization only; the controller owns teaching state/event/dialog/algorithm workflow; and the existing HTML exporter owns report file output. No independent state/lifetime/test seam justifies a new Partial or wrapper.",
+      "observed_at": "2026-09-14T02:03:14+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\edge-based-mpoint-partial-retention-20260914\\debug\\edge-based-mpoint-partial-boundary-contract.txt; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\edge-based-mpoint-partial-retention-20260914\\release\\edge-based-mpoint-partial-boundary-contract.txt",
+      "observation": "EdgeBasedMatchingPartialBoundaryContract passed 8/8 in Debug and Release, proving retained owner wiring, binding/test contracts, direct-coupling absence in the View/Panel, and existing report/creation/lifetime ownership.",
+      "observed_at": "2026-09-14T01:54:41+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\edge-based-mpoint-partial-retention-20260914",
+      "observation": "VisionRecipeRunnerSmoke Debug/Release builds passed with 0 warnings/errors; PipelineViewerScreenshotSmoke x64 Debug passed with 0 errors and two pre-existing MSB3270 warnings; dynamic monitor detection reported one DISPLAY2 screen at 1920x1080; a fresh smoke process window probe recorded one visible top-level window at Left=208,Top=208,Right=1808,Bottom=1108 intersecting the selected monitor; Edge Based Matching full-shell and Auto MPoint WPF smoke targets passed with fresh PNGs. OpenVisionReadinessCheck Debug/Release passed all 13 checks, RefactorAudit passed with CSharpFiles=831, XamlFiles=57, PartialDeclarations=54, ProjectCycles=0, and ShellStorageCalls=0, DocumentationIndex passed with IndexedPaths=306, PL-0037 schema/closure validation passed as valid v2, and git diff --check passed. Native file-dialog interaction and full UI/native matrices remain unverified.",
+      "observed_at": "2026-09-14T02:03:14+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-14T02:03:14+09:00",
+      "summary": "Edge Based Matching/Auto MPoint XAML Partials are required composition/presentation boundaries. Existing matching controller, teaching controller, report exporter, factory/composition, and base lifetime owners already form the necessary seams; a mechanical split would add a wrapper or duplicate state, so the family is retained without production changes.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "D2",
+      "kind": "decision",
+      "at": "2026-09-14T02:03:14+09:00",
+      "summary": "PL-0037 is resolved only after the repository readiness, structural, documentation, issue, and diff checks pass. Broader theme/DPI/input/native/hardware runtime remains outside this slice.",
+      "evidence_refs": [
+        "E3"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-14T02:03:14+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "The Edge Based Matching/Auto MPoint Partial audit found no independent boundary that justified a production split; focused source/build/WPF evidence was recorded. Do not reopen without a new requirement, reproducible defect, failed criterion, or changed dependency/lifetime boundary."
+    }
+  ],
+  "created_at": "2026-09-14T01:54:41+09:00",
+  "updated_at": "2026-09-14T02:03:14+09:00"
+}

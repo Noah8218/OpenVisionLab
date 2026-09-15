@@ -143,13 +143,31 @@ $xamlRows = @(
 )
 $allRows = @($csharpRows + $xamlRows)
 
+$partialDeclarationPattern = '(?m)^\s*(?:(?:public|internal|protected|private|file|abstract|sealed|static|unsafe|readonly|ref)\s+)*partial\s+(?:class|struct|record|interface)\b'
+$partialTextPattern = '\bpartial\s+(?:class|struct|record|interface)\b'
 $partialDeclarations = 0
+$partialTextMatches = 0
+$partialTextRows = [System.Collections.Generic.List[object]]::new()
 $typeDeclarations = 0
 foreach ($file in $csharpFiles) {
     $text = [System.IO.File]::ReadAllText($file.FullName)
     $partialDeclarations += [System.Text.RegularExpressions.Regex]::Matches(
         $text,
-        '(?m)\bpartial\s+(?:class|struct|record)\b').Count
+        $partialDeclarationPattern).Count
+    $lineNumber = 0
+    foreach ($line in [System.IO.File]::ReadAllLines($file.FullName)) {
+        $lineNumber++
+        foreach ($match in [System.Text.RegularExpressions.Regex]::Matches($line, $partialTextPattern)) {
+            if ($line -notmatch $partialDeclarationPattern.Replace('(?m)', '')) {
+                $partialTextMatches++
+                $partialTextRows.Add([pscustomobject]@{
+                        Path = Get-RepoRelativePath $file.FullName
+                        LineNumber = $lineNumber
+                        Match = $match.Value
+                    })
+            }
+        }
+    }
     $typeDeclarations += [System.Text.RegularExpressions.Regex]::Matches(
         $text,
         '(?m)^\s*(?:(?:public|internal|protected|private|file)\s+)*(?:(?:abstract|sealed|static|unsafe)\s+)*(?:partial\s+)?(?:class|struct|record|interface|enum)\s+[A-Za-z_][A-Za-z0-9_]*').Count
@@ -182,7 +200,7 @@ $viewModelRows = @(
 )
 
 $shellFiles = @(
-    Get-ChildItem -LiteralPath (Join-Path $repositoryPath 'src/OpenVisionLab/UI/Menu/Wpf') -File -Filter 'OpenVisionShellHostRecipeCommandSurface*.cs' |
+    Get-ChildItem -LiteralPath (Join-Path $repositoryPath 'src/OpenVisionLab/UI/Menu/Wpf/Recipe/CommandSurface') -File -Filter '*.cs' |
         Where-Object FullName -notmatch '\\(bin|obj)\\'
 )
 $shellStoragePattern = 'VisionPipelineBatchRunSummaryStorage\.(?:List|Load|Save)'
@@ -277,6 +295,7 @@ $summary = [ordered]@{
     repositoryRoot = $repositoryPath
     source = $sourceSummary
     partialDeclarations = $partialDeclarations
+    partialTextMatches = $partialTextMatches
     typeDeclarations = $typeDeclarations
     largeFiles = [ordered]@{
         ge1000 = $largeFiles.ge1000.Count
@@ -285,7 +304,7 @@ $summary = [ordered]@{
     }
     shell = [ordered]@{
         files = $shellFiles.Count
-        lines = [int64](($allRows | Where-Object { $_.Path -like 'src/OpenVisionLab/UI/Menu/Wpf/OpenVisionShellHostRecipeCommandSurface*' } | Measure-Object -Property Lines -Sum).Sum)
+        lines = [int64](($allRows | Where-Object { $_.Path -like 'src/OpenVisionLab/UI/Menu/Wpf/Recipe/CommandSurface/*' } | Measure-Object -Property Lines -Sum).Sum)
         runHistoryStorageCalls = $shellStorageRows.Count
     }
     viewModels = [ordered]@{
@@ -300,6 +319,7 @@ $summaryPath = Join-Path $outputPath 'source-survey.json'
 $summary | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $summaryPath -Encoding UTF8
 $largeFiles.ge1000 | Export-Csv -LiteralPath (Join-Path $outputPath 'large-files.csv') -NoTypeInformation -Encoding UTF8
 $viewModelRows | Export-Csv -LiteralPath (Join-Path $outputPath 'viewmodel-ui-io.csv') -NoTypeInformation -Encoding UTF8
+$partialTextRows | Export-Csv -LiteralPath (Join-Path $outputPath 'partial-text-matches.csv') -NoTypeInformation -Encoding UTF8
 Write-CsvEvidence (Join-Path $outputPath 'shell-storage-calls.csv') $shellStorageRows @('Path', 'LineNumber', 'Match')
 Write-CsvEvidence (Join-Path $outputPath 'project-cycles.csv') (@($cyclePaths | ForEach-Object { [pscustomobject]@{ Cycle = $_ } })) @('Cycle')
 
@@ -308,7 +328,7 @@ $summaryLines = @(
     ('RepositoryRoot=' + $repositoryPath)
     ('CSharpFiles=' + $sourceSummary.csharpFiles + ';CSharpLines=' + $sourceSummary.csharpLines + ';CSharpBytes=' + $sourceSummary.csharpBytes)
     ('XamlFiles=' + $sourceSummary.xamlFiles + ';XamlLines=' + $sourceSummary.xamlLines + ';XamlBytes=' + $sourceSummary.xamlBytes)
-    ('PartialDeclarations=' + $partialDeclarations + ';TypeDeclarations=' + $typeDeclarations)
+    ('PartialDeclarations=' + $partialDeclarations + ';PartialTextMatches=' + $partialTextMatches + ';TypeDeclarations=' + $typeDeclarations)
     ('LargeFiles>=1000=' + $largeFiles.ge1000.Count + ';>=2000=' + $largeFiles.ge2000.Count + ';>=3000=' + $largeFiles.ge3000.Count)
     ('ShellFiles=' + $shellFiles.Count + ';ShellLines=' + $summary.shell.lines + ';ShellRunHistoryStorageCalls=' + $shellStorageRows.Count)
     ('ViewModelFiles=' + $viewModelFiles.Count + ';DirectUiOrDialogFiles=' + $summary.viewModels.directUiOrDialogFiles + ';DirectIoFiles=' + $summary.viewModels.directIoFiles)
@@ -336,7 +356,7 @@ if ($Verify) {
     }
 }
 
-Write-Output ('REFACTOR_AUDIT=' + $status + '|CSharpFiles=' + $sourceSummary.csharpFiles + '|XamlFiles=' + $sourceSummary.xamlFiles + '|PartialDeclarations=' + $partialDeclarations + '|ViewModelUiIoFiles=' + $summary.viewModels.directUiOrDialogFiles + '|ProjectCycles=' + $projectSummary.cycles + '|ShellStorageCalls=' + $shellStorageRows.Count)
+Write-Output ('REFACTOR_AUDIT=' + $status + '|CSharpFiles=' + $sourceSummary.csharpFiles + '|XamlFiles=' + $sourceSummary.xamlFiles + '|PartialDeclarations=' + $partialDeclarations + '|PartialTextMatches=' + $partialTextMatches + '|ViewModelUiIoFiles=' + $summary.viewModels.directUiOrDialogFiles + '|ProjectCycles=' + $projectSummary.cycles + '|ShellStorageCalls=' + $shellStorageRows.Count)
 if ($status -eq 'FAIL') {
     exit 1
 }

@@ -11,7 +11,6 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Globalization;
-using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -135,11 +134,11 @@ namespace OpenVisionLab
 
         public void LoadPatternPreviewImage(string imagePath)
         {
-            if (!string.IsNullOrWhiteSpace(imagePath) && File.Exists(imagePath))
+            if (!string.IsNullOrWhiteSpace(imagePath))
             {
                 try
                 {
-                    using Bitmap patternBitmap = new Bitmap(imagePath);
+                    using Bitmap patternBitmap = OpenVisionBitmapImagePreviewFactory.LoadBitmap(imagePath, "pattern");
                     SetPatternPreview(CreateBitmapSource(patternBitmap));
                     return;
                 }
@@ -161,7 +160,7 @@ namespace OpenVisionLab
             Closed -= OpenGlTemplateEditorWindow_Closed;
             canvasViewModel.RoiAdded -= CanvasViewModel_RoiChanged;
             canvasViewModel.RoiEditingCompleted -= CanvasViewModel_RoiChanged;
-            glCanvas.DataContext = null;
+            glCanvas.Dispose();
             canvasViewModel.Dispose();
             sourceBitmap?.Dispose();
             GC.SuppressFinalize(this);
@@ -237,8 +236,7 @@ namespace OpenVisionLab
                 glCanvas.UpdateLayout();
                 canvasViewModel.LoadImage(sourceBitmap, "Template registration");
                 canvasViewModel.FitImageToView();
-                canvasViewModel.ImageViewer.Reshape();
-                canvasViewModel.ImageViewer.RefreshGL();
+                canvasViewModel.ReshapeAndRefresh();
             }
             catch
             {

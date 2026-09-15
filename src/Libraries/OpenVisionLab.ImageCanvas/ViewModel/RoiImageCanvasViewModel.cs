@@ -1,27 +1,28 @@
-﻿using OpenVisionLab.ImageCanvas.SharedViewModels;
+using Model = OpenVisionLab.ImageCanvas.Model;
+using OpenCvSharp;
 using OpenVisionLab.ImageCanvas;
-using OpenVisionLab.ImageCanvas.Infrastructure;
-using OpenVisionLab.ImageCanvas.Commands;
-using OpenVisionLab.ImageCanvas.Events;
 using OpenVisionLab.ImageCanvas.Canvas;
 using OpenVisionLab.ImageCanvas.CanvasShapes;
+using OpenVisionLab.ImageCanvas.Commands;
 using OpenVisionLab.ImageCanvas.Dialogs;
-using OpenVisionLab.ImageCanvas.Overlays;
+using OpenVisionLab.ImageCanvas.Events;
+using OpenVisionLab.ImageCanvas.Infrastructure;
 using OpenVisionLab.ImageCanvas.OpenGLRendering;
-using OpenCvSharp;
-using SharpGL;
+using OpenVisionLab.ImageCanvas.Overlays;
+using OpenVisionLab.ImageCanvas.Presentation;
+using OpenVisionLab.ImageCanvas.SharedViewModels;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Windows.Input;
-using Model = OpenVisionLab.ImageCanvas.Model;
 
 namespace OpenVisionLab.ImageCanvas.ViewModels
 {
-	public partial class RoiImageCanvasViewModel : ObservableObject, IDisposable
+	public class RoiImageCanvasViewModel : ObservableObject, IDisposable
 	{
+		#region Core
+
 		#region Event
 		public event EventHandler<object> LoadImageRequested = delegate { };
 		public event EventHandler<CanvasRect<float>> RemoveRoiRequested = delegate { };
@@ -46,6 +47,8 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 		private bool _useGroupMoveMode = false;
 		private bool _isPreviewMode = false;
 		private float _heightValue;
+		private bool _isShowCrossLine;
+		private bool _showGroupBounds = true;
 		private Measurement _measurement = new Measurement();
 		private OpenGlFontRenderOptions _measureFontOption = new OpenGlFontRenderOptions(System.Drawing.Color.Red, "Arial", 20, "");
 		protected CanvasRect<float> _selectedRect = new CanvasRect<float>();
@@ -53,9 +56,9 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 		protected CanvasRect<float> _copyRoiRect;
 		private System.Drawing.Point _mouseDownCanvasPos = System.Drawing.Point.Empty;
 		private System.Drawing.Size _imageSize = new System.Drawing.Size();
-		private OpenVisionLab.ImageCanvas.Rendering.ImageCanvasControl _imageViewer = new OpenVisionLab.ImageCanvas.Rendering.ImageCanvasControl();
-		private readonly RoiImageCanvasKeyboardInputController _keyboardInputController;
 		private readonly RoiImageCanvasWpfKeyboardInputController _wpfKeyboardInputController;
+		private readonly string _viewerName;
+		private RoiImageCanvasPresentation _presentation;
 		private Mat _currentImageMat;
 		private string _currentImageName = "Image";
 		private Func<string, bool> _saveImageOverride;
@@ -63,60 +66,39 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 		private System.Drawing.PointF _panAnchorPoint;
 		private IReadOnlyList<Model.RoiSnapshotItem> _roiSnapshotBeforeInteraction = new List<Model.RoiSnapshotItem>();
 		private bool _roiInteractionSnapshotActive;
+		private bool _disposed;
 		public float[] AfData3D = new float[10];
 		private AddRoiArrayViewModel _addRoiArrayVm = new AddRoiArrayViewModel();
-		private System.Timers.Timer _refreshTimer;  // ?�?�머 객체
-		private readonly RoiImageCanvasMouseInputController _mouseInputController;
 		#endregion
 
 		#region Properties
-		public OpenVisionLab.ImageCanvas.Rendering.ImageCanvasControl ImageViewer
-		{
-			get { return _imageViewer; }
-		}
-
 		internal IImageCanvasContextMenuHost ContextMenuHost { get; set; }
 
 		internal IImageCanvasDialogHost ImageDialogHost { get; set; }
 
 		public int GrayValue
 		{
-			get
-			{
-				if (_imageViewer != null) { return _imageViewer.GrayValue; }
-				return 0;
-			}
+			get => _presentation?.GrayValue ?? 0;
 		}
 
 		public bool IsShowCrossLine
 		{
-			get
-			{
-				if (_imageViewer != null) { return _imageViewer.IsShowCrossLine; }
-				return false;
-			}
+			get => _isShowCrossLine;
 			set
 			{
-				if (_imageViewer != null) { _imageViewer.IsShowCrossLine = value; }
-				_imageViewer.RefreshGL();
+				_isShowCrossLine = value;
+				_presentation?.SetShowCrossLine(value);
 				OnPropertyChanged(nameof(IsShowCrossLine));
 			}
 		}
 
 		public bool IsShowMeasure
 		{
-			get
-			{
-				if (_imageViewer != null) { return _isShowMeasure; }
-				return false;
-			}
+			get => _isShowMeasure;
 			set
 			{
-				if (_imageViewer != null)
-				{
-					_isShowMeasure = value;
-					_imageViewer.SetViewMode((_isShowMeasure == true) ? CanvasInteractionMode.Measure : CanvasInteractionMode.None);
-				}
+				_isShowMeasure = value;
+				_presentation?.SetViewMode(value ? CanvasInteractionMode.Measure : CanvasInteractionMode.None);
 				if (!value)
 				{
 					_measurement = new Measurement();
@@ -127,70 +109,43 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 
 		public bool IsTeachingMode
 		{
-			get
-			{
-				if (_imageViewer != null) { return _isTeachingMode; }
-				OnPropertyChanged(nameof(IsTeachingMode));
-				return false;
-			}
+			get => _isTeachingMode;
 			set
 			{
-				if (_imageViewer != null)
-				{
-					_isTeachingMode = value;
-					_imageViewer.SetViewMode((_isTeachingMode == true) ? CanvasInteractionMode.Drawing : CanvasInteractionMode.None);
-				}
-
+				_isTeachingMode = value;
+				_presentation?.SetViewMode(value ? CanvasInteractionMode.Drawing : CanvasInteractionMode.None);
 				OnPropertyChanged(nameof(IsTeachingMode));
 			}
 		}
 
 		public bool IsAddRoiArrayMode
 		{
-			get
-			{
-				if (_imageViewer != null) { return _isAddRoiArrayMode; }
-				OnPropertyChanged(nameof(IsAddRoiArrayMode));
-				return false;
-			}
+			get => _isAddRoiArrayMode;
 			set
 			{
-				if (_imageViewer != null)
-				{
-					_isAddRoiArrayMode = value;
-					_imageViewer.SetViewMode((_isAddRoiArrayMode == true) ? CanvasInteractionMode.Drawing : CanvasInteractionMode.None);
-				}
+				_isAddRoiArrayMode = value;
+				_presentation?.SetViewMode(value ? CanvasInteractionMode.Drawing : CanvasInteractionMode.None);
 				OnPropertyChanged(nameof(IsAddRoiArrayMode));
 			}
 		}
 
 		public bool IsPreviewMode
 		{
-			get
-			{
-				if (_imageViewer != null) { return _isPreviewMode; }
-				OnPropertyChanged();
-				return false;
-			}
+			get => _isPreviewMode;
 			set
 			{
-				if (_imageViewer != null) { _isPreviewMode = value; }
-				_imageViewer.RefreshGL();
+				_isPreviewMode = value;
+				_presentation?.Refresh();
 				OnPropertyChanged();
 			}
 		}
 
 		public bool UseGroupMoveMode
 		{
-			get
-			{
-				if (_imageViewer != null) { return _useGroupMoveMode; }
-				OnPropertyChanged();
-				return false;
-			}
+			get => _useGroupMoveMode;
 			set
 			{
-				if (_imageViewer != null) { _useGroupMoveMode = value; }
+				_useGroupMoveMode = value;
 				OnPropertyChanged();
 			}
 		}
@@ -201,58 +156,40 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 
 		public bool ShowGroupBounds
 		{
-			get => _imageViewer.GetLastGroup()?.IsVisible ?? true;
+			get => _presentation?.GetGroupBoundsVisible() ?? _showGroupBounds;
 			set
 			{
-				CanvasOverlayItem group = _imageViewer.GetLastGroup();
-				if (group == null) { return; }
-
-				group.IsVisible = value;
-				group.Shape.IsChanged = true;
-				_imageViewer.RefreshGL();
+				_showGroupBounds = value;
+				_presentation?.SetGroupBoundsVisible(value);
 			}
 		}
 
 		public System.Drawing.PointF CanvasPos
 		{
-			get
-			{
-				if (_imageViewer != null) { return _imageViewer.PixelPos; }
-				return new System.Drawing.PointF();
-			}
+			get => _presentation?.CanvasPosition ?? new System.Drawing.PointF();
 		}
 
 		public System.Drawing.PointF ImagePos
 		{
-			get
-			{
-				if (_imageViewer != null) { return _imageViewer.ImagePixelPos; }
-				return new System.Drawing.PointF();
-			}
+			get => _presentation?.ImagePosition ?? new System.Drawing.PointF();
 		}
 
 		public float HeightValue
 		{
-			get
-			{
-				if (_imageViewer != null) { return _heightValue; }
-				return 0;
-			}
+			get => _heightValue;
 			set
 			{
-				if (_imageViewer != null) { _heightValue = value; }
+				_heightValue = value;
 				OnPropertyChanged();
 			}
 		}
 
 		public System.Drawing.Color PixelColor
 		{
-			get
-			{
-				if (_imageViewer != null) { return _imageViewer.PixelColor; }
-				return new System.Drawing.Color();
-			}
+			get => _presentation?.PixelColor ?? new System.Drawing.Color();
 		}
+
+		public int TextureTileCount => _presentation?.TextureTileCount ?? 0;
 
 		public ObservableCollection<MenuItemViewModel> MenuItems { get; set; }
 
@@ -274,90 +211,95 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 		#endregion
 		public RoiImageCanvasViewModel(string name)
 		{
+			_viewerName = string.IsNullOrWhiteSpace(name) ? "ImageCanvas" : name;
 			_wpfKeyboardInputController = new RoiImageCanvasWpfKeyboardInputController(RemoveSelectedOverlay);
 			InitCommand();
-			_keyboardInputController = new RoiImageCanvasKeyboardInputController(
-				_imageViewer,
-				() => _selectedRect,
-				() => _copyRoiRect,
-				value => _copyRoiRect = value,
-				CaptureWindowRoiSnapshot,
-				RemoveSelectedOverlay,
-				PublishRoiSnapshotChanged,
-				() => UndoRequested(this, EventArgs.Empty),
-				() => RedoRequested(this, EventArgs.Empty),
-				OnRoiAdded,
-				OnRoiGrouped);
-			_mouseInputController = new RoiImageCanvasMouseInputController(
-				_imageViewer,
-				() => _selectedRect,
-				value => _selectedRect = value,
-				() => _drawingRect,
-				value => _drawingRect = value,
-				() => _measurement,
-				value => _measurement = value,
-				() => _mouseDownCanvasPos,
-				value => _mouseDownCanvasPos = value,
-				() => _isPanning,
-				value => _isPanning = value,
-				() => _panAnchorPoint,
-				value => _panAnchorPoint = value,
-				() => _imageSize,
-				() => IsAddRoiArrayMode,
-				value => IsAddRoiArrayMode = value,
-				() => IsTeachingMode,
-				() => ReplaceExistingRoiOnDraw,
-				() => UseGroupMoveMode,
-				_addRoiArrayVm,
-				BeginRoiInteractionSnapshot,
-				CompleteRoiInteractionSnapshot,
-				OnRoiMouseUp,
-				OnRoiEditingCompleted,
-				OnRoiAdded,
-				ReplaceWindowRoisForSingleDraw,
-				UpdatePixelProperty,
-				ExecuteRightClickCommand,
-				StartDrawingTimer);
-			InitEvent();
 			InitMenuItems();
-			_imageViewer.SetNameGL(name);
-			InitializeDefaultGroup();
 		}
 
-		private void InitializeDefaultGroup()
+		internal string ViewerName => _viewerName;
+
+		internal CanvasRect<float> SelectedRect
 		{
-			string groupType = EnumInspWindowType.Module.ToString();
-			_imageViewer.AddOverlay("", groupType, new CanvasRect<float>(), Guid.NewGuid().ToString(), EnumInspWindowType.Module, EnumItemType.Group, false, true);
-			_imageViewer.SetLastGroupType(groupType);
+			get => _selectedRect;
+			set => _selectedRect = value;
+		}
+
+		internal CanvasRect<float> DrawingRect
+		{
+			get => _drawingRect;
+			set => _drawingRect = value;
+		}
+
+		internal CanvasRect<float> CopyRoiRect
+		{
+			get => _copyRoiRect;
+			set => _copyRoiRect = value;
+		}
+
+		internal Measurement CurrentMeasurement
+		{
+			get => _measurement;
+			set => _measurement = value;
+		}
+
+		internal OpenGlFontRenderOptions MeasureFontOption => _measureFontOption;
+
+		internal System.Drawing.Point MouseDownCanvasPosition
+		{
+			get => _mouseDownCanvasPos;
+			set => _mouseDownCanvasPos = value;
+		}
+
+		internal bool IsPanning
+		{
+			get => _isPanning;
+			set => _isPanning = value;
+		}
+
+		internal System.Drawing.PointF PanAnchorPoint
+		{
+			get => _panAnchorPoint;
+			set => _panAnchorPoint = value;
+		}
+
+		internal System.Drawing.Size ImageSize => _imageSize;
+
+		internal AddRoiArrayViewModel AddRoiArrayViewModel => _addRoiArrayVm;
+
+		internal bool RequestedShowGroupBounds => _showGroupBounds;
+
+		internal CanvasInteractionMode ResolveInteractionMode()
+		{
+			if (_isShowMeasure) { return CanvasInteractionMode.Measure; }
+			if (_isTeachingMode || _isAddRoiArrayMode) { return CanvasInteractionMode.Drawing; }
+			return CanvasInteractionMode.None;
+		}
+
+		internal void AttachPresentation(RoiImageCanvasPresentation presentation)
+		{
+			if (_disposed) { throw new ObjectDisposedException(nameof(RoiImageCanvasViewModel)); }
+			if (_presentation != null && !ReferenceEquals(_presentation, presentation))
+			{
+				throw new InvalidOperationException("RoiImageCanvasViewModel is already attached to another presentation owner.");
+			}
+
+			_presentation = presentation ?? throw new ArgumentNullException(nameof(presentation));
+		}
+
+		internal void DetachPresentation(RoiImageCanvasPresentation presentation)
+		{
+			if (ReferenceEquals(_presentation, presentation))
+			{
+				_presentation = null;
+			}
 		}
 
 		private void Loaded()
 		{
-			_imageViewer.InvertYAxis = true;
+			_presentation?.SetInvertYAxis(true);
 		}
 
-		private void InitEvent()
-		{
-			_imageViewer.Load += OnLoad;
-			_imageViewer.Resized += OnResized;
-			_imageViewer.Draw += OnDraw;
-
-			_refreshTimer = new System.Timers.Timer(1);  // 1초마???�벤??발생
-			_refreshTimer.Elapsed += _dataTimer_Elapsed;
-			_refreshTimer.Start();  // ?�?�머 ?�작
-		}
-
-		private void ReleaseEvents()
-		{
-			if (_imageViewer == null)
-			{
-				return;
-			}
-
-			_imageViewer.Load -= OnLoad;
-			_imageViewer.Resized -= OnResized;
-			_imageViewer.Draw -= OnDraw;
-		}
 		private void InitMenuItems()
 		{
 			MenuItems = new ObservableCollection<MenuItemViewModel>();
@@ -365,60 +307,18 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 			MenuItems.Add(new MenuItemViewModel { Header = MenuItemUtil.GetDescription(EnumImageCanvasItems.FitImage), Command = FitImageCommand, IconData = MaterialIconData.CheckCircle, IsVisible = true });
 			MenuItems.Add(new MenuItemViewModel { Header = MenuItemUtil.GetDescription(EnumImageCanvasItems.SaveImage), Command = SaveImageCommand, IconData = MaterialIconData.ContentSave, IsVisible = true });
 		}
-		private void OnDraw(object sender, OpenVisionLab.ImageCanvas.Canvas.CanvasRenderEventArgs e)
-		{
-			OpenGL gl = e.GL;
-
-			_imageViewer.DrawContent();
-			OpenGlDrawing.DrawRoiEditHandles(gl, GetOverlayRect(), _imageViewer.ZoomScale, System.Windows.Media.Brushes.Yellow);
-			if (ShowGroupNames)
-			{
-				OpenGlDrawing.DrawGroupName(gl, _imageViewer.GetCanvasOverlayManager(), _imageViewer.GetOpenGlTextDrawOptions());
-			}
-			if (ShowRoiItemNames)
-			{
-				OpenGlDrawing.DrawRoiItemName(gl, _imageViewer.GetCanvasOverlayManager(), _imageViewer.GetOpenGlTextDrawOptions());
-			}
-			if (IsShowMeasure) { _imageViewer.DrawMeasurement(gl, _measurement, _measureFontOption); }
-		}
-
-		private void OnResized(object sender, EventArgs e)
-		{
-			StartDrawingTimer();
-		}
-
-		private void OnLoad(object sender, EventArgs e)
-		{
-
-		}
-
-		private CanvasRect<float> GetOverlayRect()
-		{
-			if (_imageViewer.GetViewMode() == CanvasInteractionMode.Drawing && _drawingRect != null && !_drawingRect.IsEmpty())
-			{
-				return _drawingRect;
-			}
-
-			if (_selectedRect != null && !_selectedRect.IsEmpty())
-			{
-				return _selectedRect;
-			}
-
-			return null;
-		}
-
-		private void RemoveSelectedOverlay()
+		internal void RemoveSelectedOverlay()
 		{
 			OnRemoveOverlay(ref _selectedRect);
 		}
 
-		private void BeginRoiInteractionSnapshot()
+		internal void BeginRoiInteractionSnapshot()
 		{
 			_roiSnapshotBeforeInteraction = CaptureWindowRoiSnapshot();
 			_roiInteractionSnapshotActive = true;
 		}
 
-		private void CompleteRoiInteractionSnapshot(string actionName)
+		internal void CompleteRoiInteractionSnapshot(string actionName)
 		{
 			if (!_roiInteractionSnapshotActive)
 			{
@@ -431,7 +331,7 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 			PublishRoiSnapshotChanged(actionName, before, CaptureWindowRoiSnapshot());
 		}
 
-		private void PublishRoiSnapshotChanged(
+		internal void PublishRoiSnapshotChanged(
 			string actionName,
 			IReadOnlyList<Model.RoiSnapshotItem> before,
 			IReadOnlyList<Model.RoiSnapshotItem> after)
@@ -446,7 +346,7 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 
 		public IReadOnlyList<Model.RoiSnapshotItem> CaptureWindowRoiSnapshot()
 		{
-			return _imageViewer.GetVisibleUnlockedOverlays()
+			return RequirePresentation().GetVisibleUnlockedOverlays()
 				.Where(item => item?.Shape != null
 					&& !item.IsGroupRectangle
 					&& item.ItemType == EnumItemType.Window)
@@ -458,10 +358,11 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 		public void RestoreWindowRoiSnapshot(IEnumerable<Model.RoiSnapshotItem> snapshot)
 		{
 			IReadOnlyList<Model.RoiSnapshotItem> items = Model.RoiSnapshotChangedEventArgs.CloneSnapshot(snapshot);
-			CanvasOverlayItem lastGroup = _imageViewer.GetLastGroup();
+			RoiImageCanvasPresentation presentation = RequirePresentation();
+			CanvasOverlayItem lastGroup = presentation.GetLastGroup();
 			string fallbackGroupType = lastGroup?.GroupType ?? string.Empty;
 
-			List<string> currentIds = _imageViewer.GetVisibleUnlockedOverlays()
+			List<string> currentIds = presentation.GetVisibleUnlockedOverlays()
 				.Where(item => item?.Shape != null
 					&& !item.IsGroupRectangle
 					&& item.ItemType == EnumItemType.Window)
@@ -471,7 +372,7 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 
 			foreach (string uniqueId in currentIds)
 			{
-				_imageViewer.DeleteOverlay(uniqueId, fallbackGroupType);
+				presentation.DeleteOverlay(uniqueId, fallbackGroupType);
 			}
 
 			CanvasRect<float> lastRect = null;
@@ -484,13 +385,13 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 				rect.UniqueId = uniqueId;
 				rect.GroupType = groupType;
 
-				_imageViewer.AddOverlay(parentGroupType, groupType, rect, uniqueId, item.InspWindowType, item.ItemType, item.IsExtensionRectangle, item.IsGroupRectangle);
+				presentation.AddOverlay(parentGroupType, groupType, rect, uniqueId, item.InspWindowType, item.ItemType, item.IsExtensionRectangle, item.IsGroupRectangle);
 				lastRect = rect;
 			}
 
 			_selectedRect = lastRect ?? new CanvasRect<float>();
 			_drawingRect = new CanvasRect<float>();
-			_imageViewer.RefreshGL();
+			presentation.Refresh();
 		}
 
 		private static bool AreSameRoiSnapshots(IReadOnlyList<Model.RoiSnapshotItem> before, IReadOnlyList<Model.RoiSnapshotItem> after)
@@ -520,7 +421,8 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 
 		private void ClearWindowRois()
 		{
-			var removableIds = _imageViewer.GetVisibleUnlockedOverlays()
+			RoiImageCanvasPresentation presentation = RequirePresentation();
+			var removableIds = presentation.GetVisibleUnlockedOverlays()
 				.Where(x => !x.IsGroupRectangle && x.ItemType == EnumItemType.Window && x.Shape != null)
 				.Select(x => x.Shape.UniqueId)
 				.Where(x => !string.IsNullOrWhiteSpace(x))
@@ -528,11 +430,11 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 
 			foreach (string uniqueId in removableIds)
 			{
-				_imageViewer.DeleteOverlay(uniqueId, _imageViewer.GetLastGroup()?.GroupType ?? string.Empty);
+				presentation.DeleteOverlay(uniqueId, presentation.GetLastGroup()?.GroupType ?? string.Empty);
 			}
 		}
 
-		private void ReplaceWindowRoisForSingleDraw()
+		internal void ReplaceWindowRoisForSingleDraw()
 		{
 			ClearWindowRois();
 			_selectedRect = new CanvasRect<float>();
@@ -565,10 +467,8 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 			_currentImageMat?.Dispose();
 			_currentImageMat = keepCurrentImage && mat != null && !mat.Empty() ? mat.Clone() : null;
 			_saveImageOverride = saveImageOverride;
-			_currentImageName = string.IsNullOrWhiteSpace(fileName)
-				? "Image"
-				: System.IO.Path.GetFileNameWithoutExtension(fileName);
-			CanvasImageLoader.UploadMatAsTexture(_imageViewer, mat, fileName, ref _imageSize);
+			_currentImageName = ImageCanvasDirectoryPolicy.ResolveImageName(fileName);
+			_imageSize = RequirePresentation().UploadMat(mat, fileName);
 		}
 
 		public void LoadImage(System.Drawing.Bitmap bitmap, string fileName, Func<string, bool> saveImageOverride = null)
@@ -576,10 +476,8 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 			_currentImageMat?.Dispose();
 			_currentImageMat = null;
 			_saveImageOverride = saveImageOverride;
-			_currentImageName = string.IsNullOrWhiteSpace(fileName)
-				? "Image"
-				: System.IO.Path.GetFileNameWithoutExtension(fileName);
-			CanvasImageLoader.UploadBitmapAsTexture(_imageViewer, bitmap, fileName, ref _imageSize);
+			_currentImageName = ImageCanvasDirectoryPolicy.ResolveImageName(fileName);
+			_imageSize = RequirePresentation().UploadBitmap(bitmap, fileName);
 		}
 
 		public void ClearImage()
@@ -589,8 +487,7 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 			_saveImageOverride = null;
 			_currentImageName = "Image";
 			_imageSize = new System.Drawing.Size();
-			_imageViewer.ClearTexture();
-			_imageViewer.RefreshGL();
+			_presentation?.ClearImage();
 		}
 
 		public bool SaveCurrentImage(string path)
@@ -600,15 +497,40 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 
 		public void FitImageToView()
 		{
-			_imageViewer.ZoomToFit();
-			_imageViewer.RefreshGL();
+			RequirePresentation().FitImageToView();
 		}
+
+		public void AddOverlay(
+			string parentType,
+			string childType,
+			CanvasShape shape,
+			string uniqueId,
+			EnumInspWindowType inspectionWindowType = EnumInspWindowType.Unit,
+			EnumItemType itemType = EnumItemType.Window,
+			bool isExtensionRectangle = false,
+			bool isGroupRectangle = false)
+		{
+			RequirePresentation().AddOverlay(parentType, childType, shape, uniqueId, inspectionWindowType, itemType, isExtensionRectangle, isGroupRectangle);
+		}
+
+		public void DeleteOverlay(string uniqueId, string groupName = "") => RequirePresentation().DeleteOverlay(uniqueId, groupName);
+
+		public CanvasOverlayItem GetOverlayByUniqueId(string uniqueId) => RequirePresentation().GetOverlayByUniqueId(uniqueId);
+
+		public void RefreshCanvas() => _presentation?.Refresh();
+
+		public void ReshapeAndRefresh() => _presentation?.ReshapeAndRefresh();
+
+		public CanvasViewState CaptureViewState() => RequirePresentation().CaptureViewState();
+
+		public void ApplyViewState(CanvasViewState state) => RequirePresentation().ApplyViewState(state);
 
 		public void AddInitialRoi(System.Drawing.Rectangle roi)
 		{
 			if (roi.IsEmpty || roi.Width <= 0 || roi.Height <= 0) { return; }
 
-			CanvasOverlayItem parentOverlay = _imageViewer.GetLastGroup();
+			RoiImageCanvasPresentation presentation = RequirePresentation();
+			CanvasOverlayItem parentOverlay = presentation.GetLastGroup();
 			if (parentOverlay == null) { return; }
 
 			int canvasTop = _imageSize.Height > 0 ? _imageSize.Height - roi.Top : roi.Top + roi.Height;
@@ -619,11 +541,11 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 				UniqueId = Guid.NewGuid().ToString()
 			};
 
-			_imageViewer.AddOverlay(parentOverlay.GroupType, parentOverlay.GroupType, rect, rect.UniqueId, parentOverlay.InspWindowType, EnumItemType.Window);
+			presentation.AddOverlay(parentOverlay.GroupType, parentOverlay.GroupType, rect, rect.UniqueId, parentOverlay.InspWindowType, EnumItemType.Window);
 			_selectedRect = rect;
 			_drawingRect = new CanvasRect<float>();
 			OnRoiAdded(rect, parentOverlay);
-			_imageViewer.RefreshGL();
+			presentation.Refresh();
 		}
 
 		#region EventHandler
@@ -639,7 +561,7 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 			RoiAdded(this, argOverlay);
 		}
 
-		private void OnRoiMouseUp(CanvasRect<float> canvasRect)
+		internal void OnRoiMouseUp(CanvasRect<float> canvasRect)
 		{
 			if (IsTeachingMode) { return; }
 			if (canvasRect == null) { return; }
@@ -653,7 +575,7 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 			if (canvasRect == null || string.IsNullOrWhiteSpace(canvasRect.UniqueId)) { return; }
 
 			RemoveRoiRequested(this, canvasRect);
-			_imageViewer.DeleteOverlay(canvasRect.UniqueId, canvasRect.GroupType);
+			RequirePresentation().DeleteOverlay(canvasRect.UniqueId, canvasRect.GroupType);
 			canvasRect = new CanvasRect<float>();
 			_drawingRect = new CanvasRect<float>();
 		}
@@ -676,6 +598,154 @@ namespace OpenVisionLab.ImageCanvas.ViewModels
 			arg.CanvasPoints = canvasRect.Points.Select(x => x.ToPointF());
 			arg.RoiRect = canvasRect;
 			return arg;
+		}
+
+		#endregion
+
+		#endregion
+
+		#region Commands
+
+		private void AllOffVisiblility()
+		{
+			foreach (var item in MenuItems)
+			{
+				item.IsVisible = false;
+			}
+		}
+
+		private void InitCommand()
+		{
+			LoadedCommand = new RelayCommand(() => Loaded());
+			SaveImageCommand = new RelayCommand(() => OnSaveIamge());
+			FitImageCommand = new RelayCommand(FitImageToView);
+			RightClickCommand = new RelayCommand(ExecuteRightClickCommand);
+			LoadImageCommand = new RelayCommand(OpenLoadImage);
+			TeachingCommand = new RelayCommand(ChangeTeachingMode);
+			AddingArrayCommand = new RelayCommand(ChangeAddingRoiArrayMode);
+			ShowPreviewCommand = new RelayCommand(ChangePreviewMode);
+			ShowCrossLineCommand = new RelayCommand(ShowCrossLine);
+			MeasureCommand = new RelayCommand(ExecuteMeasure);
+			PreviewKeyDownCommand = new RelayCommand<KeyEventArgs>(x => _wpfKeyboardInputController.HandlePreviewKeyDown(x));
+			KeyUpCommand = new RelayCommand<KeyEventArgs>(x => _wpfKeyboardInputController.HandleKeyUp(x));
+		}
+
+		private void OnSaveIamge()
+		{
+			if (_currentImageMat == null || _currentImageMat.Empty())
+			{
+				return;
+			}
+
+			string fileName = ImageDialogHost?.ShowSaveImageDialog(ImageCanvasDirectoryPolicy.CreateDefaultSaveFileName(_currentImageName), ImageCanvasDirectoryPolicy.ResolveInitialDirectory());
+			if (string.IsNullOrWhiteSpace(fileName))
+			{
+				return;
+			}
+
+			if (SaveCurrentImage(fileName))
+			{
+				ImageCanvasDirectoryPolicy.RememberImagePath(fileName);
+			}
+		}
+
+		private void ShowCrossLine() => IsShowCrossLine = !IsShowCrossLine;
+
+		private void ExecuteMeasure()
+		{
+			bool enableMeasure = !IsShowMeasure;
+			if (enableMeasure)
+			{
+				IsTeachingMode = false;
+				IsAddRoiArrayMode = false;
+			}
+
+			IsShowMeasure = enableMeasure;
+			OnWindowsChanged?.Invoke();
+		}
+
+		private void ChangePreviewMode() => IsPreviewMode = !IsPreviewMode;
+
+		private void ChangeAddingRoiArrayMode()
+		{
+			if (IsAddRoiArrayMode)
+			{
+				IsAddRoiArrayMode = false;
+				OnWindowsChanged?.Invoke();
+			}
+		}
+
+		private void ChangeTeachingMode()
+		{
+			bool enableTeaching = !IsTeachingMode;
+			if (enableTeaching)
+			{
+				IsShowMeasure = false;
+				IsAddRoiArrayMode = false;
+			}
+
+			IsTeachingMode = enableTeaching;
+			OnWindowsChanged?.Invoke();
+		}
+
+		internal void ExecuteRightClickCommand()
+		{
+			if (ContextMenuHost == null)
+			{
+				return;
+			}
+
+			if (IsShowMeasure || IsTeachingMode || IsAddRoiArrayMode)
+			{
+				IsShowMeasure = false;
+				IsTeachingMode = false;
+				IsAddRoiArrayMode = false;
+				OnWindowsChanged?.Invoke();
+				return;
+			}
+
+			ContextMenuHost.OpenContextMenu();
+		}
+
+		private void OpenLoadImage()
+		{
+			string fileName = ImageDialogHost?.ShowOpenImageDialog(ImageCanvasDirectoryPolicy.ResolveInitialDirectory());
+			if (string.IsNullOrWhiteSpace(fileName))
+			{
+				return;
+			}
+
+			using (Mat mat = CanvasImageLoader.LoadMatFromFile(fileName))
+			{
+				LoadImage(mat, fileName);
+				ImageCanvasDirectoryPolicy.RememberImagePath(fileName);
+			}
+		}
+
+		#endregion
+
+		#region Refresh
+
+		public void StartDrawingTimer() => _presentation?.StartDrawingTimer();
+
+		internal void RaiseUndoRequested() => UndoRequested(this, EventArgs.Empty);
+
+		internal void RaiseRedoRequested() => RedoRequested(this, EventArgs.Empty);
+
+		private RoiImageCanvasPresentation RequirePresentation()
+		{
+			if (_disposed) { throw new ObjectDisposedException(nameof(RoiImageCanvasViewModel)); }
+			return _presentation ?? throw new InvalidOperationException("Host RoiImageCanvasViewModel in a RoiImageCanvasView before using canvas operations.");
+		}
+
+		public void Dispose()
+		{
+			if (_disposed) { return; }
+			_disposed = true;
+
+			_currentImageMat?.Dispose();
+			_currentImageMat = null;
+			_presentation = null;
 		}
 
 		#endregion

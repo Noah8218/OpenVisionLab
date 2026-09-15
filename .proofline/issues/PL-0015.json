@@ -1,0 +1,145 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0015",
+    "aliases": [
+      "OPENVISIONLAB-SHELL-VIEW-MEMBER-NAVIGATION-20260911"
+    ],
+    "type": "task",
+    "mode": "simple",
+    "title": "Structure Shell View members by responsibility",
+    "risk": "low"
+  },
+  "origin": {
+    "kind": "user request and Shell code-behind audit",
+    "summary": "The user asked to finish the remaining Shell View burden. The audit found valid WPF adapter and compatibility code, but the large file has only broad regions and is difficult to navigate.",
+    "refs": [
+      "docs/reports/OPENVISIONLAB_SHELL_PIPELINE_CODEBEHIND_BOUNDARY_AUDIT_20260910.md",
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "AGENTS.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "PL-0015 is verified: OpenVisionShellHostView.xaml.cs is navigable by responsibility-oriented regions, no code or owner moved, normalized source tokens are identical, sequential Debug/Release and focused contracts pass, and the junior evaluation plus runtime boundaries are recorded."
+  },
+  "objective": {
+    "summary": "Make OpenVisionShellHostView.xaml.cs easy to scan by grouping existing members into responsibility-oriented regions while preserving the concrete View owner and all observable contracts.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev and preserve the existing dirty worktree.",
+      "Do not add a class, partial, interface, manager, wrapper, or folder for this navigation-only change.",
+      "Do not move business logic, persistence, Recipe state, Pipeline execution, device ownership, XAML bindings, test compatibility methods, event order, or Dispose order.",
+      "Use regions only as navigation aids in this genuinely large class; use names that describe real responsibilities.",
+      "Do not wait for user input, hardware, or unbounded UI runtime; record those boundaries as unverified.",
+      "Run token-equivalence, Debug/Release build, Shell/Recipe readiness, structural audit, and documentation checks."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "OpenVisionShellHostView.xaml.cs has named regions for constants/dependency properties, fields, construction, public view contract, lifetime, Recipe/UI adapters, runtime/localization, projections, log presentation, test helpers, and test compatibility without adding partials or types.",
+      "evidence_refs": [
+        "E1",
+        "E5"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "The source logic-token contract is identical before and after the region-only edit, and XAML, command, callback, event, test compatibility, and Dispose contracts remain unchanged.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E5"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "The affected solution and focused Shell/Recipe readiness checks pass in Debug and Release, with structural audit and documentation checks passing.",
+      "evidence_refs": [
+        "E3",
+        "E4",
+        "E5"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "The completion record gives a first-time-contributor reading order, records the junior evaluation, and states remaining runtime UI/hardware boundaries without claiming full runtime qualification.",
+      "evidence_refs": [
+        "E1",
+        "E6"
+      ]
+    }
+  ],
+  "relations": [],
+  "context": [
+    {
+      "kind": "current-owner",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/OpenVisionShellHostView.xaml.cs"
+    },
+    {
+      "kind": "prior-audit",
+      "location": "docs/reports/OPENVISIONLAB_SHELL_PIPELINE_CODEBEHIND_BOUNDARY_AUDIT_20260910.md"
+    },
+    {
+      "kind": "verification",
+      "location": "tools/VisionRecipeRunnerSmoke/ShellRecipeBasicLifecycleViewContract.cs; tools/OpenVisionReadinessCheck/Program.cs"
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/OpenVisionShellHostView.xaml.cs; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0015-shell-view-member-navigation-20260911\\OpenVisionShellHostView.before.cs",
+      "observation": "The existing View is grouped into named regions for constants/dependency properties, fields, constructors, public View contract, lifetime, Recipe/Pipeline/UI adapters, runtime/localization, projections, log presentation, and test compatibility. No class, partial, or owner was added.",
+      "observed_at": "2026-09-11T14:12:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "static",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0015-shell-view-member-navigation-20260911\\region-token-contract.txt",
+      "observation": "Region-only normalized token contract passed; before and after SHA-256 are identical and normalized lengths are both 84216.",
+      "observed_at": "2026-09-11T14:14:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "build",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0015-shell-view-member-navigation-20260911\\solution-debug-build-sequential.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0015-shell-view-member-navigation-20260911\\solution-release-build-sequential.log; smoke-debug-build.log; smoke-release-build.log",
+      "observation": "Sequential solution and VisionRecipeRunnerSmoke Debug/Release builds completed with 0 warnings and 0 errors. The initial parallel solution attempts were discarded as file-lock execution conflicts and were not used as code results.",
+      "observed_at": "2026-09-11T14:17:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0015-shell-view-member-navigation-20260911\\shell-basic-debug.log; shell-basic-release.log; readiness-debug.log; readiness-release.log",
+      "observation": "ShellRecipeBasicLifecycleViewContract passed 7/7 in Debug and Release; OpenVisionReadinessCheck passed in Debug and Release.",
+      "observed_at": "2026-09-11T14:18:00+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0015-shell-view-member-navigation-20260911\\refactor-audit.log; documentation-index.log; git-diff-check.log",
+      "observation": "RefactorAudit returned REFACTOR_AUDIT=PASS with 59 protected partial declarations and 2 text matches, DocumentationIndex returned PASS, and git diff --check returned exit code 0 with only existing line-ending conversion notices.",
+      "observed_at": "2026-09-11T14:19:00+09:00"
+    },
+    {
+      "id": "E6",
+      "kind": "review",
+      "location": "docs/reports/OPENVISIONLAB_JUNIOR_NAVIGATION_AND_SHELL_REVIEW_20260910.md; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0015-shell-view-member-navigation-20260911\\junior-review.txt",
+      "observation": "Independent junior-readability review recommends accepting the P2 navigation improvement: responsibility regions materially reduce search cost while the large class and existing owner tracing remain explicit residual costs. Runtime UI, theme, DPI, monitor, hardware, native-hang, and long-run shutdown remain unverified.",
+      "observed_at": "2026-09-11T14:21:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-11T14:20:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "All PL-0015 criteria are evidenced. The Shell View navigation burden is reduced without reopening an existing owner or adding another abstraction layer."
+    }
+  ],
+  "created_at": "2026-09-11T14:05:00+09:00",
+  "updated_at": "2026-09-11T14:20:00+09:00"
+}

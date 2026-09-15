@@ -1,0 +1,187 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0077",
+    "aliases": [
+      "OPENVISIONLAB-2D019-PERSISTENCE-EXECUTION-GATE-20260915"
+    ],
+    "type": "task",
+    "mode": "simple",
+    "title": "Block Run until damaged Recipe persistence is explicitly recovered",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "scheduled 2D task execution and source review",
+    "summary": "2D-019 requires damaged existing Recipe/Pipeline data to remain inspectable and recoverable without being treated as a normal runnable Recipe.",
+    "refs": [
+      "C:\\Users\\USER\\Downloads\\OpenVisionLab_2D_tasks.json",
+      "docs\\contracts\\openvisionlab\\OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md",
+      "docs\\admin\\OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "AGENTS.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "The existing Recipe/Pipeline persistence states are now consumed by the Pipeline Review Run owner, while the existing Recipe command gates remain in place. Isolated Debug/Release contracts prove source-byte and backup preservation, explicit SaveRecovered release, and new-Recipe default creation.",
+    "next_action": null
+  },
+  "objective": {
+    "summary": "Verify and close the execution gate for damaged Recipe data and Pipeline XML without removing the existing editable-substitute recovery flow.",
+    "constraints": [
+      "Keep the missing-file new Recipe default creation path allowed.",
+      "Preserve original source bytes and invalid backups; never overwrite a damaged source as part of the gate check.",
+      "Require the existing explicit storage owner Save path to produce SaveRecovered before Run is allowed.",
+      "Reuse the existing persistence state and presenter owners; do not add a parallel recovery format or broad Runner state.",
+      "Keep test fixtures, logs, and reports under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev.",
+      "Do not modify C:\\Git\\2D\\Original or perform commit, push, release, deployment, or external communication."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "A missing new Recipe creates its default Pipeline without a failure state, while damaged existing Pipeline XML and Recipe data return editable substitutes with preserved source bytes and an existing invalid backup.",
+      "evidence_refs": [
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "A valid file repaired outside the persistence owner remains blocked while the failure state is stale; the explicit existing Save owner changes it to SaveRecovered, retains the prior backup, and releases the option gate.",
+      "evidence_refs": [
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Pipeline Review Run checks both Pipeline and RecipeData persistence failures before starting execution and presents the shared recovery guidance; existing Recipe sample, pair, catalog, and local-validation command gates continue to consume HasSelectedRecipePersistenceFailure.",
+      "evidence_refs": [
+        "E1",
+        "E5"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "The focused persistence-execution contract passes in Debug and Release, and Recipe-load recovery, future-schema fail-closed, and layer/reference invariants remain passing.",
+      "evidence_refs": [
+        "E2",
+        "E3",
+        "E4"
+      ]
+    },
+    {
+      "id": "C5",
+      "text": "Durable completion evidence records the owner, call path, mutable-state writer, public contract, shortest reading order, focused checks, and the remaining WPF runtime/UI boundary.",
+      "evidence_refs": [
+        "E1",
+        "E5"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0076"
+    }
+  ],
+  "context": [
+    {
+      "kind": "owner-map",
+      "location": "VisionPipelineStorage and RecipeDataStorage own persistence state and source/backup writes; OpenVisionRecipePersistenceStatusPresenter owns recovery text; OpenVisionPipelineReviewDocument owns direct Review Run admission; RecipeCommandSurface owns sample/pair/catalog/local-validation CanExecute gates."
+    },
+    {
+      "kind": "call-path",
+      "location": "Recipe/Pipeline Load -> PersistenceStateKind -> OpenVisionRecipePersistenceStatusPresenter -> OpenVisionPipelineReviewDocument.RunReviewAsync and RecipeCommandSurface CanRun* gates -> execution only after explicit SaveRecovered."
+    },
+    {
+      "kind": "mutable-state-writer",
+      "location": "VisionPipelineStorage.Save and RecipeDataStorage.Save are the only recovery writers used by this slice; the Review document only reads state and updates validation/guide presentation."
+    },
+    {
+      "kind": "public-contract",
+      "location": "Missing files may create defaults. Existing damaged/schema-blocked files remain source-preserving failure states; the shared help text identifies the source and backup and prohibits Run/validation/qualification evidence until explicit save and reopen."
+    },
+    {
+      "kind": "reading-order",
+      "location": "src/OpenVisionLab/Core/Pipeline/Storage/VisionPipelineStorage.cs -> src/OpenVisionLab/Core/Recipe/RecipeDataStorage.cs -> src/OpenVisionLab/UI/Menu/Wpf/Recipe/Review/OpenVisionRecipePersistenceStatusPresenter.cs -> src/OpenVisionLab/UI/Menu/Wpf/Recipe/Models/OpenVisionRecipeValidationReviewModels.cs -> src/OpenVisionLab/UI/Menu/Wpf/Recipe/CommandSurface/RecipeCommandSurface.cs -> src/OpenVisionLab/UI/Menu/Wpf/Documents/OpenVisionPipelineReviewDocument.cs -> tools/VisionRecipeRunnerSmoke/RecipePersistenceExecutionGateContract.cs."
+    },
+    {
+      "kind": "boundary",
+      "location": "In-process Debug/Release contracts and source checks were run. A desktop WPF/EXE click path, rendered recovery state, themes/layouts/DPI/input matrix, camera/hardware, release/publication, and Original repository were not exercised in this slice."
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "evidence-directory",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d019-persistence-gate-20260915-debug",
+      "summary": "Debug build log, 9/0 focused persistence gate contract, and Recipe/Pipeline recovery fixtures."
+    },
+    {
+      "kind": "evidence-directory",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d019-persistence-gate-20260915-release",
+      "summary": "Release build log and 9/0 focused persistence gate contract."
+    },
+    {
+      "kind": "source",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/Documents/OpenVisionPipelineReviewDocument.cs; tools/VisionRecipeRunnerSmoke/RecipePersistenceExecutionGateContract.cs; tools/VisionRecipeRunnerSmoke/Program.cs",
+      "summary": "Minimal Review Run guard, focused contract, and smoke dispatch."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "review",
+      "location": "src/OpenVisionLab/Core/Pipeline/Storage/VisionPipelineStorage.cs; src/OpenVisionLab/Core/Recipe/RecipeDataStorage.cs; src/OpenVisionLab/UI/Menu/Wpf/Recipe/Review/OpenVisionRecipePersistenceStatusPresenter.cs; src/OpenVisionLab/UI/Menu/Wpf/Recipe/CommandSurface/RecipeCommandSurface.cs; src/OpenVisionLab/UI/Menu/Wpf/Documents/OpenVisionPipelineReviewDocument.cs",
+      "observation": "Source review confirmed source-preserving InvalidFileSubstituted/LoadFailed states, backup paths, SaveRecovered transitions, existing Recipe command gates, and the new Pipeline Review Run guard that reads both Pipeline and RecipeData failure states before beginning execution.",
+      "observed_at": "2026-09-15T19:45:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d019-persistence-gate-20260915-debug/build-smoke-debug-final.log; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d019-persistence-gate-20260915-debug/contract-final/recipe-persistence-execution-gate-contract.txt",
+      "observation": "Debug build completed with 0 errors and the existing 16 nullable warnings outside this slice. The isolated persistence execution gate contract passed 9/0: new default creation, damaged Pipeline source/backup, stale failure after external repair, explicit SaveRecovered, damaged Recipe data preservation/recovery, and Run-owner source gates.",
+      "observed_at": "2026-09-15T19:41:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d019-persistence-gate-20260915-release/build-smoke-release.log; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d019-persistence-gate-20260915-release/contract/recipe-persistence-execution-gate-contract.txt",
+      "observation": "Release build completed with 0 errors and the existing 16 nullable warnings outside this slice. The same isolated persistence execution gate contract passed 9/0.",
+      "observed_at": "2026-09-15T19:42:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d019-persistence-gate-20260915-debug/regressions/recipe-load-recovery/recipe-load-recovery-contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d019-persistence-gate-20260915-debug/regressions/pipeline-schema/pipeline-xml-schema-compatibility-contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d019-persistence-gate-20260915-debug/regressions/pipeline-layer-reference/pipeline-layer-reference-invariant-contract.txt",
+      "observation": "Focused regressions passed: Recipe load recovery 8/0, future-schema compatibility 7/0, and Pipeline layer/reference invariant contract passed.",
+      "observed_at": "2026-09-15T19:44:00+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "review",
+      "location": "docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md; tools/VisionRecipeRunnerSmoke/RecipePersistenceExecutionGateContract.cs; tools/VisionRecipeRunnerSmoke/Program.cs",
+      "observation": "The stable contract, current handoff, and focused smoke dispatch record the persistence recovery gate, owner/call path, verification commands, evidence locations, next 2D-020 boundary, and the unverified desktop WPF runtime boundary.",
+      "observed_at": "2026-09-15T19:48:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-15T19:48:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "Close 2D-019 after source review, Debug/Release persistence gate contracts, and focused storage regressions.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E4",
+        "E5"
+      ]
+    }
+  ],
+  "created_at": "2026-09-15T19:45:00+09:00",
+  "updated_at": "2026-09-15T19:48:00+09:00"
+}

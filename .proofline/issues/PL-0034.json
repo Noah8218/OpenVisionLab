@@ -1,0 +1,180 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0034",
+    "aliases": [],
+    "type": "task",
+    "mode": "composite",
+    "title": "Move Learn Window document launch behind the existing composition boundary",
+    "risk": "low"
+  },
+  "origin": {
+    "kind": "user-request",
+    "summary": "The user requested that Partial refactoring continue in scheduled cycles and that remaining Tool/Learn Partial responsibilities be corrected structurally.",
+    "refs": [
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "docs/reports/OPENVISIONLAB_PARTIAL_STRUCTURAL_ELIMINATION_PLAN_20260913.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "OpenVisionLearnWindow의 code-behind가 concrete Learn 문서 서비스를 직접 호출하지 않고 명시적 Action<string> callback을 발행하도록 변경했다. Shell/Tool/Threshold composition controller가 기존 OpenVisionWorkspaceLearnDocumentService를 연결하며, XAML/animation/topic/threshold/public action 계약과 Window lifetime은 유지했다. Debug/Release source contract/build 및 단일 모니터 WPF smoke가 통과했고 외부 브라우저/전체 UI 행렬은 미검증으로 남겼다."
+  },
+  "objective": {
+    "summary": "Remove the concrete Learn document service call from the required OpenVisionLearnWindow XAML Partial and route document actions through the existing Shell/Tool composition owners without changing visible controls, topic mapping, or Learn Window lifetime.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev; do not modify C:\\Git\\2D\\Original.",
+      "Reuse OpenVisionWorkspaceLearnDocumentService and existing Learn Window controllers; do not add a service, interface, manager, event bus, wrapper, or Partial.",
+      "Preserve OpenVisionLearnWindow XAML names, automation IDs, topic catalog mapping, threshold event, practice/tool callbacks, and controller cleanup.",
+      "Keep test outputs and evidence under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev.",
+      "Do not commit, push, tag, release, deploy, or mutate the Original repository."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The proof report records current and intended owners, caller path, mutable-state writer, lifetime owner, binding/public contract, shortest reading order, and matching test.",
+      "evidence_refs": [
+        "E1"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "OpenVisionLearnWindow no longer references OpenVisionWorkspaceLearnDocumentService or OpenLearnDocumentFile; all known production constructors wire the existing service through SetOpenLearnDocumentAction.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Focused Debug/Release contracts and builds, relevant WPF Learn smoke, readiness, structural audit, documentation index, issue validation, and diff checks pass; external browser and full UI/native matrices are explicitly unverified.",
+      "evidence_refs": [
+        "E2",
+        "E3"
+      ]
+    }
+  ],
+  "milestones": [
+    {
+      "id": "M1",
+      "summary": "Inventory Learn Window callers, topic/document owner, mutable state, binding, and lifetime.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M2",
+      "summary": "Replace the Window-to-service direct call with the explicit callback and wire all known production composition owners.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C2"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M3",
+      "summary": "Run focused source/build/WPF smoke proof and record durable evidence.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C3"
+      ],
+      "issue_refs": []
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0033"
+    }
+  ],
+  "context": [
+    {
+      "kind": "source",
+      "location": "src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Learn\\OpenVisionLearnWindow.xaml.cs"
+    },
+    {
+      "kind": "composition-owner",
+      "location": "src\\OpenVisionLab\\UI\\Menu\\Wpf\\Shell\\Commands\\OpenVisionShellHostLearnWindowController.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Learn\\VisionToolLearnWindowController.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Learn\\ThresholdToolLearnWindowController.cs"
+    },
+    {
+      "kind": "service-owner",
+      "location": "src\\OpenVisionLab\\UI\\Menu\\Wpf\\Workspace\\Samples\\OpenVisionWorkspaceLearnDocumentService.cs"
+    },
+    {
+      "kind": "test-host",
+      "location": "tools\\VisionRecipeRunnerSmoke\\LearnWindowDocumentBoundaryContract.cs; tools\\PipelineViewerScreenshotSmoke\\Program.cs"
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "screenshot",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\learn-window-document-boundary-20260914\\wpf-smoke\\wpf_openvision_learn_foundation_contract.png",
+      "summary": "Fresh Learn foundation WPF smoke screenshot on the detected single monitor."
+    },
+    {
+      "kind": "screenshot",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\learn-window-document-boundary-20260914\\wpf-smoke\\wpf_shell_host_learn_entry.png",
+      "summary": "Fresh Shell Learn-entry WPF smoke screenshot on the detected single monitor."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source",
+      "location": "docs\\reports\\OPENVISIONLAB_LEARN_WINDOW_DOCUMENT_BOUNDARY_20260914.md; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Learn\\OpenVisionLearnWindow.xaml.cs; src\\OpenVisionLab\\UI\\Menu\\Wpf\\Shell\\Commands\\OpenVisionShellHostLearnWindowController.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Learn\\VisionToolLearnWindowController.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Learn\\ThresholdToolLearnWindowController.cs",
+      "observation": "The required Learn Window Partial now owns only the explicit document callback boundary; the three known production composition owners wire the existing document service. The Window's topic, XAML, threshold, practice/tool callback, and lifetime contracts remain.",
+      "observed_at": "2026-09-14T00:55:35+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\learn-window-document-boundary-20260914\\learn-window-document-boundary-contract.txt",
+      "observation": "LearnWindowDocumentBoundaryContract passed 6/6 in Debug and Release. WPF Learn foundation and Shell Learn entry smoke targets also passed.",
+      "observed_at": "2026-09-14T00:55:35+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\learn-window-document-boundary-20260914",
+      "observation": "VisionRecipeRunnerSmoke and OpenVisionLab.sln Debug/Release builds passed with 0 warnings/errors; PipelineViewerScreenshotSmoke x64 Debug passed with 0 errors and three pre-existing warnings; one-monitor WPF smoke produced fresh PNG evidence. Readiness, RefactorAudit, DocumentationIndex, issue-ledger, and diff checks are recorded in phase-summary.",
+      "observed_at": "2026-09-14T00:55:35+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-14T00:55:35+09:00",
+      "summary": "OpenVisionLearnWindow은 required XAML Partial이므로 제거하지 않는다. 다만 code-behind의 concrete document service 호출은 presentation adapter가 소유할 이유가 없으므로 Action<string> 결과 경계를 추가하고, 기존 Shell/Tool/Threshold composition controller에서 service owner를 연결한다.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "D2",
+      "kind": "decision",
+      "at": "2026-09-14T00:55:35+09:00",
+      "summary": "PL-0034의 세 completion criteria와 세 milestone이 현재 증거로 충족되어 resolved로 닫는다. 외부 browser launch, 전체 topic/theme/DPI/input 행렬, hardware/native runtime은 이 slice의 검증 범위가 아니다.",
+      "evidence_refs": [
+        "E3"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-14T00:55:35+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "The Window-to-service coupling was removed, explicit composition wiring was verified, and focused source/build/runtime evidence was recorded. Do not reopen this boundary without a new requirement, reproducible defect, failed criterion, or changed dependency boundary."
+    }
+  ],
+  "created_at": "2026-09-14T00:55:35+09:00",
+  "updated_at": "2026-09-14T00:55:35+09:00"
+}

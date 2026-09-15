@@ -1,0 +1,154 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0049",
+    "aliases": [],
+    "type": "task",
+    "mode": "simple",
+    "title": "Retain Foundation Learn View Partial after concrete owner audit",
+    "risk": "low"
+  },
+  "origin": {
+    "kind": "user-request",
+    "summary": "The user requested that Partial refactoring continue in scheduled cycles and that each remaining Partial be structurally reviewed rather than mechanically deleted or split.",
+    "refs": [
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "docs/reports/OPENVISIONLAB_PARTIAL_STRUCTURAL_ELIMINATION_PLAN_20260913.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "FoundationLearnView.xaml.cs의 no-change 구조 감사가 완료되었다. View Partial은 required XAML/presentation adapter로 유지되고, FoundationLearnPresenter, Learn Window topic/action composition, and View-owned WPF cell/marker/brush/timer owners가 lesson state, routing, presentation, lifetime, and test boundaries를 각각 소유한다. 독립 seam이 없어 production split은 만들지 않았으며, focused source/build/WPF/monitor and documentation evidence가 통과했다."
+  },
+  "objective": {
+    "summary": "Audit FoundationLearnView's Partial structure and retain it only if existing concrete owners already provide lesson state, topic routing, timer lifetime, binding, and test boundaries without a new split.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev; do not modify C:\\Git\\2D\\Original.",
+      "Do not add a service, interface, manager, wrapper, forwarding Partial, or ViewModel split for file length alone.",
+      "Preserve FoundationLearnView XAML names, automation IDs, topic/action callback contract, animation behavior, test facade, and Unloaded timer cleanup.",
+      "Keep test outputs and evidence under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev.",
+      "Do not commit, push, tag, release, deploy, or mutate the Original repository."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The proof report records current/intended owners, caller path, mutable-state writer, lifetime owner, binding/public/test contract, shortest reading order, and the reason no production split is justified.",
+      "evidence_refs": [
+        "E1"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "The source contract proves that FoundationLearnView has no direct persistence/file-dialog/OpenCV/tool-factory coupling and that the existing presenter, Learn Window composition, timer lifetime, callback, and XAML/test owners are wired.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Focused Debug/Release contracts and builds plus Foundation Learn WPF smoke and dynamic monitor geometry pass; broader theme/DPI/input/native related-tool/camera/SDK/GPU runtime remains explicitly unverified.",
+      "evidence_refs": [
+        "E2",
+        "E3",
+        "E4"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0048"
+    }
+  ],
+  "context": [
+    {
+      "kind": "source",
+      "location": "src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Learn\\FoundationLearnView.xaml(.cs); src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Learn\\FoundationLearnPresenter.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Learn\\OpenVisionLearnWindow.xaml.cs"
+    },
+    {
+      "kind": "test-host",
+      "location": "tools\\VisionRecipeRunnerSmoke\\FoundationLearnPartialBoundaryContract.cs; tools\\VisionRecipeRunnerSmoke\\LearnFoundationPresentationContract.cs; tools\\PipelineViewerScreenshotSmoke\\LearnFoundationSmoke.cs; tools\\RunUiPrecheck.ps1"
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "screenshot",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\foundation-learn-partial-retention-20260914\\ui-precheck\\wpf_openvision_learn_foundation_contract.png",
+      "summary": "Fresh Debug Foundation Learn contract WPF smoke screenshot."
+    },
+    {
+      "kind": "screenshot",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\foundation-learn-partial-retention-20260914\\ui-precheck-release\\wpf_openvision_learn_foundation_view.png",
+      "summary": "Fresh Release Foundation Learn view WPF smoke screenshot."
+    },
+    {
+      "kind": "geometry",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\foundation-learn-partial-retention-20260914\\monitor-moved\\monitor-window-geometry.json",
+      "summary": "Dynamic monitor/window geometry after explicit placement on the selected smaller-left monitor."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source",
+      "location": "docs\\reports\\OPENVISIONLAB_FOUNDATION_LEARN_PARTIAL_RETENTION_20260914.md; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Learn\\FoundationLearnView.xaml.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Learn\\FoundationLearnPresenter.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Learn\\OpenVisionLearnWindow.xaml.cs",
+      "observation": "FoundationLearnView remains a required XAML/presentation adapter. FoundationLearnPresenter owns Point/ROI and Mat-channel lesson state, role/visibility decisions, guidance and Tool location text; OpenVisionLearnWindow owns topic/action composition and the public facade; and the View owns only WPF cell/marker/brush projection, callback forwarding, and timer attach/detach. The View has no direct file, dialog, OpenCV, tool-factory, persistence, or inspection coupling.",
+      "observed_at": "2026-09-14T06:57:09+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\foundation-learn-partial-retention-20260914\\debug\\foundation-learn-partial-boundary-contract.txt; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\foundation-learn-partial-retention-20260914\\release\\foundation-learn-partial-boundary-contract.txt",
+      "observation": "FoundationLearnPartialBoundaryContract passed 9/9 in Debug and Release. VisionRecipeRunnerSmoke Debug and Release builds passed with 0 warnings/errors.",
+      "observed_at": "2026-09-14T06:57:09+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\foundation-learn-partial-retention-20260914\\ui-precheck\\ui_precheck_report.md; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\foundation-learn-partial-retention-20260914\\ui-precheck-release\\ui_precheck_report.md",
+      "observation": "RunUiPrecheck passed wpf_openvision_learn_foundation_contract and wpf_openvision_learn_foundation_view in Debug and Release with check=OK, layout/text/internal counts zero, and fresh PNGs. Broader theme/DPI/input and native matrices remain unverified.",
+      "observed_at": "2026-09-14T06:57:09+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\foundation-learn-partial-retention-20260914\\monitor-moved\\monitor-window-geometry.json",
+      "observation": "Dynamic monitor probing selected the smaller-left monitor \\\\.\\DISPLAY2 with bounds X=-1920,Y=365,1920x1080; the Foundation Learn smoke window was explicitly placed there and one visible window intersected the selected monitor. The initial unplaced probe was rejected because the window opened on the other monitor; the moved rerun is the accepted geometry evidence.",
+      "observed_at": "2026-09-14T06:57:09+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-14T06:57:09+09:00",
+      "summary": "FoundationLearnView Partial은 required XAML/presentation adapter이며, FoundationLearnPresenter, Learn Window topic/action composition, and View-owned WPF cell/marker/brush/timer owners가 독립 책임과 lifetime을 이미 제공한다. 새 seam 없이 분리하면 forwarding wrapper나 WPF control leakage가 되므로 no-change로 유지한다.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "D2",
+      "kind": "decision",
+      "at": "2026-09-14T06:57:09+09:00",
+      "summary": "PL-0049의 세 completion criteria가 현재 source, contract, build, WPF smoke, monitor, and documentation evidence로 충족되어 resolved로 닫는다. 전체 theme/DPI/input, native related-tool click/file association, camera/SDK/GPU 및 long-running native runtime은 이 slice의 검증 범위가 아니다.",
+      "evidence_refs": [
+        "E3",
+        "E4"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-14T06:57:09+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "The Foundation Learn View Partial retained-owner audit found no independent boundary that justified a production split; focused source/build/WPF/monitor/documentation evidence was recorded. Do not reopen without a new requirement, reproducible defect, failed criterion, or changed dependency/lifetime boundary."
+    }
+  ],
+  "created_at": "2026-09-14T06:57:09+09:00",
+  "updated_at": "2026-09-14T06:57:09+09:00"
+}

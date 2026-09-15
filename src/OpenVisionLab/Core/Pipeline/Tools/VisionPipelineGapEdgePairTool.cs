@@ -678,13 +678,10 @@ namespace OpenVisionLab
             metrics[VisionPipelineKnownMetrics.LineAngleAvg] = (pair.Upper.AngleDegrees + pair.Lower.AngleDegrees) / 2D;
 
             double pixelPerMm = property.PIXELPERMM;
-            if (pixelPerMm > 0D)
-            {
-                metrics[VisionPipelineKnownMetrics.DistanceMmMin] = metrics[VisionPipelineKnownMetrics.DistancePxMin] * pixelPerMm;
-                metrics[VisionPipelineKnownMetrics.DistanceMmMax] = metrics[VisionPipelineKnownMetrics.DistancePxMax] * pixelPerMm;
-                metrics[VisionPipelineKnownMetrics.DistanceMmAvg] = metrics[VisionPipelineKnownMetrics.DistancePxAvg] * pixelPerMm;
-                metrics[VisionPipelineKnownMetrics.DistanceMmRange] = metrics[VisionPipelineKnownMetrics.DistancePxRange] * pixelPerMm;
-            }
+            VisionPipelineMetricEnrichmentService.AddConvertedMetric(metrics, VisionPipelineKnownMetrics.DistancePxMin, VisionPipelineKnownMetrics.DistanceMmMin, pixelPerMm);
+            VisionPipelineMetricEnrichmentService.AddConvertedMetric(metrics, VisionPipelineKnownMetrics.DistancePxMax, VisionPipelineKnownMetrics.DistanceMmMax, pixelPerMm);
+            VisionPipelineMetricEnrichmentService.AddConvertedMetric(metrics, VisionPipelineKnownMetrics.DistancePxAvg, VisionPipelineKnownMetrics.DistanceMmAvg, pixelPerMm);
+            VisionPipelineMetricEnrichmentService.AddConvertedMetric(metrics, VisionPipelineKnownMetrics.DistancePxRange, VisionPipelineKnownMetrics.DistanceMmRange, pixelPerMm);
         }
 
         private static List<VisionToolOverlay> CreateRoiOverlays(Rect roi)

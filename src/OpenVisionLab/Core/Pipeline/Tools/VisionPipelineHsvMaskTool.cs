@@ -38,7 +38,15 @@ namespace OpenVisionLab
                 using Mat hsv = new Mat();
                 Cv2.CvtColor(bgr, hsv, ColorConversionCodes.BGR2HSV);
 
-                Rect roi = ResolveRoi(hsv);
+                if (!TryResolveRoi(hsv, out Rect roi))
+                {
+                    stopwatch.Stop();
+                    return VisionToolResult.Failed(
+                        VisionToolErrorCode.InvalidRoi,
+                        "HSV mask requires USE_ROI=false or one valid in-image CvROI.",
+                        stopwatch.Elapsed);
+                }
+
                 using Mat mask = new Mat(hsv.Size(), MatType.CV_8UC1, Scalar.Black);
 
                 int denominator;
@@ -144,18 +152,19 @@ namespace OpenVisionLab
             return bgr;
         }
 
-        private Rect ResolveRoi(Mat image)
+        private bool TryResolveRoi(Mat image, out Rect roi)
         {
+            roi = default;
             if (!GetBool("USE_ROI", false))
             {
-                return default;
+                return true;
             }
 
             string value = GetString("CvROI", string.Empty);
             string[] parts = value.Split(',');
             if (parts.Length != 4)
             {
-                return default;
+                return false;
             }
 
             if (!int.TryParse(parts[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out int x)
@@ -163,14 +172,18 @@ namespace OpenVisionLab
                 || !int.TryParse(parts[2], NumberStyles.Integer, CultureInfo.InvariantCulture, out int width)
                 || !int.TryParse(parts[3], NumberStyles.Integer, CultureInfo.InvariantCulture, out int height))
             {
-                return default;
+                return false;
             }
 
-            int left = Clamp(x, 0, image.Width);
-            int top = Clamp(y, 0, image.Height);
-            int right = Clamp(x + width, left, image.Width);
-            int bottom = Clamp(y + height, top, image.Height);
-            return new Rect(left, top, right - left, bottom - top);
+            long right = (long)x + width;
+            long bottom = (long)y + height;
+            if (x < 0 || y < 0 || width <= 0 || height <= 0 || right > image.Width || bottom > image.Height)
+            {
+                return false;
+            }
+
+            roi = new Rect(x, y, width, height);
+            return true;
         }
 
         private string GetString(string key, string defaultValue)
@@ -193,14 +206,15 @@ namespace OpenVisionLab
                 : defaultValue;
         }
 
+        private static int Clamp(int value, int min, int max)
+        {
+            return Math.Max(min, Math.Min(max, value));
+        }
+
         private bool GetBool(string key, bool defaultValue)
         {
             return bool.TryParse(GetString(key, string.Empty), out bool value) ? value : defaultValue;
         }
 
-        private static int Clamp(int value, int min, int max)
-        {
-            return Math.Max(min, Math.Min(max, value));
-        }
     }
 }

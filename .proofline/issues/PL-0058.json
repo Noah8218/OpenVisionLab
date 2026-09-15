@@ -1,0 +1,145 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0058",
+    "aliases": [
+      "OPENVISIONLAB-CORRECTED-OUTPUT-DIRTY-GUARD-20260915"
+    ],
+    "type": "bug",
+    "mode": "simple",
+    "title": "Block corrected-output rerun while Step edit is unapplied",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "explicit user request and source review",
+    "summary": "The user authorized starting the next 2D pre-development slice from the current owner map. Source review found that the existing corrected-output rerun action remains executable while a selected Step PropertyGrid edit is dirty.",
+    "refs": [
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "docs/roadmap/OPENVISIONLAB_PRODUCT_TARGET_AND_MAIN_VIEWS.md",
+      "AGENTS.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "PL-0058 remains resolved. The existing Local Validation Set contextual rerun regression also passes after the shared dirty guard, confirming the clean-state same-set branch is preserved."
+  },
+  "problem": {
+    "claims": [
+      {
+        "id": "P1",
+        "state": "confirmed",
+        "text": "The corrected-output rerun command can remain executable while the selected Step edit session is dirty and unapplied.",
+        "evidence_refs": [
+          "E1"
+        ]
+      }
+    ],
+    "impact": "An operator can believe the just-edited parameters were rerun even though the XML/pipeline still contains the previous saved values, weakening correction evidence and comparison trust."
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "RerunCorrectedOutputCommand.CanExecute returns false whenever the selected Step edit session is dirty, for both catalog Good/Bad and Local Validation Set contexts.",
+      "evidence_refs": [
+        "E3",
+        "E5"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "While dirty, CorrectedOutputRerunToolTipText tells the operator to apply or discard the pending Step edit; no Preview/Run or layer/routing mutation is triggered by the guard.",
+      "evidence_refs": [
+        "E3",
+        "E4",
+        "E5"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "After a successful XML apply marks the edit clean, the existing contextual rerun command and its Good/Bad or same-set scope are restored unchanged.",
+      "evidence_refs": [
+        "E3",
+        "E6"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "The built corrected-output panel renders the disabled dirty state and readable tooltip/action text, and focused source/build/runtime checks pass with unrun theme/DPI states recorded.",
+      "evidence_refs": [
+        "E2",
+        "E3",
+        "E4",
+        "E5",
+        "E6"
+      ]
+    }
+  ],
+  "relations": [],
+  "context": [
+    {
+      "kind": "source",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/Recipe/CommandSurface/RecipeCommandSurface.cs; src/OpenVisionLab/UI/Menu/Wpf/OpenVisionShellHostView.xaml"
+    },
+    {
+      "kind": "owner-map",
+      "location": "docs/admin/CODEBASE_STRUCTURE.md"
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "review",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/Recipe/CommandSurface/RecipeCommandSurface.cs:6151-6162; src/OpenVisionLab/UI/Menu/Wpf/Recipe/CommandSurface/RecipeCommandSurface.cs:6645-6649",
+      "observation": "CanRerunCorrectedOutput only checks the selected run scope and CanRunLocalValidationSet/CanRunSelectedSamplePairCheck; it does not check IsSelectedStepEditDirty. The IsDirty property change does refresh command state, so the missing guard is observable as an enabled rerun path while dirty.",
+      "observed_at": "2026-09-15T07:16:14+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "build",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\PL-0058_dirty-rerun-20260915-final2\\solution-build.log",
+      "observation": "The source-built OpenVisionLab.sln Debug/Any CPU build completed with exit code 0, warnings 0, and errors 0 after the dirty-rerun guard change.",
+      "observed_at": "2026-09-15T07:16:14+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\PL-0058_dirty-rerun-20260915-final2\\wpf-shell-host-fixture-step-edit-apply-rerun.log",
+      "observation": "The focused WPF smoke target completed with exit code 0 and check=OK. Its runtime assertions observed IsEnabled=false and CanExecute=false with apply-before-rerun guidance while dirty, unchanged Preview/layer/route state until explicit XML apply, then restored the existing Good/Bad rerun and completed it successfully; layout=0, text=0, internal=0.",
+      "observed_at": "2026-09-15T07:16:14+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "visual",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\PL-0058_dirty-rerun-20260915-final2\\wpf_shell_host_fixture_step_edit_apply_rerun.diagnostics",
+      "observation": "Fresh 1600x900 pending and applied corrected-output captures show the same Recipe Manager panel before and after XML apply. The pending capture shows the apply/discard guidance and disabled rerun affordance; the applied capture shows corrected-output guidance with the explicit rerun affordance restored.",
+      "observed_at": "2026-09-15T07:16:14+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "review",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/Recipe/CommandSurface/RecipeCommandSurface.cs:2622-2646; src/OpenVisionLab/UI/Menu/Wpf/Recipe/CommandSurface/RecipeCommandSurface.cs:6104-6120; src/OpenVisionLab/UI/Menu/Wpf/Recipe/CommandSurface/RecipeCommandSurface.cs:6151-6162",
+      "observation": "The post-change rerun label/tooltip, defensive execution guard, and CanExecute guard all test IsSelectedStepEditDirty before the existing IsSelectedRunLocalValidationSet branch. The same safety boundary therefore covers both catalog Good/Bad and Local Validation Set rerun scopes; the focused runtime target exercises the catalog fallback and the source proof covers the shared branch ordering.",
+      "observed_at": "2026-09-15T07:17:40+09:00"
+    },
+    {
+      "id": "E6",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\PL-0058_local-set-regression-20260915\\p252-contextual-correction-rerun.log",
+      "observation": "The existing p252 contextual Local Validation Set rerun target completed with exit code 0, check=OK, layout=0, text=0, and internal=0. The same-set rerun action remained enabled after a clean XML apply and preserved its persisted source-set and run-history contract.",
+      "observed_at": "2026-09-15T07:19:21+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-15T07:16:14+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "C1~C4 are satisfied by source, build, focused WPF runtime, and fresh visual evidence. Close PL-0058 without reopening completed owners; keep broader theme/DPI/input and field qualification outside this bounded slice."
+    }
+  ],
+  "created_at": "2026-09-15T07:16:14+09:00",
+  "updated_at": "2026-09-15T07:19:21+09:00"
+}

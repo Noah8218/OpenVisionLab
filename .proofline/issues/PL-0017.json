@@ -1,0 +1,151 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0017",
+    "aliases": [
+      "OPENVISIONLAB-SHELL-PENDING-EDIT-DIALOG-20260911"
+    ],
+    "type": "task",
+    "mode": "simple",
+    "title": "Move Shell pending-edit dialog decision to the Recipe dialog adapter",
+    "risk": "medium"
+  },
+  "origin": {
+    "kind": "user continuation request and PL-0016 junior review",
+    "summary": "The Shell View still contains the pending Recipe edit modal decision and its test queue. The user asked to finish the remaining Shell burden, and the existing RecipeDialogAdapter is the proven UI side-effect owner.",
+    "refs": [
+      "PL-0016",
+      "docs/reports/OPENVISIONLAB_JUNIOR_NAVIGATION_AND_SHELL_REVIEW_20260910.md",
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "AGENTS.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "PL-0017 is verified: the existing RecipeDialogAdapter owns the Shell pending-edit queue and modal decision, the View no longer owns that direct UI state, existing Recipe callback/test contracts are preserved, focused verification passes, and runtime UI/hardware interaction remains unverified."
+  },
+  "objective": {
+    "summary": "Make RecipeDialogAdapter the single concrete owner of Shell Recipe modal dialog side effects, including pending-edit decisions and their existing test queue, without changing Recipe command or public test contracts.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev and preserve the dirty worktree.",
+      "Do not add a new interface, factory, manager, or partial.",
+      "Keep OpenVisionRecipePendingEditRequest/Decision callback signatures and QueuePendingRecipeEditDecisionForTest unchanged.",
+      "Keep the existing dialog owner resolution, decision defaults, queue order, and modal semantics unchanged.",
+      "Keep Recipe state, persistence, workflow policy, and Shell lifetime ownership with existing owners.",
+      "Skip full runtime UI/hardware validation and record it as unverified."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "RecipeDialogAdapter owns pending-edit queue and modal decision; OpenVisionShellHostView no longer contains OpenVisionRecipePendingEditDialog construction or pending-edit queue state.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "RecipeCommandSurface pending-edit callback and Shell public/internal QueuePendingRecipeEditDecisionForTest contract remain unchanged and route through the adapter.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E4"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Sequential Debug/Release solution and focused smoke/readiness/refactor/documentation checks pass with no new warnings or errors attributable to this slice.",
+      "evidence_refs": [
+        "E3",
+        "E4",
+        "E5"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "Completion evidence records the new state owner, call path, lifetime owner, junior evaluation, and remaining runtime boundary.",
+      "evidence_refs": [
+        "E1",
+        "E6"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0016"
+    }
+  ],
+  "context": [
+    {
+      "kind": "current-owner",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/OpenVisionShellHostView.xaml.cs:pendingRecipeEditDecisionsForTest and DecidePendingRecipeEdit"
+    },
+    {
+      "kind": "intended-owner",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/Shell/Recipe/RecipeDialogAdapter.cs"
+    },
+    {
+      "kind": "test-contract",
+      "location": "tools/PipelineViewerScreenshotSmoke/Program.cs:QueuePendingRecipeEditDecisionForTest"
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/Shell/Recipe/RecipeDialogAdapter.cs; src/OpenVisionLab/UI/Menu/Wpf/OpenVisionShellHostView.xaml.cs; src/OpenVisionLab/UI/Menu/Wpf/Shell/Support/OpenVisionShellHostViewTestSurface.cs",
+      "observation": "RecipeDialogAdapter owns the pending-edit FIFO test queue and modal decision. OpenVisionShellHostView registers the adapter method with the existing Recipe command surface, and OpenVisionShellHostViewTestSurface forwards the unchanged QueuePendingRecipeEditDecisionForTest contract to the adapter.",
+      "observed_at": "2026-09-11T16:00:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "static",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0017-pending-edit-dialog-20260911\\pending-edit-contract.txt",
+      "observation": "PL0017_PENDING_EDIT_CONTRACT=PASS. The normalized before/after pending-edit method token SHA-256 is identical (fe16d130fbb531cc040af99962aeae74876713e41bd12a2f8cccfb250fc670ef), length 359; View direct dialog/queue checks and adapter routing checks pass.",
+      "observed_at": "2026-09-11T16:00:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "build",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0017-pending-edit-dialog-20260911\\solution-debug-build.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0017-pending-edit-dialog-20260911\\solution-release-build.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0017-pending-edit-dialog-20260911\\app-debug-build.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0017-pending-edit-dialog-20260911\\app-release-build.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0017-pending-edit-dialog-20260911\\smoke-debug-build.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0017-pending-edit-dialog-20260911\\smoke-release-build.log",
+      "observation": "Sequential OpenVisionLab solution, app, and VisionRecipeRunnerSmoke Debug/Release builds completed with 0 warnings and 0 errors.",
+      "observed_at": "2026-09-11T16:00:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0017-pending-edit-dialog-20260911\\shell-basic-debug.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0017-pending-edit-dialog-20260911\\shell-basic-release.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0017-pending-edit-dialog-20260911\\readiness-debug.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0017-pending-edit-dialog-20260911\\readiness-release.log",
+      "observation": "ShellRecipeBasicLifecycleViewContract passed 7/7 in Debug and Release; OpenVisionReadinessCheck passed in Debug and Release.",
+      "observed_at": "2026-09-11T16:00:00+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0017-pending-edit-dialog-20260911\\refactor-audit-final.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0017-pending-edit-dialog-20260911\\documentation-index-final2.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0017-pending-edit-dialog-20260911\\git-diff-check-final.log",
+      "observation": "RefactorAudit passed with CSharpFiles=816, XamlFiles=60, PartialDeclarations=59, PartialTextMatches=2, ProjectCycles=0, ShellStorageCalls=0. DocumentationIndex passed with IndexedPaths=288, Routes=16, RootRedirects=102. git diff --check returned exit code 0 with existing line-ending conversion warnings only.",
+      "observed_at": "2026-09-11T16:00:00+09:00"
+    },
+    {
+      "id": "E6",
+      "kind": "review",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0017-pending-edit-dialog-20260911\\junior-review.txt; docs/reports/OPENVISIONLAB_JUNIOR_NAVIGATION_AND_SHELL_REVIEW_20260910.md",
+      "observation": "Independent junior-readability review ACCEPTs the adapter as the pending-edit owner and records the call path, preserved FIFO/modal/test contracts, residual test forwarding path, and unverified runtime UI/hardware boundaries.",
+      "observed_at": "2026-09-11T16:00:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-11T16:00:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "All PL-0017 criteria are evidenced: pending-edit queue and modal decision moved to the existing RecipeDialogAdapter, callback/test contracts and modal semantics are preserved, sequential builds and focused checks pass, and runtime UI/hardware boundaries are explicitly unverified."
+    }
+  ],
+  "created_at": "2026-09-11T15:30:00+09:00",
+  "updated_at": "2026-09-11T16:00:00+09:00"
+}

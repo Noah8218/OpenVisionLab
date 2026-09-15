@@ -29,14 +29,14 @@ namespace OpenVisionLab
                 ? displayManager.SelectedItem
                 : displayManager.FocusItem;
 
-        public OpenVisionShellHostLayerListRefreshResult Refresh()
+        public LayerListRefreshResult Refresh()
         {
             Rows.Clear();
             layerTitles.Clear();
 
             if (displayManager.LayerCount <= 0)
             {
-                return new OpenVisionShellHostLayerListRefreshResult(-1, null);
+                return new LayerListRefreshResult(-1, null);
             }
 
             string activeLayer = ActiveLayerTitle;
@@ -62,7 +62,7 @@ namespace OpenVisionLab
             string selectedTitle = TryGetLayerTitle(selectedIndex, out string titleAtIndex)
                 ? titleAtIndex
                 : null;
-            return new OpenVisionShellHostLayerListRefreshResult(selectedIndex, selectedTitle);
+            return new LayerListRefreshResult(selectedIndex, selectedTitle);
         }
 
         public void ApplySelection(int selectedIndex, Action<int> setSelectedIndex)
@@ -98,9 +98,9 @@ namespace OpenVisionLab
         }
     }
 
-    internal sealed class OpenVisionShellHostLayerListRefreshResult
+    internal sealed class LayerListRefreshResult
     {
-        public OpenVisionShellHostLayerListRefreshResult(int selectedIndex, string selectedLayerTitle)
+        public LayerListRefreshResult(int selectedIndex, string selectedLayerTitle)
         {
             SelectedIndex = selectedIndex;
             SelectedLayerTitle = selectedLayerTitle;

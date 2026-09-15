@@ -599,7 +599,7 @@ namespace OpenVisionLab
             }
         }
 
-        private static string ComputeImageSetSha256(
+        internal static string ComputeImageSetSha256(
             IEnumerable<QualifiedRecipeValidationImageSource> images)
         {
             StringBuilder canonical = new StringBuilder();

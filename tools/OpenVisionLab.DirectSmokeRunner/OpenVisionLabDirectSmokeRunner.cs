@@ -35,49 +35,11 @@ namespace OpenVisionLab
 {
     internal static class OpenVisionLabDirectSmokeRunner
     {
-        private const uint MouseEventLeftDown = 0x0002;
-        private const uint MouseEventLeftUp = 0x0004;
-
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern bool SetCursorPos(int x, int y);
-
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint dwData, UIntPtr dwExtraInfo);
-
         [DllImport("user32.dll", SetLastError = true)]
         private static extern bool SetForegroundWindow(IntPtr hWnd);
 
         [DllImport("user32.dll", SetLastError = true)]
         private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
-
-        [DllImport("user32.dll")]
-        private static extern bool EnumDisplayMonitors(
-            IntPtr hdc,
-            IntPtr clip,
-            MonitorEnumCallback callback,
-            IntPtr data);
-
-        [DllImport("user32.dll", CharSet = CharSet.Auto)]
-        private static extern bool GetMonitorInfo(IntPtr monitor, ref SmokeMonitorInfo monitorInfo);
-
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern bool GetWindowRect(IntPtr window, out SmokeNativeRect rect);
-
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern bool SetWindowPos(
-            IntPtr window,
-            IntPtr insertAfter,
-            int x,
-            int y,
-            int width,
-            int height,
-            uint flags);
-
-        private delegate bool MonitorEnumCallback(
-            IntPtr monitor,
-            IntPtr hdc,
-            ref SmokeNativeRect rect,
-            IntPtr data);
 
         public static bool TryRun(string[] args)
         {
@@ -150,6 +112,30 @@ namespace OpenVisionLab
                 if (string.Equals(scenario, "tool-preview-popout", StringComparison.OrdinalIgnoreCase))
                 {
                     RunToolPreviewPopout(outputDirectory);
+                    return true;
+                }
+
+                if (string.Equals(scenario, "preview-result-validity", StringComparison.OrdinalIgnoreCase))
+                {
+                    RunPreviewResultValidity(outputDirectory);
+                    return true;
+                }
+
+                if (string.Equals(scenario, "preview-ui-heartbeat-baseline", StringComparison.OrdinalIgnoreCase))
+                {
+                    RunPreviewUiHeartbeatBaseline(outputDirectory);
+                    return true;
+                }
+
+                if (string.Equals(scenario, "preview-ui-heartbeat-async", StringComparison.OrdinalIgnoreCase))
+                {
+                    RunPreviewUiHeartbeatAsync(outputDirectory);
+                    return true;
+                }
+
+                if (string.Equals(scenario, "preview-ui-click-path", StringComparison.OrdinalIgnoreCase))
+                {
+                    RunPreviewUiClickPath(outputDirectory);
                     return true;
                 }
 
@@ -1320,6 +1306,692 @@ namespace OpenVisionLab
             finally
             {
                 window?.Complete();
+                app.Shutdown();
+            }
+        }
+
+        private static void RunPreviewUiHeartbeatBaseline(string outputDirectory)
+        {
+            Directory.CreateDirectory(outputDirectory);
+            string repoRoot = FindRepositoryRoot();
+            string samplePath = Path.Combine(repoRoot, "docs", "samples", "public", "Matching_DiePad_Synthetic_OK.png");
+            EnsureFileExists(samplePath, "Preview UI heartbeat baseline sample image");
+
+            Application app = Application.Current ?? new Application();
+            app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            OpenVisionShellHostWindow window = null;
+            DispatcherTimer heartbeat = null;
+            try
+            {
+                OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+                window = new OpenVisionShellHostWindow(ApplicationRuntimeContext.CreateDefault())
+                {
+                    Width = 1600,
+                    Height = 900,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                    Topmost = true
+                };
+                app.MainWindow = window;
+                window.Show();
+                string monitorEvidence = PlaceWindowOnLeftmostMonitor(window);
+                window.Activate();
+                Pump(36);
+
+                OpenVisionShellHostView shellHost = window.ShellHostForSmoke
+                    ?? throw new InvalidOperationException("Preview UI heartbeat baseline shell host was not created.");
+                using (Bitmap source = new Bitmap(samplePath))
+                {
+                    shellHost.SetMainLayerImageForTest(source);
+                }
+
+                Pump(24);
+                IDisplayManager displayManager = ApplicationRuntimeContext.CreateDefault().DisplayManager
+                    ?? throw new InvalidOperationException("Preview UI heartbeat baseline display manager was not created.");
+                OpenVisionNativePreviewExecutionController controller =
+                    new OpenVisionNativePreviewExecutionController(
+                        displayManager,
+                        new OpenVisionNativePreviewLayerPublisher(displayManager));
+
+                int heartbeatTicks = 0;
+                heartbeat = new DispatcherTimer(DispatcherPriority.Background)
+                {
+                    Interval = TimeSpan.FromMilliseconds(16)
+                };
+                heartbeat.Tick += (sender, args) => heartbeatTicks++;
+                heartbeat.Start();
+                Pump(24);
+                int ticksBeforeRun = heartbeatTicks;
+
+                Stopwatch runStopwatch = Stopwatch.StartNew();
+                OpenVisionNativePreviewExecutionResult result = controller.RunSingleInput(
+                    "Main",
+                    "PreviewHeartbeatBaseline",
+                    "Main",
+                    normalizeSingleChannelInput: false,
+                    executePreview: sourceImage =>
+                    {
+                        Thread.Sleep(420);
+                        throw new InvalidOperationException("controlled slow preview baseline");
+                    });
+                runStopwatch.Stop();
+                int ticksDuringRun = heartbeatTicks - ticksBeforeRun;
+                long blockingWindowMilliseconds = runStopwatch.ElapsedMilliseconds;
+
+                heartbeat.Stop();
+                Pump(24);
+                int ticksAfterPump = heartbeatTicks;
+                if (result == null || result.Success)
+                {
+                    throw new InvalidOperationException("Preview UI heartbeat baseline did not retain the controlled failure result.");
+                }
+
+                File.WriteAllText(
+                    Path.Combine(outputDirectory, "report.txt"),
+                    "Result: PASS" + Environment.NewLine
+                    + "Scenario: preview-ui-heartbeat-baseline" + Environment.NewLine
+                    + "OwnerCallPath: OpenVisionNativeToolDocument.RunPreview -> OpenVisionNativePreviewExecutionController.RunSingleInput -> executePreview" + Environment.NewLine
+                    + "ControlledSlowDelegateMilliseconds: 420" + Environment.NewLine
+                    + "BlockingWindowMilliseconds: " + blockingWindowMilliseconds.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "DispatcherTicksBeforeRun: " + ticksBeforeRun.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "DispatcherTicksDuringSynchronousRun: " + ticksDuringRun.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "DispatcherTicksAfterPump: " + ticksAfterPump.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "HeartbeatProposalMilliseconds: 250" + Environment.NewLine
+                    + "ObservedBaselineExceedsProposal: " + (blockingWindowMilliseconds > 250 && ticksDuringRun == 0) + Environment.NewLine
+                    + "NoAsyncBoundaryIntroduced: true" + Environment.NewLine
+                    + monitorEvidence + Environment.NewLine
+                    + "Executable: " + (Environment.ProcessPath ?? Assembly.GetExecutingAssembly().Location) + Environment.NewLine
+                    + "ExecutableSha256: " + ComputeC9FileSha256(Environment.ProcessPath ?? Assembly.GetExecutingAssembly().Location) + Environment.NewLine
+                    + "ManagedAssembly: " + typeof(OpenVisionLabDirectSmokeRunner).Assembly.Location + Environment.NewLine
+                    + "ManagedAssemblySha256: " + ComputeC9FileSha256(typeof(OpenVisionLabDirectSmokeRunner).Assembly.Location),
+                    Encoding.UTF8);
+            }
+            finally
+            {
+                heartbeat?.Stop();
+                window?.Close();
+                app.Shutdown();
+            }
+        }
+
+        private static void RunPreviewUiHeartbeatAsync(string outputDirectory)
+        {
+            Directory.CreateDirectory(outputDirectory);
+            string repoRoot = FindRepositoryRoot();
+            string samplePath = Path.Combine(repoRoot, "docs", "samples", "public", "Matching_DiePad_Synthetic_OK.png");
+            EnsureFileExists(samplePath, "Preview UI heartbeat async sample image");
+
+            Application app = Application.Current ?? new Application();
+            app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            OpenVisionShellHostWindow window = null;
+            DispatcherTimer heartbeat = null;
+            OpenVisionNativePreviewExecutionBoundary boundary = null;
+            try
+            {
+                OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+                window = new OpenVisionShellHostWindow(ApplicationRuntimeContext.CreateDefault())
+                {
+                    Width = 1600,
+                    Height = 900,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                    Topmost = true
+                };
+                app.MainWindow = window;
+                window.Show();
+                string monitorEvidence = PlaceWindowOnLeftmostMonitor(window);
+                window.Activate();
+                Pump(36);
+
+                OpenVisionShellHostView shellHost = window.ShellHostForSmoke
+                    ?? throw new InvalidOperationException("Preview UI heartbeat async shell host was not created.");
+                using (Bitmap source = new Bitmap(samplePath))
+                {
+                    shellHost.SetMainLayerImageForTest(source);
+                }
+
+                Pump(24);
+                IDisplayManager displayManager = ApplicationRuntimeContext.CreateDefault().DisplayManager
+                    ?? throw new InvalidOperationException("Preview UI heartbeat async display manager was not created.");
+                OpenVisionNativePreviewExecutionController controller =
+                    new OpenVisionNativePreviewExecutionController(
+                        displayManager,
+                        new OpenVisionNativePreviewLayerPublisher(displayManager));
+                boundary = new OpenVisionNativePreviewExecutionBoundary(
+                    controller,
+                    action => window.Dispatcher.BeginInvoke(action));
+
+                int heartbeatTicks = 0;
+                heartbeat = new DispatcherTimer(DispatcherPriority.Background)
+                {
+                    Interval = TimeSpan.FromMilliseconds(16)
+                };
+                heartbeat.Tick += (sender, args) => heartbeatTicks++;
+                heartbeat.Start();
+                Pump(24);
+                int ticksBeforeRun = heartbeatTicks;
+                int applyCount = 0;
+                OpenVisionNativePreviewExecutionResult completedResult = null;
+
+                bool started = boundary.TryStartSingleInput(
+                    "Main",
+                    "PreviewAsyncOutput",
+                    "Main",
+                    normalizeSingleChannelInput: false,
+                    executePreview: sourceImage =>
+                    {
+                        Thread.Sleep(420);
+                        return new OpenVisionLab.Vision2D.Tool.VisionToolResult
+                        {
+                            Success = true,
+                            ResultImage = sourceImage.Clone()
+                        };
+                    },
+                    applyResult: result =>
+                    {
+                        applyCount++;
+                        completedResult = result;
+                    },
+                    started: () => { });
+                bool duplicateAccepted = boundary.TryStartSingleInput(
+                    "Main",
+                    "PreviewAsyncDuplicate",
+                    "Main",
+                    normalizeSingleChannelInput: false,
+                    executePreview: sourceImage => new OpenVisionLab.Vision2D.Tool.VisionToolResult
+                    {
+                        Success = true,
+                        ResultImage = sourceImage.Clone()
+                    },
+                    applyResult: result => { },
+                    started: () => { });
+
+                Pump(72);
+                int ticksDuringRun = heartbeatTicks - ticksBeforeRun;
+                if (!started || duplicateAccepted || applyCount != 1 || completedResult?.Success != true || ticksDuringRun <= 0)
+                {
+                    Console.Error.WriteLine(
+                        "Async Preview diagnostic: "
+                        + $"Started={started}, DuplicateAccepted={duplicateAccepted}, Applies={applyCount}, "
+                        + $"Success={completedResult?.Success}, Status='{completedResult?.Status}', TicksDuring={ticksDuringRun}");
+                    throw new InvalidOperationException(
+                        "Async Preview boundary did not keep the Dispatcher responsive or reject the duplicate start. "
+                        + $"Started={started}, DuplicateAccepted={duplicateAccepted}, Applies={applyCount}, "
+                        + $"Success={completedResult?.Success}, Status='{completedResult?.Status}', TicksDuring={ticksDuringRun}");
+                }
+
+                using (Bitmap published = shellHost.GetLayerImageCloneForTest("PreviewAsyncOutput"))
+                {
+                    if (published == null)
+                    {
+                        throw new InvalidOperationException("Async Preview did not publish its result layer.");
+                    }
+
+                    published.Save(Path.Combine(outputDirectory, "PreviewAsyncOutput.png"));
+                }
+
+                applyCount = 0;
+                completedResult = null;
+                bool secondStarted = boundary.TryStartSingleInput(
+                    "Main",
+                    "PreviewAsyncDiscarded",
+                    "Main",
+                    normalizeSingleChannelInput: false,
+                    executePreview: sourceImage =>
+                    {
+                        Thread.Sleep(420);
+                        return new OpenVisionLab.Vision2D.Tool.VisionToolResult
+                        {
+                            Success = true,
+                            ResultImage = sourceImage.Clone()
+                        };
+                    },
+                    applyResult: result =>
+                    {
+                        applyCount++;
+                        completedResult = result;
+                    },
+                    started: () => { });
+                Pump(4);
+                bool canceled = boundary.CancelAndDiscard();
+                Pump(72);
+                if (!secondStarted || !canceled || applyCount != 0 || boundary.IsRunning)
+                {
+                    throw new InvalidOperationException(
+                        "Async Preview cancellation did not drain and discard the late result. "
+                        + $"Started={secondStarted}, Canceled={canceled}, Applies={applyCount}, IsRunning={boundary.IsRunning}");
+                }
+
+                using (Bitmap discarded = shellHost.GetLayerImageCloneForTest("PreviewAsyncDiscarded"))
+                {
+                    if (discarded != null)
+                    {
+                        throw new InvalidOperationException("Canceled Preview published a discarded result layer.");
+                    }
+                }
+
+                boundary.Dispose();
+                heartbeat.Stop();
+                Pump(24);
+                File.WriteAllText(
+                    Path.Combine(outputDirectory, "report.txt"),
+                    "Result: PASS" + Environment.NewLine
+                    + "Scenario: preview-ui-heartbeat-async" + Environment.NewLine
+                    + "OwnerCallPath: OpenVisionNativeToolDocument.RunPreview -> OpenVisionNativePreviewExecutionBoundary -> OpenVisionNativePreviewExecutionController" + Environment.NewLine
+                    + "ControlledSlowDelegateMilliseconds: 420" + Environment.NewLine
+                    + "DispatcherTicksDuringAsyncRun: " + ticksDuringRun.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "DuplicateExecutionAccepted: " + duplicateAccepted.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "CanceledLateResultPublished: false" + Environment.NewLine
+                    + "SingleActiveSlot: true" + Environment.NewLine
+                    + "GenerationDiscardGuard: true" + Environment.NewLine
+                    + "LateResultDrain: true" + Environment.NewLine
+                    + monitorEvidence + Environment.NewLine
+                    + "Executable: " + (Environment.ProcessPath ?? Assembly.GetExecutingAssembly().Location) + Environment.NewLine
+                    + "ExecutableSha256: " + ComputeC9FileSha256(Environment.ProcessPath ?? Assembly.GetExecutingAssembly().Location) + Environment.NewLine
+                    + "ManagedAssembly: " + typeof(OpenVisionLabDirectSmokeRunner).Assembly.Location + Environment.NewLine
+                    + "ManagedAssemblySha256: " + ComputeC9FileSha256(typeof(OpenVisionLabDirectSmokeRunner).Assembly.Location),
+                    Encoding.UTF8);
+            }
+            finally
+            {
+                boundary?.Dispose();
+                heartbeat?.Stop();
+                window?.Close();
+                app.Shutdown();
+            }
+        }
+
+        private static void RunPreviewUiClickPath(string outputDirectory)
+        {
+            Directory.CreateDirectory(outputDirectory);
+            string repoRoot = FindRepositoryRoot();
+            string samplePath = Path.Combine(repoRoot, "docs", "samples", "public", "Matching_DiePad_Synthetic_OK.png");
+            EnsureFileExists(samplePath, "Preview UI click-path sample image");
+
+            Application app = Application.Current ?? new Application();
+            app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            OpenVisionShellHostWindow window = null;
+            OpenVisionFloatingToolWindow toolWindow = null;
+            DispatcherTimer heartbeat = null;
+            try
+            {
+                OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+                window = new OpenVisionShellHostWindow(ApplicationRuntimeContext.CreateDefault())
+                {
+                    Width = 1600,
+                    Height = 900,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                    Topmost = true
+                };
+                app.MainWindow = window;
+                window.Show();
+                string monitorEvidence = PlaceWindowOnLeftmostMonitor(window);
+                window.Activate();
+                Pump(36);
+
+                OpenVisionShellHostView shellHost = window.ShellHostForSmoke
+                    ?? throw new InvalidOperationException("Preview UI click-path shell host was not created.");
+                using (Bitmap source = new Bitmap(samplePath))
+                {
+                    shellHost.SetMainLayerImageForTest(source);
+                }
+
+                Pump(48);
+                shellHost.SelectToolForTest(VISION_MENU.Blob);
+                Pump(80);
+                toolWindow = Application.Current.Windows
+                    .OfType<OpenVisionFloatingToolWindow>()
+                    .FirstOrDefault(item => item.IsVisible && FindVisualChildren<BlobToolWpfView>(item).Any())
+                    ?? throw new InvalidOperationException("Preview UI click-path Blob tool window was not found.");
+                string toolMonitorEvidence = PlaceWindowOnLeftmostMonitor(toolWindow);
+                OpenVisionNativeToolDocument document = shellHost.ActiveNativeDocumentForTest
+                    ?? throw new InvalidOperationException("Preview UI click-path active native document was not created.");
+                Button runPreviewButton = FindVisualChildren<Button>(toolWindow)
+                    .FirstOrDefault(button => button.IsVisible
+                        && string.Equals(
+                            System.Windows.Automation.AutomationProperties.GetAutomationId(button),
+                            "VisionToolRunPreviewButton",
+                            StringComparison.Ordinal))
+                    ?? throw new InvalidOperationException("Preview UI click-path Run Preview button was not found.");
+
+                int delegateCalls = 0;
+                document.SetPreviewExecutionOverrideForTest(sourceImage =>
+                {
+                    Interlocked.Increment(ref delegateCalls);
+                    Thread.Sleep(420);
+                    return new OpenVisionLab.Vision2D.Tool.VisionToolResult
+                    {
+                        Success = true,
+                        ResultImage = sourceImage.Clone()
+                    };
+                });
+
+                heartbeat = new DispatcherTimer(DispatcherPriority.Background)
+                {
+                    Interval = TimeSpan.FromMilliseconds(16)
+                };
+                int heartbeatTicks = 0;
+                heartbeat.Tick += (sender, args) => heartbeatTicks++;
+                heartbeat.Start();
+                Pump(20);
+                int ticksBeforeRun = heartbeatTicks;
+                int runsBefore = shellHost.NativePreviewRunCount;
+
+                InvokeButton(runPreviewButton);
+                InvokeButton(runPreviewButton);
+                Pump(12);
+                int ticksWhileRunning = heartbeatTicks - ticksBeforeRun;
+                Pump(60);
+                int runsAfterFirst = shellHost.NativePreviewRunCount;
+                string firstStatus = shellHost.ActiveNativeStatusText ?? string.Empty;
+                string firstReview = shellHost.ActiveNativeResultReviewText ?? string.Empty;
+                using Bitmap firstOutput = shellHost.GetLayerImageCloneForTest("Blob_Preview");
+                if (delegateCalls != 1
+                    || runsAfterFirst != runsBefore + 1
+                    || !shellHost.HasNativePreviewResult
+                    || firstOutput == null
+                    || firstStatus.IndexOf("Preview OK", StringComparison.OrdinalIgnoreCase) < 0
+                    || ticksWhileRunning <= 0)
+                {
+                    throw new InvalidOperationException(
+                        "Actual Run Preview click path did not complete one async run with a responsive Dispatcher. "
+                        + $"DelegateCalls={delegateCalls}, Runs={runsBefore}->{runsAfterFirst}, HasResult={shellHost.HasNativePreviewResult}, "
+                        + $"Status='{firstStatus}', Review='{firstReview}', TicksWhileRunning={ticksWhileRunning}");
+                }
+
+                SaveWindowScreenshot(toolWindow, Path.Combine(outputDirectory, "click-path-success.png"));
+                document.InvalidatePreviewResultForInputChange();
+                if (shellHost.HasNativePreviewResult)
+                {
+                    throw new InvalidOperationException("Input-change invalidation did not clear the current Preview result.");
+                }
+
+                InvokeButton(runPreviewButton);
+                Pump(8);
+                document.InvalidatePreviewResultForInputChange();
+                Pump(60);
+                int runsAfterDiscard = shellHost.NativePreviewRunCount;
+                if (delegateCalls != 2
+                    || runsAfterDiscard != runsAfterFirst
+                    || shellHost.HasNativePreviewResult)
+                {
+                    throw new InvalidOperationException(
+                        "Input-change cancellation published a stale result or advanced Preview state. "
+                        + $"DelegateCalls={delegateCalls}, Runs={runsAfterFirst}->{runsAfterDiscard}, HasResult={shellHost.HasNativePreviewResult}");
+                }
+
+                document.SetPreviewExecutionOverrideForTest(sourceImage => new OpenVisionLab.Vision2D.Tool.VisionToolResult
+                {
+                    Success = true,
+                    ResultImage = sourceImage.Clone()
+                });
+                InvokeButton(runPreviewButton);
+                Pump(50);
+                int runsAfterRecovery = shellHost.NativePreviewRunCount;
+                if (!shellHost.HasNativePreviewResult || runsAfterRecovery != runsAfterDiscard + 1)
+                {
+                    throw new InvalidOperationException(
+                        "A valid Preview click did not recover after input-change cancellation. "
+                        + $"Runs={runsAfterDiscard}->{runsAfterRecovery}, HasResult={shellHost.HasNativePreviewResult}, "
+                        + $"Status='{shellHost.ActiveNativeStatusText}'");
+                }
+
+                document.SetPreviewExecutionOverrideForTest(sourceImage =>
+                {
+                    Thread.Sleep(420);
+                    return new OpenVisionLab.Vision2D.Tool.VisionToolResult
+                    {
+                        Success = true,
+                        ResultImage = sourceImage.Clone()
+                    };
+                });
+                InvokeButton(runPreviewButton);
+                Pump(8);
+                int runsBeforeDispose = shellHost.NativePreviewRunCount;
+                document.Dispose();
+                Pump(60);
+                if (shellHost.NativePreviewRunCount != runsBeforeDispose)
+                {
+                    throw new InvalidOperationException(
+                        "Document disposal allowed a late Preview result to update the run count. "
+                        + $"Runs={runsBeforeDispose}->{shellHost.NativePreviewRunCount}");
+                }
+
+                heartbeat.Stop();
+                SaveWindowScreenshot(toolWindow, Path.Combine(outputDirectory, "click-path-after-dispose.png"));
+                File.WriteAllText(
+                    Path.Combine(outputDirectory, "report.txt"),
+                    "Result: PASS" + Environment.NewLine
+                    + "Scenario: preview-ui-click-path" + Environment.NewLine
+                    + "OwnerCallPath: VisionToolRunPreviewButton -> OpenVisionNativeToolDocument.RunPreview -> OpenVisionNativePreviewExecutionBoundary" + Environment.NewLine
+                    + "ControlledSlowDelegateMilliseconds: 420" + Environment.NewLine
+                    + "DispatcherTicksWhileRunning: " + ticksWhileRunning.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "RapidDuplicateDelegateCalls: 1" + Environment.NewLine
+                    + "InputChangeDiscardedLateResult: true" + Environment.NewLine
+                    + "RecoveryRunPublished: true" + Environment.NewLine
+                    + "DisposeDiscardedLateResult: true" + Environment.NewLine
+                    + monitorEvidence + Environment.NewLine
+                    + "Tool" + toolMonitorEvidence + Environment.NewLine
+                    + "Executable: " + (Environment.ProcessPath ?? Assembly.GetExecutingAssembly().Location) + Environment.NewLine
+                    + "ExecutableSha256: " + ComputeC9FileSha256(Environment.ProcessPath ?? Assembly.GetExecutingAssembly().Location) + Environment.NewLine
+                    + "ManagedAssembly: " + typeof(OpenVisionLabDirectSmokeRunner).Assembly.Location + Environment.NewLine
+                    + "ManagedAssemblySha256: " + ComputeC9FileSha256(typeof(OpenVisionLabDirectSmokeRunner).Assembly.Location),
+                    Encoding.UTF8);
+            }
+            finally
+            {
+                heartbeat?.Stop();
+                toolWindow?.Close();
+                window?.Close();
+                app.Shutdown();
+            }
+        }
+
+        private static void RunPreviewResultValidity(string outputDirectory)
+        {
+            Directory.CreateDirectory(outputDirectory);
+            string repoRoot = FindRepositoryRoot();
+            string matchingImagePath = Path.Combine(repoRoot, "docs", "samples", "public", "Matching_DiePad_Synthetic_OK.png");
+            string matchingTemplatePath = Path.Combine(repoRoot, "docs", "samples", "public", "templates", "Matching_DiePad_Synthetic_Template.png");
+            EnsureFileExists(matchingImagePath, "Preview validity Matching sample image");
+            EnsureFileExists(matchingTemplatePath, "Preview validity Matching template");
+
+            string workingTemplatePath = Path.Combine(outputDirectory, "matching-template-working.png");
+            string missingTemplatePath = Path.Combine(outputDirectory, "matching-template-missing.png");
+            File.Copy(matchingTemplatePath, workingTemplatePath, true);
+            if (File.Exists(missingTemplatePath))
+            {
+                File.Delete(missingTemplatePath);
+            }
+
+            Application app = Application.Current ?? new Application();
+            app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+
+            OpenVisionShellHostWindow window = null;
+            OpenVisionFloatingToolWindow toolWindow = null;
+            try
+            {
+                window = new OpenVisionShellHostWindow(ApplicationRuntimeContext.CreateDefault())
+                {
+                    Width = 1600,
+                    Height = 900,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                    Topmost = true
+                };
+                app.MainWindow = window;
+                window.Show();
+                string monitorEvidence = PlaceWindowOnLeftmostMonitor(window);
+                window.Activate();
+                Pump(36);
+
+                OpenVisionShellHostView shellHost = window.ShellHostForSmoke
+                    ?? throw new InvalidOperationException("Preview validity shell host was not created.");
+                using (Bitmap source = new Bitmap(matchingImagePath))
+                {
+                    shellHost.SetMainLayerImageForTest(source);
+                }
+
+                Pump(48);
+                shellHost.SelectToolForTest(VISION_MENU.Matching);
+                Pump(80);
+                toolWindow = Application.Current.Windows
+                    .OfType<OpenVisionFloatingToolWindow>()
+                    .FirstOrDefault(item => item.IsVisible
+                        && FindVisualChildren<MatchingToolWpfView>(item).Any())
+                    ?? throw new InvalidOperationException("Preview validity Matching tool window was not found.");
+                string toolMonitorEvidence = PlaceWindowOnLeftmostMonitor(toolWindow);
+
+                shellHost.SetActiveMatchingTemplatePathForTest(workingTemplatePath);
+                Pump(20);
+                shellHost.ConfigureActiveMatchingForTest(ConfigureTutorialMatchingProperty);
+                Pump(20);
+                int previewRunsBeforeSuccess = shellHost.NativePreviewRunCount;
+                shellHost.RunActiveNativePreviewForTest();
+                Pump(140);
+
+                int previewRunsAfterSuccess = shellHost.NativePreviewRunCount;
+                string successStatus = shellHost.ActiveNativeStatusText ?? string.Empty;
+                string successReview = shellHost.ActiveNativeResultReviewText ?? string.Empty;
+                if (!shellHost.HasNativePreviewResult
+                    || previewRunsAfterSuccess != previewRunsBeforeSuccess + 1
+                    || successStatus.IndexOf("미평가", StringComparison.OrdinalIgnoreCase) < 0
+                    || string.IsNullOrWhiteSpace(successReview))
+                {
+                    throw new InvalidOperationException(
+                        "Preview validity baseline did not produce a current result. "
+                        + $"Runs={previewRunsBeforeSuccess}->{previewRunsAfterSuccess}, HasResult={shellHost.HasNativePreviewResult}, "
+                        + $"Status='{successStatus}', Review='{successReview}'");
+                }
+
+                SaveWindowScreenshot(toolWindow, Path.Combine(outputDirectory, "preview-validity-before-failure.png"));
+                using (Bitmap previousOutput = shellHost.GetLayerImageCloneForTest("Matching_Preview"))
+                {
+                    if (previousOutput == null || previousOutput.Width <= 0 || previousOutput.Height <= 0)
+                    {
+                        throw new InvalidOperationException("Preview validity baseline did not retain an output image.");
+                    }
+
+                    previousOutput.Save(Path.Combine(outputDirectory, "previous-output-before-failure.png"));
+                }
+
+                shellHost.SetActiveMatchingTemplatePathForTest(missingTemplatePath);
+                Pump(24);
+                if (!shellHost.HasNativePreviewResult)
+                {
+                    throw new InvalidOperationException(
+                        "The failure fixture invalidated the previous result before the failed Preview attempt.");
+                }
+
+                shellHost.RunActiveNativePreviewForTest();
+                Pump(120);
+                int previewRunsAfterFailure = shellHost.NativePreviewRunCount;
+                string failureStatus = shellHost.ActiveNativeStatusText ?? string.Empty;
+                string failureReview = shellHost.ActiveNativeResultReviewText ?? string.Empty;
+                using Bitmap retainedOutput = shellHost.GetLayerImageCloneForTest("Matching_Preview");
+                bool retainedPreviousOutput = retainedOutput != null
+                    && retainedOutput.Width > 0
+                    && retainedOutput.Height > 0;
+                if (shellHost.HasNativePreviewResult
+                    || previewRunsAfterFailure != previewRunsAfterSuccess
+                    || failureStatus.IndexOf("Preview NG", StringComparison.OrdinalIgnoreCase) < 0
+                    || failureStatus.IndexOf("미평가", StringComparison.OrdinalIgnoreCase) < 0
+                    || string.Equals(failureReview, successReview, StringComparison.Ordinal)
+                    || failureReview.IndexOf("NG", StringComparison.OrdinalIgnoreCase) < 0
+                    || !retainedPreviousOutput)
+                {
+                    throw new InvalidOperationException(
+                        "Failed Preview did not invalidate the current result while preserving the previous output. "
+                        + $"Runs={previewRunsAfterSuccess}->{previewRunsAfterFailure}, HasResult={shellHost.HasNativePreviewResult}, "
+                        + $"Status='{failureStatus}', Review='{failureReview}', RetainedOutput={retainedPreviousOutput}");
+                }
+
+                SaveWindowScreenshot(toolWindow, Path.Combine(outputDirectory, "preview-validity-after-failure.png"));
+                VisionToolInlinePreviewSlot outputSlot = FindNamedPreviewSlot(toolWindow, "imgOutputPreview");
+                RaisePreviewDoubleClick(outputSlot);
+                Pump(20);
+                OpenVisionFloatingToolWindow previewWindow = FindToolPreviewWindow();
+                OpenVisionLayerViewerView previewViewer = FindVisualChildren<OpenVisionLayerViewerView>(previewWindow).Single();
+                if (shellHost.OpenLayerViewerWindowCount != 1
+                    || !previewViewer.HasImage
+                    || shellHost.HasNativePreviewResult
+                    || shellHost.NativePreviewRunCount != previewRunsAfterSuccess)
+                {
+                    throw new InvalidOperationException(
+                        "The previous output viewer could not reopen without restoring current Preview validity. "
+                        + $"ViewerCount={shellHost.OpenLayerViewerWindowCount}, HasImage={previewViewer.HasImage}, "
+                        + $"HasResult={shellHost.HasNativePreviewResult}, Runs={shellHost.NativePreviewRunCount}");
+                }
+
+                SaveWindowScreenshot(previewWindow, Path.Combine(outputDirectory, "preview-validity-previous-viewer.png"));
+                previewWindow.Close();
+                Pump(12);
+                File.Copy(matchingTemplatePath, workingTemplatePath, true);
+                shellHost.SetActiveMatchingTemplatePathForTest(workingTemplatePath);
+                Pump(24);
+                shellHost.RunActiveNativePreviewForTest();
+                Pump(140);
+                int previewRunsAfterRecovery = shellHost.NativePreviewRunCount;
+                if (!shellHost.HasNativePreviewResult
+                    || previewRunsAfterRecovery != previewRunsAfterFailure + 1
+                    || (shellHost.ActiveNativeStatusText ?? string.Empty).IndexOf("Preview NG", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    throw new InvalidOperationException(
+                        "A valid Preview retry did not restore current-result validity after failure. "
+                        + $"Runs={previewRunsAfterFailure}->{previewRunsAfterRecovery}, HasResult={shellHost.HasNativePreviewResult}, "
+                        + $"Status='{shellHost.ActiveNativeStatusText}'");
+                }
+
+                SaveWindowScreenshot(toolWindow, Path.Combine(outputDirectory, "preview-validity-recovery.png"));
+                if (!shellHost.LoadMainImageFromFileForTest(matchingImagePath))
+                {
+                    throw new InvalidOperationException("Loading the changed input image failed during Preview validity recovery.");
+                }
+
+                Pump(48);
+                if (shellHost.HasNativePreviewResult)
+                {
+                    throw new InvalidOperationException(
+                        "Changing the input image did not invalidate the current Preview result.");
+                }
+
+                SaveWindowScreenshot(toolWindow, Path.Combine(outputDirectory, "preview-validity-after-input-change.png"));
+                File.WriteAllText(
+                    Path.Combine(outputDirectory, "report.txt"),
+                    "Result: PASS" + Environment.NewLine
+                    + "Scenario: preview-result-validity" + Environment.NewLine
+                    + "BaselineSuccess: true" + Environment.NewLine
+                    + "FailedPreviewInvalidatesCurrentResult: true" + Environment.NewLine
+                    + "PreviewRunCount: " + previewRunsBeforeSuccess.ToString(CultureInfo.InvariantCulture)
+                    + " -> " + previewRunsAfterSuccess.ToString(CultureInfo.InvariantCulture)
+                    + " -> " + previewRunsAfterFailure.ToString(CultureInfo.InvariantCulture)
+                    + " -> " + previewRunsAfterRecovery.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "PreviousOutputRetainedButNotCurrent: " + retainedPreviousOutput + Environment.NewLine
+                    + "SuccessStatusShowsInspectionNotEvaluated: " + (successStatus.IndexOf("미평가", StringComparison.OrdinalIgnoreCase) >= 0) + Environment.NewLine
+                    + "FailureStatus: " + failureStatus + Environment.NewLine
+                    + "FailureStatusShowsInspectionNotEvaluated: " + (failureStatus.IndexOf("미평가", StringComparison.OrdinalIgnoreCase) >= 0) + Environment.NewLine
+                    + "FailureReviewShowsFailedAttempt: " + (failureReview.IndexOf("NG", StringComparison.OrdinalIgnoreCase) >= 0) + Environment.NewLine
+                    + "PreviousViewerReopen: true" + Environment.NewLine
+                    + "ValidRetryRestoresCurrentResult: true" + Environment.NewLine
+                    + "InputChangeInvalidatesCurrentResult: true" + Environment.NewLine
+                    + monitorEvidence + Environment.NewLine
+                    + "Tool" + toolMonitorEvidence + Environment.NewLine
+                    + "Executable: " + (Environment.ProcessPath ?? Assembly.GetExecutingAssembly().Location) + Environment.NewLine
+                    + "ExecutableSha256: " + ComputeC9FileSha256(Environment.ProcessPath ?? Assembly.GetExecutingAssembly().Location) + Environment.NewLine
+                    + "ManagedAssembly: " + typeof(OpenVisionLabDirectSmokeRunner).Assembly.Location + Environment.NewLine
+                    + "ManagedAssemblySha256: " + ComputeC9FileSha256(typeof(OpenVisionLabDirectSmokeRunner).Assembly.Location),
+                    Encoding.UTF8);
+            }
+            finally
+            {
+                if (toolWindow != null && toolWindow.IsVisible)
+                {
+                    toolWindow.Close();
+                }
+
+                if (window != null)
+                {
+                    window.Close();
+                }
+
                 app.Shutdown();
             }
         }
@@ -3509,6 +4181,7 @@ namespace OpenVisionLab
                 WaitForTaskWithPump(shellHost.RunPipelineReviewForTestAsync(), "Recipe Pipeline roundtrip explicit review");
                 Pump(80);
                 if (!shellHost.PipelineReviewResultSummaryText.Contains("OK", StringComparison.OrdinalIgnoreCase)
+                    || !shellHost.PipelineReviewResultSummaryText.Contains("미평가", StringComparison.OrdinalIgnoreCase)
                     || shellHost.NativePreviewRunCount != nativeRunsBefore
                     || shellHost.LayerDocumentCount != layerCountBefore)
                 {
@@ -3737,6 +4410,7 @@ namespace OpenVisionLab
                     + "SummaryAdvancedRoundtrip: no Preview/Run, layer, active-layer, or recipe-routing changes" + Environment.NewLine
                     + "PendingProducedInput: " + pendingInputState + Environment.NewLine
                     + "ReviewResult: " + reviewResult + Environment.NewLine
+                    + "ReviewResultShowsInspectionNotEvaluated: " + reviewResult.Contains("미평가", StringComparison.OrdinalIgnoreCase) + Environment.NewLine
                     + "WorkSample: " + workSampleName + Environment.NewLine
                     + "RecipeSampleExecution: " + shellHost.RecipeCommands.HasCurrentRecipeSampleExecution + Environment.NewLine
                     + "RecipeSampleResult: " + shellHost.RecipeCommands.RecipeOverviewLastResultValueText + Environment.NewLine
@@ -13195,29 +13869,7 @@ namespace OpenVisionLab
             }
 
             Pump(24);
-            Rect union = Rect.Empty;
-            foreach (Window window in visibleWindows)
-            {
-                System.Windows.Point topLeft = window.PointToScreen(new System.Windows.Point(0D, 0D));
-                System.Windows.Point bottomRight = window.PointToScreen(
-                    new System.Windows.Point(window.ActualWidth, window.ActualHeight));
-                Rect bounds = new Rect(topLeft, bottomRight);
-                union = union.IsEmpty ? bounds : Rect.Union(union, bounds);
-            }
-
-            int pixelWidth = Math.Max(1, (int)Math.Ceiling(union.Width));
-            int pixelHeight = Math.Max(1, (int)Math.Ceiling(union.Height));
-            using (Bitmap bitmap = new Bitmap(pixelWidth, pixelHeight))
-            using (Graphics graphics = Graphics.FromImage(bitmap))
-            {
-                graphics.CopyFromScreen(
-                    (int)Math.Floor(union.X),
-                    (int)Math.Floor(union.Y),
-                    0,
-                    0,
-                    new System.Drawing.Size(pixelWidth, pixelHeight));
-                bitmap.Save(path, System.Drawing.Imaging.ImageFormat.Png);
-            }
+            ScreenshotPngWriter.WriteWindowsScreenPng(visibleWindows, path);
         }
 
         private static void RunLayerInitialDockedWorkspace(string outputDirectory)
@@ -17194,11 +17846,13 @@ namespace OpenVisionLab
             System.Windows.Point dragProbe = closeButton.PointToScreen(
                 new System.Windows.Point(closeButton.ActualWidth + 6D, closeButton.ActualHeight * 0.5D));
 
-            mouse_event(MouseEventLeftUp, 0U, 0U, 0U, UIntPtr.Zero);
+            SmokeMouseInput.ReleaseLeftButton();
             for (int attempt = 0; attempt < 3 && !closeButton.IsMouseOver; attempt++)
             {
                 window.Activate();
-                SetCursorPosOrThrow(RoundToScreenPixel(center.X), RoundToScreenPixel(center.Y));
+                SmokeMouseInput.SetCursorPosOrThrow(
+                    SmokeMouseInput.RoundToScreenPixel(center.X),
+                    SmokeMouseInput.RoundToScreenPixel(center.Y));
                 Pump(12);
             }
 
@@ -17219,11 +17873,13 @@ namespace OpenVisionLab
                 throw new InvalidOperationException(stage + " close button did not recover after mouse leave.");
             }
 
-            SetCursorPosOrThrow(RoundToScreenPixel(center.X), RoundToScreenPixel(center.Y));
+            SmokeMouseInput.SetCursorPosOrThrow(
+                SmokeMouseInput.RoundToScreenPixel(center.X),
+                SmokeMouseInput.RoundToScreenPixel(center.Y));
             Pump(12);
             try
             {
-                mouse_event(MouseEventLeftDown, 0U, 0U, 0U, UIntPtr.Zero);
+                SmokeMouseInput.PressLeftButton();
                 Pump(12);
                 if (!closeButton.IsPressed)
                 {
@@ -17231,7 +17887,9 @@ namespace OpenVisionLab
                 }
 
                 SaveWindowScreenScreenshot(window, Path.Combine(outputDirectory, stage + "_pressed.png"));
-                SetCursorPosOrThrow(RoundToScreenPixel(dragProbe.X), RoundToScreenPixel(dragProbe.Y));
+                SmokeMouseInput.SetCursorPosOrThrow(
+                    SmokeMouseInput.RoundToScreenPixel(dragProbe.X),
+                    SmokeMouseInput.RoundToScreenPixel(dragProbe.Y));
                 Pump(14);
                 if (shellHost.IsDockingGuideOverlayVisibleForTest)
                 {
@@ -17241,7 +17899,7 @@ namespace OpenVisionLab
             }
             finally
             {
-                mouse_event(MouseEventLeftUp, 0U, 0U, 0U, UIntPtr.Zero);
+                SmokeMouseInput.ReleaseLeftButton();
             }
 
             Pump(12);
@@ -17250,11 +17908,13 @@ namespace OpenVisionLab
                 closeButton = FindDockedLayerCloseButton(shellHost, layerTitle, stage + "_click");
                 center = closeButton.PointToScreen(
                     new System.Windows.Point(closeButton.ActualWidth * 0.5D, closeButton.ActualHeight * 0.5D));
-                SetCursorPosOrThrow(RoundToScreenPixel(center.X), RoundToScreenPixel(center.Y));
+                SmokeMouseInput.SetCursorPosOrThrow(
+                    SmokeMouseInput.RoundToScreenPixel(center.X),
+                    SmokeMouseInput.RoundToScreenPixel(center.Y));
                 Pump(10);
-                mouse_event(MouseEventLeftDown, 0U, 0U, 0U, UIntPtr.Zero);
+                SmokeMouseInput.PressLeftButton();
                 Pump(8);
-                mouse_event(MouseEventLeftUp, 0U, 0U, 0U, UIntPtr.Zero);
+                SmokeMouseInput.ReleaseLeftButton();
             }
             Pump(36);
             bool statePreserved = shellHost.DockedLayerCount == expectedDockedLayerCount
@@ -17987,7 +18647,11 @@ namespace OpenVisionLab
             report.AppendLine("DragStartConfirmationScreen=" + FormatPoint(dragStartConfirmationScreenPoint));
             report.AppendLine("TargetScreen=" + FormatPoint(targetScreenPoint));
 
-            DragMouseViaPointOnBackgroundThread(sourceScreenPoint, dragStartConfirmationScreenPoint, targetScreenPoint);
+            SmokeMouseInput.DragViaPointOnBackgroundThread(
+                sourceScreenPoint,
+                dragStartConfirmationScreenPoint,
+                targetScreenPoint,
+                () => Pump(1));
             Pump(72);
         }
 
@@ -18013,16 +18677,16 @@ namespace OpenVisionLab
             report.AppendLine("SourceWorkspace=" + FormatPoint(sourceWorkspacePoint));
             report.AppendLine("SourceScreen=" + FormatPoint(sourceScreenPoint));
 
-            int sourceX = RoundToScreenPixel(sourceScreenPoint.X);
-            int sourceY = RoundToScreenPixel(sourceScreenPoint.Y);
-            mouse_event(MouseEventLeftUp, 0U, 0U, 0U, UIntPtr.Zero);
+            int sourceX = SmokeMouseInput.RoundToScreenPixel(sourceScreenPoint.X);
+            int sourceY = SmokeMouseInput.RoundToScreenPixel(sourceScreenPoint.Y);
+            SmokeMouseInput.ReleaseLeftButton();
             Thread.Sleep(80);
-            SetCursorPosOrThrow(sourceX, sourceY);
+            SmokeMouseInput.SetCursorPosOrThrow(sourceX, sourceY);
             Thread.Sleep(120);
 
             try
             {
-                mouse_event(MouseEventLeftDown, 0U, 0U, 0U, UIntPtr.Zero);
+                SmokeMouseInput.PressLeftButton();
                 Pump(14);
                 report.AppendLine("GuideVisibleDuringMouseDown=" + shellHost.IsDockingGuideOverlayVisibleForTest);
                 report.AppendLine("ActiveGuideDuringMouseDown=" + shellHost.ActiveDockingGuideZoneForTest);
@@ -18033,7 +18697,7 @@ namespace OpenVisionLab
             }
             finally
             {
-                mouse_event(MouseEventLeftUp, 0U, 0U, 0U, UIntPtr.Zero);
+                SmokeMouseInput.ReleaseLeftButton();
             }
 
             Pump(36);
@@ -18070,7 +18734,11 @@ namespace OpenVisionLab
                 sourceScreenPoint.Y);
             report.AppendLine("DragStartConfirmationScreen=" + FormatPoint(dragStartConfirmationPoint));
 
-            DragMouseViaPointOnBackgroundThread(sourceScreenPoint, dragStartConfirmationPoint, targetScreenPoint);
+            SmokeMouseInput.DragViaPointOnBackgroundThread(
+                sourceScreenPoint,
+                dragStartConfirmationPoint,
+                targetScreenPoint,
+                () => Pump(1));
             Pump(96);
         }
 
@@ -18228,161 +18896,6 @@ namespace OpenVisionLab
                 "x={0:0.0},y={1:0.0}",
                 point.X,
                 point.Y);
-        }
-
-        private static void DragMouseOnBackgroundThread(System.Windows.Point sourceScreenPoint, System.Windows.Point targetScreenPoint)
-        {
-            Exception inputException = null;
-            Thread inputThread = new Thread(() =>
-            {
-                try
-                {
-                    SendMouseDrag(sourceScreenPoint, targetScreenPoint);
-                }
-                catch (Exception ex)
-                {
-                    inputException = ex;
-                }
-            });
-            inputThread.IsBackground = true;
-            inputThread.Name = "OpenVisionDockingMouseDragSmoke";
-            inputThread.Start();
-
-            DateTime deadline = DateTime.UtcNow.AddSeconds(8D);
-            while (inputThread.IsAlive && DateTime.UtcNow < deadline)
-            {
-                Pump(1);
-            }
-
-            if (inputThread.IsAlive)
-            {
-                throw new TimeoutException("Mouse drag input thread did not finish within the expected time.");
-            }
-
-            inputThread.Join();
-            if (inputException != null)
-            {
-                throw new InvalidOperationException("Mouse drag input failed.", inputException);
-            }
-        }
-
-        private static void DragMouseViaPointOnBackgroundThread(
-            System.Windows.Point sourceScreenPoint,
-            System.Windows.Point viaScreenPoint,
-            System.Windows.Point targetScreenPoint)
-        {
-            Exception inputException = null;
-            Thread inputThread = new Thread(() =>
-            {
-                try
-                {
-                    SendMouseDragThroughPoints(sourceScreenPoint, viaScreenPoint, targetScreenPoint);
-                }
-                catch (Exception ex)
-                {
-                    inputException = ex;
-                }
-            });
-            inputThread.IsBackground = true;
-            inputThread.Name = "OpenVisionHostTabMouseDragSmoke";
-            inputThread.Start();
-
-            DateTime deadline = DateTime.UtcNow.AddSeconds(8D);
-            while (inputThread.IsAlive && DateTime.UtcNow < deadline)
-            {
-                Pump(1);
-            }
-
-            if (inputThread.IsAlive)
-            {
-                throw new TimeoutException("Host tab mouse drag input thread did not finish within the expected time.");
-            }
-
-            inputThread.Join();
-            if (inputException != null)
-            {
-                throw new InvalidOperationException("Host tab mouse drag input failed.", inputException);
-            }
-        }
-
-        private static void SendMouseDrag(System.Windows.Point sourceScreenPoint, System.Windows.Point targetScreenPoint)
-        {
-            int sourceX = RoundToScreenPixel(sourceScreenPoint.X);
-            int sourceY = RoundToScreenPixel(sourceScreenPoint.Y);
-            int targetX = RoundToScreenPixel(targetScreenPoint.X);
-            int targetY = RoundToScreenPixel(targetScreenPoint.Y);
-
-            mouse_event(MouseEventLeftUp, 0U, 0U, 0U, UIntPtr.Zero);
-            Thread.Sleep(80);
-            SetCursorPosOrThrow(sourceX, sourceY);
-            Thread.Sleep(160);
-            mouse_event(MouseEventLeftDown, 0U, 0U, 0U, UIntPtr.Zero);
-            Thread.Sleep(120);
-
-            const int steps = 34;
-            for (int step = 1; step <= steps; step++)
-            {
-                double ratio = step / (double)steps;
-                int x = RoundToScreenPixel(sourceX + ((targetX - sourceX) * ratio));
-                int y = RoundToScreenPixel(sourceY + ((targetY - sourceY) * ratio));
-                SetCursorPosOrThrow(x, y);
-                Thread.Sleep(18);
-            }
-
-            Thread.Sleep(180);
-            mouse_event(MouseEventLeftUp, 0U, 0U, 0U, UIntPtr.Zero);
-        }
-
-        private static void SendMouseDragThroughPoints(params System.Windows.Point[] screenPoints)
-        {
-            if (screenPoints == null || screenPoints.Length < 2)
-            {
-                throw new ArgumentException("At least two screen points are required.", nameof(screenPoints));
-            }
-
-            int sourceX = RoundToScreenPixel(screenPoints[0].X);
-            int sourceY = RoundToScreenPixel(screenPoints[0].Y);
-
-            mouse_event(MouseEventLeftUp, 0U, 0U, 0U, UIntPtr.Zero);
-            Thread.Sleep(80);
-            SetCursorPosOrThrow(sourceX, sourceY);
-            Thread.Sleep(180);
-            mouse_event(MouseEventLeftDown, 0U, 0U, 0U, UIntPtr.Zero);
-            Thread.Sleep(120);
-
-            for (int segment = 1; segment < screenPoints.Length; segment++)
-            {
-                int fromX = RoundToScreenPixel(screenPoints[segment - 1].X);
-                int fromY = RoundToScreenPixel(screenPoints[segment - 1].Y);
-                int toX = RoundToScreenPixel(screenPoints[segment].X);
-                int toY = RoundToScreenPixel(screenPoints[segment].Y);
-                int steps = segment == 1 ? 10 : 34;
-
-                for (int step = 1; step <= steps; step++)
-                {
-                    double ratio = step / (double)steps;
-                    int x = RoundToScreenPixel(fromX + ((toX - fromX) * ratio));
-                    int y = RoundToScreenPixel(fromY + ((toY - fromY) * ratio));
-                    SetCursorPosOrThrow(x, y);
-                    Thread.Sleep(segment == 1 ? 24 : 18);
-                }
-            }
-
-            Thread.Sleep(180);
-            mouse_event(MouseEventLeftUp, 0U, 0U, 0U, UIntPtr.Zero);
-        }
-
-        private static void SetCursorPosOrThrow(int x, int y)
-        {
-            if (!SetCursorPos(x, y))
-            {
-                throw new Win32Exception(Marshal.GetLastWin32Error(), "SetCursorPos failed.");
-            }
-        }
-
-        private static int RoundToScreenPixel(double value)
-        {
-            return (int)Math.Round(value, MidpointRounding.AwayFromZero);
         }
 
         private static bool IsFloatingToolWindow(Window window)
@@ -18811,32 +19324,7 @@ namespace OpenVisionLab
             BringWindowToFront(window);
             window.UpdateLayout();
             Pump(4);
-            double scaleX = 1D;
-            double scaleY = 1D;
-            PresentationSource source = PresentationSource.FromVisual(window);
-            if (source?.CompositionTarget != null)
-            {
-                Matrix transform = source.CompositionTarget.TransformToDevice;
-                scaleX = transform.M11;
-                scaleY = transform.M22;
-            }
-
-            int pixelWidth = Math.Max(1, (int)Math.Ceiling(window.ActualWidth * scaleX));
-            int pixelHeight = Math.Max(1, (int)Math.Ceiling(window.ActualHeight * scaleY));
-            RenderTargetBitmap renderTarget = new RenderTargetBitmap(
-                pixelWidth,
-                pixelHeight,
-                96D * scaleX,
-                96D * scaleY,
-                PixelFormats.Pbgra32);
-            renderTarget.Render(window);
-
-            PngBitmapEncoder encoder = new PngBitmapEncoder();
-            encoder.Frames.Add(BitmapFrame.Create(renderTarget));
-            using (FileStream stream = File.Create(path))
-            {
-                encoder.Save(stream);
-            }
+            ScreenshotPngWriter.WriteDpiAwareWindowPng(window, path);
         }
 
         private static void SaveWindowScreenScreenshot(Window window, string path)
@@ -18844,21 +19332,7 @@ namespace OpenVisionLab
             BringWindowToFront(window);
             window.UpdateLayout();
             Pump(24);
-            System.Windows.Point topLeft = window.PointToScreen(new System.Windows.Point(0D, 0D));
-            System.Windows.Point bottomRight = window.PointToScreen(new System.Windows.Point(window.ActualWidth, window.ActualHeight));
-            int pixelWidth = Math.Max(1, (int)Math.Ceiling(bottomRight.X - topLeft.X));
-            int pixelHeight = Math.Max(1, (int)Math.Ceiling(bottomRight.Y - topLeft.Y));
-            using (Bitmap bitmap = new Bitmap(pixelWidth, pixelHeight))
-            using (Graphics graphics = Graphics.FromImage(bitmap))
-            {
-                graphics.CopyFromScreen(
-                    (int)Math.Floor(topLeft.X),
-                    (int)Math.Floor(topLeft.Y),
-                    0,
-                    0,
-                    new System.Drawing.Size(pixelWidth, pixelHeight));
-                bitmap.Save(path, System.Drawing.Imaging.ImageFormat.Png);
-            }
+            ScreenshotPngWriter.WriteWindowScreenPng(window, path);
         }
 
         private static void BringWindowToFront(Window window)
@@ -18895,7 +19369,7 @@ namespace OpenVisionLab
             }
 
             System.Windows.Point screenPoint = window.PointToScreen(new System.Windows.Point(x, y));
-            SetCursorPosOrThrow((int)Math.Round(screenPoint.X), (int)Math.Round(screenPoint.Y));
+            SmokeMouseInput.SetCursorPosOrThrow((int)Math.Round(screenPoint.X), (int)Math.Round(screenPoint.Y));
         }
 
         private static void SaveTutorialScreenshot(
@@ -18961,221 +19435,55 @@ namespace OpenVisionLab
                 throw new ArgumentNullException(nameof(task));
             }
 
-            Stopwatch stopwatch = Stopwatch.StartNew();
-            while (!task.IsCompleted)
-            {
-                Pump(4);
-                Thread.Sleep(20);
-                if (stopwatch.Elapsed > TimeSpan.FromSeconds(20))
-                {
-                    throw new TimeoutException(description + " did not complete within 20 seconds.");
-                }
-            }
-
-            task.GetAwaiter().GetResult();
+            SmokeTaskWaiter.Wait(
+                task,
+                description,
+                () => Pump(4),
+                TimeSpan.FromSeconds(20),
+                TimeSpan.FromMilliseconds(20),
+                " did not complete within 20 seconds.");
         }
 
         private static string PlaceWindowOnLeftmostMonitor(Window window)
         {
-            if (window == null)
-            {
-                throw new ArgumentNullException(nameof(window));
-            }
-
-            List<SmokeMonitorInfo> monitors = new List<SmokeMonitorInfo>();
-            MonitorEnumCallback callback = (IntPtr monitor, IntPtr _, ref SmokeNativeRect __, IntPtr ___) =>
-            {
-                SmokeMonitorInfo info = SmokeMonitorInfo.Create();
-                if (GetMonitorInfo(monitor, ref info))
-                {
-                    monitors.Add(info);
-                }
-
-                return true;
-            };
-
-            if (!EnumDisplayMonitors(IntPtr.Zero, IntPtr.Zero, callback, IntPtr.Zero) || monitors.Count == 0)
-            {
-                throw new InvalidOperationException("No display monitor was available for the EXE capture.");
-            }
-
-            SmokeMonitorInfo selected = monitors
-                .OrderBy(info => info.Monitor.Left)
-                .ThenBy(info => info.Monitor.Top)
-                .First();
-            IntPtr handle = new WindowInteropHelper(window).Handle;
-            if (handle == IntPtr.Zero || !GetWindowRect(handle, out SmokeNativeRect initialWindow))
-            {
-                throw new InvalidOperationException("The EXE window rectangle was unavailable before monitor placement.");
-            }
-
-            int width = initialWindow.Right - initialWindow.Left;
-            int height = initialWindow.Bottom - initialWindow.Top;
-            int left = selected.WorkArea.Left + Math.Max(0, (selected.WorkArea.Right - selected.WorkArea.Left - width) / 2);
-            int top = selected.WorkArea.Top + Math.Max(0, (selected.WorkArea.Bottom - selected.WorkArea.Top - height) / 2);
-            const uint noSize = 0x0001;
-            const uint noZOrder = 0x0004;
-            if (!SetWindowPos(handle, IntPtr.Zero, left, top, 0, 0, noSize | noZOrder)
-                || !GetWindowRect(handle, out SmokeNativeRect actualWindow))
-            {
-                throw new InvalidOperationException("The EXE window could not be placed on the leftmost monitor.");
-            }
-
-            bool intersects = actualWindow.Left < selected.Monitor.Right
-                && actualWindow.Right > selected.Monitor.Left
-                && actualWindow.Top < selected.Monitor.Bottom
-                && actualWindow.Bottom > selected.Monitor.Top;
-            if (!intersects)
-            {
-                throw new InvalidOperationException(
-                    "The EXE window did not intersect the selected leftmost monitor. "
-                    + $"Window={actualWindow}; Monitor={selected.Monitor}");
-            }
-
-            return "CaptureMonitor: " + selected.DeviceName
-                + "; Bounds=" + selected.Monitor
-                + "; WorkArea=" + selected.WorkArea
-                + "; Window=" + actualWindow
-                + "; Intersects=true";
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct SmokeNativeRect
-        {
-            public int Left;
-            public int Top;
-            public int Right;
-            public int Bottom;
-
-            public override readonly string ToString()
-            {
-                return $"{Left},{Top},{Right - Left},{Bottom - Top}";
-            }
-        }
-
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
-        private struct SmokeMonitorInfo
-        {
-            public int Size;
-            public SmokeNativeRect Monitor;
-            public SmokeNativeRect WorkArea;
-            public uint Flags;
-
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
-            public string DeviceName;
-
-            public static SmokeMonitorInfo Create()
-            {
-                return new SmokeMonitorInfo
-                {
-                    Size = Marshal.SizeOf<SmokeMonitorInfo>(),
-                    DeviceName = string.Empty
-                };
-            }
+            return SmokeWindowMonitorPlacement.PlaceOnLeftmostMonitor(window);
         }
 
         private static string GetClipboardTextWithRetry()
         {
-            return RunClipboardActionWithRetry(() => System.Windows.Clipboard.GetText());
+            return SmokeClipboardRetry.Run(() => System.Windows.Clipboard.GetText(), () => Pump(4));
         }
 
         private static void SetClipboardTextWithRetry(string text)
         {
-            RunClipboardActionWithRetry(() =>
-            {
-                System.Windows.Clipboard.SetText(text ?? string.Empty);
-                return true;
-            });
-        }
-
-        private static T RunClipboardActionWithRetry<T>(Func<T> action)
-        {
-            if (action == null)
-            {
-                throw new ArgumentNullException(nameof(action));
-            }
-
-            COMException lastException = null;
-            for (int attempt = 0; attempt < 40; attempt++)
-            {
-                try
+            SmokeClipboardRetry.Run(
+                () =>
                 {
-                    return action();
-                }
-                catch (COMException ex) when ((uint)ex.ErrorCode == 0x800401D0)
-                {
-                    lastException = ex;
-                    Pump(4);
-                    Thread.Sleep(Math.Min(250, 50 + attempt * 10));
-                }
-            }
-
-            throw lastException ?? new COMException("Clipboard operation failed.");
+                    System.Windows.Clipboard.SetText(text ?? string.Empty);
+                    return true;
+                },
+                () => Pump(4));
         }
 
         private static void CopyCurrentDockingStateFile(string fileName, string outputDirectory, string outputFileName)
         {
-            string path = Path.Combine(AppPathService.EnsureDirectory("CONFIG", "UI"), fileName);
-            if (File.Exists(path))
-            {
-                File.Copy(path, Path.Combine(outputDirectory, outputFileName), true);
-            }
+            SmokeDockingStateFiles.CopyCurrent(
+                AppPathService.EnsureDirectory("CONFIG", "UI"),
+                fileName,
+                outputDirectory,
+                outputFileName);
         }
 
         private static void ClearCurrentDockingStateFiles()
         {
-            string uiConfigDirectory = AppPathService.EnsureDirectory("CONFIG", "UI");
-            string[] paths =
-            {
-                Path.Combine(uiConfigDirectory, "LayerDocking.layers"),
-                Path.Combine(uiConfigDirectory, "LayerDocking.layout")
-            };
-
-            foreach (string path in paths)
-            {
-                if (File.Exists(path))
-                {
-                    File.Delete(path);
-                }
-            }
+            SmokeDockingStateFiles.Clear(AppPathService.EnsureDirectory("CONFIG", "UI"));
         }
 
         private static void WithDockingStateFileBackup(Action action)
         {
-            string uiConfigDirectory = AppPathService.EnsureDirectory("CONFIG", "UI");
-            string[] paths =
-            {
-                Path.Combine(uiConfigDirectory, "LayerDocking.layers"),
-                Path.Combine(uiConfigDirectory, "LayerDocking.layout")
-            };
-            Dictionary<string, byte[]> backups = paths
-                .Where(File.Exists)
-                .ToDictionary(path => path, File.ReadAllBytes, StringComparer.OrdinalIgnoreCase);
-
-            try
-            {
-                action();
-            }
-            finally
-            {
-                foreach (string path in paths)
-                {
-                    try
-                    {
-                        if (backups.TryGetValue(path, out byte[] bytes) && bytes != null)
-                        {
-                            File.WriteAllBytes(path, bytes);
-                        }
-                        else if (File.Exists(path))
-                        {
-                            File.Delete(path);
-                        }
-                    }
-                    catch
-                    {
-                    }
-                }
-            }
+            SmokeDockingStateFiles.RunWithBackup(
+                AppPathService.EnsureDirectory("CONFIG", "UI"),
+                action);
         }
 
         private static void Pump(int iterations)
@@ -19194,6 +19502,21 @@ namespace OpenVisionLab
                 Dispatcher.PushFrame(frame);
                 Thread.Sleep(10);
             }
+        }
+
+        private static void InvokeButton(Button button)
+        {
+            if (button == null)
+            {
+                throw new ArgumentNullException(nameof(button));
+            }
+
+            System.Windows.Automation.Peers.ButtonAutomationPeer peer =
+                new System.Windows.Automation.Peers.ButtonAutomationPeer(button);
+            System.Windows.Automation.Provider.IInvokeProvider invoke =
+                (System.Windows.Automation.Provider.IInvokeProvider)peer.GetPattern(
+                    System.Windows.Automation.Peers.PatternInterface.Invoke);
+            invoke.Invoke();
         }
     }
 }

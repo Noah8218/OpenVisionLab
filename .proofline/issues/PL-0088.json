@@ -1,0 +1,119 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0088",
+    "aliases": [
+      "2D-030"
+    ],
+    "type": "task",
+    "mode": "simple",
+    "title": "Verify ROI fixture transform and overlay coordinate meaning",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "scheduled-follow-up",
+    "summary": "2D-030 requires a focused source and fixture contract for ROI, affine transforms, coordinate frames, overlays, and exported metrics.",
+    "refs": [
+      "C:/Users/USER/Downloads/OpenVisionLab_2D_tasks.json#2D-030",
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      ".proofline/issues/PL-0087.json"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "2D-030 coordinate meaning is verified through the existing fixture/affine, ROI, metric, overlay, XML, and Run History owners; no new coordinate or calibration abstraction was added."
+  },
+  "objective": {
+    "summary": "Prove that supported ROI and fixture transforms preserve metric, overlay, and export coordinates, while singular, out-of-ROI, missing-calibration, and unsupported anisotropic/world-calibration cases fail or remain N/A without scalar mm/px inference.",
+    "constraints": [
+      "Reuse the existing fixture/affine, ROI, coordinate-frame, overlay, and export owners; do not add a new coordinate abstraction, calibration service, or algorithm.",
+      "Use known-point/known-length synthetic fixtures and preserve existing frame fields and XML/save-reopen semantics.",
+      "Use isolated evidence under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev; do not touch Original, release, deploy, hardware, or external systems."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "Identity, translation, rotation, and flip cases preserve the declared metric, overlay, and export coordinate frame within the existing tolerance.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "Singular transforms, ROI-outside inputs, missing calibration, and unsupported anisotropic/world-calibration cases fail closed or remain explicitly N/A without fabricated scalar mm/px results.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Focused Debug/Release contract and documentation record the existing owner/call path, save/reopen boundary, and unverified WPF/render/runtime limits.",
+      "evidence_refs": [
+        "E2",
+        "E3",
+        "E4"
+      ]
+    }
+  ],
+  "relations": [],
+  "context": [],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d030-debug-20260916\\coordinate-transform-meaning\\coordinate-transform-meaning-contract.txt",
+      "observation": "Debug coordinate contract passed for identity, translation, 90-degree rotation, horizontal flip, fixture ROI translation/failure gates, and singular destination rejection; XML reopen, affine metrics, point overlays, Run History metrics, and overlay export were retained.",
+      "observed_at": "2026-09-16T00:00:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d030-release-20260916\\coordinate-transform-meaning\\coordinate-transform-meaning-contract.txt",
+      "observation": "Release coordinate contract passed with the same matrix, overlay, save/reopen, report, fixture, and fail-closed observations as Debug.",
+      "observed_at": "2026-09-16T00:00:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d030-debug-20260916 and D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d030-release-20260916",
+      "observation": "Existing affine-transform, detected-point Affine, ROI meaning, and finite PIXELPERMM contracts all exited 0 in both configurations; invalid scalar calibration remained pixel-only/no-mm through the existing contract.",
+      "observed_at": "2026-09-16T00:00:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "review",
+      "location": "docs/reports/OPENVISIONLAB_2D_COORDINATE_TRANSFORM_MEANING_20260916.md; docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "observation": "Documentation records the current owner/call path, mutable ROI/metric writers, save/reopen and export boundary, next 2D-031 priority, and the unverified WPF EXE/theme/DPI/monitor/hardware limits.",
+      "observed_at": "2026-09-16T00:00:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-16T00:00:00+09:00",
+      "summary": "Close 2D-030 as a contract-only slice: retain the existing fixture translation-only boundary and SDK Affine owner, record pixel-coordinate persistence/export evidence, and leave WPF/runtime qualification outside this slice.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-16T00:00:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "All 2D-030 criteria have active Debug/Release evidence and durable documentation; the remaining WPF/runtime qualification is explicitly outside this slice."
+    }
+  ],
+  "created_at": "2026-09-15T23:51:39+09:00",
+  "updated_at": "2026-09-16T00:00:00+09:00"
+}

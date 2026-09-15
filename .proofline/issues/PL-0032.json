@@ -1,0 +1,169 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0032",
+    "aliases": [],
+    "type": "task",
+    "mode": "composite",
+    "title": "Move Image Compare display-coordinate policy out of the Window Partial",
+    "risk": "low"
+  },
+  "origin": {
+    "kind": "user-request",
+    "summary": "The user requested that the Partial refactoring continue in scheduled cycles and that remaining Partial responsibilities be structurally corrected.",
+    "refs": [
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "docs/reports/OPENVISIONLAB_PARTIAL_STRUCTURAL_ELIMINATION_PLAN_20260913.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "ImageCompareWindow의 표시 좌표 매핑 계산을 기존 ImageCompareViewModel의 순수 정책으로 이동했다. Window는 WPF event 측정값 전달과 기존 status 호출만 유지하며, XAML/public binding/resource lifetime은 보존했다. Debug/Release focused contract와 Smoke build가 통과했다. 전체 WPF visual/hardware/native 행렬은 미검증으로 남겼다."
+  },
+  "objective": {
+    "summary": "Move the Image Compare display-to-pixel coordinate mapping policy from the required XAML Window Partial to the existing ImageCompareViewModel without changing pointer behavior, status bindings, or image resource ownership.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev; do not modify C:\\Git\\2D\\Original.",
+      "Keep ImageCompareWindow as the required XAML Window Partial and do not add a new service, interface, wrapper, registry, or Partial.",
+      "Preserve existing ImageCompareWindow events, ImageCompareViewModel status properties, ImageCompareSlotViewModel resource lifetime, and public LoadImages facade.",
+      "Keep all test outputs and evidence under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev.",
+      "Do not commit, push, tag, release, deploy, or change the Original repository."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The proof report records the current and intended owner, caller path, mutable-state writer, lifetime owner, binding/public contract, and matching test.",
+      "evidence_refs": [
+        "E1"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "ImageCompareWindow no longer contains the coordinate-mapping algorithm; ImageCompareViewModel owns a WPF-object-free policy that preserves center, letterbox rejection, edge clamp, and invalid-dimension behavior.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Focused Debug/Release contracts, relevant Debug/Release builds, and targeted diff checks pass, with full WPF runtime and native qualification explicitly unverified.",
+      "evidence_refs": [
+        "E2",
+        "E3"
+      ]
+    }
+  ],
+  "milestones": [
+    {
+      "id": "M1",
+      "summary": "Freeze the Image Compare Partial caller, owner, binding, and lifetime contract.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M2",
+      "summary": "Move pure display-coordinate mapping to ImageCompareViewModel and keep the Window as a WPF adapter.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C2"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M3",
+      "summary": "Run focused Debug/Release proof and record durable evidence.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C3"
+      ],
+      "issue_refs": []
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0028"
+    }
+  ],
+  "context": [
+    {
+      "kind": "source",
+      "location": "src\\OpenVisionLab\\UI\\Popup\\Wpf\\ImageCompareWindow.xaml.cs"
+    },
+    {
+      "kind": "owner",
+      "location": "src\\OpenVisionLab\\UI\\Popup\\Wpf\\ViewModels\\ImageCompareViewModel.cs"
+    },
+    {
+      "kind": "resource-owner",
+      "location": "src\\OpenVisionLab\\UI\\Popup\\Wpf\\ImageCompare\\ImageCompareImageResource.cs; src\\OpenVisionLab\\UI\\Popup\\Wpf\\ViewModels\\ImageCompareViewModel.cs"
+    },
+    {
+      "kind": "test-host",
+      "location": "tools\\VisionRecipeRunnerSmoke\\ImageComparePointMappingContract.cs"
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source",
+      "location": "docs\\reports\\OPENVISIONLAB_IMAGE_COMPARE_POINT_MAPPING_BOUNDARY_20260914.md; src\\OpenVisionLab\\UI\\Popup\\Wpf\\ImageCompareWindow.xaml.cs; src\\OpenVisionLab\\UI\\Popup\\Wpf\\ViewModels\\ImageCompareViewModel.cs",
+      "observation": "The Window no longer contains TryMapImagePoint or the scale/letterbox algorithm; it delegates a numeric snapshot to the existing ViewModel owner while preserving the existing status update path and XAML contracts.",
+      "observed_at": "2026-09-14T00:04:41+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\image-compare-point-mapping-20260914\\image_compare_point_mapping_contract.txt",
+      "observation": "ImageComparePointMappingContract passed 4/4 in Debug and Release for centered mapping, letterbox rejection, edge clamp, and invalid dimensions.",
+      "observed_at": "2026-09-14T00:04:41+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\image-compare-point-mapping-20260914; tools\\VisionRecipeRunnerSmoke\\VisionRecipeRunnerSmoke.csproj",
+      "observation": "VisionRecipeRunnerSmoke Debug and Release builds passed with 0 warnings/errors, both focused contract runs passed, and targeted git diff --check passed.",
+      "observed_at": "2026-09-14T00:04:41+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-14T00:04:41+09:00",
+      "summary": "ImageCompareWindow의 XAML/input/lifetime 경계는 유지하고, WPF 객체가 필요 없는 display-to-pixel 계산만 기존 ImageCompareViewModel로 이동한다. 새 추상화나 Partial은 추가하지 않는다.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "D2",
+      "kind": "decision",
+      "at": "2026-09-14T00:04:41+09:00",
+      "summary": "PL-0032의 세 completion criteria와 세 milestone이 현재 증거로 충족되어 resolved로 닫는다. 전체 WPF/native runtime 검증은 별도 범위로 남긴다.",
+      "evidence_refs": [
+        "E3"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-14T00:04:41+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "PL-0032의 owner proof, 최소 구조 이동, focused Debug/Release 검증이 완료되어 resolved로 닫는다. 동일 owner는 새 defect, requirement, failed criterion 또는 dependency boundary 전에는 다시 열지 않는다."
+    }
+  ],
+  "created_at": "2026-09-14T00:00:00+09:00",
+  "updated_at": "2026-09-14T00:04:41+09:00"
+}

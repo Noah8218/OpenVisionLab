@@ -1,0 +1,240 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0023",
+    "aliases": [],
+    "type": "task",
+    "mode": "composite",
+    "title": "Move Recipe validation-suite dispatch to the existing execution owner",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "explicit user request to continue refactoring",
+    "summary": "The user asked to continue the completed RecipeCommandSurface refactoring. PL-0022 is closed, so this is a new bounded boundary based on the recorded History/Validation orchestration priority.",
+    "refs": [
+      "current user request",
+      "PL-0022",
+      "docs/reports/OPENVISIONLAB_OVL07_PIPELINE_REVIEW_DOCUMENT_REVISION_GUARD_20260908.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "PL-0023 resolved: validation-suite scope dispatch now has one existing execution-session owner, focused contracts and Debug builds passed, and the final owner/MVVM/partial/folder/navigation audit is recorded. Runtime UI, hardware, and long-running native limits remain explicit."
+  },
+  "objective": {
+    "summary": "Reduce RecipeCommandSurface workflow coupling by moving only the validation-suite scope dispatch policy to the existing concrete execution-session owner, while preserving selection validation, command bindings, Preview/Run explicitness, cancellation, status projection, and Recipe/XML behavior.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev; keep C:\\Git\\2D\\Original read-only.",
+      "Do not reopen or repeat PL-0022 dead-code cleanup; use the current owner and direct constructor path as the baseline.",
+      "Reuse OpenVisionRecipeExecutionSessionViewModel and existing validation/selected/pair/catalog owners; do not add a manager, interface, provider, factory, wrapper, event bus, or manual partial.",
+      "Move a complete dispatch responsibility only if the execution session can own it without WPF controls or Shell binding state.",
+      "Preserve XAML command/property names, CanExecute policy, Preview/Run behavior, status and command-state notifications, cancellation, Recipe/XML, Layer routing, and shutdown semantics.",
+      "Do not wait for user input, hardware, or unavailable WPF runtime matrices; record those limits as unverified.",
+      "Store generated evidence under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\recipe-validation-orchestration-refactor-20260912.",
+      "Do not commit, push, tag, release, deploy, or modify Original from this scheduled work."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The validation dispatch owner, caller, dependency direction, mutable-state writers, lifetime/release owner, bindings/public contract, and shortest reading route are documented from current source.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "The existing execution-session owner owns the complete scope dispatch, and the CommandSurface no longer owns that dispatch policy; or a direct evidence record explains why the boundary cannot move without changing a protected contract.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "The caller and execution owner pass focused Recipe execution/dispatch contracts and the required Debug build; unrun WPF, hardware, and long-run boundaries are explicit.",
+      "evidence_refs": [
+        "E3",
+        "E4"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "Handoff and codebase navigation record the changed owner, call path, preserved contracts, first-contributor effect, remaining debt, and next separate priority.",
+      "evidence_refs": [
+        "E4"
+      ]
+    }
+  ],
+  "milestones": [
+    {
+      "id": "M1",
+      "summary": "Audit validation-suite dispatch and prove the smallest existing-owner boundary.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1",
+        "C2"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M2",
+      "summary": "Move the complete dispatch policy to the existing execution-session owner or record a protected-contract no-change decision.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1",
+        "C2"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M3",
+      "summary": "Run focused dispatch/execution contracts and a Debug build.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C3"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M4",
+      "summary": "Complete owner, MVVM, partial, folder, navigation, and first-contributor audit.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1",
+        "C3",
+        "C4"
+      ],
+      "issue_refs": []
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0022"
+    }
+  ],
+  "context": [
+    {
+      "kind": "source",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/Recipe/CommandSurface/RecipeCommandSurface.cs"
+    },
+    {
+      "kind": "owner",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/Recipe/Review/OpenVisionRecipeExecutionSessionViewModel.cs"
+    },
+    {
+      "kind": "contract",
+      "location": "tools/VisionRecipeRunnerSmoke/RecipeExecutionSessionContract.cs"
+    },
+    {
+      "kind": "live-status",
+      "location": "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md"
+    },
+    {
+      "kind": "owner-registry",
+      "location": "docs/admin/CODEBASE_STRUCTURE.md"
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "evidence-root",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\recipe-validation-orchestration-refactor-20260912",
+      "summary": "Scheduled Recipe validation dispatch refactor evidence."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\recipe-validation-orchestration-refactor-20260912\\m1-audit",
+      "observation": "The source audit maps the current path OpenVisionShellHostView -> RecipeCommandSurface command -> Surface scope branch -> existing execution-session workflow. The Surface branch contains only scope selection, two start-status strings, and forwarding calls; the execution session already owns IsValidationSuiteRunning, StopRequested, StatusText, ExecutionStatusText, BatchRunSaved, CommandStateChanged, and selected/local/pair/catalog execution. The existing command, binding, CanExecute, and Shell lifetime contracts remain at the Surface; the moved dispatch will pass scope and selected snapshots to the existing execution owner. The complete owner map and static search outputs are in owner-map.txt, dispatch-call-path.txt, session-state-owner.txt, and surface-selection-owner.txt.",
+      "observed_at": "2026-09-12T19:32:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\recipe-validation-orchestration-refactor-20260912\\m2-dispatch",
+      "observation": "OpenVisionRecipeExecutionSessionViewModel.RunValidationSuiteAsync now owns LocalValidationSet, GoodBadPair, Catalog, and default selected-sample dispatch and reuses the existing workflow methods. RecipeCommandSurface delegates through executionSession.RunValidationSuiteAsync, retains RunValidationSuiteCommand/CanRunValidationSuite and all binding projections, and no longer contains the old status strings or RunLocalValidationSetAsync/RunSelectedSampleValidationSuiteAsync wrappers. The source proof and diff check are recorded in source-proof.txt and git-diff-check.txt.",
+      "observed_at": "2026-09-12T20:00:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\recipe-validation-orchestration-refactor-20260912\\m3-focused",
+      "observation": "Solution Debug and VisionRecipeRunnerSmoke Debug x64 builds passed with 0 warnings and 0 errors. The valid copied-runtime Recipe execution session dispatch contract passed 13/13; validation evidence passed 4/4; step preview navigation passed 5/5; Shell Recipe basic lifecycle passed 7/7; RefreshOptions command-state projection passed 1/1. The focused summary and build logs are in the M3 evidence directory; WPF visual theme/DPI/monitor/input, hardware/camera/SDK/GPU, and long-running native shutdown remain unverified.",
+      "observed_at": "2026-09-12T20:10:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\recipe-validation-orchestration-refactor-20260912\\m4-final-audit",
+      "observation": "The final source audit records the active RecipeCommandSurface caller, the single OpenVisionRecipeExecutionSessionViewModel dispatch owner, the mutable-state writers, Shell/session lifetime, XAML/public contract, shortest reading route, Recipe folders, protected framework/XAML partials, and absence of stale forwarding wrappers. The handoff and codebase navigation records were updated. M3 builds and focused contracts passed; WPF runtime visual/theme/DPI/monitor/input, hardware/camera/SDK/GPU, and long-running native shutdown remain unverified.",
+      "observed_at": "2026-09-12T20:20:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-12T19:22:00+09:00",
+      "from": "open",
+      "to": "doing",
+      "summary": "PL-0023 is active. The first bounded slice audits validation-suite scope dispatch against the existing execution-session owner before any code move."
+    },
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-12T19:32:00+09:00",
+      "summary": "Move only the validation-suite scope dispatch to the existing OpenVisionRecipeExecutionSessionViewModel. Keep CommandSurface selection and CanExecute policy because it owns binding state, validation document readiness, persistence status, and command requery. Do not create a new dispatcher or partial.",
+      "evidence_refs": [
+        "E1"
+      ]
+    },
+    {
+      "id": "D2",
+      "kind": "decision",
+      "at": "2026-09-12T20:00:00+09:00",
+      "summary": "Use the existing execution-session owner for complete validation-suite scope dispatch. Keep Surface selection and CanExecute in place; remove only the old scope branch plus two forwarding wrappers. No new abstraction, partial, binding, or lifetime was introduced.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "D3",
+      "kind": "decision",
+      "at": "2026-09-12T20:10:00+09:00",
+      "summary": "Keep the existing OpenVisionRecipeExecutionSessionViewModel as the validation-suite dispatch owner after focused execution, validation-evidence, step-preview, Shell Recipe lifecycle, and command-state contracts passed. Do not add another boundary for this slice.",
+      "evidence_refs": [
+        "E3"
+      ]
+    },
+    {
+      "id": "D4",
+      "kind": "decision",
+      "at": "2026-09-12T20:20:00+09:00",
+      "summary": "The final audit confirms the existing CommandSurface selection/binding owner and execution-session dispatch owner, the preserved Recipe responsibility folders, only framework/XAML partials under Recipe, and no new independently managed boundary. Close this bounded refactor and do not reopen it by file length alone.",
+      "evidence_refs": [
+        "E4"
+      ]
+    },
+    {
+      "id": "T2",
+      "kind": "transition",
+      "at": "2026-09-12T20:20:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "PL-0023 resolved: validation-suite scope dispatch now has one existing execution-session owner, focused contracts and Debug builds passed, and the final owner/MVVM/partial/folder/navigation audit is recorded. Runtime UI, hardware, and long-running native limits remain explicit."
+    }
+  ],
+  "created_at": "2026-09-12T19:20:00+09:00",
+  "updated_at": "2026-09-12T20:20:00+09:00"
+}

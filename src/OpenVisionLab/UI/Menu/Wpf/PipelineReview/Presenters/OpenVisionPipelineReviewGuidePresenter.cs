@@ -233,6 +233,26 @@ namespace OpenVisionLab
                     : T("PipelineReview.Guide.BeforeRunNext", "Run Review to create the step output");
             }
 
+            if (string.Equals(
+                summary.ExecutionState,
+                VisionPipelineResultSummaryService.NotRunAfterFailureState,
+                StringComparison.Ordinal))
+            {
+                return T(
+                    "PipelineReview.Guide.NotRunAfterFailureNext",
+                    "Fix the earlier failed step, then rerun review");
+            }
+
+            if (string.Equals(
+                summary.ExecutionState,
+                VisionPipelineResultSummaryService.CancelledState,
+                StringComparison.Ordinal))
+            {
+                return T(
+                    "PipelineReview.Guide.CancelledNext",
+                    "Rerun review to evaluate this step");
+            }
+
             if (!summary.Success || summary.IsAcceptanceNg)
             {
                 return ResolveNgNextActionText(step, summary);
@@ -256,6 +276,22 @@ namespace OpenVisionLab
             if (summary == null)
             {
                 return T("PipelineReview.Guide.NoRunDecision", "Not judged");
+            }
+
+            if (string.Equals(
+                summary.ExecutionState,
+                VisionPipelineResultSummaryService.NotRunAfterFailureState,
+                StringComparison.Ordinal))
+            {
+                return T("PipelineReview.Guide.NotRunAfterFailureDecision", "Not run after an earlier failure");
+            }
+
+            if (string.Equals(
+                summary.ExecutionState,
+                VisionPipelineResultSummaryService.CancelledState,
+                StringComparison.Ordinal))
+            {
+                return T("PipelineReview.Guide.CancelledDecision", "Cancelled / not judged");
             }
 
             string status = SafeText(statusText, summary.Success ? "OK" : "NG");
@@ -317,6 +353,28 @@ namespace OpenVisionLab
                 parts.Add(hasOutputImage
                     ? T("PipelineReview.Guide.ReadyDetail", "An output image exists, but Run Review refreshes the measured result.")
                     : T("PipelineReview.Guide.BeforeRunDetail", "Run Review creates the output image and measured result for this step."));
+                return string.Join(" / ", parts);
+            }
+
+            if (string.Equals(
+                summary.ExecutionState,
+                VisionPipelineResultSummaryService.NotRunAfterFailureState,
+                StringComparison.Ordinal))
+            {
+                parts.Add(T(
+                    "PipelineReview.Guide.NotRunAfterFailureDetail",
+                    "This step was not run because an earlier step failed; its tail is not an additional NG result."));
+                return string.Join(" / ", parts);
+            }
+
+            if (string.Equals(
+                summary.ExecutionState,
+                VisionPipelineResultSummaryService.CancelledState,
+                StringComparison.Ordinal))
+            {
+                parts.Add(T(
+                    "PipelineReview.Guide.CancelledDetail",
+                    "This step was not evaluated because the review run was cancelled."));
                 return string.Join(" / ", parts);
             }
 

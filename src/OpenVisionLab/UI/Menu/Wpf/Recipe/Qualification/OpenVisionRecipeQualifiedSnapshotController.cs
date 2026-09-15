@@ -2,6 +2,7 @@ using OpenVisionLab.Vision2D.Pipeline;
 using OpenCvSharp;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -259,6 +260,23 @@ namespace OpenVisionLab
         internal OpenVisionRecipeQualifiedSnapshotActionResult Verify(
             string snapshotId)
         {
+            return Verify(
+                snapshotId,
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                null,
+                null);
+        }
+
+        internal OpenVisionRecipeQualifiedSnapshotActionResult Verify(
+            string snapshotId,
+            string currentRecipeName,
+            string currentPipelineName,
+            string currentPipelinePath,
+            OpenVisionRecipeValidationSet currentValidationSet,
+            IReadOnlyList<QualifiedRecipeRuntimeFileSource> currentRuntimeFiles)
+        {
             QualifiedRecipeSnapshotVerificationResult verification =
                 store.Verify(snapshotId);
             QualifiedRecipeSnapshotLifecycleState lifecycleState =
@@ -271,19 +289,119 @@ namespace OpenVisionLab
                         verification.Errors.Concat(lifecycleState.Errors)));
             }
 
-            string runtime = verification.RuntimeFingerprintMatches
-                ? OpenVisionRecipeText.Local(
-                    "현재 runtime 일치",
-                    "current runtime matches")
-                : OpenVisionRecipeText.Local(
-                    "payload 정상 / 현재 runtime 변경",
-                    "payload intact / current runtime changed");
+            OpenVisionRecipeQualifiedSnapshotCurrentIdentity current =
+                EvaluateCurrentIdentity(
+                    snapshotId,
+                    currentRecipeName,
+                    currentPipelineName,
+                    currentPipelinePath,
+                    currentValidationSet,
+                    currentRuntimeFiles);
+            if (!current.Success)
+            {
+                return Failure(
+                    OpenVisionRecipeText.Local(
+                        "기존 자격 결과가 stale입니다. 현재 Recipe/입력/runtime을 다시 평가하세요: ",
+                        "The existing qualification is stale. Re-evaluate the current Recipe/input/runtime: ")
+                    + string.Join(" | ", current.Errors));
+            }
+
             return new OpenVisionRecipeQualifiedSnapshotActionResult
             {
                 Success = true,
                 SnapshotId = snapshotId ?? string.Empty,
-                Message = lifecycleState.State + " | " + runtime
+                Message = lifecycleState.State
+                    + " | "
+                    + OpenVisionRecipeText.Local(
+                        "현재 검증 구성 일치",
+                        "current verification identity matches")
             };
+        }
+
+        internal OpenVisionRecipeQualifiedSnapshotCurrentIdentity
+            EvaluateCurrentIdentity(
+                string snapshotId,
+                string currentRecipeName,
+                string currentPipelineName,
+                string currentPipelinePath,
+                OpenVisionRecipeValidationSet currentValidationSet,
+                IReadOnlyList<QualifiedRecipeRuntimeFileSource> currentRuntimeFiles)
+        {
+            OpenVisionRecipeQualifiedSnapshotCurrentIdentity result =
+                new OpenVisionRecipeQualifiedSnapshotCurrentIdentity();
+            QualifiedRecipeSnapshotVerificationResult verification =
+                store.Verify(snapshotId);
+            if (!verification.PayloadIntegrityValid || verification.Manifest == null)
+            {
+                result.Errors.Add(
+                    "Snapshot payload is not intact: "
+                    + string.Join(" | ", verification.Errors));
+                return result;
+            }
+
+            result.RuntimeMatches = CompareCurrentRuntime(
+                verification.Manifest,
+                currentRuntimeFiles ?? CreateRuntimeFingerprintSources(),
+                result);
+
+            bool hasCurrentRecipeContext = !string.IsNullOrWhiteSpace(currentRecipeName)
+                || !string.IsNullOrWhiteSpace(currentPipelineName)
+                || !string.IsNullOrWhiteSpace(currentPipelinePath)
+                || currentValidationSet != null;
+            if (!hasCurrentRecipeContext)
+            {
+                result.RecipeMatches = true;
+                result.InputMatches = true;
+                return result;
+            }
+
+            QualifiedRecipeSnapshotManifest manifest = verification.Manifest;
+            result.RecipeMatches = true;
+            if (!string.Equals(
+                    manifest.SourceRecipeName,
+                    currentRecipeName?.Trim() ?? string.Empty,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                result.RecipeMatches = false;
+                result.Errors.Add("Current Recipe identity differs from the qualified Snapshot.");
+            }
+
+            if (!string.Equals(
+                    manifest.PipelineName,
+                    currentPipelineName?.Trim() ?? string.Empty,
+                    StringComparison.Ordinal))
+            {
+                result.RecipeMatches = false;
+                result.Errors.Add("Current Pipeline identity differs from the qualified Snapshot.");
+            }
+
+            if (string.IsNullOrWhiteSpace(currentPipelinePath)
+                || !File.Exists(currentPipelinePath))
+            {
+                result.RecipeMatches = false;
+                result.Errors.Add("Current Pipeline file is missing.");
+            }
+            else
+            {
+                string currentPipelineSha =
+                    QualifiedRecipeSnapshotPreflight.ComputeFileSha256(currentPipelinePath);
+                if (!string.Equals(
+                        currentPipelineSha,
+                        manifest.PipelineSha256,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    result.RecipeMatches = false;
+                    result.Errors.Add("Current Pipeline content differs from the qualified Snapshot.");
+                }
+            }
+
+            result.InputMatches = CompareCurrentValidationSet(
+                snapshotId,
+                manifest,
+                currentPipelinePath,
+                currentValidationSet,
+                result);
+            return result;
         }
 
         internal OpenVisionRecipeQualifiedSnapshotActionResult CreateWorkingCopy(
@@ -338,13 +456,53 @@ namespace OpenVisionLab
                 .ToList();
         }
 
+        internal IReadOnlyList<OpenVisionRecipeQualifiedSnapshotOption> List(
+            string currentRecipeName,
+            string currentPipelineName,
+            string currentPipelinePath,
+            OpenVisionRecipeValidationSet currentValidationSet)
+        {
+            return store.ListSnapshotIds()
+                .Select(snapshotId => CreateOption(
+                    snapshotId,
+                    currentRecipeName,
+                    currentPipelineName,
+                    currentPipelinePath,
+                    currentValidationSet))
+                .OrderByDescending(option => option.CreatedAtUtc)
+                .ToList();
+        }
+
         private OpenVisionRecipeQualifiedSnapshotOption CreateOption(
             string snapshotId)
+        {
+            return CreateOption(
+                snapshotId,
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                null);
+        }
+
+        private OpenVisionRecipeQualifiedSnapshotOption CreateOption(
+            string snapshotId,
+            string currentRecipeName,
+            string currentPipelineName,
+            string currentPipelinePath,
+            OpenVisionRecipeValidationSet currentValidationSet)
         {
             QualifiedRecipeSnapshotVerificationResult verification =
                 store.Verify(snapshotId);
             QualifiedRecipeSnapshotLifecycleState lifecycleState =
                 lifecycle.Load(snapshotId);
+            OpenVisionRecipeQualifiedSnapshotCurrentIdentity current =
+                EvaluateCurrentIdentity(
+                    snapshotId,
+                    currentRecipeName,
+                    currentPipelineName,
+                    currentPipelinePath,
+                    currentValidationSet,
+                    null);
             QualifiedRecipeSnapshotManifest manifest = verification.Manifest;
             DateTime.TryParse(
                 manifest?.CreatedAtUtc,
@@ -356,9 +514,9 @@ namespace OpenVisionLab
                 : "Lifecycle tampered";
             string integrity = !verification.PayloadIntegrityValid
                 ? "Tampered or incomplete"
-                : verification.RuntimeFingerprintMatches
-                    ? "Payload OK / Runtime match"
-                    : "Payload OK / Runtime changed";
+                : current.Success && lifecycleState.Success
+                    ? "Payload OK / Current verification"
+                    : "Payload OK / Qualification stale";
             return new OpenVisionRecipeQualifiedSnapshotOption
             {
                 SnapshotId = snapshotId,
@@ -380,8 +538,271 @@ namespace OpenVisionLab
                 IntegrityState = integrity,
                 PayloadIntegrityValid = verification.PayloadIntegrityValid,
                 RuntimeFingerprintMatches =
-                    verification.RuntimeFingerprintMatches
+                    current.RuntimeMatches,
+                CurrentIdentityEvaluated = true,
+                CurrentIdentityMatches = current.Success
             };
+        }
+
+        private bool CompareCurrentValidationSet(
+            string snapshotId,
+            QualifiedRecipeSnapshotManifest manifest,
+            string currentPipelinePath,
+            OpenVisionRecipeValidationSet currentValidationSet,
+            OpenVisionRecipeQualifiedSnapshotCurrentIdentity result)
+        {
+            if (currentValidationSet == null)
+            {
+                result.Errors.Add("Current Validation Set is not selected.");
+                return false;
+            }
+
+            string snapshotDirectory = store.GetSnapshotDirectory(snapshotId);
+            if (!TryResolveSnapshotFile(
+                    snapshotDirectory,
+                    manifest.ValidationSetFile,
+                    out string archivedValidationSetPath)
+                || !SerializeHelper.TryLoadFromXmlFile(
+                    archivedValidationSetPath,
+                    out QualifiedRecipeValidationSetSnapshot archivedValidationSet)
+                || archivedValidationSet == null)
+            {
+                result.Errors.Add("Qualified Validation Set identity could not be loaded.");
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(currentPipelinePath)
+                || !File.Exists(currentPipelinePath))
+            {
+                result.Errors.Add("Current Validation Set cannot be compared without the Pipeline file.");
+                return false;
+            }
+
+            QualifiedRecipeValidationSetSnapshot currentSnapshot;
+            try
+            {
+                currentSnapshot = CreateValidationSetSnapshot(
+                    currentValidationSet,
+                    manifest.PipelineName,
+                    currentPipelinePath);
+                foreach (QualifiedRecipeValidationImageSource image in
+                    currentSnapshot.Images ?? new List<QualifiedRecipeValidationImageSource>())
+                {
+                    image.Sha256 = File.Exists(image.SourcePath)
+                        ? OpenVisionRecipeValidationSetStorage.ComputeFileSha256(image.SourcePath)
+                        : string.Empty;
+                }
+
+                currentSnapshot.ImageSetSha256 =
+                    QualifiedRecipeSnapshotPreflight.ComputeImageSetSha256(
+                        currentSnapshot.Images);
+                foreach (QualifiedRecipeDependencySource dependency in
+                    currentSnapshot.Dependencies ?? new List<QualifiedRecipeDependencySource>())
+                {
+                    dependency.Sha256 = File.Exists(dependency.SourcePath)
+                        ? OpenVisionRecipeValidationSetStorage.ComputeFileSha256(
+                            dependency.SourcePath)
+                        : string.Empty;
+                }
+            }
+            catch (Exception exception) when (
+                exception is ArgumentException
+                || exception is IOException
+                || exception is InvalidOperationException)
+            {
+                result.Errors.Add(
+                    "Current Validation Set identity could not be computed: "
+                    + exception.GetBaseException().Message);
+                return false;
+            }
+
+            if (!SameValidationSetIdentity(archivedValidationSet, currentSnapshot))
+            {
+                result.Errors.Add("Current input bytes or Validation Set identity differs from the qualified Snapshot.");
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool SameValidationSetIdentity(
+            QualifiedRecipeValidationSetSnapshot expected,
+            QualifiedRecipeValidationSetSnapshot actual)
+        {
+            List<QualifiedRecipeValidationImageSource> expectedImages =
+                expected?.Images ?? new List<QualifiedRecipeValidationImageSource>();
+            List<QualifiedRecipeValidationImageSource> actualImages =
+                actual?.Images ?? new List<QualifiedRecipeValidationImageSource>();
+            List<QualifiedRecipeDependencySource> expectedDependencies =
+                expected?.Dependencies ?? new List<QualifiedRecipeDependencySource>();
+            List<QualifiedRecipeDependencySource> actualDependencies =
+                actual?.Dependencies ?? new List<QualifiedRecipeDependencySource>();
+            if (expected == null || actual == null
+                || !string.Equals(expected.Name, actual.Name, StringComparison.Ordinal)
+                || !string.Equals(expected.PipelineName, actual.PipelineName, StringComparison.Ordinal)
+                || !string.Equals(expected.PipelineDefinitionSha256, actual.PipelineDefinitionSha256, StringComparison.OrdinalIgnoreCase)
+                || !string.Equals(expected.ImageSetSha256, actual.ImageSetSha256, StringComparison.OrdinalIgnoreCase)
+                || !string.Equals(expected.Notes, actual.Notes, StringComparison.Ordinal)
+                || expectedImages.Count != actualImages.Count
+                || expectedDependencies.Count != actualDependencies.Count)
+            {
+                return false;
+            }
+
+            for (int index = 0; index < expectedImages.Count; index++)
+            {
+                QualifiedRecipeValidationImageSource left = expectedImages[index];
+                QualifiedRecipeValidationImageSource right = actualImages[index];
+                if (!string.Equals(left.ExpectedOutcome, right.ExpectedOutcome, StringComparison.Ordinal)
+                    || !SameFullPath(left.SourcePath, right.SourcePath)
+                    || !string.Equals(left.Sha256, right.Sha256, StringComparison.OrdinalIgnoreCase)
+                    || !string.Equals(left.VariantId, right.VariantId, StringComparison.Ordinal)
+                    || !string.Equals(left.ExpectedMetricName, right.ExpectedMetricName, StringComparison.Ordinal)
+                    || !string.Equals(left.ExpectedMetricMinimum, right.ExpectedMetricMinimum, StringComparison.Ordinal)
+                    || !string.Equals(left.ExpectedMetricMaximum, right.ExpectedMetricMaximum, StringComparison.Ordinal)
+                    || !string.Equals(left.Notes, right.Notes, StringComparison.Ordinal))
+                {
+                    return false;
+                }
+            }
+
+            for (int index = 0; index < expectedDependencies.Count; index++)
+            {
+                QualifiedRecipeDependencySource left = expectedDependencies[index];
+                QualifiedRecipeDependencySource right = actualDependencies[index];
+                if (!SameFullPath(left.SourcePath, right.SourcePath)
+                    || !string.Equals(left.Sha256, right.Sha256, StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool CompareCurrentRuntime(
+            QualifiedRecipeSnapshotManifest manifest,
+            IReadOnlyList<QualifiedRecipeRuntimeFileSource> currentSources,
+            OpenVisionRecipeQualifiedSnapshotCurrentIdentity result)
+        {
+            List<QualifiedRecipeRuntimeFingerprint> current =
+                new List<QualifiedRecipeRuntimeFingerprint>();
+            HashSet<string> labels = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (QualifiedRecipeRuntimeFileSource source in
+                currentSources ?? Array.Empty<QualifiedRecipeRuntimeFileSource>())
+            {
+                if (source == null || !labels.Add(source.Label ?? string.Empty))
+                {
+                    result.Errors.Add("Current runtime fingerprint labels are invalid or duplicated.");
+                    continue;
+                }
+
+                if (!File.Exists(source.SourcePath))
+                {
+                    result.Errors.Add("Current runtime fingerprint file is missing: " + source.Label);
+                    continue;
+                }
+
+                FileInfo info = new FileInfo(source.SourcePath);
+                current.Add(new QualifiedRecipeRuntimeFingerprint
+                {
+                    Label = source.Label.Trim(),
+                    SourcePath = info.FullName,
+                    FileVersion = FileVersionInfo.GetVersionInfo(info.FullName).FileVersion
+                        ?? string.Empty,
+                    Size = info.Length,
+                    Sha256 = QualifiedRecipeSnapshotPreflight.ComputeFileSha256(info.FullName)
+                });
+            }
+
+            List<QualifiedRecipeRuntimeFingerprint> expected =
+                manifest.RuntimeFingerprint ?? new List<QualifiedRecipeRuntimeFingerprint>();
+            bool matches = expected.Count == current.Count;
+            foreach (QualifiedRecipeRuntimeFingerprint expectedRuntime in expected)
+            {
+                QualifiedRecipeRuntimeFingerprint actual = current.FirstOrDefault(item =>
+                    string.Equals(item.Label, expectedRuntime.Label, StringComparison.OrdinalIgnoreCase));
+                if (actual == null
+                    || !SameFullPath(actual.SourcePath, expectedRuntime.SourcePath)
+                    || !string.Equals(actual.FileVersion, expectedRuntime.FileVersion, StringComparison.Ordinal)
+                    || actual.Size != expectedRuntime.Size
+                    || !string.Equals(actual.Sha256, expectedRuntime.Sha256, StringComparison.OrdinalIgnoreCase))
+                {
+                    matches = false;
+                    result.Errors.Add("Current SDK/runtime identity differs: " + expectedRuntime.Label);
+                }
+            }
+
+            if (!matches && !result.Errors.Any(error =>
+                    error.StartsWith("Current SDK/runtime identity differs", StringComparison.Ordinal)))
+            {
+                result.Errors.Add("Current SDK/runtime identity set differs from the qualified Snapshot.");
+            }
+
+            return matches;
+        }
+
+        private static bool TryResolveSnapshotFile(
+            string snapshotDirectory,
+            string archivePath,
+            out string path)
+        {
+            path = string.Empty;
+            if (string.IsNullOrWhiteSpace(snapshotDirectory)
+                || string.IsNullOrWhiteSpace(archivePath)
+                || Path.IsPathRooted(archivePath))
+            {
+                return false;
+            }
+
+            try
+            {
+                string root = Path.GetFullPath(snapshotDirectory)
+                    .TrimEnd(Path.DirectorySeparatorChar)
+                    + Path.DirectorySeparatorChar;
+                string candidate = Path.GetFullPath(
+                    Path.Combine(
+                        root,
+                        archivePath.Replace('/', Path.DirectorySeparatorChar)));
+                if (!candidate.StartsWith(root, StringComparison.OrdinalIgnoreCase)
+                    || !File.Exists(candidate))
+                {
+                    return false;
+                }
+
+                path = candidate;
+                return true;
+            }
+            catch (Exception exception) when (
+                exception is ArgumentException
+                || exception is IOException
+                || exception is NotSupportedException)
+            {
+                return false;
+            }
+        }
+
+        private static bool SameFullPath(string left, string right)
+        {
+            if (string.IsNullOrWhiteSpace(left) || string.IsNullOrWhiteSpace(right))
+            {
+                return string.IsNullOrWhiteSpace(left) && string.IsNullOrWhiteSpace(right);
+            }
+
+            try
+            {
+                return string.Equals(
+                    Path.GetFullPath(left),
+                    Path.GetFullPath(right),
+                    StringComparison.OrdinalIgnoreCase);
+            }
+            catch (Exception exception) when (
+                exception is ArgumentException
+                || exception is IOException
+                || exception is NotSupportedException)
+            {
+                return false;
+            }
         }
 
         private static QualifiedRecipeValidationSetSnapshot
@@ -530,6 +951,20 @@ namespace OpenVisionLab
         internal string Message { get; set; } = string.Empty;
     }
 
+    internal sealed class OpenVisionRecipeQualifiedSnapshotCurrentIdentity
+    {
+        internal bool Success =>
+            Errors.Count == 0
+            && RecipeMatches
+            && InputMatches
+            && RuntimeMatches;
+
+        internal bool RecipeMatches { get; set; }
+        internal bool InputMatches { get; set; }
+        internal bool RuntimeMatches { get; set; }
+        internal List<string> Errors { get; } = new List<string>();
+    }
+
     public sealed class OpenVisionRecipeQualificationScopeOption
     {
         internal OpenVisionRecipeQualificationScopeOption(
@@ -581,5 +1016,7 @@ namespace OpenVisionLab
         public string IntegrityState { get; internal set; } = string.Empty;
         public bool PayloadIntegrityValid { get; internal set; }
         public bool RuntimeFingerprintMatches { get; internal set; }
+        public bool CurrentIdentityEvaluated { get; internal set; }
+        public bool CurrentIdentityMatches { get; internal set; }
     }
 }

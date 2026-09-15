@@ -56,9 +56,9 @@
                         Margin="8,0,0,0"
                         IsDefault="True"
                         IsEnabled="{Binding CanSelect}"
+                        Command="{Binding AcceptSelectionCommand}"
                         Background="#157C86"
                         BorderBrush="#89F1F7"
-                        Click="Select_Click"
                         AutomationProperties.AutomationId="WorkspaceSamplePickerOpenButton">
                     <TextBlock Text="{Binding OpenButtonText}"
                                FontWeight="SemiBold"
@@ -69,9 +69,9 @@
                         Height="32"
                         Margin="8,0,0,0"
                         IsEnabled="{Binding CanOpenLearnAndSample}"
+                        Command="{Binding OpenLearnAndSelectCommand}"
                         Background="#173B43"
                         BorderBrush="#89F1F7"
-                        Click="OpenGuideAndSelect_Click"
                         AutomationProperties.AutomationId="WorkspaceSamplePickerOpenGuideAndSampleButton">
                     <TextBlock Text="{Binding OpenLearnAndSampleButtonText}"
                                FontWeight="SemiBold"

@@ -758,7 +758,7 @@
                        Foreground="#CFE0E4"
                        VerticalAlignment="Center" />
             <TextBlock Grid.Column="3"
-                       Text="OpenVisionLab 2.2.0-dev.1 | Updated 2026/06/08 | NOAH"
+                       Text="OpenVisionLab 2.2.0-dev.3 | Updated 2026/09/16 | NOAH"
                        Foreground="#CFE0E4"
                        HorizontalAlignment="Right"
                        VerticalAlignment="Center"

@@ -130,6 +130,22 @@ namespace OpenVisionLab
 
             if (summary != null)
             {
+                if (string.Equals(
+                    summary.ExecutionState,
+                    VisionPipelineResultSummaryService.NotRunAfterFailureState,
+                    StringComparison.Ordinal))
+                {
+                    return PipelineFlowStepStatus.Waiting;
+                }
+
+                if (string.Equals(
+                    summary.ExecutionState,
+                    VisionPipelineResultSummaryService.CancelledState,
+                    StringComparison.Ordinal))
+                {
+                    return PipelineFlowStepStatus.Canceled;
+                }
+
                 return summary.Success && !summary.IsAcceptanceNg
                     ? PipelineFlowStepStatus.Passed
                     : PipelineFlowStepStatus.Failed;

@@ -1,6 +1,5 @@
 using System;
 using System.Drawing;
-using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -42,7 +41,7 @@ namespace OpenVisionLab
             try
             {
                 LoadError = string.Empty;
-                using Bitmap source = LoadBitmap(evidence.OriginalImagePath, "source");
+                using Bitmap source = OpenVisionBitmapImagePreviewFactory.LoadBitmap(evidence.OriginalImagePath, "source");
                 sourceViewer.SetLayer(
                     OpenVisionRecipeText.Local("원본 | ", "Source | ") + evidence.SampleName,
                     source,
@@ -86,7 +85,7 @@ namespace OpenVisionLab
 
             try
             {
-                using Bitmap image = LoadBitmap(drawing.DrawingImagePath, "drawing");
+                using Bitmap image = OpenVisionBitmapImagePreviewFactory.LoadBitmap(drawing.DrawingImagePath, "drawing");
                 drawingViewer.SetLayer(
                     OpenVisionRecipeText.Local("검출 드로잉 | ", "Detection drawing | ") + drawing.StepText,
                     image,
@@ -103,20 +102,6 @@ namespace OpenVisionLab
                 LoadError = exception.GetType().Name + ": " + exception.Message;
                 txtEvidenceStatus.Text = LoadError;
                 return false;
-            }
-        }
-
-        private static Bitmap LoadBitmap(string path, string role)
-        {
-            try
-            {
-                using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                using System.Drawing.Image decoded = System.Drawing.Image.FromStream(stream, useEmbeddedColorManagement: false, validateImageData: true);
-                return new Bitmap(decoded);
-            }
-            catch (Exception exception)
-            {
-                throw new InvalidOperationException(role + " image could not be loaded: " + path, exception);
             }
         }
 

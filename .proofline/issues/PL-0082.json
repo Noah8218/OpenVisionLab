@@ -1,0 +1,144 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0082",
+    "aliases": [
+      "OPENVISIONLAB-2D024-VALIDATION-CONTENT-HASH-20260915"
+    ],
+    "type": "task",
+    "mode": "simple",
+    "title": "Detect exact-byte overlap across role-aware evaluation splits",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "scheduled 2D task execution and current-source owner audit",
+    "summary": "2D-024 asked whether tuning/evaluation evidence can accidentally reuse the same image bytes under different names. Existing SampleCheck, Tool View N-image, Local Validation Set, and PinArrayGap identity owners were inspected before the smallest owner-level change.",
+    "refs": [
+      "C:\\Users\\USER\\Downloads\\OpenVisionLab_2D_tasks.json",
+      "docs\\reports\\OPENVISIONLAB_2D_VALIDATION_CONTENT_HASH_AUDIT_20260915.md",
+      "docs\\contracts\\openvisionlab\\OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md",
+      "docs\\admin\\OPENVISIONLAB_CURRENT_HANDOFF.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "Resolved for the existing role-aware PinArrayGap Train/Validation/Test identity owner: exact source-file SHA-256 duplicates are rejected within a split and across split roles, while renamed or changed inputs make the frozen identity stale without rewriting it. General Local Validation Sets and Tool View N-image retain their existing OK/NG or UNLABELED semantics because no generic tuning/evaluation role vocabulary is product-approved.",
+    "blocker": "",
+    "unblock_condition": ""
+  },
+  "objective": {
+    "summary": "Audit the current SampleCheck/N-image/Good-Bad/evaluation entry points and enforce exact-byte disjointness in the existing frozen Train/Validation/Test identity path without inventing generic role assignment.",
+    "constraints": [
+      "Reuse OpenVisionRecipePinArrayGapValidationRecordStorage and the existing Local Validation Set rows; do not create a dataset database, Labeling Studio integration, or perceptual similarity detector.",
+      "Preserve source files, existing role labels, expected OK/NG semantics, and frozen-record immutability.",
+      "Keep fixtures and evidence on D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev; do not modify C:\\Git\\2D\\Original, hardware, user data, or external services.",
+      "Do not commit, push, release, deploy, or perform external communication."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The role-aware Train/Validation/Test freeze path computes source SHA-256 values and rejects duplicate bytes within one split and across split roles even when paths or filenames differ.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "The frozen record retains role and set-name identity; a set-name/role change or changed source becomes stale and does not rewrite the stored record.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Existing general Local Validation Set and Tool View N-image semantics remain explicit and unassigned rather than receiving an inferred tuning/evaluation role, and focused build/contract checks pass.",
+      "evidence_refs": [
+        "E1",
+        "E3"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0081"
+    }
+  ],
+  "context": [
+    {
+      "kind": "owner-map",
+      "location": "Sample catalog uses PairGroup/PairRole; VisionPipelineSampleCheckService executes one selected sample; VisionToolNImageVerificationService stores SourceSha256 but PairRole=UNLABELED; OpenVisionRecipeValidationSetStorage owns local OK/NG rows and path normalization; PinArrayGapValidationRecordStorage owns frozen Train/Validation/Test role identity."
+    },
+    {
+      "kind": "call-path",
+      "location": "PinArrayGapValidationIdentityOwner.Freeze -> PinArrayGapValidationRecordStorage.TrySave -> TryCreateRecord -> TryCreateSplitIdentity -> current file SHA-256 -> frozen XML record. Evaluate uses TryMatchesCurrent without writing the record."
+    },
+    {
+      "kind": "public-contract",
+      "location": "Exact-byte overlap across role-aware splits is rejected with a role-specific SHA-256 disjointness error. Re-encoded/perceptually similar images are not duplicates. General local sets remain OK/NG-only and Tool View N-image remains UNLABELED."
+    },
+    {
+      "kind": "reading-order",
+      "location": "OPENVISIONLAB_2D_VALIDATION_CONTENT_HASH_AUDIT_20260915.md -> OpenVisionRecipePinArrayGapValidationIdentityOwner.cs -> OpenVisionRecipePinArrayGapValidationRecordStorage.cs -> OpenVisionRecipeValidationSetStorage.cs -> PinArrayGapValidationIdentityOwnerContract.cs."
+    },
+    {
+      "kind": "boundary",
+      "location": "No perceptual/re-encoded similarity, generic tuning/evaluation role vocabulary, full WPF/EXE UI matrix, hardware, release distribution, or Original repository mutation was performed."
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "report",
+      "location": "docs/reports/OPENVISIONLAB_2D_VALIDATION_CONTENT_HASH_AUDIT_20260915.md",
+      "summary": "Owner/call-path audit, exact-byte policy, focused evidence, and explicit boundaries."
+    },
+    {
+      "kind": "evidence-directory",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d024-content-hash-20260915-run",
+      "summary": "Debug build and 7-case role/content identity contract output."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "test",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d024-content-hash-20260915-run/pinarraygap-validation-identity-owner-contract.txt",
+      "observation": "The focused identity contract passed 7/7 cases, including same bytes under a different filename rejected across Train/Validation, renamed Validation set marked stale without record rewrite, changed image marked stale, and missing Pipeline read-only behavior.",
+      "observed_at": "2026-09-15T21:20:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "source-inspection",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/Recipe/Validation/OpenVisionRecipePinArrayGapValidationRecordStorage.cs; tools/VisionRecipeRunnerSmoke/PinArrayGapValidationIdentityOwnerContract.cs",
+      "observation": "The existing PinArrayGap identity owner now computes current file SHA-256 sets, rejects within-split duplicates and Train/Validation/Test hash overlap, and preserves Role/SetName/ContentSha256 in the existing frozen record.",
+      "observed_at": "2026-09-15T21:18:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "build",
+      "location": "C:/Git/2D/Dev/tools/VisionRecipeRunnerSmoke/VisionRecipeRunnerSmoke.csproj; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d024-content-hash-20260915-release/pinarraygap-validation-identity-owner-contract.txt",
+      "observation": "Debug and Release builds completed with 0 errors and 16 pre-existing nullable warnings; the same focused contract passed 7/7 against both binaries and the targeted diff check passed.",
+      "observed_at": "2026-09-15T21:19:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-15T21:22:21+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "2D-024 bounded role-aware content identity slice completed; existing owner and focused contract prove exact-byte duplicate rejection and stale role-change behavior.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3"
+      ]
+    }
+  ],
+  "created_at": "2026-09-15T21:22:21+09:00",
+  "updated_at": "2026-09-15T21:22:21+09:00"
+}

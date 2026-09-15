@@ -1,0 +1,135 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0069",
+    "aliases": [
+      "OPENVISIONLAB-2D011-DUPLICATE-STEP-IDENTITY-20260915"
+    ],
+    "type": "bug",
+    "mode": "simple",
+    "title": "Keep duplicate Pipeline Review Step rows distinct by run-scoped index",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "scheduled 2D task execution and source review",
+    "summary": "2D-011 requires duplicate Step names and identical layer routes to retain the correct Review row, metric, NG reason, execution order, and intermediate image when only parameters differ.",
+    "refs": [
+      "C:\\Users\\USER\\Downloads\\OpenVisionLab_2D_tasks.json",
+      "AGENTS.md",
+      "docs\\contracts\\openvisionlab\\OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md",
+      "C:\\Users\\USER\\.codex\\docs\\WPF_UI_UX_RULES.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "Pipeline Review now keys summaries and intermediate output images by the ordered Step index of the current Run. Duplicate Name/Tool/InputLayer/OutputLayer rows keep distinct metrics and acceptance decisions, reordering and disabled steps remain aligned, and the selected document row requests its exact Step-index output while the legacy layer-only lookup remains latest-output compatible."
+  },
+  "problem": {
+    "claims": [
+      {
+        "id": "P1",
+        "state": "confirmed",
+        "text": "The prior AreSameStep comparison used Name, ToolType, InputLayer, and OutputLayer, CompleteRun selected the first Step by Name and OutputLayer, and review output images were cached by output-layer name only. Duplicate rows with different parameters could therefore collapse into the wrong summary or overwrite one another's preview.",
+        "evidence_refs": [
+          "E1"
+        ]
+      }
+    ],
+    "impact": "A beginner reviewing a pipeline could see a metric, NG reason, or intermediate image belonging to a different duplicate Step, and editing or reordering a Step could make historical evidence appear to move between rows."
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "Review execution maps each run result and source Step to its ordered run-scoped Step index without Name/route first-match fallback, preserving execution order and disabled/skipped state.",
+      "evidence_refs": [
+        "E2"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "Intermediate output images are retained per Step index even when output layers are identical; selecting a Review row requests its exact image, while the existing layer-only lookup remains compatible.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Duplicate identity, same-route output, metric/NG, reorder, disabled, execution-generation, cache-lifetime, and stale-callback contracts pass with a focused Debug build and no Original repository or external mutation.",
+      "evidence_refs": [
+        "E2",
+        "E3",
+        "E4"
+      ]
+    }
+  ],
+  "relations": [],
+  "context": [
+    {
+      "kind": "owner-map",
+      "location": "OpenVisionPipelineReviewExecutionController owns run generation, Step-index summaries, and per-Step cached output; OpenVisionPipelineReviewLayerImageOwner owns preview lookup conversion; OpenVisionPipelineReviewDocument.SelectStep owns the selected-row request; PipelineReviewDuplicateStepIdentityContract owns the focused corpus contract."
+    },
+    {
+      "kind": "state-writer",
+      "location": "The execution controller writes mutable run/result and image-cache state; the document only selects and presents a Step; no new serializer or persisted GUID state was introduced."
+    },
+    {
+      "kind": "reading-order",
+      "location": "OpenVisionPipelineReviewExecutionController.cs -> OpenVisionPipelineReviewLayerImageOwner.cs -> OpenVisionPipelineReviewDocument.cs -> PipelineReviewDuplicateStepIdentityContract.cs -> stable feature contracts and current handoff."
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "review",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/PipelineReview/Execution/OpenVisionPipelineReviewExecutionController.cs:38-40,120-200,477-625; src/OpenVisionLab/UI/Menu/Wpf/PipelineReview/Presenters/OpenVisionPipelineReviewLayerImageOwner.cs:20-71; src/OpenVisionLab/UI/Menu/Wpf/Documents/OpenVisionPipelineReviewDocument.cs:68-76,430-460",
+      "observation": "Source review confirms Dictionary<int,...> summary/image state, source/effective pipeline index resolution, exact Step-index output lookup, and removal of Name/route first-match and layer-only cache ownership from the selected-row path.",
+      "observed_at": "2026-09-15T16:09:22+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d011-duplicate-step-identity-20260915/pipeline-review-duplicate-step-identity-contract.txt",
+      "observation": "Focused contract passed. Two Steps with identical Name/Tool/InputLayer/OutputLayer but different constants retained separate summaries; Step 2 kept its OutputWidth NG reason, both output pixels remained distinct, layer-only lookup returned the latest output, and reorder and disabled cases preserved separate identities.",
+      "observed_at": "2026-09-15T16:09:22+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d011-duplicate-step-identity-20260915/pipeline-review-execution-contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d011-duplicate-step-identity-20260915/pipeline-review-cache-lifetime-contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d011-duplicate-step-identity-20260915/pipeline-review-stale-callback-contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d011-duplicate-step-identity-20260915/pipeline-review-document-revision-contract.txt",
+      "observation": "Existing Review execution-generation, cached-image replacement/reset/close lifetime, stale callback atomic-application, and document revision/selection guard contracts all passed after the identity change.",
+      "observed_at": "2026-09-15T16:09:22+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "build",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d011-duplicate-step-identity-20260915/vision-recipe-runner-smoke-build.log",
+      "observation": "VisionRecipeRunnerSmoke Debug build completed with 0 warnings and 0 errors. No desktop EXE or WPF UI interaction was launched in this slice; theme, DPI, monitor, and native hardware coverage remain unverified.",
+      "observed_at": "2026-09-15T16:09:22+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-15T16:09:22+09:00",
+      "summary": "Reuse the existing Review execution controller and document/layer-image owner. Use the current Run's ordered Step index as the minimal stable identity; do not add a GUID serializer migration or a second mapping service.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-15T16:09:22+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "PL-0069 resolved after the duplicate identity contract and existing Review lifecycle regressions passed with the focused Debug build; no Original or external mutation was performed."
+    }
+  ],
+  "created_at": "2026-09-15T15:52:00+09:00",
+  "updated_at": "2026-09-15T16:09:22+09:00"
+}

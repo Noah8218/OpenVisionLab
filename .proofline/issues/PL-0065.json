@@ -1,0 +1,139 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0065",
+    "aliases": [
+      "OPENVISIONLAB-2D007-PREVIEW-ACCEPTANCE-CLARITY-20260915"
+    ],
+    "type": "bug",
+    "mode": "simple",
+    "title": "Distinguish Preview processing success from inspection acceptance",
+    "risk": "medium"
+  },
+  "origin": {
+    "kind": "scheduled 2D task execution and source review",
+    "summary": "The 2D plan identifies that Preview OK currently describes tool execution/result-image success but can be read as a Pipeline Acceptance pass. The bounded change must make the distinction explicit in existing status, review, and exported evidence surfaces.",
+    "refs": [
+      "C:\\Users\\USER\\Downloads\\OpenVisionLab_2D_Audit_and_Plan.md",
+      "C:\\Users\\USER\\Downloads\\OpenVisionLab_2D_tasks.json",
+      "AGENTS.md",
+      "C:\\Users\\USER\\.codex\\docs\\WPF_UI_UX_RULES.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "The owner-local change now distinguishes direct Preview processing from inspection judgment, carries acceptance configuration into persisted Run Report/evidence, and verifies the distinction with Korean/English contracts and final Debug/Release builds. A final native Preview rerun opened the WPF shell but timed out without a report; the prior native Preview pass and the final Pipeline Review acceptance-NG UI smoke are retained as separate evidence, while full theme/DPI/native hardware coverage remains unverified."
+  },
+  "problem": {
+    "claims": [
+      {
+        "id": "P1",
+        "state": "confirmed",
+        "text": "Direct native Preview success is published as Preview OK without stating that Pipeline Acceptance is not evaluated, while Pipeline Review summaries expose only the aggregate OK/NG status unless the detail happens to include an acceptance failure message.",
+        "evidence_refs": [
+          "E1"
+        ]
+      }
+    ],
+    "impact": "A first-time contributor or operator can interpret a successful tool execution and result image as an inspection PASS, and exported evidence cannot unambiguously show whether acceptance criteria were applied."
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "Native Preview status retains the existing Preview OK/Preview NG or Offset OK parser prefix and explicitly states that inspection judgment is not evaluated for direct tool Preview; no acceptance evaluator is added to that path.",
+      "evidence_refs": [
+        "E3"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "Pipeline Review result text distinguishes tool processing and acceptance for no-criteria success, acceptance PASS, acceptance NG, and tool failure, while preserving existing OK/NG status tokens and run-log contracts.",
+      "evidence_refs": [
+        "E2",
+        "E4"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Persisted Run Report and recipe evidence preserve whether acceptance was configured/evaluated; no-criteria evidence is shown as not evaluated and existing AcceptancePassed/AcceptanceMessage values remain available.",
+      "evidence_refs": [
+        "E2"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "Focused Korean/English contracts, Debug/Release builds, and fresh desktop smoke evidence pass; full theme/DPI/native hardware matrices remain explicitly reported as unverified.",
+      "evidence_refs": [
+        "E2",
+        "E3",
+        "E4",
+        "E5"
+      ]
+    }
+  ],
+  "relations": [],
+  "context": [
+    {
+      "kind": "owner-map",
+      "location": "OpenVisionNativePreviewExecutionController -> OpenVisionNativeToolDocument status; OpenVisionPipelineReviewResultPresenter -> GuideResultProjectionOwner; VisionPipelineRunReportStorage -> OpenVisionRecipeRunEvidenceDrawing"
+    },
+    {
+      "kind": "state-writer",
+      "location": "NativeToolDocument owns LastStatusText; Pipeline Review presenter owns aggregate result text; Run Report storage owns AcceptanceEvaluated persistence state."
+    },
+    {
+      "kind": "reading-order",
+      "location": "Native Preview controller -> ToolDocument ApplyPreviewExecutionResult -> status presenter; Pipeline Review GuideResultProjectionOwner -> ResultPresenter; RunReportStorage -> RecipeRunEvidenceDrawing"
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "review",
+      "location": "src\\OpenVisionLab\\UI\\Menu\\Wpf\\NativeTools\\Preview\\OpenVisionNativePreviewExecutionController.cs; src\\OpenVisionLab\\UI\\Menu\\Wpf\\PipelineReview\\Presenters\\OpenVisionPipelineReviewResultPresenter.cs; src\\OpenVisionLab\\Core\\Pipeline\\Storage\\VisionPipelineRunReportStorage.cs; src\\OpenVisionLab\\UI\\Menu\\Wpf\\Recipe\\Review\\OpenVisionRecipeRunEvidence.cs",
+      "observation": "The native controller currently emits Preview/Offset OK or Preview NG strings without an acceptance-state marker. Pipeline Review FormatResultSummary currently renders only the aggregate status and elapsed/error text. VisionPipelineStepRunReport stores AcceptancePassed and AcceptanceMessage but no flag indicating whether UseAcceptance was enabled, and the evidence drawing renders a PASS/NG or missing-message label without a not-evaluated state.",
+      "observed_at": "2026-09-15T13:00:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d007-preview-acceptance-clarity-20260915/contract-debug-final/pipeline_review_guide_result_projection_contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d007-preview-acceptance-clarity-20260915/contract-release-final/pipeline_review_guide_result_projection_contract.txt",
+      "observation": "Both Debug and Release Pipeline Review guide/result projection contracts exited 0 and report PASS. The contract covers missing-result, no-criteria OK, acceptance PASS, tool-NG, acceptance-NG, persisted evidence, Korean/English text, validation-error, running state, paired action/metric, and run-log projection preservation.",
+      "observed_at": "2026-09-15T13:42:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d007-preview-acceptance-clarity-20260915/runtime-debug-preview-final/report.txt",
+      "observation": "The Debug embedded desktop Preview validity scenario passed. Direct Preview success and failure statuses contain the inspection-not-evaluated marker; failed Preview invalidates only the current result while retaining the previous output; the valid retry restores the current result; input change invalidates it again. The report records DISPLAY2 bounds 0,0,1920,1080 and both shell/tool window rectangles intersecting that monitor, plus the exact executable and managed assembly hashes.",
+      "observed_at": "2026-09-15T13:05:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d007-preview-acceptance-clarity-20260915/runtime-debug-pipeline-acceptance-ng-ui-final/result.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d007-preview-acceptance-clarity-20260915/runtime-debug-pipeline-acceptance-ng-ui-final/wpf_shell_host_pipeline_review_ng.png",
+      "observation": "The final Debug PipelineViewer acceptance-NG WPF target exited OK (check=OK, layout=0, text=0, internal=0, 1600x900). Visual inspection confirms the compact processing/inspection distinction wraps in the top result card without clipping while the output preview and surrounding layout remain visible.",
+      "observed_at": "2026-09-15T13:20:00+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "build",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d007-preview-acceptance-clarity-20260915/app-debug-embedded-build-final.log; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d007-preview-acceptance-clarity-20260915/app-release-embedded-build-final.log; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d007-preview-acceptance-clarity-20260915/recipe-smoke-debug-build-final.log; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d007-preview-acceptance-clarity-20260915/recipe-smoke-release-build-final.log",
+      "observation": "Final focused Debug and Release builds completed with exit 0, reporting 0 warnings and 0 errors for the embedded OpenVisionLab executable and VisionRecipeRunnerSmoke contract runner.",
+      "observed_at": "2026-09-15T13:35:10+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-15T13:43:28+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "Resolved after the existing Preview, Pipeline Review, Run Report, and recipe-evidence owners were updated and the focused contracts/build/UI evidence passed. The final native Preview rerun was not used as pass evidence because it timed out without a report; full theme/DPI/native hardware coverage remains outside this slice."
+    }
+  ],
+  "created_at": "2026-09-15T13:00:00+09:00",
+  "updated_at": "2026-09-15T13:43:28+09:00"
+}

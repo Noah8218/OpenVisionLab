@@ -933,6 +933,7 @@
                                             AutomationProperties.AutomationId="PipelineReviewSelectedResultSummary"
                                             Text="{Binding ResultSummaryText}"
                                             ToolTip="{Binding ResultSummaryText}"
+                                            TextWrapping="Wrap"
                                             Style="{StaticResource SummaryValueStyle}" />
                                 <TextBlock x:Name="txtOutputMetaTop"
                                            Text="{Binding OutputMetaText}"

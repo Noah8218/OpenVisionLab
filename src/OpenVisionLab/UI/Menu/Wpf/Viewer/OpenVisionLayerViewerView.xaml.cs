@@ -203,9 +203,8 @@ namespace OpenVisionLab
                 pendingCanvasRefresh.Abort();
             }
             pendingCanvasRefresh = null;
-            canvasPresenter.Dispose();
-            layerCanvas.DataContext = null;
             layerCanvas.Dispose();
+            canvasPresenter.Dispose();
             fallbackImageZoomController.Dispose();
             layerFallbackImage.Source = null;
             ReplaceOwnedLayerImage(null);

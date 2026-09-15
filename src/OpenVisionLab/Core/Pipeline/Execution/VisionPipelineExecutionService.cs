@@ -86,6 +86,33 @@ namespace OpenVisionLab
             if (context == null) { throw new ArgumentNullException(nameof(context)); }
 
             VisionPipelineRunResult runResult = new VisionPipelineRunResult();
+            try
+            {
+                await RunPreparedStepsAsync(
+                    pipeline, context, runResult, stepTimeoutMilliseconds,
+                    cancellationToken, stepUpdate, normalizationChanges).ConfigureAwait(false);
+                return runResult;
+            }
+            catch
+            {
+                foreach (VisionPipelineStepResult stepResult in runResult.StepResults)
+                {
+                    stepResult?.ToolResult?.Dispose();
+                }
+
+                throw;
+            }
+        }
+
+        private static async Task RunPreparedStepsAsync(
+            VisionPipeline pipeline,
+            VisionPipelineContext context,
+            VisionPipelineRunResult runResult,
+            int stepTimeoutMilliseconds,
+            CancellationToken cancellationToken,
+            Action<VisionPipelineStepExecutionUpdate> stepUpdate,
+            IReadOnlyList<VisionPipelineNormalizationChange> normalizationChanges)
+        {
             Dictionary<string, VisionPipelineFixtureFrame> fixtureFrames = new Dictionary<string, VisionPipelineFixtureFrame>(StringComparer.OrdinalIgnoreCase);
             foreach (VisionPipelineNormalizationChange change in normalizationChanges ?? Array.Empty<VisionPipelineNormalizationChange>())
             {
@@ -101,11 +128,18 @@ namespace OpenVisionLab
             {
                 if (cancellationToken.IsCancellationRequested)
                 {
-                    stepUpdate?.Invoke(new VisionPipelineStepExecutionUpdate
+                    StepRuntimeValidationResult cancellation = new StepRuntimeValidationResult
                     {
-                        Status = "CANCEL",
-                        Message = "Pipeline stopped before next step."
-                    });
+                        ErrorCode = VisionToolErrorCode.StepCanceled,
+                        Message = $"Pipeline step '{step?.Name ?? "Step"}' was canceled before execution."
+                    };
+                    VisionPipelineStepResult canceledStepResult = CreateFailedStepResult(
+                        step,
+                        cancellation,
+                        TimeSpan.Zero,
+                        new OperationCanceledException(cancellationToken));
+                    runResult.StepResults.Add(canceledStepResult);
+                    NotifyStepResult(stepUpdate, step, canceledStepResult);
                     break;
                 }
 
@@ -153,7 +187,7 @@ namespace OpenVisionLab
                     Message = $"{step.InputLayer} -> {step.OutputLayer}"
                 });
 
-                Mat input = context.GetLayer(step.InputLayer);
+                using Mat input = context.GetLayer(step.InputLayer);
                 VisionPipelineFixtureApplication fixtureApplication = VisionPipelineFixtureFrameService.PrepareRuntimeStep(step, fixtureFrames);
                 if (!fixtureApplication.Success)
                 {
@@ -173,7 +207,6 @@ namespace OpenVisionLab
                         StepResult = failedStepResult
                     });
 
-                    input?.Dispose();
                     break;
                 }
 
@@ -192,7 +225,32 @@ namespace OpenVisionLab
                         StepResult = failedStepResult
                     });
 
-                    input?.Dispose();
+                    break;
+                }
+
+                VisionPipelineOutputAllocationPreflightResult outputAllocationValidation =
+                    VisionPipelineOutputAllocationGuard.Validate(runtimeStep, input);
+                if (!outputAllocationValidation.Success)
+                {
+                    stepStopwatch.Stop();
+                    StepRuntimeValidationResult outputAllocationFailure = new StepRuntimeValidationResult
+                    {
+                        ErrorCode = outputAllocationValidation.ErrorCode,
+                        Message = outputAllocationValidation.Message
+                    };
+                    VisionPipelineStepResult failedStepResult = CreateFailedStepResult(
+                        step,
+                        outputAllocationFailure,
+                        stepStopwatch.Elapsed);
+                    runResult.StepResults.Add(failedStepResult);
+                    stepUpdate?.Invoke(new VisionPipelineStepExecutionUpdate
+                    {
+                        Step = step,
+                        Status = VisionPipelineResultSummaryService.ResolveStatus(failedStepResult),
+                        Message = outputAllocationFailure.Message,
+                        StepResult = failedStepResult
+                    });
+
                     break;
                 }
 
@@ -222,7 +280,6 @@ namespace OpenVisionLab
                         StepResult = failedStepResult
                     });
 
-                    input?.Dispose();
                     break;
                 }
 
@@ -242,7 +299,7 @@ namespace OpenVisionLab
                 VisionPipelineStepCompletion completion = await WaitForStepCompletionStatusAsync(
                     runTask,
                     stepTimeoutMilliseconds,
-                    cancellationToken);
+                    cancellationToken).ConfigureAwait(false);
 
                 VisionToolResult toolResult;
                 if (!completion.CompletedWithinDeadline)
@@ -261,7 +318,7 @@ namespace OpenVisionLab
                 }
                 else
                 {
-                    toolResult = await runTask;
+                    toolResult = await runTask.ConfigureAwait(false);
                 }
 
                 VisionPipelineMetricEnrichmentService.Enrich(toolResult, runtimeStep);
@@ -294,7 +351,7 @@ namespace OpenVisionLab
                     pendingFixtureFrame = null;
                 }
 
-                VisionPipelineAcceptanceResult acceptance = VisionPipelineAcceptanceEvaluator.Evaluate(step, toolResult);
+                VisionPipelineAcceptanceResult acceptance = EvaluateAcceptance(step, toolResult);
                 VisionPipelineStepResult stepResult = new VisionPipelineStepResult
                 {
                     Step = step,
@@ -308,7 +365,6 @@ namespace OpenVisionLab
                     runResult.StepResults.Add(stepResult);
                     NotifyStepResult(stepUpdate, step, stepResult);
 
-                    input?.Dispose();
 
                     break;
                 }
@@ -341,16 +397,11 @@ namespace OpenVisionLab
                     });
                     break;
                 }
-                finally
-                {
-                    input?.Dispose();
-                }
 
                 runResult.StepResults.Add(stepResult);
                 NotifyStepResult(stepUpdate, step, stepResult);
             }
 
-            return runResult;
         }
 
         private static VisionToolResult ExecuteStep(VisionPipelineStep step, Mat input)
@@ -441,7 +492,7 @@ namespace OpenVisionLab
                 validation?.Message ?? string.Empty,
                 elapsed,
                 exception);
-            VisionPipelineAcceptanceResult failedAcceptance = VisionPipelineAcceptanceEvaluator.Evaluate(step, failedResult);
+            VisionPipelineAcceptanceResult failedAcceptance = EvaluateAcceptance(step, failedResult);
             return new VisionPipelineStepResult
             {
                 Step = step,
@@ -450,6 +501,60 @@ namespace OpenVisionLab
                 AcceptanceMessage = failedAcceptance.Message
             };
         }
+
+        internal static VisionPipelineAcceptanceResult EvaluateAcceptance(
+            VisionPipelineStep step,
+            VisionToolResult toolResult)
+        {
+            if (toolResult?.ErrorCode == VisionToolErrorCode.StepCanceled)
+            {
+                return new VisionPipelineAcceptanceResult
+                {
+                    Passed = false,
+                    Message = toolResult.Message ?? "Pipeline step was canceled."
+                };
+            }
+
+            if (step?.UseAcceptance == true)
+            {
+                if (!IsFinite(step.MaxElapsedMilliseconds))
+                {
+                    return CreateAcceptanceFailure("MaxElapsedMilliseconds must be finite.");
+                }
+
+                if (step.UseAcceptanceMetricMinimum && !IsFinite(step.AcceptanceMetricMinimum))
+                {
+                    return CreateAcceptanceFailure("Acceptance metric minimum must be finite.");
+                }
+
+                if (step.UseAcceptanceMetricMaximum && !IsFinite(step.AcceptanceMetricMaximum))
+                {
+                    return CreateAcceptanceFailure("Acceptance metric maximum must be finite.");
+                }
+
+                if ((step.UseAcceptanceMetricMinimum || step.UseAcceptanceMetricMaximum)
+                    && !string.IsNullOrWhiteSpace(step.AcceptanceMetricName)
+                    && toolResult?.Metrics != null
+                    && toolResult.Metrics.TryGetValue(step.AcceptanceMetricName, out double metricValue)
+                    && !IsFinite(metricValue))
+                {
+                    return CreateAcceptanceFailure($"Metric '{step.AcceptanceMetricName}' must be finite.");
+                }
+            }
+
+            return VisionPipelineAcceptanceEvaluator.Evaluate(step, toolResult);
+        }
+
+        private static VisionPipelineAcceptanceResult CreateAcceptanceFailure(string message)
+        {
+            return new VisionPipelineAcceptanceResult
+            {
+                Passed = false,
+                Message = message
+            };
+        }
+
+        private static bool IsFinite(double value) => !double.IsNaN(value) && !double.IsInfinity(value);
 
         private static void NotifyStepResult(
             Action<VisionPipelineStepExecutionUpdate> stepUpdate,
@@ -600,39 +705,55 @@ namespace OpenVisionLab
             }
 
             bool useMultiRoi = GetBool(parameters, "USE_MULTI_ROI", false);
-            IEnumerable<Rect> rois = useMultiRoi
-                ? GetRectList(parameters, "CvROIS")
-                : new[] { GetRect(parameters, "CvROI") };
-
             int imageWidth = input.Width;
             int imageHeight = input.Height;
-            int index = 1;
-            foreach (Rect roi in rois)
+            string parameterName = useMultiRoi ? "CvROIS" : "CvROI";
+            string value = GetValue(parameters, parameterName);
+            if (string.IsNullOrWhiteSpace(value))
             {
-                string message = ValidateRoi(roi, imageWidth, imageHeight, useMultiRoi ? $"ROI #{index}" : "ROI");
-                if (!string.IsNullOrWhiteSpace(message))
+                return InvalidRoi(step, $"{parameterName} is required when USE_ROI=true.");
+            }
+
+            string[] entries = useMultiRoi
+                ? value.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
+                : new[] { value };
+            if (entries.Length == 0)
+            {
+                return InvalidRoi(step, $"{parameterName} must contain at least one ROI.");
+            }
+
+            for (int index = 0; index < entries.Length; index++)
+            {
+                string entryLabel = useMultiRoi ? $"ROI #{index + 1}" : "ROI";
+                if (!TryParseRect(entries[index], out Rect roi))
                 {
-                    return new StepRuntimeValidationResult
-                    {
-                        ErrorCode = VisionToolErrorCode.InvalidRoi,
-                        Message = $"{step?.Name ?? "Step"} {message}"
-                    };
+                    return InvalidRoi(
+                        step,
+                        $"{entryLabel} is malformed. Expected x,y,width,height.");
                 }
 
-                index++;
+                string message = ValidateRoi(roi, imageWidth, imageHeight, entryLabel);
+                if (!string.IsNullOrWhiteSpace(message))
+                {
+                    return InvalidRoi(step, message);
+                }
             }
 
             return new StepRuntimeValidationResult();
         }
 
+        private static StepRuntimeValidationResult InvalidRoi(VisionPipelineStep step, string message)
+        {
+            return new StepRuntimeValidationResult
+            {
+                ErrorCode = VisionToolErrorCode.InvalidRoi,
+                Message = $"{step?.Name ?? "Step"} {message}"
+            };
+        }
+
         private static string ValidateRoi(Rect roi, int imageWidth, int imageHeight, string label)
         {
-            if (roi.Width == 0 || roi.Height == 0)
-            {
-                return null;
-            }
-
-            if (roi.Width < 0 || roi.Height < 0)
+            if (roi.Width <= 0 || roi.Height <= 0)
             {
                 return $"{label} has an invalid size. ROI=({roi.X},{roi.Y},{roi.Width},{roi.Height}), Image={imageWidth}x{imageHeight}.";
             }
@@ -651,26 +772,6 @@ namespace OpenVisionLab
         {
             string value = GetValue(parameters, key);
             return bool.TryParse(value, out bool result) ? result : defaultValue;
-        }
-
-        private static Rect GetRect(IDictionary<string, string> parameters, string key)
-        {
-            string value = GetValue(parameters, key);
-            return TryParseRect(value, out Rect rect) ? rect : default;
-        }
-
-        private static List<Rect> GetRectList(IDictionary<string, string> parameters, string key)
-        {
-            string value = GetValue(parameters, key);
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                return new List<Rect>();
-            }
-
-            return value
-                .Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
-                .Select(part => TryParseRect(part, out Rect rect) ? rect : default)
-                .ToList();
         }
 
         private static bool TryParseRect(string value, out Rect rect)

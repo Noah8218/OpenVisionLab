@@ -221,9 +221,27 @@ namespace OpenVisionLab
                     out double rangeMaximum,
                     out List<OpenVisionRecipePinArrayGapRowIdentity> rows,
                     out error)
-                || !TryCreateSplitIdentity("Train", train, out OpenVisionRecipePinArrayGapValidationSplitIdentity trainIdentity, out HashSet<string> trainPaths, out error)
-                || !TryCreateSplitIdentity("Validation", validation, out OpenVisionRecipePinArrayGapValidationSplitIdentity validationIdentity, out HashSet<string> validationPaths, out error)
-                || !TryCreateSplitIdentity("Test", test, out OpenVisionRecipePinArrayGapValidationSplitIdentity testIdentity, out HashSet<string> testPaths, out error))
+                || !TryCreateSplitIdentity(
+                    "Train",
+                    train,
+                    out OpenVisionRecipePinArrayGapValidationSplitIdentity trainIdentity,
+                    out HashSet<string> trainPaths,
+                    out HashSet<string> trainContentHashes,
+                    out error)
+                || !TryCreateSplitIdentity(
+                    "Validation",
+                    validation,
+                    out OpenVisionRecipePinArrayGapValidationSplitIdentity validationIdentity,
+                    out HashSet<string> validationPaths,
+                    out HashSet<string> validationContentHashes,
+                    out error)
+                || !TryCreateSplitIdentity(
+                    "Test",
+                    test,
+                    out OpenVisionRecipePinArrayGapValidationSplitIdentity testIdentity,
+                    out HashSet<string> testPaths,
+                    out HashSet<string> testContentHashes,
+                    out error))
             {
                 return false;
             }
@@ -233,6 +251,24 @@ namespace OpenVisionLab
                 || validationPaths.Overlaps(testPaths))
             {
                 error = "Train, Validation, and Test image paths must be pairwise disjoint.";
+                return false;
+            }
+
+            if (trainContentHashes.Overlaps(validationContentHashes))
+            {
+                error = "Train and Validation image content must be pairwise disjoint by SHA-256.";
+                return false;
+            }
+
+            if (trainContentHashes.Overlaps(testContentHashes))
+            {
+                error = "Train and Test image content must be pairwise disjoint by SHA-256.";
+                return false;
+            }
+
+            if (validationContentHashes.Overlaps(testContentHashes))
+            {
+                error = "Validation and Test image content must be pairwise disjoint by SHA-256.";
                 return false;
             }
 
@@ -413,10 +449,12 @@ namespace OpenVisionLab
             OpenVisionRecipeValidationSetOption option,
             out OpenVisionRecipePinArrayGapValidationSplitIdentity identity,
             out HashSet<string> paths,
+            out HashSet<string> contentHashes,
             out string error)
         {
             identity = null;
             paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            contentHashes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             OpenVisionRecipeValidationSet set = option?.Set;
             string setName = set?.Name?.Trim() ?? string.Empty;
             List<OpenVisionRecipeValidationSetImage> images = set?.Images;
@@ -439,6 +477,12 @@ namespace OpenVisionLab
                 }
 
                 paths.Add(path);
+                if (!contentHashes.Add(fileSha256))
+                {
+                    error = role + " validation set contains duplicate image content (same SHA-256): " + fileSha256;
+                    return false;
+                }
+
                 imageIdentities.Add(new ValidationImageIdentity(
                     path,
                     expected,

@@ -196,7 +196,8 @@ namespace OpenVisionLab
                 storageResults,
                 request.SetName,
                 isPartial ? "LocalValidationSetPartial" : "LocalValidationSet",
-                savedNotes);
+                savedNotes,
+                inputSampleCount: request.Images.Count);
             int correct = storageResults.Count(OpenVisionRecipeValidationRunSupport.IsExpectedOutcomeCorrect);
             return new OpenVisionRecipeValidationSetRunResult(
                 storageResults.Count,

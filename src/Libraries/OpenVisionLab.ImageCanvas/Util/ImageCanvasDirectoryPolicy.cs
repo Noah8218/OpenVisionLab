@@ -42,6 +42,22 @@ namespace OpenVisionLab.ImageCanvas
 			lastImageDirectory = Path.GetDirectoryName(filePath);
 		}
 
+		public static string ResolveImageName(string filePath)
+		{
+			return string.IsNullOrWhiteSpace(filePath) ? "Image" : Path.GetFileNameWithoutExtension(filePath);
+		}
+
+		public static string CreateDefaultSaveFileName(string imageName)
+		{
+			string name = string.IsNullOrWhiteSpace(imageName) ? "Image" : imageName;
+			foreach (char invalid in Path.GetInvalidFileNameChars())
+			{
+				name = name.Replace(invalid, '_');
+			}
+
+			return name + ".png";
+		}
+
 		private static string ResolveSampleImageDirectory()
 		{
 			foreach (string root in new[] { AppDomain.CurrentDomain.BaseDirectory, Directory.GetCurrentDirectory() })

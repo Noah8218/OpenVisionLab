@@ -19,6 +19,7 @@ using System.Runtime.CompilerServices;
 // 해당 형식에 대해 ComVisible 특성을 true로 설정하세요.
 [assembly: ComVisible(false)]
 [assembly: InternalsVisibleTo("VisionRecipeRunnerSmoke")]
+[assembly: InternalsVisibleTo("PipelineViewerScreenshotSmoke")]
 
 // 이 프로젝트가 COM에 노출되는 경우 다음 GUID는 typelib의 ID를 나타냅니다.
 [assembly: Guid("84c593c6-9e07-402f-8de0-c2bc3dcd180d")]

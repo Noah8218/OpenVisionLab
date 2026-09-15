@@ -1,0 +1,158 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0047",
+    "aliases": [],
+    "type": "task",
+    "mode": "simple",
+    "title": "Retain Contour Tool Partial after concrete owner audit",
+    "risk": "low"
+  },
+  "origin": {
+    "kind": "user-request",
+    "summary": "The user requested that Partial refactoring continue in scheduled cycles and that each remaining Partial be structurally reviewed rather than mechanically deleted or split.",
+    "refs": [
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "docs/reports/OPENVISIONLAB_PARTIAL_STRUCTURAL_ELIMINATION_PLAN_20260913.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "ContourToolWpfView.xaml.cs의 no-change 구조 감사가 완료되었다. View Partial은 required XAML/property-grid adapter로 유지되고, Contour ViewModel/composition, generic property-grid controller/runtime/presenter, area verification/threshold teaching, factory/document, preview/overlay, registry/pipeline, and base owners가 editor state, teaching/review, preview, binding, persistence/routing, creation, algorithm, and lifetime을 각각 소유한다. 독립 seam이 없어 production split은 만들지 않았으며, focused source/build/WPF/monitor and documentation evidence가 통과했다."
+  },
+  "objective": {
+    "summary": "Audit ContourToolWpfView's Partial structure and retain it only if existing concrete owners already provide editor, preview, persistence, binding, routing, and lifetime boundaries without a new split.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev; do not modify C:\\Git\\2D\\Original.",
+      "Do not add a service, interface, manager, wrapper, forwarding Partial, or ViewModel split for file length alone.",
+      "Preserve ContourToolWpfView XAML names, Learn contract, property-grid/layer/preview/result-review facades, settings persistence, and DisposeView lifetime.",
+      "Keep test outputs and evidence under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev.",
+      "Do not commit, push, tag, release, deploy, or mutate the Original repository."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The proof report records current/intended owners, caller path, mutable-state writer, lifetime owner, binding/public/test contract, shortest reading order, and the reason no production split is justified.",
+      "evidence_refs": [
+        "E1"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "The source contract proves that the View Partial has no direct persistence/file-dialog/algorithm coupling and that existing Contour ViewModel, generic property-grid, teaching/review, factory/document, preview/overlay, registry/pipeline, and base lifetime owners are wired.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Focused Debug/Release contracts and builds plus Contour WPF smoke and dynamic monitor geometry pass; broader theme/DPI/input/camera/SDK/GPU/native runtime remains explicitly unverified.",
+      "evidence_refs": [
+        "E2",
+        "E3",
+        "E4"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0046"
+    }
+  ],
+  "context": [
+    {
+      "kind": "source",
+      "location": "src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\ToolViews\\ContourToolWpfView.xaml(.cs); src\\OpenVisionLab\\UI\\VisionTest\\ViewModels\\ContourToolViewModel.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Tooling\\SingleInput\\"
+    },
+    {
+      "kind": "composition-owner",
+      "location": "src\\OpenVisionLab\\UI\\VisionTest\\Composition\\VisionToolCompositionService.cs; src\\OpenVisionLab\\UI\\Menu\\Wpf\\NativeTools\\Documents\\OpenVisionNativePropertyGridToolFactory.cs; src\\OpenVisionLab\\UI\\Menu\\Wpf\\NativeTools\\Preview\\"
+    },
+    {
+      "kind": "test-host",
+      "location": "tools\\VisionRecipeRunnerSmoke\\ContourToolPartialBoundaryContract.cs; tools\\PipelineViewerScreenshotSmoke\\Program.cs; tools\\RunUiPrecheck.ps1"
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "screenshot",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\contour-tool-partial-retention-20260914\\ui-precheck\\wpf_shell_host_contour_tool.png",
+      "summary": "Fresh Contour Tool shell-host WPF smoke screenshot."
+    },
+    {
+      "kind": "screenshot",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\contour-tool-partial-retention-20260914\\ui-precheck\\wpf_openvision_learn_contour.png",
+      "summary": "Fresh Contour Learn WPF smoke screenshot."
+    },
+    {
+      "kind": "geometry",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\contour-tool-partial-retention-20260914\\monitor\\monitor-window-geometry.json",
+      "summary": "Dynamic monitor/window geometry for the Contour smoke."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source",
+      "location": "docs\\reports\\OPENVISIONLAB_CONTOUR_TOOL_PARTIAL_RETENTION_20260914.md; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\ToolViews\\ContourToolWpfView.xaml.cs; src\\OpenVisionLab\\UI\\VisionTest\\ViewModels\\ContourToolViewModel.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Tooling\\SingleInput\\",
+      "observation": "ContourToolWpfView remains a required XAML/property-grid adapter. Existing Contour ViewModel/composition, generic property-grid controller/runtime/presenter, area verification/threshold teaching presenters, factory/document builders, preview/overlay, registry/pipeline, and base owners provide concrete editor, presentation, preview, binding, persistence/routing, creation, algorithm, and lifetime boundaries. The View has no direct settings store, dialog, System.IO, OpenCV/Contour algorithm construction, or pipeline coupling.",
+      "observed_at": "2026-09-14T06:12:46+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\contour-tool-partial-retention-20260914\\debug\\contour-tool-partial-boundary-contract.txt; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\contour-tool-partial-retention-20260914\\release\\contour-tool-partial-boundary-contract.txt",
+      "observation": "ContourToolPartialBoundaryContract passed 11/11 in Debug and Release. VisionRecipeRunnerSmoke Debug and Release builds passed with 0 warnings/errors.",
+      "observed_at": "2026-09-14T06:12:46+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\contour-tool-partial-retention-20260914",
+      "observation": "Contour-focused WPF smoke and dynamic monitor/window probing are recorded here; broader UI and native matrices remain unverified.",
+      "observed_at": "2026-09-14T06:12:46+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\contour-tool-partial-retention-20260914\\ui-precheck\\ui_precheck_report.md; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\contour-tool-partial-retention-20260914\\monitor\\monitor-window-geometry.json",
+      "observation": "RunUiPrecheck passed wpf_shell_host_contour_tool and wpf_openvision_learn_contour with check=OK, layout/text/internal counts zero, and fresh PNGs. Dynamic monitor probing recorded DISPLAY2 1920x1080 with one visible intersecting smoke window. Broader UI and native matrices remain unverified.",
+      "observed_at": "2026-09-14T06:12:46+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-14T06:12:46+09:00",
+      "summary": "ContourToolWpfView Partial은 required XAML/property-grid adapter이며, Contour ViewModel/composition, generic property-grid controller/runtime/presenter, area verification/threshold teaching, factory/document, preview/overlay, registry/pipeline/base owners가 독립 책임과 lifetime을 이미 제공한다. 새 seam 없이 분리하면 forwarding wrapper나 중복 상태가 되므로 no-change로 유지한다.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "D2",
+      "kind": "decision",
+      "at": "2026-09-14T06:12:46+09:00",
+      "summary": "PL-0047의 세 completion criteria가 현재 source, contract, build, WPF smoke, monitor, and documentation evidence로 충족되어 resolved로 닫는다. 전체 theme/DPI/input, native dialog, camera/SDK/GPU 및 long-running native runtime은 이 slice의 검증 범위가 아니다.",
+      "evidence_refs": [
+        "E3",
+        "E4"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-14T06:12:46+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "The Contour Tool Partial retained-owner audit found no independent boundary that justified a production split; focused source/build/WPF/monitor/documentation evidence was recorded. Do not reopen without a new requirement, reproducible defect, failed criterion, or changed dependency/lifetime boundary."
+    }
+  ],
+  "created_at": "2026-09-14T06:12:46+09:00",
+  "updated_at": "2026-09-14T06:12:46+09:00"
+}

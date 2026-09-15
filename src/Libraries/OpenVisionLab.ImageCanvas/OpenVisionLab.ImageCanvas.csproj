@@ -28,19 +28,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="ViewModel\AutoAlignTeachingViewModel.cs" />
-    <Compile Remove="ViewModel\AutoWarpageTeachingViewModel.cs" />
-    <Compile Remove="ViewModel\LayoutItemViewModel.cs" />
-    <Compile Remove="View\AddRoiArrayView.xaml.cs" />
-    <Compile Remove="View\AutoAlignTeachingView.xaml.cs" />
-    <Compile Remove="View\AutoWarpageTeachingView.xaml.cs" />
-    <Compile Remove="Converter\BooleanToEyeIconConverter .cs" />
-    <Page Remove="View\AddRoiArrayView.xaml" />
-    <Page Remove="View\AutoAlignTeachingView.xaml" />
-    <Page Remove="View\AutoWarpageTeachingView.xaml" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\OpenVisionLab.Localization\OpenVisionLab.Localization.csproj" />
   </ItemGroup>
 

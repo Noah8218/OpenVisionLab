@@ -43,6 +43,44 @@ namespace OpenVisionLab
                 ?? rows.FirstOrDefault();
             return new OpenVisionRecipeValidationSetImageSelection(rows, selected);
         }
+
+        internal static string BuildFolderImageRegistrationError(string error)
+        {
+            return OpenVisionRecipeText.Local(
+                    "폴더 이미지 등록 ERROR: ",
+                    "Folder image registration ERROR: ")
+                + (error ?? string.Empty);
+        }
+
+        internal static string BuildEmptyFolderImageRegistrationStatus()
+        {
+            return OpenVisionRecipeText.Local(
+                "선택한 폴더의 바로 아래에서 지원 이미지 파일을 찾지 못했습니다.",
+                "No supported images were found directly in the selected folder.");
+        }
+
+        internal static string BuildImageRegistrationStatus(
+            string expected,
+            int added,
+            int updated,
+            int skipped)
+        {
+            return string.Format(
+                CultureInfo.CurrentCulture,
+                OpenVisionRecipeText.Local(
+                    "{0} 이미지: 추가 {1}, 갱신 {2}, 건너뜀 {3}",
+                    "{0} images: added {1}, updated {2}, skipped {3}"),
+                expected,
+                added,
+                updated,
+                skipped);
+        }
+
+        internal static string BuildSaveErrorStatus(string operation, string error)
+        {
+            return (operation ?? string.Empty) + " ERROR: " + (error ?? string.Empty);
+        }
+
         internal static string BuildExpectedText(
             bool storageReady,
             OpenVisionRecipeValidationSetOption option)

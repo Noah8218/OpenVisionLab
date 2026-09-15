@@ -22,6 +22,7 @@ namespace OpenVisionLab
         public string FinishedAt { get; set; } = string.Empty;
         public double TotalMilliseconds { get; set; }
         public int TotalCount { get; set; }
+        public int InputSampleCount { get; set; }
         public int PassCount { get; set; }
         public int FailCount { get; set; }
         public int JudgmentCount { get; set; }
@@ -170,7 +171,8 @@ namespace OpenVisionLab
             string suiteKind = "Batch",
             string notes = "",
             VisionPipeline pipelineSnapshot = null,
-            VisionPipelineExecutionProvenance executionProvenance = null)
+            VisionPipelineExecutionProvenance executionProvenance = null,
+            int inputSampleCount = 0)
         {
             List<VisionPipelineBatchSampleRunResult> resultList = (results ?? Enumerable.Empty<VisionPipelineBatchSampleRunResult>()).ToList();
             string batchName = CreateUniqueBatchName(recipeName, pipelineName, startedAt);
@@ -195,6 +197,7 @@ namespace OpenVisionLab
                 FinishedAt = finishedAt.ToString("o"),
                 TotalMilliseconds = (finishedAt - startedAt).TotalMilliseconds,
                 TotalCount = resultList.Count,
+                InputSampleCount = Math.Max(resultList.Count, inputSampleCount),
                 PassCount = resultList.Count(result => result.Success),
                 FailCount = resultList.Count(result => !result.Success),
                 JudgmentCount = resultList.Count(result =>

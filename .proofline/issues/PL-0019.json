@@ -1,0 +1,131 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0019",
+    "aliases": [
+      "OPENVISIONLAB-IMAGECANVAS-TIMER-DISPOSE-20260912"
+    ],
+    "type": "bug",
+    "mode": "simple",
+    "title": "Prevent ImageCanvas timer callback failure during disposal",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "current-source audit and reproducible lifecycle probe",
+    "summary": "The current ImageCanvas timer callback was invoked after the view-model timer field had been cleared, reproducing a NullReferenceException before any WPF or hardware runtime was required.",
+    "refs": [
+      "AGENTS.md",
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "src/Libraries/OpenVisionLab.ImageCanvas/ViewModel/RoiImageCanvasViewModel.cs"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "The timer callback now snapshots the timer, returns when the timer is unavailable, and keeps the existing disposal exception boundary. The confirmed null-timer failure is fixed; focused probe, ImageCanvas build, solution Debug/Release builds, readiness, and the representative workspace image-load smoke all passed."
+  },
+  "problem": {
+    "claims": [
+      {
+        "id": "P1",
+        "state": "confirmed",
+        "text": "Invoking RoiImageCanvasViewModel._dataTimer_Elapsed after construction state has no timer produces a NullReferenceException at _refreshTimer.Stop().",
+        "evidence_refs": [
+          "E1"
+        ]
+      }
+    ],
+    "impact": "A queued System.Timers.Timer callback can race with Dispose after _refreshTimer is cleared and surface an unhandled callback exception during ImageCanvas shutdown or view replacement."
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The timer callback returns without an exception when the timer field is null and does not call Stop on a cleared timer.",
+      "evidence_refs": [
+        "E2"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "The affected ImageCanvas project and the solution build successfully with no new warnings or errors, and existing readiness verification remains green.",
+      "evidence_refs": [
+        "E3",
+        "E4",
+        "E5",
+        "E6"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0018"
+    }
+  ],
+  "context": [
+    {
+      "kind": "source",
+      "location": "src/Libraries/OpenVisionLab.ImageCanvas/ViewModel/RoiImageCanvasViewModel.cs::_dataTimer_Elapsed and Dispose"
+    },
+    {
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\roi-image-canvas-timer-race-20260912\\reproduce-before-fix.txt"
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "reproduction",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\roi-image-canvas-timer-race-20260912\\reproduce-before-fix.txt",
+      "observation": "A reflection probe loaded the Debug ImageCanvas assembly, created an uninitialized RoiImageCanvasViewModel with a null _refreshTimer, invoked the private _dataTimer_Elapsed callback, and caught a MethodInvocationException whose inner exception was System.NullReferenceException with message 'Object reference not set to an instance of an object.'.",
+      "observed_at": "2026-09-12T10:20:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\roi-image-canvas-timer-race-20260912\\reproduce-after-fix.txt",
+      "observation": "The same reflection probe invoked _dataTimer_Elapsed with a null _refreshTimer after the guard was added and completed with NULL_TIMER_CALLBACK=OK and exit code 0.",
+      "observed_at": "2026-09-12T10:28:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "build",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\roi-image-canvas-timer-race-20260912\\imagecanvas-debug-build.txt",
+      "observation": "OpenVisionLab.ImageCanvas Debug build completed with 0 warnings and 0 errors.",
+      "observed_at": "2026-09-12T10:28:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "build",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\roi-image-canvas-timer-race-20260912\\solution-debug-build.txt; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\roi-image-canvas-timer-race-20260912\\solution-release-build.txt",
+      "observation": "The full OpenVisionLab solution Debug and Release builds completed with 0 warnings and 0 errors.",
+      "observed_at": "2026-09-12T10:42:00+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "contract",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\roi-image-canvas-timer-race-20260912\\readiness-debug.txt; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\roi-image-canvas-timer-race-20260912\\readiness-release.txt",
+      "observation": "OpenVisionReadinessCheck completed with all 13 checks OK in both Debug and Release and reported OpenVisionLab readiness contract passed.",
+      "observed_at": "2026-09-12T10:42:00+09:00"
+    },
+    {
+      "id": "E6",
+      "kind": "ui-smoke",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\roi-image-canvas-timer-race-20260912\\wpf-workspace-image-load\\ui_smoke_stdout.txt",
+      "observation": "The representative wpf_shell_host_workspace_image_load smoke completed with check=OK, elapsed=10686ms, and exit code 0 after the ImageCanvas lifetime change.",
+      "observed_at": "2026-09-12T10:59:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-12T10:45:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "The reproduced null-timer callback defect was fixed with the smallest local lifecycle guard and all required focused checks passed."
+    }
+  ],
+  "created_at": "2026-09-12T10:20:00+09:00",
+  "updated_at": "2026-09-12T10:45:00+09:00"
+}

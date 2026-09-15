@@ -22,10 +22,10 @@
   },
   "state": {
     "status": "blocked",
-    "current_summary": "PL-0011 read-only RC2 preflight is recorded; the release candidate remains blocked. The preflight captured 101 tracked changes and 26 untracked files before the new report was added; Dev remains dirty, PL-0005 evidence is unresolved, and PL-0010 has an explicit SDK-boundary defer rather than a one-pass implementation.",
-    "next_action": "Obtain PL-0005 external license/provenance evidence, retain the explicit PL-0010 SDK-boundary defer unless a coordinated SDK contract is supplied, then review the Dev changes into an exact clean candidate and rerun the repository gate from a clean clone before requesting separate release-stage authorizations.",
-    "blocker": "The Dev worktree has 101 tracked changes and additional untracked artifacts (26 at the gate probe, 27 after the preflight documentation), PL-0005 release evidence is unresolved, and no exact approved rc.2 source commit or original-repository release target has been established.",
-    "unblock_condition": "PL-0005 is supported by current license/provenance/NOTICE evidence; PL-0010 has a recorded include/defer decision; an exact clean committed candidate exists; VerifyReleaseCandidate.ps1, copied-runtime, hosted-CI, manifest, and SHA-256 evidence pass; and each later release stage has explicit authorization."
+    "current_summary": "The historical v2.1.0-rc.2 GitHub draft exists, but publication or retirement is not authorized and the active Dev product has advanced to 2.2.0-dev.2. No release mutation belongs to the current PL-0057 predevelopment task.",
+    "next_action": "Wait for an explicit release request that names whether to retire or publish the exact v2.1.0-rc.2 draft and confirms repository, tag, target commit, assets, and visibility.",
+    "blocker": "No explicit authorization or current release decision exists for the historical v2.1.0-rc.2 draft, and its candidate is not the active 2.2.0-dev.2 Dev source.",
+    "unblock_condition": "The user explicitly names the desired action for the exact v2.1.0-rc.2 draft or replaces it with a separately scoped, versioned release request."
   },
   "objective": {
     "summary": "Produce one reproducible OpenVisionLab v2.1.0-rc.2 pre-release from an exact verified commit after accepted source-distribution, memory-safety, storage-boundary, and execution-reproducibility risks are closed.",
@@ -42,34 +42,43 @@
       "id": "C1",
       "text": "The exact rc.2 included/excluded scope, canonical version sources, channel, source repository, branch, and target commit are recorded before release mutation.",
       "evidence_refs": [
-        "E1"
+        "E1",
+        "E4",
+        "E5"
       ]
     },
     {
       "id": "C2",
       "text": "PL-0005, PL-0006, PL-0007, and PL-0008 are resolved with current evidence, and PL-0009/PL-0010 have an explicit evidence-based include or defer decision rather than silent omission.",
       "evidence_refs": [
-        "E3"
+        "E3",
+        "E4"
       ]
     },
     {
       "id": "C3",
       "text": "The exact release commit passes the repository's clean Release Candidate gate, copied-runtime launch, focused new regressions, hosted CI, artifact manifest, and SHA-256 checks.",
       "evidence_refs": [
-        "E2"
+        "E2",
+        "E4"
       ]
     },
     {
       "id": "C4",
       "text": "Any original promotion, commit, branch push, annotated v2.1.0-rc.2 tag, tag push, draft, and publication have separate explicit authorization and recorded outcomes; no deployment is inferred.",
-      "evidence_refs": []
+      "evidence_refs": [
+        "E4",
+        "E6",
+        "E7",
+        "E8"
+      ]
     }
   ],
   "milestones": [
     {
       "id": "M1",
       "summary": "Establish a clean, buildable Dev reliability baseline from the current validated working tree without losing or mixing user-owned changes.",
-      "status": "pending",
+      "status": "done",
       "required": true,
       "criteria_refs": [
         "C1"
@@ -79,7 +88,7 @@
     {
       "id": "M2",
       "summary": "Close the tracked binary and redistribution boundary.",
-      "status": "pending",
+      "status": "done",
       "required": true,
       "criteria_refs": [
         "C2"
@@ -91,7 +100,7 @@
     {
       "id": "M3",
       "summary": "Close converter memory safety, workspace path containment, and immutable execution identity.",
-      "status": "pending",
+      "status": "done",
       "required": true,
       "criteria_refs": [
         "C2"
@@ -105,7 +114,7 @@
     {
       "id": "M4",
       "summary": "Resolve or explicitly defer Pipeline persistence atomicity and single-execution object evidence from measured current evidence.",
-      "status": "pending",
+      "status": "done",
       "required": true,
       "criteria_refs": [
         "C2"
@@ -164,6 +173,46 @@
       "location": "docs/reports/OPENVISIONLAB_RC2_PREFLIGHT_20260825.md; .proofline/issues/PL-0005.json; .proofline/issues/PL-0006.json; .proofline/issues/PL-0007.json; .proofline/issues/PL-0008.json; .proofline/issues/PL-0009.json; .proofline/issues/PL-0010.json",
       "observation": "PL-0005 remains open with unresolved DLL license/provenance and notice evidence; PL-0006 through PL-0009 are resolved in Dev; PL-0010 is blocked at the vendored SDK result-contract boundary and has an explicit evidence-based defer decision.",
       "observed_at": "2026-08-25T19:40:24+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "gate-and-promotion-record",
+      "location": "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md:392-448; docs/reports/OPENVISIONLAB_RETAINED_DEPENDENCY_NOTICE_COVERAGE_20260826.md:59-64; C:\\Git\\OpenVisionLab_Dev\\artifacts\\release_candidate_20260826_actual_launch\\release_candidate_summary.json; C:\\Git\\OpenVisionLab\\artifacts\\release_launch_smoke_20260826_122127; C:\\Git\\OpenVisionLab\\artifacts\\release_candidate_20260826_original_main\\release_candidate_summary.json",
+      "observation": "The latest recorded evidence shows the clean Dev Release candidate gate passed at 0292656befc07a79e4e2d43ddd24d386a6b24909 with copied-runtime launch/data-root smoke, and the original main full gate passed at 4b92289133a593356c74b22505714a1f91112380 before the reviewed promotion was pushed to origin/main. The canonical version remains 2.1.0; no v2.1.0-rc.2 tag, GitHub Release, or deployment was performed.",
+      "observed_at": "2026-08-26T13:44:48+09:00",
+      "supersedes": [
+        "E1",
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "E5",
+      "kind": "repository-inspection",
+      "location": "C:\\Git\\OpenVisionLab_Dev: git status --short; git log -1; src/OpenVisionLab/OpenVisionLab.csproj; .proofline/issues/PL-0011.json",
+      "observation": "The current Dev checkout is not a release-clean working tree: it contains modified issue/documentation files, a modified OpenVisionLab.csproj with an Integration.Contracts reference, a modified smoke program, and untracked NuGet/Integration/third_party/test files. The current source version remains 2.1.0, no v2.1.0-rc.2 tag exists locally, and PL-0011 records the reviewed original-main commit 4b92289133a593356c74b22505714a1f91112380 as the promoted candidate evidence while release mutations remain pending.",
+      "observed_at": "2026-08-26T15:29:00+09:00"
+    },
+    {
+      "id": "E6",
+      "kind": "repository-mutation-check",
+      "location": "C:\\Git\\OpenVisionLab: git show-ref --tags --dereference v2.1.0-rc.2; git cat-file -p refs/tags/v2.1.0-rc.2; git ls-remote --tags origin refs/tags/v2.1.0-rc.2; git status --short --branch",
+      "observation": "The local annotated tag v2.1.0-rc.2 exists as tag object 5f9fc82c0db085e41b5e3d3f6be90cd80cb8d7e7 and dereferences to commit 4b92289133a593356c74b22505714a1f91112380. The origin tag query returned no result, so the tag has not been pushed. The original main worktree remains on main tracking origin/main with only the pre-existing untracked Temp.txt; no Release or deployment mutation was performed.",
+      "observed_at": "2026-08-26T15:58:55+09:00"
+    },
+    {
+      "id": "E7",
+      "kind": "remote-mutation-check",
+      "location": "C:\\Git\\OpenVisionLab: git push origin refs/tags/v2.1.0-rc.2:refs/tags/v2.1.0-rc.2; git ls-remote --tags origin refs/tags/v2.1.0-rc.2; git show-ref --tags --dereference v2.1.0-rc.2",
+      "observation": "The exact tag push succeeded and origin now reports tag object 5f9fc82c0db085e41b5e3d3f6be90cd80cb8d7e7 for refs/tags/v2.1.0-rc.2, matching the local annotated tag; local dereference confirms candidate commit 4b92289133a593356c74b22505714a1f91112380. No branch push was executed in this step, and no GitHub Release or deployment mutation was performed.",
+      "observed_at": "2026-08-26T16:34:14+09:00"
+    },
+    {
+      "id": "E8",
+      "kind": "release-draft-check",
+      "location": "GitHub repository Noah8218/OpenVisionLab; gh release create/view v2.1.0-rc.2",
+      "observation": "GitHub Release draft RE_kwDOStA7nM4WeAoP was created with tagName v2.1.0-rc.2, name OpenVisionLab 2.1.0 RC2, isDraft=true, isPrerelease=true, publishedAt=null, and five uploaded assets: clean_runtime_manifest.json, OpenVisionLab-win-x64-framework-dependent.zip, its .sha256 file, release_candidate_summary.json, and sample_catalog_summary.json. Publication and deployment were not performed.",
+      "observed_at": "2026-08-26T17:01:10+09:00"
     }
   ],
   "events": [
@@ -184,8 +233,76 @@
       "from": "open",
       "to": "blocked",
       "summary": "The RC2 preflight reproduced the clean-working-tree gate blocker and preserved the release boundary without mutation."
+    },
+    {
+      "id": "T2",
+      "kind": "transition",
+      "at": "2026-08-26T13:44:48+09:00",
+      "from": "blocked",
+      "to": "open",
+      "summary": "Later current evidence superseded the 2026-08-25 dirty-worktree and PL-0005 preflight blockers; RC2 release-stage mutations remain pending separate authorization."
+    },
+    {
+      "id": "D2",
+      "kind": "decision",
+      "at": "2026-08-26T13:44:48+09:00",
+      "summary": "Record the later clean Dev gate, original-main full gate, and reviewed promotion as superseding the old read-only preflight blockers. Keep the issue open only for separately authorized tag, tag push, draft release, and publication stages; deployment remains out of scope.",
+      "evidence_refs": [
+        "E4"
+      ],
+      "supersedes": [
+        "D1"
+      ]
+    },
+    {
+      "id": "D3",
+      "kind": "decision",
+      "at": "2026-08-26T15:32:06+09:00",
+      "summary": "The user confirmed the sequential plan with RC2 release-stage work first. Freeze the proposed RC2 scope at the reviewed original-main commit 4b92289133a593356c74b22505714a1f91112380: include the resolved PL-0005 through PL-0009 hardening evidence, retain an explicit PL-0010 SDK-boundary defer, and exclude current dirty Dev Integration changes and unapproved feature expansion. Keep tag, tag push, draft, publication, and deployment behind separate authorization boundaries.",
+      "evidence_refs": [
+        "E4",
+        "E5"
+      ]
+    },
+    {
+      "id": "D4",
+      "kind": "decision",
+      "at": "2026-08-26T15:58:55+09:00",
+      "summary": "Execute only the user-authorized local annotated tag stage for RC2. Create v2.1.0-rc.2 in the original repository at candidate commit 4b92289133a593356c74b22505714a1f91112380, then stop before tag push, Release draft/publication, or deployment.",
+      "evidence_refs": [
+        "E4",
+        "E6"
+      ]
+    },
+    {
+      "id": "D5",
+      "kind": "decision",
+      "at": "2026-08-26T16:34:14+09:00",
+      "summary": "Execute the user-authorized exact tag push only. Push refs/tags/v2.1.0-rc.2 from the original repository to origin, verify the remote object and peeled commit, then stop before Release draft/publication or deployment.",
+      "evidence_refs": [
+        "E6",
+        "E7"
+      ]
+    },
+    {
+      "id": "D6",
+      "kind": "decision",
+      "at": "2026-08-26T17:01:10+09:00",
+      "summary": "Execute the user-authorized GitHub Release draft stage only for v2.1.0-rc.2, using the verified remote tag and five candidate assets. Keep publication and deployment unperformed pending a separate authorization and review of the platform-precheck limitation.",
+      "evidence_refs": [
+        "E7",
+        "E8"
+      ]
+    },
+    {
+      "id": "T3",
+      "kind": "transition",
+      "at": "2026-09-14T23:52:00+09:00",
+      "from": "open",
+      "to": "blocked",
+      "summary": "Move the historical RC2 release item from open to blocked because its next action requires a new explicit external-release decision and is not part of current Dev work."
     }
   ],
   "created_at": "2026-08-25T11:56:04+09:00",
-  "updated_at": "2026-08-25T19:43:00+09:00"
+  "updated_at": "2026-09-14T23:52:00+09:00"
 }

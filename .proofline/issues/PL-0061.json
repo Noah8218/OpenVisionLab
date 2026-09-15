@@ -1,0 +1,128 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0061",
+    "aliases": [
+      "OPENVISIONLAB-2D003-METADATA-20260915"
+    ],
+    "type": "bug",
+    "mode": "simple",
+    "title": "Restore .NET 8 release metadata verification host",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "scheduled 2D task execution and source review",
+    "summary": "The 2D plan identifies the release distribution gate's PowerShell runtime metadata loading as a P1 reliability defect. A bounded application-side tool change was authorized by the scheduled development cycle.",
+    "refs": [
+      "C:\\Users\\USER\\Downloads\\OpenVisionLab_2D_Audit_and_Plan.md",
+      "C:\\Users\\USER\\Downloads\\OpenVisionLab_2D_tasks.json",
+      "AGENTS.md"
+    ]
+  },
+  "state": {
+    "status": "blocked",
+    "current_summary": "TestReleaseDistribution.ps1 now delegates AssemblyMetadata extraction to a .NET 8 OpenVisionReadinessCheck PE metadata reader and retains the existing manifest, hash, runtime identity, and required metadata comparisons. Focused helper and solution Debug/Release builds pass, but the complete release-candidate distribution gate remains unverified because the current Dev worktree contains pre-existing user changes and the RC command requires a clean tracked tree.",
+    "next_action": "Run VerifyReleaseCandidate.ps1 -SkipLaunch in a clean tracked verification checkout or separately authorized staging copy using the patched tools, then test altered DLL/hash/version/missing-metadata fixtures and resolve this issue only when every release-gate criterion passes.",
+    "blocker": "The current Dev tracked worktree is dirty with pre-existing user changes. VerifyReleaseCandidate.ps1 refuses a dirty tracked tree, and committing, resetting, or discarding those changes is outside this scheduled cycle's authorization.",
+    "unblock_condition": "A user-approved clean verification checkout or separately authorized clean staging run is available for the release-candidate command and mutation fixtures."
+  },
+  "problem": {
+    "claims": [
+      {
+        "id": "P1",
+        "state": "confirmed",
+        "text": "The release distribution gate must read OpenVisionLab.dll AssemblyMetadata without execution-loading the application assembly in the PowerShell host.",
+        "evidence_refs": [
+          "E1"
+        ]
+      }
+    ],
+    "impact": "A host/runtime metadata-loading failure can reject an otherwise valid release or weaken the trustworthiness of the distribution gate if the check is bypassed."
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "TestReleaseDistribution.ps1 uses the .NET 8 metadata reader and preserves all existing manifest, hash, runtime identity, clean-state, and required AssemblyMetadata comparisons without Assembly.LoadFrom or GetCustomAttributesData in the PowerShell host.",
+      "evidence_refs": [
+        "E1"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "The helper and OpenVisionLab solution build cleanly in Debug and Release, and the reader returns the expected application id, version, source commit, and source state from the built OpenVisionLab.dll.",
+      "evidence_refs": [
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "A non-CLI input fails closed and an assembly without the required metadata produces missing required keys rather than an accepted identity.",
+      "evidence_refs": [
+        "E3"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "VerifyReleaseCandidate.ps1 -SkipLaunch passes for an unchanged clean distribution and fails for intentional DLL/hash/version/missing-metadata mutations while preserving NOTICE, sample catalog, ZIP, and required payload checks.",
+      "evidence_refs": []
+    }
+  ],
+  "relations": [],
+  "context": [
+    {
+      "kind": "owner-map",
+      "location": "tools\\TestReleaseDistribution.ps1 -> tools\\OpenVisionReadinessCheck\\Program.cs --read-assembly-metadata -> tools\\OpenVisionReadinessCheck\\AssemblyMetadataReader.cs"
+    },
+    {
+      "kind": "boundary",
+      "location": "The helper is a verification-tool dependency only and is not added to the customer release payload."
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "evidence-root",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d003-metadata-20260915",
+      "summary": "Helper/solution build logs, reader output, readiness contract, invalid-input and missing-metadata contract logs."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "review",
+      "location": "tools\\TestReleaseDistribution.ps1; tools\\OpenVisionReadinessCheck\\Program.cs; tools\\OpenVisionReadinessCheck\\AssemblyMetadataReader.cs",
+      "observation": "The distribution script no longer calls Assembly.LoadFrom or GetCustomAttributesData. It invokes the .NET 8 OpenVisionReadinessCheck --read-assembly-metadata route and continues to compare the returned keys against the existing runtime build manifest. The readiness contract explicitly protects this call path.",
+      "observed_at": "2026-09-15T11:25:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "build",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d003-metadata-20260915\\readiness-helper-build-rerun.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d003-metadata-20260915\\solution-debug-build.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d003-metadata-20260915\\solution-release-build.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d003-metadata-20260915\\reader-debug-openvisionlab.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d003-metadata-20260915\\reader-release-openvisionlab.log",
+      "observation": "The helper build and full solution Debug/Release builds completed with exit code 0, warnings 0, and errors 0. The Debug and Release reader outputs returned OpenVisionLab.2DStudio, version 2.2.0-dev.2, source commit 176eec95e0081502dc07d89ddaee666abac8123d, and source state dirty.",
+      "observed_at": "2026-09-15T11:25:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d003-metadata-20260915\\reader-invalid.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d003-metadata-20260915\\reader-missing-metadata-contract.txt; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d003-metadata-20260915\\readiness-contract.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d003-metadata-20260915\\distribution-script-parse-windows-powershell-rerun.log",
+      "observation": "A four-byte non-CLI fixture caused the reader to exit 1 with Image is too small. A valid helper assembly without the required application metadata returned zero metadata keys, and the required-key contract reported missing=4 and expectedFailure=True. The readiness contract and Windows PowerShell script parse both passed.",
+      "observed_at": "2026-09-15T11:25:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-15T11:25:00+09:00",
+      "from": "open",
+      "to": "blocked",
+      "summary": "Bounded .NET 8 metadata-reader implementation and local contracts pass; the clean distribution-gate and mutation-fixture criterion remains blocked by the dirty Dev worktree and unavailable clean verification checkout.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3"
+      ]
+    }
+  ],
+  "created_at": "2026-09-15T11:25:00+09:00",
+  "updated_at": "2026-09-15T11:25:00+09:00"
+}

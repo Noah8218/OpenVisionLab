@@ -1,0 +1,281 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0057",
+    "aliases": [
+      "OPENVISIONLAB-PREDEVELOPMENT-PRIORITIES-1-5-20260914"
+    ],
+    "type": "task",
+    "mode": "composite",
+    "title": "Close predevelopment audit priorities 1 through 5",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "explicit user request",
+    "summary": "The user explicitly requested execution of all five priorities from the whole-project review before further 2D feature development.",
+    "refs": [
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "docs/reports/OPENVISIONLAB_JUNIOR_WHOLE_REPOSITORY_REVIEW_20260911.md",
+      "AGENTS.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "우선순위 1~5는 Dev에서 완료 상태다. 마지막 ImageCanvas attach 순서 조정 이후 Debug/Release 전체 build, 세 focused contract, negative execution contract, dependency/document/refactor gate와 두 actual EXE를 다시 검증했고 현재 source 기준 결과와 동적 monitor 조건을 완료 보고서에 갱신했다."
+  },
+  "objective": {
+    "summary": "Produce a stable, evidence-backed Dev baseline; correct three false runtime contracts; reduce the live documentation surface and verified dead files; prevent Line overlay collisions; and move concrete ImageCanvas control/lifetime ownership out of the ViewModel while preserving behavior.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev; do not modify C:\\Git\\2D\\Original.",
+      "Preserve all pre-existing tracked and untracked user changes and distinguish new changes with the captured baseline.",
+      "Keep explicit Teach, Preview, and Run behavior and the x64 Windows/.NET 8 product identity unchanged.",
+      "Reuse existing concrete owners; add no speculative service, interface, wrapper, registry, folder, or Partial split.",
+      "Store generated test output, screenshots, and logs under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev.",
+      "Do not commit, push, tag, release, deploy, communicate externally, or mutate hardware/platform integrations."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The pre-change branch, HEAD, status, tracked diff, and SHA-256 inventory are recorded outside the repository so existing work and this task can be distinguished.",
+      "evidence_refs": [
+        "E1",
+        "E6",
+        "E9"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "The solution exposes no unsupported x86 configuration, embedded smoke failures return a nonzero process code, and NOTICE identifies the manifest-verified Vision SDK commit; focused checks prove each contract.",
+      "evidence_refs": [
+        "E2",
+        "E6",
+        "E9"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "The live documentation route is compact and current, stale/duplicate control entries are removed or archived, and only locally proven dead files are deleted; documentation and source/build checks pass.",
+      "evidence_refs": [
+        "E3",
+        "E6",
+        "E9"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "Line measurement and signal-diagnostic labels use a collision-safe layout, with focused rendering/runtime evidence and all unexercised DPI/theme/input scope stated.",
+      "evidence_refs": [
+        "E4",
+        "E6",
+        "E7",
+        "E9"
+      ]
+    },
+    {
+      "id": "C5",
+      "text": "RoiImageCanvasViewModel no longer creates, exposes, invokes, or disposes the concrete ImageCanvasControl; a View/presentation owner owns control creation and lifetime while the existing binding/public/consumer behavior passes focused contracts.",
+      "evidence_refs": [
+        "E5",
+        "E6",
+        "E8",
+        "E9"
+      ]
+    },
+    {
+      "id": "C6",
+      "text": "The final report records the product identity, executable/project graph route, MVVM conclusion, DLL portability boundary, completed checks, and every remaining unverified runtime risk without claiming commit, release, or hardware proof.",
+      "evidence_refs": [
+        "E3",
+        "E5",
+        "E6",
+        "E8",
+        "E9"
+      ]
+    }
+  ],
+  "milestones": [
+    {
+      "id": "M1",
+      "summary": "Capture the immutable pre-change worktree baseline",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M2",
+      "summary": "Correct x86, smoke exit-code, and SDK NOTICE contracts",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C2"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M3",
+      "summary": "Compact the documentation control plane and remove verified dead files",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C3",
+        "C6"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M4",
+      "summary": "Make Line result and diagnostic labels collision-safe",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C4"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M5",
+      "summary": "Move concrete ImageCanvas control and lifetime ownership out of the ViewModel",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C5",
+        "C6"
+      ],
+      "issue_refs": []
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0018"
+    }
+  ],
+  "context": [
+    {
+      "kind": "source",
+      "location": "OpenVisionLab.sln; src/OpenVisionLab; src/Libraries/OpenVisionLab.ImageCanvas; tools; NOTICE"
+    },
+    {
+      "kind": "documentation",
+      "location": "docs/README.md; docs/LLM_DOCUMENT_INDEX.json; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md; docs/admin/CODEBASE_STRUCTURE.md"
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "evidence-root",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\predevelopment-priorities-20260914",
+      "summary": "Pre-change baseline, focused build/test logs, runtime reports, screenshots, and final verification evidence."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "audit",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\predevelopment-priorities-20260914\\01-baseline",
+      "observation": "Starting branch codex/public-sample-ux-docs, HEAD 176eec95e0081502dc07d89ddaee666abac8123d, 244-path status, tracked patch/stat, diff check, and SHA-256 inventory were captured before modification.",
+      "observed_at": "2026-09-14T23:33:42+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\predevelopment-priorities-20260914\\02-contracts",
+      "observation": "Unsupported x86 configuration is absent and rejected, an unknown embedded-smoke scenario reports FAIL with process exit 1, SDK NOTICE version/commit matches the hash-verified manifest, and focused builds/checks pass.",
+      "observed_at": "2026-09-15T00:57:09+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "documentation",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\predevelopment-priorities-20260914\\03-document-cleanup; docs\\README.md; docs\\LLM_DOCUMENT_INDEX.json",
+      "observation": "The 1,331-file documentation tree has a SHA-256 inventory; 944 text files have zero invalid UTF-8/JSON and zero missing inline relative links. The four live control documents are compact, old content is archived, 156 moved-archive links were rebased, and only verified dead source/config/media was removed.",
+      "observed_at": "2026-09-15T00:57:09+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\predevelopment-priorities-20260914\\04-line-overlay; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\predevelopment-priorities-20260914\\06-final-checkpoint\\actual-exe-line\\run-final",
+      "observation": "Line label layout contract passes 5 checks for 12 labels. Final actual product EXE exits 0 with 37 px, 0.222 mm, and 24 detections; the window intersects DISPLAY2 and visual review confirms separated distance columns and top profile legend at 100% DPI.",
+      "observed_at": "2026-09-15T00:57:09+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\predevelopment-priorities-20260914\\05-imagecanvas-owner; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\predevelopment-priorities-20260914\\06-final-checkpoint\\external-consumer-runtime-final",
+      "observation": "RoiImageCanvasViewModel has no ImageCanvasControl creation, exposure, invocation, or disposal. RoiImageCanvasPresentation and its View/session callers own native lifetime; the 8-check owner contract and 6-check path contract pass. The actual external consumer exits 0 after 100 create/dispose cycles with handle delta -5 and valid overlay/view-state evidence on DISPLAY2.",
+      "observed_at": "2026-09-15T00:57:09+09:00"
+    },
+    {
+      "id": "E6",
+      "kind": "review",
+      "location": "docs\\reports\\OPENVISIONLAB_PREDEVELOPMENT_PRIORITIES_1_TO_5_20260915.md; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\predevelopment-priorities-20260914\\06-final-checkpoint",
+      "observation": "The report records the executable/project graph route, practical MVVM conclusion, DLL dependency-closure boundary, deletions/retained candidates, full final checks, and unverified runtime scope. Debug/Release solution and relevant harness builds have zero warnings/errors; readiness, refactor audit, documentation, DLL, NOTICE, sample, and focused contracts pass.",
+      "observed_at": "2026-09-15T00:57:09+09:00"
+    },
+    {
+      "id": "E7",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\predevelopment-priorities-20260914\\06-final-checkpoint\\actual-exe-line\\run-post-review",
+      "observation": "Current-source Line layout contract passes 5 checks for 12 labels. The rebuilt actual product EXE exits 0 with 37 px, 0.222 mm, and 24 detections; its capture and tool windows intersect the dynamically selected DISPLAY2, and direct image review confirms separated distance-label columns and a top profile legend at 100% DPI. The final run reported one logical monitor; the earlier two-monitor run also placed the window on the smaller left DISPLAY2.",
+      "observed_at": "2026-09-15T01:18:00+09:00",
+      "supersedes": [
+        "E4"
+      ]
+    },
+    {
+      "id": "E8",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\predevelopment-priorities-20260914\\06-final-checkpoint\\external-consumer-runtime-post-review",
+      "observation": "Current-source RoiImageCanvas owner and path contracts pass 8 and 6 checks. The rebuilt actual external consumer exits 0 after Borrow/Clone/TakeOwnership, view-state round-trip, selection, and 100 create/dispose cycles with handle delta +2 (within the <=8 gate), and its window is inside the dynamically selected DISPLAY2.",
+      "observed_at": "2026-09-15T01:18:00+09:00",
+      "supersedes": [
+        "E5"
+      ]
+    },
+    {
+      "id": "E9",
+      "kind": "review",
+      "location": "docs\\reports\\OPENVISIONLAB_PREDEVELOPMENT_PRIORITIES_1_TO_5_20260915.md; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\predevelopment-priorities-20260914\\06-final-checkpoint",
+      "observation": "After the final source adjustment, Debug and Release solution builds plus embedded product, VisionRecipeRunnerSmoke, and PipelineViewerScreenshotSmoke builds have zero warnings and errors. Readiness 13 categories, refactor audit, documentation index and full 1,331-file scan, external DLL Debug/Release, NOTICE provenance, public sample assets, three focused contracts, unknown-smoke exit propagation, x86 rejection, static ownership checks, and git diff check pass. The report preserves the DLL dependency-closure conclusion and all unverified runtime and release boundaries.",
+      "observed_at": "2026-09-15T01:18:00+09:00",
+      "supersedes": [
+        "E6"
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-14T23:36:00+09:00",
+      "summary": "Execute all five user-approved priorities in one bounded sequence, preserve the existing worktree through an external baseline, and stop at Dev verification without commit, push, release, Original, hardware, or unrelated cleanup.",
+      "evidence_refs": []
+    },
+    {
+      "id": "D2",
+      "kind": "decision",
+      "at": "2026-09-15T00:57:09+09:00",
+      "summary": "Close PL-0057 because all six criteria and five required milestones have reusable local evidence. Keep full DPI/theme/input, hardware/driver, long-run, packaging, Original, commit/push/release/deploy outside the completion claim; reopen only for a new requirement, reproducible defect, failed criterion, or changed dependency boundary.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E4",
+        "E5",
+        "E6"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-15T00:57:09+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "C1~C6와 M1~M5가 모두 증거로 충족되어 PL-0057을 resolved로 닫는다. 다음 2D 기능은 사용자가 선택한 새 범위에서 시작한다."
+    }
+  ],
+  "created_at": "2026-09-14T23:36:00+09:00",
+  "updated_at": "2026-09-15T01:18:00+09:00"
+}

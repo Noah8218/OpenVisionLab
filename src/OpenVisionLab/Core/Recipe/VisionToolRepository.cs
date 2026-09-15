@@ -69,5 +69,26 @@ namespace OpenVisionLab
                 return false;
             }
         }
+
+        internal void ReplaceLoadedState(VisionToolRepository source)
+        {
+            Blobs.Clear();
+            Blobs.AddRange(source.Blobs);
+            Contours.Clear();
+            Contours.AddRange(source.Contours);
+            Lines_L.Clear();
+            Lines_L.AddRange(source.Lines_L);
+            Lines_R.Clear();
+            Lines_R.AddRange(source.Lines_R);
+            Lines_TOP.Clear();
+            Lines_TOP.AddRange(source.Lines_TOP);
+            Matchings.Clear();
+            Matchings.AddRange(source.Matchings);
+            EdgeBasedMatchings.Clear();
+            EdgeBasedMatchings.AddRange(source.EdgeBasedMatchings);
+            Features.Clear();
+            Features.AddRange(source.Features);
+            PropertyVision = source.PropertyVision;
+        }
     }
 }

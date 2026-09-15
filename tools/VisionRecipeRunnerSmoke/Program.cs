@@ -5,6 +5,7 @@ using OpenVisionLab.Core;
 using OpenVisionLab.Core.Integration;
 using OpenVisionLab.Integration.Contracts;
 using OpenVisionLab.Pipeline.Controls;
+using OpenVisionLab.Smoke;
 using OpenVisionLab.Vision2D;
 using OpenVisionLab.Vision2D.Blob;
 using OpenVisionLab.Vision2D.Pipeline;
@@ -45,6 +46,12 @@ if (args.Length == 6
         args[5]);
 }
 
+if (args.Length == 2
+    && string.Equals(args[0], "--integration-2d-result-disposition-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return TwoDIntegrationResultDispositionContract.Run(args[1]);
+}
+
 if ((args.Length == 5
         || args.Length == 6
             && string.Equals(args[5], "--require-locator-evidence", StringComparison.OrdinalIgnoreCase))
@@ -67,6 +74,34 @@ if ((args.Length == 1 || args.Length == 2)
     && string.Equals(args[0], "--runtime-stability-contract", StringComparison.OrdinalIgnoreCase))
 {
     return await RunRuntimeStabilityContractAsync(args.Length == 2 ? args[1] : null);
+}
+
+if (args.Length >= 1
+    && args.Length <= 3
+    && string.Equals(args[0], "--video-size-memory-baseline-contract", StringComparison.OrdinalIgnoreCase))
+{
+    string evidenceDirectory = args.Length >= 2
+        ? args[1]
+        : Path.Combine(
+            "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev",
+            "2d034-video-size-memory-baseline-" + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture));
+    bool includeTwentyThousand = args.Length == 3
+        && string.Equals(args[2], "--include-20000", StringComparison.OrdinalIgnoreCase);
+    if (args.Length == 3 && !includeTwentyThousand)
+    {
+        Console.Error.WriteLine("Unknown 2D-034 option. Use --include-20000 only after a safe preflight.");
+        return 2;
+    }
+
+    return await VideoSizeMemoryBaselineContract.RunAsync(evidenceDirectory, includeTwentyThousand);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--output-allocation-preflight-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return await OutputAllocationPreflightContract.RunAsync(args.Length == 2 ? args[1] : Path.Combine(
+        "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev",
+        "2d036-output-allocation-preflight-" + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture)));
 }
 
 if ((args.Length == 1 || args.Length == 2)
@@ -100,6 +135,55 @@ if ((args.Length == 1 || args.Length == 2)
 }
 
 if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--pipeline-review-duplicate-step-identity-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return await PipelineReviewDuplicateStepIdentityContract.RunAsync(
+        args.Length == 2 ? args[1] : Path.Combine(
+            "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev",
+            "2d011-duplicate-step-identity-" + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture)));
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--pipeline-review-run-input-isolation-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return await PipelineReviewRunInputIsolationContract.RunAsync(
+        args.Length == 2 ? args[1] : Path.Combine(
+            "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev",
+            "2d012-run-input-isolation-" + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture)));
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--preview-run-reopen-equivalence-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return await PreviewRunEquivalenceContract.RunAsync(
+        args.Length == 2 ? args[1] : Path.Combine(
+            "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev",
+            "2d013-preview-run-reopen-equivalence-" + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture)));
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--pixelpermm-finite-unit-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return PixelPerMmFiniteUnitContract.Run(args.Length == 2 ? args[1] : Path.Combine(
+        "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev",
+        "2d014-pixelpermm-finite-unit-" + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture)));
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--pipeline-layer-reference-invariant-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return await PipelineLayerReferenceInvariantContract.RunAsync(args.Length == 2 ? args[1] : Path.Combine(
+        "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev",
+        "2d015-layer-reference-invariant-" + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture)));
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--threshold-suggestion-session-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return ThresholdSuggestionSessionContract.Run(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
     && string.Equals(args[0], "--pipeline-review-document-revision-contract", StringComparison.OrdinalIgnoreCase))
 {
     return OpenVisionPipelineReviewDocumentRevisionContract.Run(args.Length == 2 ? args[1] : null);
@@ -118,10 +202,116 @@ if ((args.Length == 1 || args.Length == 2)
 }
 
 if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--mat-view-ownership-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return MatViewOwnershipContract.Run(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--input-format-meaning-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return InputFormatMeaningContract.Run(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
     && string.Equals(args[0], "--image-compare-resource-contract", StringComparison.OrdinalIgnoreCase))
 {
     return ImageCompareResourceContract.Run(args.Length == 2 ? args[1] : null);
 }
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--image-compare-directory-policy-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return ImageCompareDirectoryPolicyContract.Run(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--image-compare-point-mapping-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return ImageComparePointMappingContract.Run(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--app-path-boundary-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return AppPathBoundaryContract.Run(args.Length == 2 ? args[1] : null);
+}
+
+if (args.Length == 2 && string.Equals(args[0], "--recipe-save-failure-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return RecipeSaveFailureContract.Run(args[1]);
+}
+
+if (args.Length == 2 && string.Equals(args[0], "--pipeline-failure-lifetime-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return await PipelineFailureLifetimeContract.RunAsync(args[1]);
+}
+
+if (args.Length == 2 && string.Equals(args[0], "--pipeline-cancellation-result-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return await PipelineCancellationResultContract.RunAsync(args[1]);
+}
+
+if (args.Length == 2 && string.Equals(args[0], "--pipeline-not-run-tail-status-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return await PipelineNotRunTailStatusContract.RunAsync(args[1]);
+}
+
+if (args.Length == 2 && string.Equals(args[0], "--pipeline-acceptance-finite-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return PipelineAcceptanceFiniteContract.Run(args[1]);
+}
+
+if (args.Length == 2 && string.Equals(args[0], "--expected-failure-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return ExpectedFailureContract.Run(args[1]);
+}
+
+if (args.Length == 2 && string.Equals(args[0], "--confusion-matrix-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return ConfusionMatrixContract.Run(args[1]);
+}
+
+if (args.Length == 2 && string.Equals(args[0], "--pipeline-prevalidation-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return await PipelinePrevalidationContract.RunAsync(args[1]);
+}
+
+if (args.Length == 2 && string.Equals(args[0], "--pipeline-roi-meaning-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return await PipelineRoiMeaningContract.RunAsync(args[1]);
+}
+
+if (args.Length == 2 && string.Equals(args[0], "--recipe-load-recovery-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return RecipeLoadRecoveryContract.Run(args[1]);
+}
+
+if (args.Length == 2 && string.Equals(args[0], "--recipe-persistence-execution-gate-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return RecipePersistenceExecutionGateContract.Run(args[1]);
+}
+
+if (args.Length == 2 && string.Equals(args[0], "--pipeline-xml-schema-compatibility-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return PipelineXmlSchemaCompatibilityContract.Run(args[1]);
+}
+
+if (args.Length == 2 && string.Equals(args[0], "--pipeline-xml-roundtrip-compatibility-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return PipelineXmlRoundTripCompatibilityContract.Run(args[1]);
+}
+
+if (args.Length == 2 && string.Equals(args[0], "--recipe-file-snapshot-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return await RecipeFileSnapshotContract.RunAsync(args[1]);
+}
+
+if (args.Length == 2 && string.Equals(args[0], "--recipe-multi-file-save-recovery-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return RecipeMultiFileSaveRecoveryContract.Run(args[1]);
+}
+
 
 if ((args.Length == 1 || args.Length == 2)
     && string.Equals(args[0], "--recipe-storage-path-contract", StringComparison.OrdinalIgnoreCase))
@@ -134,6 +324,245 @@ if ((args.Length == 1 || args.Length == 2)
 {
     return RunValidationSetDocumentOwnerContract(args.Length == 2 ? args[1] : null);
 }
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--validation-set-status-presenter-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return ValidationSetStatusPresenterContract.Run(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--validation-set-evidence-notification-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return ValidationSetEvidenceNotificationContract.Run(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--validation-set-projection-error-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return ValidationSetProjectionErrorContract.Run(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--validation-set-success-projection-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return ValidationSetSuccessProjectionContract.Run(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--refresh-options-command-state-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return RefreshOptionsCommandStateContract.Run(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+            && string.Equals(args[0], "--recipe-command-surface-clipboard-boundary-contract", StringComparison.OrdinalIgnoreCase))
+        {
+            return RecipeCommandSurfaceClipboardBoundaryContract.Run(args.Length == 2 ? args[1] : null);
+        }
+
+        if ((args.Length == 1 || args.Length == 2)
+            && string.Equals(args[0], "--recipe-command-surface-dispatch-boundary-contract", StringComparison.OrdinalIgnoreCase))
+        {
+            return RecipeCommandSurfaceDispatcherBoundaryContract.Run(args.Length == 2 ? args[1] : null);
+        }
+
+if ((args.Length == 1 || args.Length == 2)
+            && string.Equals(args[0], "--recipe-command-surface-image-boundary-contract", StringComparison.OrdinalIgnoreCase))
+        {
+            return RecipeCommandSurfaceImageBoundaryContract.Run(args.Length == 2 ? args[1] : null);
+        }
+
+        if (args.Length == 2
+            && string.Equals(args[0], "--recipe-run-evidence-image-boundary-contract", StringComparison.OrdinalIgnoreCase))
+        {
+            return RecipeRunEvidenceImageBoundaryContract.Run(args[1]);
+        }
+
+        if ((args.Length == 1 || args.Length == 2)
+            && string.Equals(args[0], "--recipe-dialog-localization-contract", StringComparison.OrdinalIgnoreCase))
+        {
+            return RecipeDialogLocalizationContract.Run(args.Length == 2 ? args[1] : null);
+        }
+
+        if (args.Length == 2
+            && string.Equals(args[0], "--line-tool-persistence-boundary-contract", StringComparison.OrdinalIgnoreCase))
+        {
+            return LineToolPersistenceBoundaryContract.Run(args[1]);
+        }
+        if (args.Length == 2
+            && string.Equals(args[0], "--line-tool-partial-boundary-contract", StringComparison.OrdinalIgnoreCase))
+        {
+            return LineToolPartialBoundaryContract.Run(args[1]);
+        }
+
+        if ((args.Length == 1 || args.Length == 2)
+            && string.Equals(args[0], "--line-overlay-label-layout-contract", StringComparison.OrdinalIgnoreCase))
+        {
+            return LineOverlayLabelLayoutContract.Run(args.Length == 2 ? args[1] : null);
+        }
+
+        if ((args.Length == 1 || args.Length == 2)
+            && string.Equals(args[0], "--simple-preprocess-partial-boundary-contract", StringComparison.OrdinalIgnoreCase))
+        {
+            return SimplePreprocessPartialBoundaryContract.Run(args.Length == 2 ? args[1] : null);
+        }
+
+        if ((args.Length == 1 || args.Length == 2)
+            && string.Equals(args[0], "--affine-transform-partial-boundary-contract", StringComparison.OrdinalIgnoreCase))
+        {
+            return AffineTransformPartialBoundaryContract.Run(args.Length == 2 ? args[1] : null);
+        }
+
+        if ((args.Length == 1 || args.Length == 2)
+            && string.Equals(args[0], "--arithmetic-tool-partial-boundary-contract", StringComparison.OrdinalIgnoreCase))
+        {
+            return ArithmeticToolPartialBoundaryContract.Run(args.Length == 2 ? args[1] : null);
+        }
+
+        if ((args.Length == 1 || args.Length == 2)
+            && string.Equals(args[0], "--filter-tool-partial-boundary-contract", StringComparison.OrdinalIgnoreCase))
+        {
+            return FilterToolPartialBoundaryContract.Run(args.Length == 2 ? args[1] : null);
+        }
+
+        if ((args.Length == 1 || args.Length == 2)
+            && string.Equals(args[0], "--blob-tool-partial-boundary-contract", StringComparison.OrdinalIgnoreCase))
+        {
+            return BlobToolPartialBoundaryContract.Run(args.Length == 2 ? args[1] : null);
+        }
+
+        if ((args.Length == 1 || args.Length == 2)
+            && string.Equals(args[0], "--contour-tool-partial-boundary-contract", StringComparison.OrdinalIgnoreCase))
+        {
+            return ContourToolPartialBoundaryContract.Run(args.Length == 2 ? args[1] : null);
+        }
+
+        if ((args.Length == 1 || args.Length == 2)
+            && string.Equals(args[0], "--binary-learn-partial-boundary-contract", StringComparison.OrdinalIgnoreCase))
+        {
+            return BinaryLearnPartialBoundaryContract.Run(args.Length == 2 ? args[1] : null);
+        }
+
+        if ((args.Length == 1 || args.Length == 2)
+            && string.Equals(args[0], "--foundation-learn-partial-boundary-contract", StringComparison.OrdinalIgnoreCase))
+        {
+            return FoundationLearnPartialBoundaryContract.Run(args.Length == 2 ? args[1] : null);
+        }
+
+        if ((args.Length == 1 || args.Length == 2)
+            && string.Equals(args[0], "--grayscale-learn-partial-boundary-contract", StringComparison.OrdinalIgnoreCase))
+        {
+            return GrayscaleLearnPartialBoundaryContract.Run(args.Length == 2 ? args[1] : null);
+        }
+
+        if ((args.Length == 1 || args.Length == 2)
+            && string.Equals(args[0], "--layer-recipe-learn-partial-boundary-contract", StringComparison.OrdinalIgnoreCase))
+        {
+            return LayerRecipeLearnPartialBoundaryContract.Run(args.Length == 2 ? args[1] : null);
+        }
+
+        if ((args.Length == 1 || args.Length == 2)
+            && string.Equals(args[0], "--geometry-learn-partial-boundary-contract", StringComparison.OrdinalIgnoreCase))
+        {
+            return GeometryLearnPartialBoundaryContract.Run(args.Length == 2 ? args[1] : null);
+        }
+
+        if ((args.Length == 1 || args.Length == 2)
+            && string.Equals(args[0], "--metrics-acceptance-learn-partial-boundary-contract", StringComparison.OrdinalIgnoreCase))
+        {
+            return MetricsAcceptanceLearnPartialBoundaryContract.Run(args.Length == 2 ? args[1] : null);
+        }
+
+        if ((args.Length == 1 || args.Length == 2)
+            && string.Equals(args[0], "--vision-tool-verification-guide-partial-boundary-contract", StringComparison.OrdinalIgnoreCase))
+        {
+            return VisionToolVerificationGuidePartialBoundaryContract.Run(args.Length == 2 ? args[1] : null);
+        }
+
+        if ((args.Length == 1 || args.Length == 2)
+            && string.Equals(args[0], "--vision-tool-parameter-guide-partial-boundary-contract", StringComparison.OrdinalIgnoreCase))
+        {
+            return VisionToolParameterGuidePartialBoundaryContract.Run(args.Length == 2 ? args[1] : null);
+        }
+
+        if ((args.Length == 1 || args.Length == 2)
+            && string.Equals(args[0], "--vision-tool-double-input-shell-partial-boundary-contract", StringComparison.OrdinalIgnoreCase))
+        {
+            return VisionToolDoubleInputCustomToolShellPartialBoundaryContract.Run(args.Length == 2 ? args[1] : null);
+        }
+
+        if (args.Length == 2
+            && string.Equals(args[0], "--template-editor-image-boundary-contract", StringComparison.OrdinalIgnoreCase))
+        {
+            return TemplateEditorImageBoundaryContract.Run(args[1]);
+        }
+
+        if ((args.Length == 1 || args.Length == 2)
+            && string.Equals(args[0], "--color-hsv-learn-presenter-contract", StringComparison.OrdinalIgnoreCase))
+        {
+            return ColorHsvLearnPresenterContract.Run(args.Length == 2 ? args[1] : null);
+        }
+
+        if ((args.Length == 1 || args.Length == 2)
+            && string.Equals(args[0], "--roi-image-canvas-boundary-contract", StringComparison.OrdinalIgnoreCase))
+        {
+            return RoiImageCanvasBoundaryContract.Run(args.Length == 2 ? args[1] : null);
+        }
+
+        if ((args.Length == 1 || args.Length == 2)
+            && string.Equals(args[0], "--roi-image-canvas-path-policy-contract", StringComparison.OrdinalIgnoreCase))
+        {
+            return RoiImageCanvasPathPolicyContract.Run(args.Length == 2 ? args[1] : null);
+        }
+
+        if ((args.Length == 1 || args.Length == 2)
+            && string.Equals(args[0], "--learn-window-document-boundary-contract", StringComparison.OrdinalIgnoreCase))
+        {
+            return LearnWindowDocumentBoundaryContract.Run(args.Length == 2 ? args[1] : null);
+        }
+
+        if ((args.Length == 1 || args.Length == 2)
+            && string.Equals(args[0], "--signal-inspector-export-boundary-contract", StringComparison.OrdinalIgnoreCase))
+        {
+            return SignalInspectorExportBoundaryContract.Run(args.Length == 2 ? args[1] : null);
+        }
+
+        if ((args.Length == 1 || args.Length == 2)
+            && string.Equals(args[0], "--morphology-tool-partial-boundary-contract", StringComparison.OrdinalIgnoreCase))
+        {
+            return MorphologyToolPartialBoundaryContract.Run(args.Length == 2 ? args[1] : null);
+        }
+
+        if ((args.Length == 1 || args.Length == 2)
+            && string.Equals(args[0], "--edge-based-matching-partial-boundary-contract", StringComparison.OrdinalIgnoreCase))
+        {
+            return EdgeBasedMatchingPartialBoundaryContract.Run(args.Length == 2 ? args[1] : null);
+        }
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--feature-matching-partial-boundary-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return FeatureMatchingPartialBoundaryContract.Run(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--matching-tool-partial-boundary-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return MatchingToolPartialBoundaryContract.Run(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--workspace-sample-picker-image-boundary-contract", StringComparison.OrdinalIgnoreCase))
+        {
+            return WorkspaceSamplePickerImageBoundaryContract.Run(args.Length == 2 ? args[1] : null);
+        }
+
+        if ((args.Length == 1 || args.Length == 2)
+            && string.Equals(args[0], "--tool-n-image-verification-image-boundary-contract", StringComparison.OrdinalIgnoreCase))
+        {
+            return ToolNImageVerificationImageBoundaryContract.Run(args.Length == 2 ? args[1] : null);
+        }
 
 if ((args.Length == 1 || args.Length == 2)
     && string.Equals(args[0], "--validation-evidence-owner-contract", StringComparison.OrdinalIgnoreCase))
@@ -281,6 +710,31 @@ if ((args.Length == 1 || args.Length == 2)
 }
 
 if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--recipe-external-asset-reconnection-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return RecipeExternalAssetReconnectionContract.Run(
+        args.Length == 2
+            ? args[1]
+            : Directory.Exists(@"D:\OpenVisionLab-TestData")
+                ? Path.Combine(
+                    @"D:\OpenVisionLab-TestData\OpenVisionLab_Dev",
+                    "2d020-asset-reconnection")
+                : Path.Combine(Path.GetTempPath(), "OpenVisionLab-recipe-external-asset-reconnection"));
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--llm-draft-review-owner-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return LlmDraftReviewOwnerContract.Run(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--pinarraygap-validation-identity-owner-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return PinArrayGapValidationIdentityOwnerContract.Run(args.Length == 2 ? args[1] : null);
+}
+
+if ((args.Length == 1 || args.Length == 2)
     && string.Equals(args[0], "--pipeline-review-result-status-projection-contract", StringComparison.OrdinalIgnoreCase))
 {
     return RunPipelineReviewResultStatusProjectionContract(args.Length == 2 ? args[1] : null);
@@ -370,6 +824,46 @@ if ((args.Length == 1 || args.Length == 2)
 }
 
 if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--coordinate-transform-meaning-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return await CoordinateTransformMeaningContract.RunAsync(args.Length == 2
+        ? args[1]
+        : Path.Combine(
+            "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev",
+            "2d030-coordinate-transform-meaning-" + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture)));
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--matching-boundary-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return await MatchingBoundaryContract.RunAsync(args.Length == 2
+        ? args[1]
+        : Path.Combine(
+            "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev",
+            "2d031-matching-boundary-" + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture)));
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--blob-contour-candidate-boundary-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return await BlobContourCandidateBoundaryContract.RunAsync(args.Length == 2
+        ? args[1]
+        : Path.Combine(
+            "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev",
+            "2d032-blob-contour-candidate-boundary-" + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture)));
+}
+
+if ((args.Length == 1 || args.Length == 2)
+    && string.Equals(args[0], "--line-length-mean-degenerate-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return await LineLengthMeanDegenerateContract.RunAsync(args.Length == 2
+        ? args[1]
+        : Path.Combine(
+            "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev",
+            "2d033-line-length-mean-degenerate-" + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture)));
+}
+
+if ((args.Length == 1 || args.Length == 2)
     && string.Equals(args[0], "--affine-detected-points-contract", StringComparison.OrdinalIgnoreCase))
 {
     return await RunAffineDetectedPointsContractAsync(args.Length == 2 ? args[1] : null);
@@ -451,10 +945,50 @@ if (args.Length < 2)
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --pipeline-review-cache-lifetime-contract [evidenceDirectory]");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --pipeline-review-stale-callback-contract [evidenceDirectory]");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --pipeline-review-execution-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --pipeline-review-duplicate-step-identity-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --pipeline-review-run-input-isolation-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --preview-run-reopen-equivalence-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --pipeline-layer-reference-invariant-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --threshold-suggestion-session-contract [evidenceDirectory]");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --pipeline-review-document-revision-contract [evidenceDirectory]");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --tcp-controller-disposal-contract [evidenceDirectory]");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --bitmap-converter-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --mat-view-ownership-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --input-format-meaning-contract [evidenceDirectory]");
+        Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --recipe-run-evidence-image-boundary-contract <evidenceDirectory>");
+        Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --recipe-dialog-localization-contract <evidenceDirectory>");
+        Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --line-tool-persistence-boundary-contract <evidenceDirectory>");
+        Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --line-tool-partial-boundary-contract <evidenceDirectory>");
+        Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --line-overlay-label-layout-contract [evidenceDirectory]");
+        Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --simple-preprocess-partial-boundary-contract [evidenceDirectory]");
+        Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --affine-transform-partial-boundary-contract [evidenceDirectory]");
+        Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --arithmetic-tool-partial-boundary-contract [evidenceDirectory]");
+        Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --filter-tool-partial-boundary-contract [evidenceDirectory]");
+        Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --blob-tool-partial-boundary-contract [evidenceDirectory]");
+        Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --contour-tool-partial-boundary-contract [evidenceDirectory]");
+        Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --binary-learn-partial-boundary-contract [evidenceDirectory]");
+        Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --foundation-learn-partial-boundary-contract [evidenceDirectory]");
+        Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --grayscale-learn-partial-boundary-contract [evidenceDirectory]");
+        Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --layer-recipe-learn-partial-boundary-contract [evidenceDirectory]");
+        Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --geometry-learn-partial-boundary-contract [evidenceDirectory]");
+        Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --metrics-acceptance-learn-partial-boundary-contract [evidenceDirectory]");
+        Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --vision-tool-verification-guide-partial-boundary-contract [evidenceDirectory]");
+        Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --vision-tool-parameter-guide-partial-boundary-contract [evidenceDirectory]");
+        Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --vision-tool-double-input-shell-partial-boundary-contract [evidenceDirectory]");
+        Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --template-editor-image-boundary-contract <evidenceDirectory>");
+        Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --color-hsv-learn-presenter-contract [evidenceDirectory]");
+        Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --roi-image-canvas-boundary-contract [evidenceDirectory]");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --recipe-storage-path-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --recipe-save-failure-contract <evidenceDirectory>");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --recipe-load-recovery-contract <evidenceDirectory>");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --recipe-persistence-execution-gate-contract <evidenceDirectory>");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --pipeline-xml-schema-compatibility-contract <evidenceDirectory>");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --pipeline-xml-roundtrip-compatibility-contract <evidenceDirectory>");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --recipe-multi-file-save-recovery-contract <evidenceDirectory>");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --pipeline-failure-lifetime-contract <evidenceDirectory>");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --pipeline-cancellation-result-contract <evidenceDirectory>");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --pipeline-not-run-tail-status-contract <evidenceDirectory>");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --pipeline-acceptance-finite-contract <evidenceDirectory>");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --validation-set-document-owner-contract [evidenceDirectory]");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --property-grid-value-change-subscription-contract [evidenceDirectory]");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --property-grid-metadata-adapter-contract [evidenceDirectory]");
@@ -473,6 +1007,12 @@ if (args.Length < 2)
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --recipe-pipeline-lifecycle-projection-contract [evidenceDirectory]");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --recipe-pipeline-exchange-projection-contract [evidenceDirectory]");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --recipe-review-bundle-dry-run-projection-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --recipe-external-asset-reconnection-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --llm-draft-review-owner-contract <evidenceDirectory>");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --pinarraygap-validation-identity-owner-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --validation-set-evidence-notification-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --validation-set-projection-error-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --validation-set-success-projection-contract [evidenceDirectory]");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --pipeline-review-result-status-projection-contract [evidenceDirectory]");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --pipeline-review-guide-result-projection-contract [evidenceDirectory]");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --pipeline-review-domain-evidence-projection-contract [evidenceDirectory]");
@@ -484,6 +1024,10 @@ if (args.Length < 2)
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --blob-contour-audit-baseline [evidenceDirectory]");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --tool-n-image-verification-contract [evidenceDirectory]");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --affine-transform-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --coordinate-transform-meaning-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --matching-boundary-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --blob-contour-candidate-boundary-contract [evidenceDirectory]");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --line-length-mean-degenerate-contract [evidenceDirectory]");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --affine-detected-points-contract [evidenceDirectory]");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --affine-card-pilot <cardDatasetRoot> <evidenceDirectory>");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --affine-card-fixed-roi <cardDatasetRoot> <evidenceDirectory>");
@@ -3432,7 +3976,11 @@ static int RunPipelineReviewGuideResultProjectionContract(string? requestedEvide
             ToolType = step.ToolType,
             InputLayer = step.InputLayer,
             OutputLayer = step.OutputLayer,
-            Enabled = true
+            Enabled = true,
+            UseAcceptance = true,
+            AcceptanceMetricName = "Score",
+            UseAcceptanceMetricMinimum = true,
+            AcceptanceMetricMinimum = 0.5
         };
         VisionPipelineValidationResult validationResult = new VisionPipelineValidationResult();
         VisionPipelineSampleCatalogItem activeSample = new VisionPipelineSampleCatalogItem
@@ -3529,11 +4077,32 @@ static int RunPipelineReviewGuideResultProjectionContract(string? requestedEvide
         OpenVisionPipelineReviewGuideResultProjection okResult = projectionOwner.ProjectSelected(
             CreateRequest(step, okSummary, "OK", hasOutputImage: true, includePair: true));
         Require(HasText(okResult.ResultSummaryText, "OK"), "OK result summary changed.");
+        Require(
+            HasText(okResult.ResultSummaryText, "Judgement not evaluated", "판정 미평가"),
+            "No-acceptance result did not disclose that inspection judgment was not evaluated.");
         Require(okResult.ResultDetailText.Contains("512x384", StringComparison.Ordinal), "OK image dimensions were not projected.");
         Require(!string.IsNullOrWhiteSpace(okResult.GuideState.ResultDecisionText), "OK guide decision was empty.");
         Require(HasText(okResult.PairActionText, "NG reference", "NG 기준"), "Pair action text changed.");
         Require(!okResult.CanOpenPairAction, "Missing pair files were unexpectedly marked openable.");
         Require(!string.IsNullOrWhiteSpace(okResult.PairMetricText), "Pair metric comparison was not projected.");
+
+        VisionPipelineStepResultSummary acceptancePassSummary = new VisionPipelineStepResultSummary
+        {
+            Index = 1,
+            Name = acceptanceStep.Name,
+            ToolType = acceptanceStep.ToolType,
+            Status = "OK",
+            Success = true,
+            Metrics = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Score"] = 0.75
+            }
+        };
+        OpenVisionPipelineReviewGuideResultProjection acceptancePassResult = projectionOwner.ProjectSelected(
+            CreateRequest(acceptanceStep, acceptancePassSummary, "OK", hasOutputImage: true, includePair: false));
+        Require(
+            HasText(acceptancePassResult.ResultSummaryText, "Judgement PASS", "판정 PASS"),
+            "Acceptance-pass result did not disclose the inspection judgment.");
 
         VisionPipelineStepResultSummary toolNgSummary = new VisionPipelineStepResultSummary
         {
@@ -3548,6 +4117,12 @@ static int RunPipelineReviewGuideResultProjectionContract(string? requestedEvide
         OpenVisionPipelineReviewGuideResultProjection toolNgResult = projectionOwner.ProjectSelected(
             CreateRequest(step, toolNgSummary, "NG", hasOutputImage: false, includePair: false));
         Require(HasText(toolNgResult.ResultSummaryText, "NG"), "Tool-NG result summary changed.");
+        Require(
+            HasText(toolNgResult.ResultSummaryText, "Tool NG", "처리 NG"),
+            "Tool-NG result did not separate processing failure from inspection judgment.");
+        Require(
+            HasText(toolNgResult.ResultSummaryText, "Judgement not evaluated", "판정 미평가"),
+            "Tool-NG result did not disclose that inspection judgment was not evaluated.");
         Require(toolNgResult.ResultDetailText.Contains("synthetic tool failure", StringComparison.Ordinal), "Tool-NG detail changed.");
 
         VisionPipelineStepResultSummary acceptanceNgSummary = new VisionPipelineStepResultSummary
@@ -3563,8 +4138,55 @@ static int RunPipelineReviewGuideResultProjectionContract(string? requestedEvide
         OpenVisionPipelineReviewGuideResultProjection acceptanceNgResult = projectionOwner.ProjectSelected(
             CreateRequest(acceptanceStep, acceptanceNgSummary, "NG", hasOutputImage: true, includePair: false));
         Require(HasText(acceptanceNgResult.ResultSummaryText, "NG"), "Acceptance-NG result summary changed.");
+        Require(
+            HasText(acceptanceNgResult.ResultSummaryText, "Tool OK", "처리 OK"),
+            "Acceptance-NG result did not preserve tool-processing success.");
+        Require(
+            HasText(acceptanceNgResult.ResultSummaryText, "Judgement NG", "판정 NG"),
+            "Acceptance-NG result did not disclose the inspection judgment.");
         Require(acceptanceNgResult.ResultDetailText.Contains("synthetic acceptance failure", StringComparison.Ordinal), "Acceptance-NG detail changed.");
         Require(!string.IsNullOrWhiteSpace(acceptanceNgResult.GuideState.DetailText), "Acceptance-NG guide detail was empty.");
+
+        OpenVisionRecipeRunEvidenceDrawing notEvaluatedDrawing = new OpenVisionRecipeRunEvidenceDrawing(
+            new VisionPipelineStepRunReport
+            {
+                AcceptanceEvaluated = false,
+                AcceptancePassed = false,
+                AcceptanceMessage = string.Empty
+            },
+            "synthetic.png");
+        Require(
+            HasText(notEvaluatedDrawing.AcceptanceText, "Not evaluated: no acceptance criteria", "미평가: 적용 기준 없음"),
+            "Persisted no-acceptance evidence did not preserve the not-evaluated state.");
+
+        OpenVisionRecipeRunEvidenceDrawing passDrawing = new OpenVisionRecipeRunEvidenceDrawing(
+            new VisionPipelineStepRunReport
+            {
+                AcceptanceEvaluated = true,
+                AcceptancePassed = true,
+                AcceptanceMessage = "Score within range"
+            },
+            "synthetic.png");
+        Require(passDrawing.AcceptanceText.StartsWith("PASS:", StringComparison.Ordinal), "Persisted acceptance PASS evidence changed.");
+
+        OpenVisionLanguage originalLanguage = OpenVisionLanguageService.CurrentLanguage;
+        try
+        {
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, save: false);
+            string koreanSummary = OpenVisionPipelineReviewResultPresenter.FormatResultSummary(step, okSummary);
+            string koreanNativeMarker = VisionToolVerificationText.InspectionJudgmentNotEvaluated;
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.English, save: false);
+            string englishSummary = OpenVisionPipelineReviewResultPresenter.FormatResultSummary(step, okSummary);
+            string englishNativeMarker = VisionToolVerificationText.InspectionJudgmentNotEvaluated;
+            Require(koreanSummary.Contains("판정 미평가", StringComparison.Ordinal), "Korean acceptance-clarity text changed.");
+            Require(englishSummary.Contains("Judgement not evaluated", StringComparison.Ordinal), "English acceptance-clarity text changed.");
+            Require(koreanNativeMarker.Contains("검사 판정 미평가", StringComparison.Ordinal), "Korean native Preview marker changed.");
+            Require(englishNativeMarker.Contains("Inspection judgment not evaluated", StringComparison.Ordinal), "English native Preview marker changed.");
+        }
+        finally
+        {
+            OpenVisionLanguageService.SetLanguage(originalLanguage, save: false);
+        }
 
         OpenVisionPipelineReviewGuideState validationGuide = projectionOwner.ProjectValidationErrorGuide(1, 1, step);
         Require(
@@ -3575,7 +4197,7 @@ static int RunPipelineReviewGuideResultProjectionContract(string? requestedEvide
             HasText(runningGuide.NextActionText, "Review is running", "리뷰 실행"),
             "Running guide changed.");
 
-        observations.Add("missing-result, OK, tool-NG, acceptance-NG, validation-error, running, pair action, pair metric, and run-log projection preserved");
+        observations.Add("missing-result, no-acceptance OK, acceptance PASS, tool-NG, acceptance-NG, persisted evidence, Korean/English text, validation-error, running, pair action, pair metric, and run-log projection preserved");
     }
     catch (Exception exception)
     {

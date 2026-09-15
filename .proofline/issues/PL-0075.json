@@ -1,0 +1,183 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0075",
+    "aliases": [
+      "OPENVISIONLAB-2D017-XML-SCHEMA-20260915"
+    ],
+    "type": "task",
+    "mode": "simple",
+    "title": "Reject unsupported future Pipeline XML schema before execution",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "scheduled 2D task execution and source review",
+    "summary": "2D-017 requires future Pipeline XML meanings to fail closed instead of being silently ignored and executed as a different inspection.",
+    "refs": [
+      "C:\\Users\\USER\\Downloads\\OpenVisionLab_2D_tasks.json",
+      "docs\\contracts\\openvisionlab\\OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md",
+      "docs\\admin\\OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "AGENTS.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "The existing SerializeHelper, VisionPipelineStorage, VisionPipelineExecutionPlan, and Runner admission path now apply a centralized Pipeline XML schema gate. Unversioned legacy and explicit v1 remain loadable; future/unsupported schema and unknown critical XML fail closed with original-source preservation and LoadFailed storage state, while named optional extensions/comments remain accepted."
+  },
+  "objective": {
+    "summary": "Define and verify the supported Pipeline XML schema range so future required meanings cannot be silently dropped before execution, without reopening the completed Runner prevalidation or result-identity owners.",
+    "constraints": [
+      "Reuse the existing SerializeHelper deserialization boundary, VisionPipelineStorage recovery state, VisionPipelineExecutionPlan, and Runner admission path.",
+      "Keep unversioned legacy XML, explicit schema v1, comments, and named optional extension content compatible.",
+      "Preserve blocked future/critical source bytes and do not overwrite or create invalid-file backups during semantic schema failure.",
+      "Keep test artifacts on D: and do not modify C:\\Git\\2D\\Original or external systems."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The supported Pipeline XML range is explicit: unversioned legacy and schema version 1 load successfully.",
+      "evidence_refs": [
+        "E2"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "A future or unsupported schema version and an unknown unqualified critical element/attribute are rejected before deserialization/normalization/native execution with a typed schema error.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "VisionPipelineStorage preserves the blocked source bytes, records LoadFailed, avoids invalid-file backup/default overwrite, and leaves the existing load/run failure contract usable.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "XML comments and named optional Extensions/urn:openvisionlab:extension content remain loadable without changing current Pipeline semantics; opaque optional content is documented as non-canonical on later model save.",
+      "evidence_refs": [
+        "E2",
+        "E4"
+      ]
+    },
+    {
+      "id": "C5",
+      "text": "VisionRecipeRunnerSmoke builds and the focused XML-schema contract pass in Debug and Release, and recipe-load/recovery plus layer-reference XML regressions pass.",
+      "evidence_refs": [
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "C6",
+      "text": "Completion evidence records owner, call path, mutable-state writer, public failure contract, shortest reading order, focused checks, and the remaining runtime/UI boundary.",
+      "evidence_refs": [
+        "E1",
+        "E3",
+        "E4"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0067"
+    }
+  ],
+  "context": [
+    {
+      "kind": "owner-map",
+      "location": "VisionPipelineXmlSchemaPolicy owns XML semantic inspection; SerializeHelper owns the shared Pipeline deserialization gate; VisionPipelineStorage owns persistence failure state and source-preservation behavior; VisionPipelineExecutionPlan and VisionRecipeRunner own execution admission."
+    },
+    {
+      "kind": "call-path",
+      "location": "raw Pipeline XML -> SerializeHelper.TryLoadFromXmlBytes/Text -> VisionPipelineXmlSchemaPolicy -> VisionPipelineStorage.Load or VisionPipelineExecutionPlan.Create -> existing Validator/Runner admission."
+    },
+    {
+      "kind": "state-writer",
+      "location": "Existing callers and SerializeHelper.SaveXmlFile remain mutable XML writers. The schema policy is read-only; blocked semantic loads write only the existing LoadFailed persistence state and do not write the source file."
+    },
+    {
+      "kind": "public-contract",
+      "location": "Existing TryLoad false/error-message behavior, VisionPipelineXmlSchemaException at internal execution boundaries, and VisionPipelinePersistenceStateKind.LoadFailed are reused; no new UI state or ViewModel boundary was added."
+    },
+    {
+      "kind": "reading-order",
+      "location": "src/OpenVisionLab/Common/Persistence/VisionPipelineXmlSchemaPolicy.cs -> src/OpenVisionLab/Common/Persistence/SerializeHelper.cs -> src/OpenVisionLab/Core/Pipeline/Storage/VisionPipelineStorage.cs -> src/OpenVisionLab/Core/Pipeline/Execution/VisionPipelineExecutionPlan.cs -> tools/VisionRecipeRunnerSmoke/PipelineXmlSchemaCompatibilityContract.cs."
+    },
+    {
+      "kind": "boundary",
+      "location": "Debug/Release in-process contracts and storage/source checks were run. Opaque extension/comment canonical-save byte preservation, WPF error dialog/theme/Wide-Compact/keyboard/DPI matrix, desktop EXE monitor matrix, camera/hardware, release/publication, and Original changes remain unverified/out of scope."
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "evidence-directory",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d017-xml-schema-20260915-debug",
+      "summary": "Debug schema compatibility fixture XML and report."
+    },
+    {
+      "kind": "evidence-directory",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d017-xml-schema-20260915-release",
+      "summary": "Release schema compatibility fixture XML and report."
+    },
+    {
+      "kind": "evidence-directory",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d017-xml-schema-20260915-regressions",
+      "summary": "Focused recipe-load and layer-reference regression reports."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "review",
+      "location": "src/OpenVisionLab/Common/Persistence/VisionPipelineXmlSchemaPolicy.cs; src/OpenVisionLab/Common/Persistence/SerializeHelper.cs; src/OpenVisionLab/Core/Pipeline/Storage/VisionPipelineStorage.cs; src/OpenVisionLab/Core/Pipeline/Execution/VisionPipelineExecutionPlan.cs; src/OpenVisionLab/Core/Pipeline/Execution/VisionRecipeRunner.cs",
+      "observation": "Source review confirmed that the centralized policy treats unversioned XML as v1, allows the explicit v1 and named optional extension/comment cases, rejects future/unsupported versions and unknown critical XML, and is invoked before deserialization or execution-plan normalization. Semantic failure returns LoadFailed without backup/default replacement in VisionPipelineStorage.",
+      "observed_at": "2026-09-15T20:10:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d017-xml-schema-20260915-debug/pipeline-xml-schema-compatibility-contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d017-xml-schema-20260915-release/pipeline-xml-schema-compatibility-contract.txt",
+      "observation": "The focused contract passed 7/0 in Debug and Release. It covered legacy/unversioned and explicit v1 load, optional extension/comment compatibility, future schema v2 and unknown critical element typed rejection, execution-plan blocking before normalization, and storage source-byte preservation with LoadFailed and no invalid backup.",
+      "observed_at": "2026-09-15T20:10:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "build",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d017-xml-schema-20260915-debug/build-smoke-debug.log; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d017-xml-schema-20260915-release/build-smoke-release.log; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d017-xml-schema-20260915-regressions/recipe-load/recipe-load-recovery-contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d017-xml-schema-20260915-regressions/layer-reference/pipeline-layer-reference-invariant-contract.txt",
+      "observation": "Debug and Release VisionRecipeRunnerSmoke builds completed with 0 errors (the existing project emitted 16 nullable warnings), and recipe-load-recovery plus pipeline-layer-reference-invariant regression contracts passed.",
+      "observed_at": "2026-09-15T20:10:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "review",
+      "location": "docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md; tools/VisionRecipeRunnerSmoke/PipelineXmlSchemaCompatibilityContract.cs; tools/VisionRecipeRunnerSmoke/Program.cs",
+      "observation": "Stable contract, current handoff, smoke dispatch, and the contract report record the supported range, fail-closed policy, owner/call path, source-preservation boundary, verification commands, and next 2D-018 boundary.",
+      "observed_at": "2026-09-15T20:10:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-15T20:10:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "Close 2D-017 after centralized future-schema fail-closed source review, Debug/Release compatibility contracts, storage preservation evidence, and focused XML regressions.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ]
+    }
+  ],
+  "created_at": "2026-09-15T20:10:00+09:00",
+  "updated_at": "2026-09-15T20:10:00+09:00"
+}

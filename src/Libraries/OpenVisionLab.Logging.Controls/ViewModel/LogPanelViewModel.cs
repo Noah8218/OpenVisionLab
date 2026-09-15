@@ -4,10 +4,9 @@ using OpenVisionLab.Logging.Controls.Model;
 using OpenVisionLab.Logging.Model;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Collections.ObjectModel;
 using System.Globalization;
-using System.IO;
 using System.Linq;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -35,6 +34,7 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
         private static event Action<LogPanelQuickFilterRequest> QuickFilterRequested;
 
         private readonly RuntimeLogStream logBufferReader;
+        private readonly LogPanelFileAccess fileAccess;
         private readonly DispatcherTimer refreshTimer;
         private readonly DateTime sessionStartedAt = Process.GetCurrentProcess().StartTime.AddSeconds(-2);
         private string selectedLevel;
@@ -49,8 +49,13 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
         private string latestSummaryText;
         private long droppedLogCount;
 
-        public LogPanelViewModel()
+        public LogPanelViewModel() : this(new LogPanelFileAccess())
         {
+        }
+
+        internal LogPanelViewModel(LogPanelFileAccess fileAccess)
+        {
+            this.fileAccess = fileAccess ?? throw new ArgumentNullException(nameof(fileAccess));
             logBufferReader = new RuntimeLogStream();
             Levels = new ObservableCollection<string>(new[] { AnyFilter }.Concat(VisibleLevelNames));
             Types = new ObservableCollection<string>(
@@ -62,7 +67,7 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
             summaryText = FormatCount(0);
             latestSummaryText = T("Log.NoRecentEvent");
 
-            OpenDirectoryCommand = new UiCommand(OpenLogFolder);
+            OpenDirectoryCommand = new UiCommand(this.fileAccess.OpenLogFolder);
             ResetCommand = new UiCommand(Reset);
             ToggleDetailCommand = new UiCommand(ToggleDetailMode);
             LoadLatestLogFile();
@@ -372,26 +377,7 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
 
         private void LoadLatestLogFile()
         {
-            string latestLogFile = GetLatestLogFile();
-            if (string.IsNullOrWhiteSpace(latestLogFile))
-            {
-                return;
-            }
-
-            List<string> lines;
-            try
-            {
-                using (FileStream stream = new FileStream(latestLogFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                using (StreamReader reader = new StreamReader(stream))
-                {
-                    lines = new List<string>();
-                    while (!reader.EndOfStream)
-                    {
-                        lines.Add(reader.ReadLine());
-                    }
-                }
-            }
-            catch
+            if (!fileAccess.TryReadLatestLogLines(out List<string> lines))
             {
                 return;
             }
@@ -434,21 +420,6 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
                 : entries;
         }
 
-        private static string GetLatestLogFile()
-        {
-            string logDirectory = OVLog.GetLogDirectory();
-            if (string.IsNullOrWhiteSpace(logDirectory) || !Directory.Exists(logDirectory))
-            {
-                return null;
-            }
-
-            return Directory.EnumerateFiles(logDirectory, "*ALL.log", SearchOption.AllDirectories)
-                .Select(path => new FileInfo(path))
-                .OrderByDescending(file => file.LastWriteTime)
-                .Select(file => file.FullName)
-                .FirstOrDefault();
-        }
-
         private bool ShouldDisplayLog(LogLine log)
         {
             bool textMatches = string.IsNullOrWhiteSpace(SearchText)
@@ -487,21 +458,6 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
             }
 
             target.AddRange(logs);
-        }
-
-        private static void OpenLogFolder()
-        {
-            string logDirectory = OVLog.GetLogDirectory();
-            if (string.IsNullOrWhiteSpace(logDirectory) || !Directory.Exists(logDirectory))
-            {
-                return;
-            }
-
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = logDirectory,
-                UseShellExecute = true
-            });
         }
 
         private static bool IsAnyFilterText(string value)

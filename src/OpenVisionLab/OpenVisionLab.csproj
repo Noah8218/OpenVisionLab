@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFramework>net8.0-windows7.0</TargetFramework>
     <OutputType>WinExe</OutputType>
-    <Version>2.2.0-dev.1</Version>
+    <Version>2.2.0-dev.3</Version>
     <AssemblyVersion>2.2.0.0</AssemblyVersion>
     <FileVersion>2.2.0.0</FileVersion>
     <Deterministic>true</Deterministic>
@@ -27,17 +27,6 @@
     <Optimize>true</Optimize>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
-    <OutputPath>$(OpenVisionLabOutputRoot)x86\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;TEST;OPENCV</DefineConstants>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
-    <OutputPath>$(OpenVisionLabOutputRoot)x86\Release\</OutputPath>
-    <DefineConstants>TRACE;RELEASE;OPENCV</DefineConstants>
-    <Optimize>true</Optimize>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <OutputPath>$(OpenVisionLabOutputRoot)x64\Debug\</OutputPath>
     <DefineConstants>TRACE;DEBUG;TEST;OPENCV</DefineConstants>
@@ -53,9 +42,6 @@
     <OutputPath>$(OpenVisionLabOutputRoot)Side_2\</OutputPath>
     <DefineConstants>TRACE;DEBUG;TEST;OPENCV</DefineConstants>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Side_2|x86'">
-    <OutputPath>$(OpenVisionLabOutputRoot)x86\Side_2\</OutputPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Side_2|x64'">
     <OutputPath>$(OpenVisionLabOutputRoot)x64\Side_2\</OutputPath>
@@ -125,6 +111,24 @@
   <ItemGroup>
     <Compile Include="$(OpenVisionLabRepoRoot)tools\OpenVisionLab.DirectSmokeRunner\OpenVisionLabDirectSmokeRunner.cs"
              Link="OpenVisionLabDirectSmokeRunner.cs"
+             Condition=" '$(OpenVisionLabEnableEmbeddedSmokeRunner)' == 'true' " />
+    <Compile Include="$(OpenVisionLabRepoRoot)tools\PipelineViewerScreenshotSmoke\SmokeDockingStateFiles.cs"
+             Link="SmokeDockingStateFiles.cs"
+             Condition=" '$(OpenVisionLabEnableEmbeddedSmokeRunner)' == 'true' " />
+    <Compile Include="$(OpenVisionLabRepoRoot)tools\PipelineViewerScreenshotSmoke\ScreenshotPngWriter.cs"
+             Link="ScreenshotPngWriter.cs"
+             Condition=" '$(OpenVisionLabEnableEmbeddedSmokeRunner)' == 'true' " />
+    <Compile Include="$(OpenVisionLabRepoRoot)tools\PipelineViewerScreenshotSmoke\SmokeClipboardRetry.cs"
+             Link="SmokeClipboardRetry.cs"
+             Condition=" '$(OpenVisionLabEnableEmbeddedSmokeRunner)' == 'true' " />
+    <Compile Include="$(OpenVisionLabRepoRoot)tools\PipelineViewerScreenshotSmoke\SmokeTaskWaiter.cs"
+             Link="SmokeTaskWaiter.cs"
+             Condition=" '$(OpenVisionLabEnableEmbeddedSmokeRunner)' == 'true' " />
+    <Compile Include="$(OpenVisionLabRepoRoot)tools\PipelineViewerScreenshotSmoke\SmokeWindowMonitorPlacement.cs"
+             Link="SmokeWindowMonitorPlacement.cs"
+             Condition=" '$(OpenVisionLabEnableEmbeddedSmokeRunner)' == 'true' " />
+    <Compile Include="$(OpenVisionLabRepoRoot)tools\PipelineViewerScreenshotSmoke\SmokeMouseInput.cs"
+             Link="SmokeMouseInput.cs"
              Condition=" '$(OpenVisionLabEnableEmbeddedSmokeRunner)' == 'true' " />
   </ItemGroup>
   <ItemGroup>

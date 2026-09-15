@@ -35,7 +35,15 @@ namespace OpenVisionLab
             try
             {
                 using Mat gray = ToGray(source);
-                Rect roi = ResolveRoi(gray);
+                if (!TryResolveRoi(gray, out Rect roi))
+                {
+                    stopwatch.Stop();
+                    return VisionToolResult.Failed(
+                        VisionToolErrorCode.InvalidRoi,
+                        "EdgeDetection requires USE_ROI=false or one valid in-image CvROI.",
+                        stopwatch.Elapsed);
+                }
+
                 using Mat work = roi.Width > 0 && roi.Height > 0
                     ? new Mat(gray, roi).Clone()
                     : gray.Clone();
@@ -175,18 +183,19 @@ namespace OpenVisionLab
             return gray;
         }
 
-        private Rect ResolveRoi(Mat image)
+        private bool TryResolveRoi(Mat image, out Rect roi)
         {
+            roi = default;
             if (!GetBool("USE_ROI", false))
             {
-                return default;
+                return true;
             }
 
             string value = GetString("CvROI", string.Empty);
             string[] parts = value.Split(',');
             if (parts.Length != 4)
             {
-                return default;
+                return false;
             }
 
             if (!int.TryParse(parts[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out int x)
@@ -194,14 +203,18 @@ namespace OpenVisionLab
                 || !int.TryParse(parts[2], NumberStyles.Integer, CultureInfo.InvariantCulture, out int width)
                 || !int.TryParse(parts[3], NumberStyles.Integer, CultureInfo.InvariantCulture, out int height))
             {
-                return default;
+                return false;
             }
 
-            int left = Clamp(x, 0, image.Width);
-            int top = Clamp(y, 0, image.Height);
-            int right = Clamp(x + width, left, image.Width);
-            int bottom = Clamp(y + height, top, image.Height);
-            return new Rect(left, top, right - left, bottom - top);
+            long right = (long)x + width;
+            long bottom = (long)y + height;
+            if (x < 0 || y < 0 || width <= 0 || height <= 0 || right > image.Width || bottom > image.Height)
+            {
+                return false;
+            }
+
+            roi = new Rect(x, y, width, height);
+            return true;
         }
 
         private string GetString(string key, string defaultValue)
@@ -239,5 +252,6 @@ namespace OpenVisionLab
         {
             return Math.Max(min, Math.Min(max, value));
         }
+
     }
 }

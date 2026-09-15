@@ -23,6 +23,8 @@ namespace OpenVisionLab
         // Legacy sample-validation result after expected-failure and metric checks.
         public bool Success { get; set; }
         public bool HasToolError { get; set; }
+        public string ExpectedFailureValidation { get; set; } = string.Empty;
+        public string ExpectedFailureClassification { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;
         public string MetricText { get; set; } = string.Empty;
         public string DistanceMetricText { get; set; } = string.Empty;
@@ -232,6 +234,7 @@ namespace OpenVisionLab
             CancellationToken cancellationToken)
         {
             DateTime checkedAt = DateTime.Now;
+            ValidateInspectionImageFormat(sample.ImageFullPath);
             using (Bitmap bitmap = new Bitmap(sample.ImageFullPath))
             using (Mat source = BitmapImageConverter.ToMat(bitmap))
             using (Mat executionSource = normalizeInputToGray ? source.Clone() : null)
@@ -255,13 +258,16 @@ namespace OpenVisionLab
                             sourceImage: source);
                     List<string> messages = new List<string>();
                     bool expectedFailure = sample.ExpectsFailure;
+                    VisionPipelineExpectedFailureEvaluation expectedFailureEvaluation = expectedFailure
+                        ? VisionPipelineExpectedFailureContract.Evaluate(sample, result)
+                        : null;
                     if (!result.Success && !expectedFailure && !string.IsNullOrWhiteSpace(result.Message))
                     {
                         messages.Add(result.Message);
                     }
-                    else if (result.Success && expectedFailure)
+                    else if (expectedFailure && !expectedFailureEvaluation.IsValid)
                     {
-                        messages.Add("Expected failure did not occur.");
+                        messages.Add(expectedFailureEvaluation.Message);
                     }
 
                     if (sample.Width > 0
@@ -296,15 +302,35 @@ namespace OpenVisionLab
                                 continue;
                             }
 
+                            if (double.IsNaN(metricValue) || double.IsInfinity(metricValue))
+                            {
+                                messages.Add($"Expected metric '{expectedMetric.Name}' was non-finite.");
+                                metricParts.Add($"{expectedMetric.Name}=nonfinite");
+                                metricReviewLines.Add($"{expectedMetric.Name}: expected {expectedRangeText}, actual non-finite, judgment NG");
+                                continue;
+                            }
+
                             metricParts.Add($"{expectedMetric.Name}={metricValue:0.###}");
                             bool metricPassed = true;
-                            if (TryParseDouble(expectedMetric.Minimum, out double minimum) && metricValue < minimum)
+                            if (TryParseDouble(expectedMetric.Minimum, out double minimum)
+                                && (double.IsNaN(minimum) || double.IsInfinity(minimum)))
+                            {
+                                messages.Add($"Expected metric '{expectedMetric.Name}' minimum was non-finite.");
+                                metricPassed = false;
+                            }
+                            else if (TryParseDouble(expectedMetric.Minimum, out minimum) && metricValue < minimum)
                             {
                                 messages.Add($"{expectedMetric.Name} {metricValue:0.###} < {minimum:0.###}.");
                                 metricPassed = false;
                             }
 
-                            if (TryParseDouble(expectedMetric.Maximum, out double maximum) && metricValue > maximum)
+                            if (TryParseDouble(expectedMetric.Maximum, out double maximum)
+                                && (double.IsNaN(maximum) || double.IsInfinity(maximum)))
+                            {
+                                messages.Add($"Expected metric '{expectedMetric.Name}' maximum was non-finite.");
+                                metricPassed = false;
+                            }
+                            else if (TryParseDouble(expectedMetric.Maximum, out maximum) && metricValue > maximum)
                             {
                                 messages.Add($"{expectedMetric.Name} {metricValue:0.###} > {maximum:0.###}.");
                                 metricPassed = false;
@@ -320,18 +346,25 @@ namespace OpenVisionLab
                             : "Metric review:" + Environment.NewLine + " - " + string.Join(Environment.NewLine + " - ", metricReviewLines);
                     }
 
+                    bool hasToolError = result.Steps.Any(step => step != null && !step.Skipped && !step.ToolSuccess);
+                    bool executionCompleted = !hasToolError
+                        || expectedFailureEvaluation?.IsValid == true && expectedFailureEvaluation.IsControlledNoResult;
                     success = success && messages.Count == 0;
                     string message = messages.Count == 0
-                        ? result.Message
+                        ? expectedFailureEvaluation?.IsValid == true
+                            ? result.Message
+                            : expectedFailureEvaluation?.Message ?? result.Message
                         : string.Join(" ", messages);
 
                     return new VisionPipelineSampleCheckResult
                     {
-                        Status = success ? "OK" : "NG",
-                        ExecutionCompleted = true,
+                        Status = executionCompleted ? success ? "OK" : "NG" : "ERROR",
+                        ExecutionCompleted = executionCompleted,
                         ActualSuccess = result.Success,
                         Success = success,
-                        HasToolError = result.Steps.Any(step => step != null && !step.Skipped && !step.ToolSuccess),
+                        HasToolError = hasToolError,
+                        ExpectedFailureValidation = expectedFailureEvaluation?.ValidationStrength ?? string.Empty,
+                        ExpectedFailureClassification = expectedFailureEvaluation?.Classification ?? string.Empty,
                         Message = message,
                         MetricText = metricText,
                         DistanceMetricText = BuildDistanceMetricText(result),
@@ -345,6 +378,25 @@ namespace OpenVisionLab
                         TotalMilliseconds = result.TotalMilliseconds,
                         CheckedAt = checkedAt
                     };
+                }
+            }
+        }
+
+        private static void ValidateInspectionImageFormat(string imagePath)
+        {
+            using (Mat decoded = Cv2.ImRead(imagePath, ImreadModes.Unchanged))
+            {
+                if (decoded.Empty())
+                {
+                    throw new InvalidOperationException(
+                        $"Inspection input could not be decoded: {imagePath}");
+                }
+
+                if (decoded.Depth() != MatType.CV_8U)
+                {
+                    throw new NotSupportedException(
+                        $"Inspection input depth '{decoded.Depth()}' is not supported. "
+                        + "Only 8-bit Gray/BGR/BGRA input is accepted; display-only conversion does not change Runner input.");
                 }
             }
         }

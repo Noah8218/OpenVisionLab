@@ -38,6 +38,7 @@ namespace OpenVisionLab
             {
                 Owner = ownerProvider()
             };
+            learnWindow.SetOpenLearnDocumentAction(OpenVisionWorkspaceLearnDocumentService.OpenLearnDocumentFile);
             learnWindow.ApplyThresholdRequested += LearnWindow_ApplyThresholdRequested;
             learnWindow.Closed += LearnWindow_Closed;
             learnWindow.Show();

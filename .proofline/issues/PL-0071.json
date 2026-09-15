@@ -1,0 +1,181 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0071",
+    "aliases": [
+      "OPENVISIONLAB-2D013-PREVIEW-RUN-REOPEN-EQUIVALENCE-20260915"
+    ],
+    "type": "task",
+    "mode": "simple",
+    "title": "Establish Preview, Run, and save-reopen equivalence baseline",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "scheduled 2D task execution and source review",
+    "summary": "2D-013 requires evidence that supported representative Tools preserve the same input semantics, raw metrics, decisions, and coordinates across the Preview boundary, headless Runner, and a saved/reopened Pipeline.",
+    "refs": [
+      "C:\\Users\\USER\\Downloads\\OpenVisionLab_2D_tasks.json",
+      "AGENTS.md",
+      "docs\\contracts\\openvisionlab\\OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md",
+      "docs\\admin\\OPENVISIONLAB_CURRENT_HANDOFF.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "The deterministic equivalence baseline now runs the public Mean, Blob, Contour, Matching, and Line samples through the shared Preview controller and VisionRecipeRunner using the same SetImageChannel1 input semantics. Integer metrics, floating metrics within the declared 1e-5 tolerance, decisions, coordinates, and save/reopen summaries all match; en-US and ko-KR Mean runs are stable, and failure-gate contracts pass. Actual WPF rendered preview interaction remains a separate boundary."
+  },
+  "objective": {
+    "summary": "Create a repeatable, evidence-backed baseline for same-input Preview, Run, and save/reopen equivalence across representative public 2D Tool samples.",
+    "constraints": [
+      "Reuse the existing Preview controller, VisionRecipeRunner, effective Pipeline and XML owners; do not alter product algorithms to force parity.",
+      "Normalize both execution paths through OpenCvHelper.SetImageChannel1, compare raw metric/decision/coordinate contracts, and do not require PNG byte identity.",
+      "Keep generated evidence on D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev and do not modify Original, commit, push, release, or deploy."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "Public Mean, Blob, Contour, Matching, and Line samples use their fixed source bytes and the same normalized target input; preview input max absolute difference after normalization is zero.",
+      "evidence_refs": [
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "Preview and headless Run agree on tool success and acceptance decisions, integer metrics exactly, floating metrics within 1e-5, and overlay/object/geometry coordinates within 1e-3; mismatch lists fail the contract.",
+      "evidence_refs": [
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "SaveXmlFile followed by reopened VisionRecipeRunner execution preserves decision, metric, coordinate-count, and result-shape outcomes for all five representative samples.",
+      "evidence_refs": [
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "Missing-input/invalid-acceptance prevalidation, finite/missing-metric acceptance gates, and en-US versus ko-KR locale consistency checks pass against the same Debug smoke binary.",
+      "evidence_refs": [
+        "E4",
+        "E5"
+      ]
+    },
+    {
+      "id": "C5",
+      "text": "The focused smoke project builds with zero errors, the contract dispatch is runnable, and no Original repository or external system is mutated.",
+      "evidence_refs": [
+        "E1",
+        "E6"
+      ]
+    }
+  ],
+  "relations": [],
+  "context": [
+    {
+      "kind": "owner-map",
+      "location": "OpenVisionNativePreviewExecutionController.ComputeSingleInput owns the Preview transport boundary; VisionRecipeRunner and VisionPipelineExecutionService own headless execution and summaries; SerializeHelper owns XML round-trip; PreviewRunEquivalenceContract owns the deterministic comparison harness."
+    },
+    {
+      "kind": "state-writer",
+      "location": "VisionPipelineContext owns per-run layer snapshots; VisionToolResult owns native metrics/overlays during execution; VisionRecipeStepRunSummary owns persisted summary values; the smoke contract owns only comparison evidence and never writes product state."
+    },
+    {
+      "kind": "reading-order",
+      "location": "PreviewRunEquivalenceContract.cs -> OpenVisionNativePreviewExecutionController.cs -> VisionRecipeRunner.cs -> VisionPipelineExecutionService.cs -> public sample XML/images -> stable contracts and current handoff."
+    },
+    {
+      "kind": "boundary",
+      "location": "This is a deterministic core/transport contract. Native WPF view construction, actual rendered overlay pixels, default EXE launch, themes, DPI, monitors, hardware, Good/Bad failure corpus, and release packaging remain unverified here."
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "evidence-directory",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d013-preview-run-reopen-equivalence-20260915",
+      "summary": "Five per-case result files, saved/reopened Pipeline XML, aggregate report, locale report, failure-contract reports, run logs, and current-build output."
+    },
+    {
+      "kind": "unrelated-recheck",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d013-preview-run-reopen-equivalence-20260915/recipe-snapshot/recipe-file-snapshot-contract.txt",
+      "summary": "Broader recipe-file-snapshot recheck reproduced an existing A/B recipe-generation failure (Pipeline has no steps). The task-specific save/reopen baseline passed; no product source change was made for that unrelated failure."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "review",
+      "location": "tools/VisionRecipeRunnerSmoke/PreviewRunEquivalenceContract.cs; tools/VisionRecipeRunnerSmoke/Program.cs",
+      "observation": "Source review confirmed that the contract reuses the existing Preview controller, VisionRecipeRunner, capture services, acceptance evaluator, and XML serializer. It compares raw metrics and evidence models rather than requiring PNG byte identity, and dispatches through --preview-run-reopen-equivalence-contract.",
+      "observed_at": "2026-09-15T17:01:06+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d013-preview-run-reopen-equivalence-20260915/preview-run-reopen-equivalence.txt",
+      "observation": "The aggregate contract passed for Mean, Blob, Contour, Matching, and Line. It recorded integer exact comparison, floating metric tolerance 1e-5, coordinate tolerance 1e-3, shared Preview/Runner boundaries, and no mismatch list.",
+      "observed_at": "2026-09-15T17:01:06+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d013-preview-run-reopen-equivalence-20260915/{mean,blob,contour,matching,line}/result.txt",
+      "observation": "Each public case recorded its source SHA-256, SetImageChannel1 normalization, zero preview input max difference after normalization, matching Preview/Run success and acceptance, metric/overlay/object evidence counts, and ReopenedResult PASS. Round-trip XML files are present beside each result.",
+      "observed_at": "2026-09-15T17:01:06+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d013-preview-run-reopen-equivalence-20260915/prevalidation/pipeline-prevalidation-contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d013-preview-run-reopen-equivalence-20260915/acceptance-finite/pipeline-acceptance-finite-contract.txt",
+      "observation": "Current Debug smoke binary passed MissingInputLayer and InvalidAcceptance prevalidation, plus ten finite/missing-metric/quality acceptance gate cases with passed=10 and failed=0.",
+      "observed_at": "2026-09-15T17:01:06+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d013-preview-run-reopen-equivalence-20260915/locale/locale-consistency.txt",
+      "observation": "Mean Run decision and metric count remained stable under en-US and ko-KR after the same SetImageChannel1 normalization; both cultures recorded ToolSuccess=True, Acceptance=True, and MetricCount=16.",
+      "observed_at": "2026-09-15T17:01:06+09:00"
+    },
+    {
+      "id": "E6",
+      "kind": "build",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d013-preview-run-reopen-equivalence-build.log",
+      "observation": "VisionRecipeRunnerSmoke Debug build completed with 0 errors. Fifteen nullable warnings remain in the newly added smoke contract; no production algorithm/UI source was changed. No desktop EXE or WPF rendered UI was launched in this slice.",
+      "observed_at": "2026-09-15T17:01:06+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-15T17:01:06+09:00",
+      "summary": "Use the existing Preview controller and Runner owners with a deterministic smoke contract. Normalize both paths through SetImageChannel1 because the Preview boundary already applies that policy; compare raw metric/decision/coordinate evidence and permit only declared numeric tolerance. Keep the visual bitmap as a transport prerequisite, not a PNG-byte criterion.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-15T17:01:06+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "PL-0071 resolved after five-case Preview/Run/save-reopen equivalence, failure-gate, locale, and focused build evidence passed. The broader recipe-file-snapshot recheck remains an unrelated known failure and is not claimed as fixed.",
+      "evidence_refs": [
+        "E2",
+        "E4",
+        "E5",
+        "E6"
+      ]
+    }
+  ],
+  "created_at": "2026-09-15T16:51:30+09:00",
+  "updated_at": "2026-09-15T17:01:06+09:00"
+}

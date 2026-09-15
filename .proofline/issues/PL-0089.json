@@ -1,0 +1,128 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0089",
+    "aliases": [
+      "2D-031"
+    ],
+    "type": "task",
+    "mode": "simple",
+    "title": "Verify Matching no-result, multiple-result, and score boundaries",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "scheduled-follow-up",
+    "summary": "2D-031 requires a focused contract for Matching no-result, multiple-result, score threshold, acceptance, overlay, and Run History meaning.",
+    "refs": [
+      "C:/Users/USER/Downloads/OpenVisionLab_2D_tasks.json#2D-031",
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      ".proofline/issues/PL-0088.json"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "2D-031 Matching no-result, multiple-result, and score-boundary meaning is verified through the existing SDK/pipeline, acceptance, overlay, XML, and Run History owners; no detector, score recalculation, or candidate abstraction was added."
+  },
+  "objective": {
+    "summary": "Prove that Matching no-result, multiple-result, and score threshold cases retain the declared ResultCount, Score metrics, acceptance, overlays, and report evidence while controlled no-result remains fail-closed and deterministic.",
+    "constraints": [
+      "Reuse the existing Matching tool, VisionRecipeRunner, acceptance, overlay summary, and Run History owners; do not add a detector, candidate abstraction, or alternate score calculation.",
+      "Use isolated synthetic template/source fixtures and D-drive evidence only; preserve XML/save-reopen semantics.",
+      "Do not touch Original, release, deploy, hardware, or external systems."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "A no-result source fails with the existing controlled MatchingNoResult meaning and does not fabricate a match overlay or positive result count.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "A source with multiple spatially distinct targets respects NUM_MATCH and preserves ResultCount, ScoreMin/ScoreMax, overlay, and acceptance meaning.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Score threshold just below an observed candidate retains the candidate and a threshold just above it rejects it without changing unrelated routing; XML reopen and Run History preserve the observed boundary evidence.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "Focused Debug/Release contract and documentation record the existing owner/call path and unverified WPF/render/hardware limits.",
+      "evidence_refs": [
+        "E2",
+        "E3",
+        "E4"
+      ]
+    }
+  ],
+  "relations": [],
+  "context": [],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d031-debug-20260916s\\matching-boundary\\matching-boundary-contract.txt",
+      "observation": "Debug Matching boundary contract passed: blank source failed closed as MatchingNoResult without a positive ResultCount or overlay; NUM_MATCH=2 retained two results, ordered finite scores, two overlays, acceptance, XML reopen, and Run History export; the observed score boundary was accepted below and rejected above the configured SCORE_MIN.",
+      "observed_at": "2026-09-16T00:00:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d031-release-20260916\\matching-boundary\\matching-boundary-contract.txt",
+      "observation": "Release Matching boundary contract passed with the same no-result, multiple-result, score threshold, overlay, XML reopen, acceptance, and Run History observations as Debug.",
+      "observed_at": "2026-09-16T00:00:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d031-debug-20260916s\\focused; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d031-release-20260916",
+      "observation": "Focused expected-failure and Preview/Run/Reopen regressions exited 0 for Mean, Blob, Contour, Matching, and Line, including locale coverage; Debug/Release builds completed with 0 errors and only the existing 16 nullable warnings.",
+      "observed_at": "2026-09-16T00:00:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "review",
+      "location": "docs/reports/OPENVISIONLAB_2D_MATCHING_BOUNDARY_20260916.md; docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "observation": "Documentation records the existing Matching owner/call path, SCORE_MIN fraction versus percentage score meaning, NUM_MATCH/result/overlay contract, explicit fixture preprocessing, next 2D-032 priority, and the unverified WPF EXE/theme/DPI/monitor/hardware limits.",
+      "observed_at": "2026-09-16T00:00:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-16T00:00:00+09:00",
+      "summary": "Close 2D-031 as a deterministic contract-only slice: retain the existing Matching SDK/result owners, prove no-result, NUM_MATCH multiple-result, score threshold, acceptance, overlay, XML, and Run History semantics, and leave WPF/runtime qualification outside this slice.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-16T00:00:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "All 2D-031 criteria have active Debug/Release contract and focused regression evidence with durable documentation; the remaining WPF/runtime qualification is explicitly outside this slice."
+    }
+  ],
+  "created_at": "2026-09-16T00:00:00+09:00",
+  "updated_at": "2026-09-16T00:00:00+09:00"
+}

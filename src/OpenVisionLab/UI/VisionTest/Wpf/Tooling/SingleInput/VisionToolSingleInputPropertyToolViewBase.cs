@@ -118,6 +118,11 @@ namespace OpenVisionLab
             ToolController.SetStatus(status);
         }
 
+        public virtual void ClearResultReview()
+        {
+            ToolController.ClearResultReview();
+        }
+
         protected virtual void DisposeToolResources()
         {
         }
@@ -142,5 +147,6 @@ namespace OpenVisionLab
         void SetInputPreview(Bitmap image);
         void SetOutputPreview(Bitmap image);
         void SetStatus(string status);
+        void ClearResultReview();
     }
 }

@@ -33,6 +33,9 @@ namespace OpenVisionLab
                     return;
                 }
 
+                string previousName = m_strName;
+                string previousModelNo = ModelNo;
+                string previousModelName = ModelName;
                 m_strName = recipeName;
                 UpdateModelInfo();
 
@@ -42,7 +45,14 @@ namespace OpenVisionLab
                 }
 
                 RecipeWorkspaceService.EnsureVisionWorkspace(m_strName);
-                LoadTools();
+                if (!LoadTools())
+                {
+                    m_strName = previousName;
+                    ModelNo = previousModelNo;
+                    ModelName = previousModelName;
+                    return;
+                }
+
                 EventChangedRecipe?.Invoke(this, EventArgs.Empty);
             }
         }
@@ -61,19 +71,12 @@ namespace OpenVisionLab
 
         public bool LoadTools()
         {
-                        
-            RecipeRuntimeStorage.Load(Name, dataAccessor, dataSetter, visionToolAccessor);
-
-            return true;
-        
+            return RecipeRuntimeStorage.Load(Name, dataAccessor, dataSetter, visionToolAccessor);
         }
 
         public bool SaveTools()
         {
-                        
-            RecipeRuntimeStorage.Save(Name, dataAccessor, visionToolAccessor);
-            return true;
-        
+            return RecipeRuntimeStorage.Save(Name, dataAccessor, visionToolAccessor);
         }
 
         private void UpdateModelInfo()

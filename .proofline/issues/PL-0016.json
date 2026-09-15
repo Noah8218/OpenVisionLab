@@ -1,0 +1,145 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0016",
+    "aliases": [
+      "OPENVISIONLAB-SHELL-RECIPE-DIALOG-ADAPTER-20260911"
+    ],
+    "type": "task",
+    "mode": "simple",
+    "title": "Move Shell Recipe dialog I/O to a concrete UI adapter",
+    "risk": "medium"
+  },
+  "origin": {
+    "kind": "user continuation request and Shell View boundary audit",
+    "summary": "The user asked to continue Shell View refactoring. The remaining dialog/file-picker/external-evidence methods form one UI side-effect boundary with test hooks and can leave the composition View without changing Recipe contracts.",
+    "refs": [
+      "docs/reports/OPENVISIONLAB_SHELL_PIPELINE_CODEBEHIND_BOUNDARY_AUDIT_20260910.md",
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "AGENTS.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "PL-0016 is verified: Recipe dialog, file-picker, and qualified-evidence side effects now have one concrete adapter owner; Shell and Recipe callback/test contracts are preserved; focused builds and contracts pass; runtime UI interaction remains unverified."
+  },
+  "objective": {
+    "summary": "Move Shell Recipe dialog/file-picker/external-evidence UI side effects from OpenVisionShellHostView into one concrete RecipeDialogAdapter while preserving all callback signatures, test override properties, language text, modal owner resolution, and failure behavior.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev and preserve the existing dirty worktree.",
+      "Do not add an interface, factory, manager, or partial.",
+      "Keep RecipeCommandSurface callback signatures and public/internal *ForTest names unchanged.",
+      "Keep Window owner resolution, dialog options, language text, Process.Start behavior, exception handling, and return values unchanged.",
+      "Do not move Recipe persistence or workflow policy; the adapter owns only WPF dialog/process side effects.",
+      "Skip hardware and full runtime UI validation; record it as unverified."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "RecipeDialogAdapter owns the existing Shell Recipe MessageBox, file/folder picker, and qualified-evidence open methods; OpenVisionShellHostView no longer contains their implementations.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "RecipeCommandSurface callback signatures, XAML/public bindings, and QualifiedSnapshot*ForTest properties remain unchanged and route through the adapter.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E4"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Sequential Debug/Release solution and focused smoke/readiness/refactor/documentation checks pass with no new warnings or errors attributable to this slice.",
+      "evidence_refs": [
+        "E3",
+        "E4",
+        "E5"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "Completion evidence records current/intended owner, call path, mutable state and lifetime owner, junior readability result, and runtime UI boundaries.",
+      "evidence_refs": [
+        "E1",
+        "E6"
+      ]
+    }
+  ],
+  "relations": [],
+  "context": [
+    {
+      "kind": "current-owner",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/OpenVisionShellHostView.xaml.cs"
+    },
+    {
+      "kind": "intended-owner",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/Shell/Recipe/RecipeDialogAdapter.cs"
+    },
+    {
+      "kind": "test-contract",
+      "location": "tools/PipelineViewerScreenshotSmoke/Program.cs:8825"
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/Shell/Recipe/RecipeDialogAdapter.cs; src/OpenVisionLab/UI/Menu/Wpf/OpenVisionShellHostView.xaml.cs; src/OpenVisionLab/UI/Menu/Wpf/Shell/Support/OpenVisionShellHostViewTestSurface.cs",
+      "observation": "RecipeDialogAdapter is the concrete owner of Recipe/Pipeline/Validation Set confirmation, file/folder picker, and qualified evidence open operations. OpenVisionShellHostView constructs it and passes method groups to RecipeCommandSurface; View no longer contains those direct dialog/process implementations. The existing TestSurface forwards QualifiedSnapshot test delegates to the adapter.",
+      "observed_at": "2026-09-11T15:18:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "static",
+      "location": "D:\\\\OpenVisionLab-TestData\\\\OpenVisionLab_Dev\\\\pl0016-dialog-adapter-20260911\\\\dialog-adapter-contract.txt",
+      "observation": "PL0016_DIALOG_ADAPTER_CONTRACT=PASS. The normalized moved dialog body has identical before/after SHA-256 efa1744ffc4b6a9fccf3782cf0b17de51b65d365da0695ee0332b2be55d4e294 and length 6777; direct View dialog I/O is absent; callbacks and test hooks route through the adapter.",
+      "observed_at": "2026-09-11T15:18:30+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "build",
+      "location": "D:\\\\OpenVisionLab-TestData\\\\OpenVisionLab_Dev\\\\pl0016-dialog-adapter-20260911\\\\solution-debug-build-final.log; solution-release-build-final.log; smoke-debug-build-final.log; smoke-release-build-final.log",
+      "observation": "Sequential OpenVisionLab solution and VisionRecipeRunnerSmoke Debug/Release builds completed with 0 warnings and 0 errors after the final adapter and formatting edits.",
+      "observed_at": "2026-09-11T15:19:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "test",
+      "location": "D:\\\\OpenVisionLab-TestData\\\\OpenVisionLab_Dev\\\\pl0016-dialog-adapter-20260911\\\\shell-basic-debug.log; shell-basic-release.log; readiness-debug.log; readiness-release.log",
+      "observation": "ShellRecipeBasicLifecycleViewContract passed 7/7 in Debug and Release; OpenVisionReadinessCheck passed in Debug and Release.",
+      "observed_at": "2026-09-11T15:19:15+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "verification",
+      "location": "D:\\\\OpenVisionLab-TestData\\\\OpenVisionLab_Dev\\\\pl0016-dialog-adapter-20260911\\\\refactor-audit.log; documentation-index-final.log; git-diff-check-final.log",
+      "observation": "RefactorAudit passed with CSharpFiles=816, XamlFiles=60, PartialDeclarations=59, PartialTextMatches=2, ProjectCycles=0, ShellStorageCalls=0. DocumentationIndex passed with IndexedPaths=288, Routes=16, RootRedirects=102. git diff --check returned exit code 0 with only existing line-ending conversion warnings.",
+      "observed_at": "2026-09-11T15:19:30+09:00"
+    },
+    {
+      "id": "E6",
+      "kind": "review",
+      "location": "D:\\\\OpenVisionLab-TestData\\\\OpenVisionLab_Dev\\\\pl0016-dialog-adapter-20260911\\\\junior-review.txt; docs/reports/OPENVISIONLAB_JUNIOR_NAVIGATION_AND_SHELL_REVIEW_20260910.md",
+      "observation": "Independent junior-readability review accepts the concrete adapter as a real navigation and ownership improvement. It records the residual pending-edit dialog as a separate existing contract and marks actual dialog interaction, external folder launch, localization rendering, WPF runtime matrix, hardware, and long-run shutdown as unverified.",
+      "observed_at": "2026-09-11T15:20:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-11T15:20:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "All PL-0016 criteria are evidenced. The Shell View no longer owns the Recipe dialog/file-picker/process side effects, callback and test contracts remain compatible, focused verification passes, and unverified runtime boundaries are explicitly recorded."
+    }
+  ],
+  "created_at": "2026-09-11T15:00:00+09:00",
+  "updated_at": "2026-09-11T15:20:00+09:00"
+}

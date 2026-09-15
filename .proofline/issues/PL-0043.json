@@ -1,0 +1,144 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0043",
+    "aliases": [],
+    "type": "task",
+    "mode": "simple",
+    "title": "Retain Affine Transform Tool Partial after concrete owner audit",
+    "risk": "low"
+  },
+  "origin": {
+    "kind": "user-request",
+    "summary": "The user requested that Partial refactoring continue in scheduled cycles and that each remaining Partial be structurally reviewed rather than mechanically deleted or split.",
+    "refs": [
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "docs/reports/OPENVISIONLAB_PARTIAL_STRUCTURAL_ELIMINATION_PLAN_20260913.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "AffineTransformToolWpfView.xaml.cs를 no-change 구조 감사로 재확인했다. View Partial은 required XAML/controller adapter로 유지되고, AffineTransformToolViewModel, generic property controller, result presenter, preview executor, factory/composition, registry/base가 state, binding, result, algorithm, persistence, creation, lifetime을 각각 소유한다. 독립 state/lifetime/test seam이 없어 production split은 만들지 않았으며, Debug/Release contract/build와 Affine WPF smoke가 통과했다."
+  },
+  "objective": {
+    "summary": "Audit AffineTransformToolWpfView's Partial structure and retain it only if existing concrete owners already provide property, preview, result, persistence, binding, and lifetime boundaries without a new split.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev; do not modify C:\\Git\\2D\\Original.",
+      "Do not add a service, interface, manager, wrapper, forwarding Partial, or ViewModel split for file length alone.",
+      "Preserve AffineTransformToolWpfView XAML names, Learn contract, property/result/test facades, preview path, persistence, and DisposeView lifetime.",
+      "Keep test outputs and evidence under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev.",
+      "Do not commit, push, tag, release, deploy, or mutate the Original repository."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The proof report records current/intended owners, caller path, mutable-state writer, lifetime owner, binding/public/test contract, shortest reading order, and the reason no production split is justified.",
+      "evidence_refs": [
+        "E1"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "The source contract proves that the View Partial has no direct persistence/file-dialog/algorithm coupling and that existing ViewModel, generic controller, result presenter, preview, factory/composition, registry, and base lifetime owners are wired.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Focused Debug/Release contracts and builds plus Affine WPF smoke and dynamic monitor geometry pass; broader theme/DPI/input/camera/SDK/GPU/native runtime remains explicitly unverified.",
+      "evidence_refs": [
+        "E2",
+        "E3"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0042"
+    }
+  ],
+  "context": [
+    {
+      "kind": "source",
+      "location": "src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\ToolViews\\AffineTransformToolWpfView.xaml(.cs); src\\OpenVisionLab\\UI\\VisionTest\\ViewModels\\AffineTransformToolViewModel.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Tooling\\SingleInput\\VisionToolSingleInputPropertyToolController.cs"
+    },
+    {
+      "kind": "composition-owner",
+      "location": "src\\OpenVisionLab\\UI\\Menu\\Wpf\\NativeTools\\Documents\\OpenVisionNativePropertyGridToolFactory.cs; src\\OpenVisionLab\\UI\\VisionTest\\Composition\\VisionToolCompositionService.cs; src\\OpenVisionLab\\UI\\Menu\\Wpf\\NativeTools\\Preview\\OpenVisionNativeToolPreviewExecutor.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Tooling\\SingleInput\\VisionToolSingleInputPropertyToolViewBase.cs"
+    },
+    {
+      "kind": "test-host",
+      "location": "tools\\VisionRecipeRunnerSmoke\\AffineTransformPartialBoundaryContract.cs; tools\\PipelineViewerScreenshotSmoke\\Program.cs; tools\\RunUiPrecheck.ps1"
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "screenshot",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\affine-transform-partial-retention-20260914\\ui-precheck\\wpf_shell_host_affine_transform_tool.png",
+      "summary": "Fresh Affine Transform WPF smoke screenshot."
+    },
+    {
+      "kind": "geometry",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\affine-transform-partial-retention-20260914\\monitor\\wpf_shell_host_affine_transform_tool\\monitor-window-geometry.json",
+      "summary": "Dynamic monitor/window geometry for the Affine Transform smoke."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source",
+      "location": "docs\\reports\\OPENVISIONLAB_AFFINE_TRANSFORM_PARTIAL_RETENTION_20260914.md; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\ToolViews\\AffineTransformToolWpfView.xaml.cs; src\\OpenVisionLab\\UI\\VisionTest\\ViewModels\\AffineTransformToolViewModel.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Tooling\\SingleInput\\VisionToolSingleInputPropertyToolController.cs",
+      "observation": "AffineTransformToolWpfView remains a required XAML/controller adapter. Existing ViewModel, generic property controller, result presenter, preview executor, factory/composition, registry, and base View provide concrete property, binding/test, result, algorithm, persistence/creation, registration, and lifetime owners. The View has no direct settings store, dialog, System.IO, OpenCvSharp, or algorithm construction coupling.",
+      "observed_at": "2026-09-14T04:34:27+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\affine-transform-partial-retention-20260914\\debug\\affine-transform-partial-boundary-contract.txt; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\affine-transform-partial-retention-20260914\\release\\affine-transform-partial-boundary-contract.txt",
+      "observation": "AffineTransformPartialBoundaryContract passed 9/9 in Debug and Release. VisionRecipeRunnerSmoke Debug and Release builds passed with 0 warnings/errors.",
+      "observed_at": "2026-09-14T04:34:27+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\affine-transform-partial-retention-20260914",
+      "observation": "PipelineViewerScreenshotSmoke Debug build passed with 0 warnings/errors. wpf_shell_host_affine_transform_tool WPF precheck passed with check=OK and layout/text/internal counts zero, producing a fresh screenshot. Sequential dynamic monitor probing recorded one DISPLAY2 1920x1080 monitor and one intersecting visible smoke window. Broader UI and native matrices remain unverified.",
+      "observed_at": "2026-09-14T04:34:27+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-14T04:34:27+09:00",
+      "summary": "AffineTransformToolWpfView Partial은 required XAML/controller adapter이고 기존 ViewModel/generic controller/result/preview/factory/base owners가 독립 책임과 lifetime을 이미 제공한다. 새 seam 없이 분리하면 wrapper나 중복 상태가 되므로 no-change로 유지한다.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "D2",
+      "kind": "decision",
+      "at": "2026-09-14T04:34:27+09:00",
+      "summary": "PL-0043의 세 completion criteria가 현재 증거로 충족되어 resolved로 닫는다. 전체 theme/DPI/input, native dialog, camera/SDK/GPU 및 long-running native runtime은 이 slice의 검증 범위가 아니다.",
+      "evidence_refs": [
+        "E3"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-14T04:34:27+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "The Affine Transform Partial retained-owner audit found no independent boundary that justified a production split; focused source/build/WPF evidence was recorded. Do not reopen without a new requirement, reproducible defect, failed criterion, or changed dependency/lifetime boundary."
+    }
+  ],
+  "created_at": "2026-09-14T04:34:27+09:00",
+  "updated_at": "2026-09-14T04:34:27+09:00"
+}

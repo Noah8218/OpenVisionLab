@@ -1,0 +1,239 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0022",
+    "aliases": [],
+    "type": "task",
+    "mode": "composite",
+    "title": "Refactor RecipeCommandSurface proven responsibility boundary",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "user request",
+    "summary": "The user explicitly requested continued RecipeCommandSurface refactoring with a five-minute scheduled cycle and no waiting for optional input.",
+    "refs": [
+      "current user request",
+      "PL-0020"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "PL-0022 resolved: the RecipeCommandSurface dead command-initializer cleanup, focused build/contracts, and final owner/MVVM/partial/folder/first-contributor audit are verified. The active constructor call path and existing Recipe owners remain canonical; full WPF visual, hardware, and long-run native shutdown coverage is explicitly unverified."
+  },
+  "objective": {
+    "summary": "Reduce first-contributor burden in the concrete RecipeCommandSurface by extracting one real independently owned responsibility with preserved binding, callback, Preview/Run, Recipe, and shutdown behavior.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev; keep C:\\Git\\2D\\Original read-only.",
+      "Reuse existing Recipe, execution, step-edit, validation, persistence, presenter, and dialog owners before adding code.",
+      "Do not add interfaces, managers, factories, providers, event buses, forwarding wrappers, or manual partials without a demonstrated replacement seam, test seam, or independent lifetime.",
+      "Do not split by file length or region names alone; move a complete responsibility and remove the old coupling.",
+      "Preserve XAML bindings, callback contracts, Preview/Run behavior, Recipe/Layer/Pipeline routing, cancellation, and shutdown semantics.",
+      "Do not wait for user input, hardware, or unavailable UI/runtime matrices; record those boundaries as unverified.",
+      "Store generated evidence under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\recipe-command-surface-refactor-20260912.",
+      "Do not commit, push, tag, release, deploy, or modify Original from the scheduled work."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The selected responsibility has a documented current owner, intended owner, call path, dependency direction, mutable-state writer, lifetime/release owner, public/XAML contract, and shortest reading route.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "At least one complete independently owned responsibility is extracted from RecipeCommandSurface, or a direct evidence record explains why the requested boundary cannot be extracted without changing a protected contract; no cosmetic partial or forwarding layer is used.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "The changed owner and caller pass focused source/contract checks and the required Debug build; relevant WPF/UI or hardware limits are explicitly marked unverified.",
+      "evidence_refs": [
+        "E3",
+        "E4"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "The final record updates the project navigation documentation, first-contributor assessment, changed-file list, remaining RecipeCommandSurface debt, and next separate priority.",
+      "evidence_refs": [
+        "E4"
+      ]
+    }
+  ],
+  "milestones": [
+    {
+      "id": "M1",
+      "summary": "Audit current RecipeCommandSurface and choose a complete boundary.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1",
+        "C2"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M2",
+      "summary": "Extract one proven responsibility and remove old coupling.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1",
+        "C2"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M3",
+      "summary": "Build and run focused Recipe and contract checks.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C3"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M4",
+      "summary": "Complete the owner, MVVM, partial, folder, and first-contributor audit.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1",
+        "C3",
+        "C4"
+      ],
+      "issue_refs": []
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0020"
+    }
+  ],
+  "context": [
+    {
+      "kind": "source",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/Recipe/CommandSurface/RecipeCommandSurface.cs"
+    },
+    {
+      "kind": "source-folder",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/Recipe/CommandSurface"
+    },
+    {
+      "kind": "live-status",
+      "location": "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md"
+    },
+    {
+      "kind": "owner-registry",
+      "location": "docs/admin/CODEBASE_STRUCTURE.md"
+    },
+    {
+      "kind": "prior-audit",
+      "location": ".proofline/issues/PL-0020.json"
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "evidence-root",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\recipe-command-surface-refactor-20260912",
+      "summary": "Scheduled RecipeCommandSurface refactor evidence."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\recipe-command-surface-refactor-20260912\\m1-audit\\dead-command-initializer-search.txt",
+      "observation": "RecipeCommandSurface.cs is 10,076 lines and 463,442 bytes. The constructor directly initializes the active command properties at lines 348-446. The ten Initialize* command methods at lines 3164-3310 have no caller outside the unreachable InitializeRecipeCommands wrapper; each helper is referenced only by that wrapper and its own declaration. The current call path remains OpenVisionShellHostView constructor -> RecipeCommandSurface constructor -> direct command wiring -> existing RecipeCommands XAML bindings.",
+      "observed_at": "2026-09-12T15:10:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\recipe-command-surface-refactor-20260912\\m2-remove-dead-command-region\\source-check.txt",
+      "observation": "The unreachable Command creation region was removed in place: RecipeCommandSurface fell from 10,076 to 9,923 lines, no Initialize* command helper reference remains, and the constructor still contains the active RunSelectedSampleCheck, RunValidationSuite, and StopValidationSuite RelayCommand wiring. No XAML binding or public command property was renamed.",
+      "observed_at": "2026-09-12T15:20:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\recipe-command-surface-refactor-20260912\\m3-contracts",
+      "observation": "Debug solution build passed with 0 warnings and 0 errors. Copied D-drive VisionRecipeRunnerSmoke runtime Recipe execution session contract passed 12/12. Focused contracts passed: validation evidence 4/4, step preview/navigation 5/5, shell recipe basic lifecycle 7/7, refresh options command state 1/1. OpenVisionReadinessCheck passed, Invoke-RefactorAudit -Verify passed (CSharpFiles=819, XamlFiles=60, PartialDeclarations=59, ProjectCycles=0), TestDocumentationIndex passed (IndexedPaths=294, Routes=16, RootRedirects=102), and git diff --check returned no whitespace errors. The initial repository-path execution-session invocation was rejected by the contract's copied-runtime guard; the corrected copied-runtime run is the valid result.",
+      "observed_at": "2026-09-12T18:35:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\recipe-command-surface-refactor-20260912\\m4-final-audit",
+      "observation": "The final source audit records RecipeCommandSurface.cs at 9,923 lines and 11 responsibility regions, one concrete file under CommandSurface, nine explicit Recipe responsibility folders, and only framework/XAML partial declarations under Recipe. The active call path, mutable-state writer, Shell/session lifetime owner, XAML/public contract, junior reading route, remaining broad-surface debt, and unverified WPF/hardware/long-run boundaries are recorded in phase-summary.txt. Refactor audit, documentation index, and diff checks passed after the documentation update.",
+      "observed_at": "2026-09-12T18:55:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-12T15:02:00+09:00",
+      "from": "open",
+      "to": "doing",
+      "summary": "PL-0022 is active. The first heartbeat will audit the current RecipeCommandSurface owner and choose one complete independently owned responsibility for extraction, preserving all existing binding and workflow contracts."
+    },
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-12T15:10:00+09:00",
+      "summary": "Select the unreachable Command creation helper region as M2. The constructor directly creates the bound commands; the private Initialize* helper family has no caller except its own unreachable wrapper. Remove only that dead region, keep RecipeCommandSurface as the binding/state owner, and do not add a new abstraction.",
+      "evidence_refs": [
+        "E1"
+      ]
+    },
+    {
+      "id": "D2",
+      "kind": "decision",
+      "at": "2026-09-12T15:20:00+09:00",
+      "summary": "Remove the dead Initialize* command helper region in place. The active constructor wiring remains canonical, so no new owner, interface, partial, binding path, or workflow behavior is needed.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "D3",
+      "kind": "decision",
+      "at": "2026-09-12T18:35:00+09:00",
+      "summary": "Keep the constructor direct command wiring as the canonical active path after dead-code removal. Focused checks show no command binding rename or callback path change; no additional extraction is justified without a new independently owned state or lifetime boundary.",
+      "evidence_refs": [
+        "E3"
+      ]
+    },
+    {
+      "id": "D4",
+      "kind": "decision",
+      "at": "2026-09-12T18:55:00+09:00",
+      "summary": "The final audit confirms one concrete RecipeCommandSurface file, explicit Recipe responsibility folders, only framework/XAML partials under Recipe, preserved binding and lifetime owners, and no new independently owned boundary beyond the dead-code cleanup. Close this bounded refactor and do not reopen it by file length alone.",
+      "evidence_refs": [
+        "E4"
+      ]
+    },
+    {
+      "id": "T2",
+      "kind": "transition",
+      "at": "2026-09-12T18:55:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "PL-0022 resolved: the RecipeCommandSurface dead command-initializer cleanup, focused build/contracts, and final owner/MVVM/partial/folder/first-contributor audit are verified. The active constructor call path and existing Recipe owners remain canonical; full WPF visual, hardware, and long-run native shutdown coverage is explicitly unverified."
+    }
+  ],
+  "created_at": "2026-09-12T15:00:00+09:00",
+  "updated_at": "2026-09-12T18:55:00+09:00"
+}

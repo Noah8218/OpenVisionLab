@@ -39,8 +39,13 @@ namespace OpenVisionLab
                     OpenCvSharp.Point ptS = new OpenCvSharp.Point(line.Start.X, line.Start.Y);
                     OpenCvSharp.Point ptE = new OpenCvSharp.Point(line.End.X, line.End.Y);
 
-                    double Distance = ptS.DistanceTo(ptE) * edgeToolL.property.PIXELPERMM;
-                    intersectionLengths.Add(Distance);
+                    if (VisionPipelineMetricEnrichmentService.TryConvertPixelToMillimeters(
+                            ptS.DistanceTo(ptE),
+                            edgeToolL.property.PIXELPERMM,
+                            out double distanceMillimeters))
+                    {
+                        intersectionLengths.Add(distanceMillimeters);
+                    }
                 }
 
                 intersectionLines.Add(new LineGaugeVerticalLines()

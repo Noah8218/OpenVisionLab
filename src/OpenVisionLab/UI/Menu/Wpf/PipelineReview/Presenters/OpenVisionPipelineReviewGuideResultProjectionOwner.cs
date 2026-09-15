@@ -26,7 +26,7 @@ namespace OpenVisionLab
                 request.SamplePairGuide);
             return new OpenVisionPipelineReviewGuideResultProjection(
                 guide,
-                OpenVisionPipelineReviewResultPresenter.FormatResultSummary(request.Summary),
+                OpenVisionPipelineReviewResultPresenter.FormatResultSummary(request.Step, request.Summary),
                 OpenVisionPipelineReviewResultPresenter.FormatResultDetails(request.Step, request.Summary),
                 OpenVisionPipelineReviewResultPresenter.FormatRunLog(
                     request.Step,

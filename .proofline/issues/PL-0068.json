@@ -1,0 +1,133 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0068",
+    "aliases": [
+      "OPENVISIONLAB-2D010-ROI-MEANING-20260915"
+    ],
+    "type": "bug",
+    "mode": "simple",
+    "title": "Separate ROI unset and invalid meanings at validation and runtime boundaries",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "scheduled 2D task execution and source review",
+    "summary": "2D-010 requires intentional full-image/unset ROI state to remain distinct from malformed, empty, negative, overflow, and out-of-bounds ROI input across shared validation, execution, and direct tool paths.",
+    "refs": [
+      "C:\\Users\\USER\\Downloads\\OpenVisionLab_2D_tasks.json",
+      "AGENTS.md",
+      "docs\\contracts\\openvisionlab\\OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md",
+      "C:\\Users\\USER\\.codex\\docs\\WPF_UI_UX_RULES.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "USE_ROI=false remains intentional full-image/unset state. With USE_ROI=true, shared validation rejects missing, malformed, non-positive, and negative-coordinate ROI definitions; the execution boundary rejects partial and overflow out-of-bounds rectangles; direct EdgeDetection and HsvMask execution rejects invalid ROI without clipping or silently falling back to the full image. Public save/reopen ROI text and valid multi-ROI definitions remain covered."
+  },
+  "problem": {
+    "claims": [
+      {
+        "id": "P1",
+        "state": "confirmed",
+        "text": "VisionPipelineExecutionService previously converted malformed or missing ROI text to a default zero rectangle, ValidateRoi accepted zero width or height as a non-error, and EdgeDetection/HsvMask clamped malformed or out-of-bounds values so invalid ROI could become full-image execution.",
+        "evidence_refs": [
+          "E1"
+        ]
+      }
+    ],
+    "impact": "An operator-authored invalid ROI could be treated as unset or clipped, changing the inspected region without an explicit failure and making UI, Runner, and direct Tool semantics diverge."
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "VisionPipelineValidator rejects malformed, missing, non-positive, and negative-coordinate CvROI/CvROIS definitions when USE_ROI=true while USE_ROI=false preserves intentional full-image/unset behavior.",
+      "evidence_refs": [
+        "E2"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "VisionPipelineExecutionService rejects partial and overflow out-of-bounds ROI at the image boundary, and direct EdgeDetection/HsvMask execution rejects malformed or out-of-bounds ROI without clipping or full-image fallback.",
+      "evidence_refs": [
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Focused ROI meaning contract, public fixture regression smoke, and affected Debug builds pass; valid multi-ROI and save/reopen CvROI behavior remain intact, with no Original repository or external mutation.",
+      "evidence_refs": [
+        "E3",
+        "E4"
+      ]
+    }
+  ],
+  "relations": [],
+  "context": [
+    {
+      "kind": "owner-map",
+      "location": "VisionPipelineValidator.ValidateParameters -> ValidateRoiParameters; VisionPipelineExecutionService.ValidateStepInput -> ValidateRoi; VisionPipelineEdgeDetectionTool.Execute/TryResolveRoi and VisionPipelineHsvMaskTool.Execute/TryResolveRoi own direct-tool ROI admission; VisionRecipeRunnerSmoke PipelineRoiMeaningContract owns the focused corpus contract."
+    },
+    {
+      "kind": "state-writer",
+      "location": "VisionPipelineValidator owns definition-level Errors; VisionPipelineExecutionService owns image-boundary runtime rejection; direct EdgeDetection/HsvMask tools own their raw parameter admission; VisionToolStorage/fixture smoke retain authored CvROI through save/reopen."
+    },
+    {
+      "kind": "reading-order",
+      "location": "VisionPipelineValidation.cs -> VisionPipelineExecutionService.cs -> VisionPipelineEdgeDetectionTool.cs and VisionPipelineHsvMaskTool.cs -> PipelineRoiMeaningContract.cs -> OpenVisionFixtureSmoke/Program.cs -> stable feature contracts and current handoff."
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "review",
+      "location": "src/OpenVisionLab/Core/Pipeline/Execution/VisionPipelineExecutionService.cs:674-734; src/OpenVisionLab/Core/Pipeline/Tools/VisionPipelineEdgeDetectionTool.cs:37-40,185-216; src/OpenVisionLab/Core/Pipeline/Tools/VisionPipelineHsvMaskTool.cs:40-43,154-184",
+      "observation": "Source review confirmed the previous default-rectangle and clipping paths. The changed owners now keep USE_ROI=false as the only full-image/unset route and reject invalid ROI syntax, dimensions, coordinates, overflow, or image bounds at the appropriate boundary.",
+      "observed_at": "2026-09-15T15:44:55+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d010-roi-meaning-20260915/pipeline-roi-meaning-contract.txt",
+      "observation": "The focused contract passed: malformed CvROI with USE_ROI=false preserved full-image mask count, valid 4x4 ROI produced the expected region, malformed/zero-width/negative-coordinate definitions failed pre-validation, partial and overflow out-of-bounds values failed at runtime, direct EdgeDetection/HsvMask rejected malformed ROI, and valid multi-ROI definition retention passed.",
+      "observed_at": "2026-09-15T15:38:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d010-roi-meaning-20260915/openvision-fixture-smoke-run.log",
+      "observation": "Public fixture smoke passed with typed pre-validation rejection for missing-frame, multi-ROI, and duplicate-frame invalid fixtures, unchanged public Good/Bad outcomes, and save/reload CvROI values preserved for both the regular and public fixture pipelines.",
+      "observed_at": "2026-09-15T15:41:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "build",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d010-roi-meaning-20260915/vision-recipe-runner-smoke-build.log; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d010-roi-meaning-20260915/openvision-fixture-smoke-build.log",
+      "observation": "VisionRecipeRunnerSmoke and OpenVisionFixtureSmoke Debug builds completed with 0 warnings and 0 errors. No desktop EXE or WPF UI runtime was launched in this slice; theme, DPI, monitor, and native hardware coverage remain unverified.",
+      "observed_at": "2026-09-15T15:36:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-15T15:44:55+09:00",
+      "summary": "Choose one Reject policy. Reuse the existing Validator, execution validation, and direct Tool owners; do not add a generic ROI service, clip invalid rectangles, or change the intentional USE_ROI=false full-image meaning.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-15T15:44:55+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "PL-0068 resolved after the ROI meaning contract, public fixture regression smoke, and affected Debug builds passed with the Reject policy and no Original or external mutation."
+    }
+  ],
+  "created_at": "2026-09-15T15:36:00+09:00",
+  "updated_at": "2026-09-15T15:44:55+09:00"
+}

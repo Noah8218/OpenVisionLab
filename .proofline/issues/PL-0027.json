@@ -1,0 +1,333 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0027",
+    "aliases": [
+      "OPENVISIONLAB-P1-VIEW-BOUNDARIES-20260913"
+    ],
+    "type": "task",
+    "mode": "composite",
+    "title": "Move remaining P1 responsibilities out of WPF Views and revalidate protected partial boundaries",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "explicit user request to refactor the three P1 View boundaries and schedule the protected Partial review",
+    "summary": "The WPF View audit identified Recipe run evidence file/Bitmap decoding, Line Tool persistence, and RoiImageCanvasViewModel UI/native/path coupling as remaining P1 responsibility candidates. The user explicitly requested these boundaries and an additional review of the existing 59 protected partial declarations.",
+    "refs": [
+      "current user request",
+      "docs/reports/OPENVISIONLAB_WPF_VIEW_MVVM_PORTABILITY_AUDIT_20260913.md",
+      "docs/reports/OPENVISIONLAB_PARTIAL_STRUCTURE_PLAN_20260911.md",
+      "AGENTS.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "PL-0027 is resolved. M1-M5 are verified: Recipe evidence image decoding, Line Tool persistence, RoiImageCanvas boundary proof, row-level structural review of all 59 Partial declarations with the ROI/template decode extraction, and final owner-map/static/build/contract verification. The retained XAML/generated/native/test boundaries have explicit owners and are not pending mechanical merging. WPF visual/theme/DPI/monitor/input, GPU/camera/SDK, and long-running native shutdown remain explicitly unverified."
+  },
+  "objective": {
+    "summary": "Reduce the three confirmed P1 View responsibility conflicts with the smallest existing concrete owners, then revalidate all 59 Partial declarations without cosmetic file movement or new abstraction layers.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev; keep C:\\Git\\2D\\Original read-only.",
+      "Preserve XAML names, binding/public contracts, Recipe/XML behavior, Preview/Run behavior, image ownership, cancellation, shutdown, and PropertyGrid contracts.",
+      "Reuse existing concrete controllers, presenters, factories, image/resource owners, and ImageCanvas policies before creating a new class.",
+      "Do not add one-implementation interfaces, managers, providers, factories, forwarding wrappers, or manual partials without an independently owned state/lifetime/test seam.",
+      "One heartbeat may complete one independently verifiable responsibility only; do not wait for optional user input or runtime hardware.",
+      "Do not commit, push, tag, release, deploy, or modify C:\\Git\\2D\\Original from scheduled work.",
+      "Partial declarations already classified as generated/framework/cohesive protected boundaries may remain unchanged when current proof still holds."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "Recipe run evidence file/Bitmap decode has a concrete owner outside the View, the View retains only presentation/lifecycle responsibilities, old direct file decode coupling is removed, and the existing evidence/error/Dispose contract is verified.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "Line Tool property persistence is owned by an existing concrete tool session/controller boundary or a directly justified concrete owner, the View no longer performs storage policy, and the existing preset/property-change behavior is verified.",
+      "evidence_refs": [
+        "E3",
+        "E4"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "RoiImageCanvasViewModel has a proven state/input/native/path boundary decision. Any extraction moves real ownership and preserves Mat/Bitmap/input/dialog/Dispose contracts; if no boundary is safe, a current proof records the no-change decision.",
+      "evidence_refs": [
+        "E5",
+        "E6"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "All current Partial declarations are inventoried and classified against the latest source. Generated/framework/cohesive declarations retain evidence, and any reopened declaration has an explicit owner/call-path/dependency/lifetime proof.",
+      "evidence_refs": [
+        "E7"
+      ]
+    },
+    {
+      "id": "C5",
+      "text": "Each accepted source slice passes its focused contract/build/static checks, updates the live handoff and owner map, and records unverified WPF runtime/hardware/long-run boundaries without overclaiming.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E4",
+        "E5",
+        "E6",
+        "E8",
+        "E9",
+        "E10"
+      ]
+    }
+  ],
+  "milestones": [
+    {
+      "id": "M1",
+      "summary": "Recipe run evidence View file/Bitmap decode owner",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1",
+        "C5"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M2",
+      "summary": "Line Tool persistence owner",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C2",
+        "C5"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M3",
+      "summary": "RoiImageCanvasViewModel boundary proof and smallest safe extraction",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C3",
+        "C5"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M4",
+      "summary": "Protected Partial 59 declaration re-inventory and no-cosmetic-change proof",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C4",
+        "C5"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M5",
+      "summary": "Final owner map, navigation, build/audit, and first-contributor review",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C4",
+        "C5"
+      ],
+      "issue_refs": []
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0021"
+    },
+    {
+      "type": "follow_up_to",
+      "target": "PL-0013"
+    }
+  ],
+  "context": [
+    {
+      "kind": "report",
+      "location": "docs/reports/OPENVISIONLAB_WPF_VIEW_MVVM_PORTABILITY_AUDIT_20260913.md"
+    },
+    {
+      "kind": "plan",
+      "location": "docs/reports/OPENVISIONLAB_PARTIAL_STRUCTURE_PLAN_20260911.md"
+    },
+    {
+      "kind": "proof",
+      "location": "docs/reports/OPENVISIONLAB_PARTIAL_STRUCTURE_PROOF_20260911.md"
+    },
+    {
+      "kind": "live-status",
+      "location": "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md"
+    },
+    {
+      "kind": "owner-registry",
+      "location": "docs/admin/CODEBASE_STRUCTURE.md"
+    },
+    {
+      "kind": "source",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/Recipe/Review/OpenVisionRecipeRunEvidenceViewerView.xaml.cs"
+    },
+    {
+      "kind": "source",
+      "location": "src/OpenVisionLab/UI/VisionTest/Wpf/ToolViews/LineToolWpfView.xaml.cs"
+    },
+    {
+      "kind": "source",
+      "location": "src/Libraries/OpenVisionLab.ImageCanvas/ViewModel/RoiImageCanvasViewModel.cs"
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "evidence-root",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\p1-view-boundaries-20260913",
+      "summary": "Focused source/build/contract evidence for the three P1 owners and Partial revalidation."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\p1-view-boundaries-20260913\\m1-recipe-evidence\\source-owner-check.txt",
+      "observation": "Recipe evidence View no longer contains FileStream or Image.FromStream; the existing OpenVisionBitmapImagePreviewFactory owns LoadBitmap and the View routes through it.",
+      "observed_at": "2026-09-13T11:30:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\p1-view-boundaries-20260913\\m1-recipe-evidence\\recipe-run-evidence-image-boundary-contract.txt",
+      "observation": "RecipeRunEvidenceImageBoundaryContract passed 4/4, including valid dimensions and role-specific missing-file failure text.",
+      "observed_at": "2026-09-13T11:30:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\p1-view-boundaries-20260913\\m2-line-persistence\\source-owner-check.txt",
+      "observation": "LineToolWpfView no longer references OpenVisionNativeToolPropertySessionStore or PersistLineProperties. LineToolPresenter exposes PersistProperties and the existing composition factory keeps Line(L)_1 and Line(R)_1 saves.",
+      "observed_at": "2026-09-13T11:30:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\p1-view-boundaries-20260913\\m2-line-persistence\\line-tool-persistence-boundary-contract.txt",
+      "observation": "LineToolPersistenceBoundaryContract passed 3/3; VisionRecipeRunnerSmoke Debug build completed with zero warnings and zero errors.",
+      "observed_at": "2026-09-13T11:30:00+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\p1-view-boundaries-20260913\\m3-imagecanvas\\source-owner-check.txt",
+      "observation": "RoiImageCanvasViewModel delegates input, dialog/context, directory, image load, and image save policy to existing concrete owners; it retains the shared ROI/state/native control lifetime contract and known consumers dispose it.",
+      "observed_at": "2026-09-13T12:00:00+09:00"
+    },
+    {
+      "id": "E6",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\p1-view-boundaries-20260913\\m3-imagecanvas\\roi-image-canvas-boundary-contract.txt",
+      "observation": "RoiImageCanvasBoundaryContract passed 6/6 and VisionRecipeRunnerSmoke Debug build completed with zero warnings and zero errors. The contract verifies no direct modal/file-encoding policy, explicit Mat/native release, host attach/detach, and consumer Dispose paths.",
+      "observed_at": "2026-09-13T12:00:00+09:00"
+    },
+    {
+      "id": "E7",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\p1-view-boundaries-20260913\\m4-partial-audit\\partial-structure-review.csv",
+      "observation": "The latest source inventory contains 59 compiled Partial declarations. Every row has a current caller, mutable-state writer, lifetime/release owner, binding/public/test contract, and disposition; retained declarations are tied to generated/framework, native, test, composition, or cohesive visual boundaries.",
+      "observed_at": "2026-09-13T13:20:00+09:00"
+    },
+    {
+      "id": "E8",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\p1-view-boundaries-20260913\\m4-template-editor-image\\template-editor-image-boundary-contract.txt",
+      "observation": "TemplateEditorImageBoundaryContract passed 3/3 and the VisionRecipeRunnerSmoke Debug build completed with 0 warnings and 0 errors. Both ROI editor Views route pattern image decoding through the existing image factory and no longer contain direct path/file Bitmap construction.",
+      "observed_at": "2026-09-13T13:20:00+09:00"
+    },
+    {
+      "id": "E9",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\p1-view-boundaries-20260913\\m5-final\\phase-summary.txt",
+      "observation": "The final static gates passed: RefactorAudit reports 59 Partial declarations, 2 literal text matches, 0 project cycles, and 0 Shell storage calls; TestDocumentationIndex passed 295 indexed paths, 16 routes, and 102 root redirects; git diff --check exited 0.",
+      "observed_at": "2026-09-13T14:10:00+09:00"
+    },
+    {
+      "id": "E10",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\p1-view-boundaries-20260913\\m5-final\\phase-summary.txt",
+      "observation": "Solution Debug/Release builds and VisionRecipeRunnerSmoke Debug/Release builds completed with 0 warnings and 0 errors. Recipe evidence, Line persistence, RoiImageCanvas, and ROI/template image contracts passed 4/4, 3/3, 6/6, and 3/3 in both configurations.",
+      "observed_at": "2026-09-13T14:10:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-13T08:45:00+09:00",
+      "summary": "Reuse the existing single heartbeat executor and process one P1 owner per slice. Do not reopen protected Shell/Pipeline/RecipeCommandSurface/Partial boundaries by length; reopen only where the current audit identifies a concrete responsibility conflict or the user has explicitly requested this new boundary review.",
+      "evidence_refs": []
+    },
+    {
+      "id": "D2",
+      "kind": "decision",
+      "at": "2026-09-13T11:30:00+09:00",
+      "summary": "For Line Tool persistence, reuse the existing composition factory and presenter. Inject the current storage action instead of adding a service, interface, manager, or manual partial; preserve the existing Recipe store and Line A/B keys.",
+      "evidence_refs": [
+        "E3",
+        "E4"
+      ]
+    },
+    {
+      "id": "D3",
+      "kind": "decision",
+      "at": "2026-09-13T12:00:00+09:00",
+      "summary": "Keep RoiImageCanvasViewModel as the concrete facade/native lifetime owner. Existing input, dialog/context, directory, loader, and saver boundaries are already independent; no additional Mat/control/timer seam is proven, so do not add a wrapper, interface, or partial.",
+      "evidence_refs": [
+        "E5",
+        "E6"
+      ]
+    },
+    {
+      "id": "D5",
+      "kind": "decision",
+      "at": "2026-09-13T12:35:00+09:00",
+      "summary": "The user clarified that Partial declarations considered protected by PL-0013/D5 still require structural review; do not mechanically merge or delete generated XAML partials. Reopen M4 for declaration-by-declaration responsibility analysis and concrete owner extraction where a real conflict is proven.",
+      "evidence_refs": []
+    },
+    {
+      "id": "D6",
+      "kind": "decision",
+      "at": "2026-09-13T13:20:00+09:00",
+      "summary": "The 59 Partial declarations were structurally re-reviewed rather than mechanically merged. Generated/framework/designer, smoke, cohesive XAML, Shell composition, Pipeline Review projection, Learn presenter, and ImageCanvas native-host boundaries retain their current owners. The concrete file-backed pattern decode conflict in OpenGlTemplateEditorWindow and RoiEditorWindow moves to the existing OpenVisionBitmapImagePreviewFactory; the XAML Windows retain ROI/UI/resource lifetime ownership.",
+      "evidence_refs": [
+        "E7",
+        "E8"
+      ]
+    },
+    {
+      "id": "D7",
+      "kind": "decision",
+      "at": "2026-09-13T14:10:00+09:00",
+      "summary": "Close PL-0027 after the final owner-map and navigation review, RefactorAudit, documentation index, diff check, Solution Debug/Release builds, VisionRecipeRunnerSmoke Debug/Release builds, and all four focused contracts in both configurations passed. Pause the single heartbeat; do not create a continuation automation without a new requirement or defect.",
+      "evidence_refs": [
+        "E9",
+        "E10"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-13T14:10:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "PL-0027 is resolved. M1-M5 are verified: Recipe evidence image decoding, Line Tool persistence, RoiImageCanvas boundary proof, row-level structural review of all 59 Partial declarations with the ROI/template decode extraction, and final owner-map/static/build/contract verification. The retained XAML/generated/native/test boundaries have explicit owners and are not pending mechanical merging. WPF visual/theme/DPI/monitor/input, GPU/camera/SDK, and long-running native shutdown remain explicitly unverified."
+    }
+  ],
+  "created_at": "2026-09-13T08:45:00+09:00",
+  "updated_at": "2026-09-13T14:10:00+09:00"
+}

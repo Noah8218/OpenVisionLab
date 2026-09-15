@@ -3,22 +3,24 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
-using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 
 namespace OpenVisionLab
 {
     internal sealed class OpenVisionWorkspaceSamplePickerViewModel : ObservableObject
     {
+        #region Fields
+
         private readonly List<VisionPipelineSampleCatalogItem> samples;
         private readonly IReadOnlyList<OpenVisionWorkspaceSampleCatalogSourceOption> catalogSourceOptions;
         private readonly ICollectionView samplesView;
         private readonly RelayCommand openLearnDocumentCommand;
+        private readonly RelayCommand openLearnAndSelectCommand;
+        private readonly RelayCommand acceptSelectionCommand;
         private readonly RelayCommand selectCounterpartSampleCommand;
         private IReadOnlyList<OpenVisionWorkspaceSampleFocusOption> sampleFocusOptions;
         private IReadOnlyList<OpenVisionWorkspaceSampleLearnPathOption> learnPathOptions;
@@ -27,6 +29,10 @@ namespace OpenVisionLab
         private OpenVisionWorkspaceSampleFocusOption selectedSampleFocusOption;
         private OpenVisionWorkspaceSampleLearnPathOption selectedLearnPathOption;
         private string searchText = string.Empty;
+
+        #endregion
+
+        #region Constructors
 
         public OpenVisionWorkspaceSamplePickerViewModel(IEnumerable<VisionPipelineSampleCatalogItem> samples)
             : this(samples, null)
@@ -42,6 +48,8 @@ namespace OpenVisionLab
                 .ToList();
             catalogSourceOptions = OpenVisionWorkspaceSampleCatalogSourceOption.Create(this.samples);
             openLearnDocumentCommand = new RelayCommand(OpenLearnDocument, () => HasLearnDocument);
+            openLearnAndSelectCommand = new RelayCommand(OpenLearnAndSelect, () => CanOpenLearnAndSample);
+            acceptSelectionCommand = new RelayCommand(AcceptSelection, () => CanSelect);
             selectCounterpartSampleCommand = new RelayCommand(SelectCounterpartSample, CanSelectCounterpartSample);
             selectedCatalogSourceOption = ResolveInitialCatalogSourceOption(preferredLearnPathId);
             RebuildSampleFocusOptions(preferredFocusId: null);
@@ -52,9 +60,23 @@ namespace OpenVisionLab
             selectedSample = FirstVisibleSample();
         }
 
+        #endregion
+
+        #region Events
+
+        internal event EventHandler SelectionAccepted;
+
+        #endregion
+
+        #region Properties
+
         public ICollectionView SamplesView => samplesView;
 
         public ICommand OpenLearnDocumentCommand => openLearnDocumentCommand;
+
+        public ICommand OpenLearnAndSelectCommand => openLearnAndSelectCommand;
+
+        public ICommand AcceptSelectionCommand => acceptSelectionCommand;
 
         public ICommand SelectCounterpartSampleCommand => selectCounterpartSampleCommand;
 
@@ -305,6 +327,7 @@ namespace OpenVisionLab
                 OnPropertyChanged(nameof(ResultExplanationText));
                 OnPropertyChanged(nameof(FailureCauseText));
                 selectCounterpartSampleCommand.RaiseCanExecuteChanged();
+                acceptSelectionCommand.RaiseCanExecuteChanged();
                 NotifyLearnDocumentChanged();
             }
         }
@@ -751,6 +774,10 @@ namespace OpenVisionLab
             }
         }
 
+        #endregion
+
+        #region Catalog Selection and Filtering
+
         private VisionPipelineSampleCatalogItem FirstVisibleSample()
         {
             return samplesView.Cast<VisionPipelineSampleCatalogItem>().FirstOrDefault();
@@ -799,7 +826,12 @@ namespace OpenVisionLab
             OnPropertyChanged(nameof(LearnDocumentTitleText));
             OnPropertyChanged(nameof(LearnDocumentDescriptionText));
             openLearnDocumentCommand.RaiseCanExecuteChanged();
+            openLearnAndSelectCommand.RaiseCanExecuteChanged();
         }
+
+        #endregion
+
+        #region Commands
 
         public void OpenLearnDocumentForSelection()
         {
@@ -809,6 +841,27 @@ namespace OpenVisionLab
             }
 
             OpenLearnDocument();
+        }
+
+        private void OpenLearnAndSelect()
+        {
+            if (!CanOpenLearnAndSample)
+            {
+                return;
+            }
+
+            OpenLearnDocumentForSelection();
+            SelectionAccepted?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void AcceptSelection()
+        {
+            if (!CanSelect)
+            {
+                return;
+            }
+
+            SelectionAccepted?.Invoke(this, EventArgs.Empty);
         }
 
         private void OpenLearnDocument()
@@ -832,6 +885,10 @@ namespace OpenVisionLab
             SelectedSample = counterpart;
             samplesView.MoveCurrentTo(counterpart);
         }
+
+        #endregion
+
+        #region Pair Selection and Filtering
 
         private OpenVisionWorkspaceSampleLearnPathOption ResolveLearnPathOption(string preferredLearnPathId)
         {
@@ -993,6 +1050,10 @@ namespace OpenVisionLab
                 : string.Join(", ", commonNames);
         }
 
+        #endregion
+
+        #region Presentation Helpers
+
         private OpenVisionWorkspaceSamplePairDecisionGuide PairDecisionGuide =>
             OpenVisionWorkspaceSamplePairDecisionGuidePresenter.Create(SelectedSample, ResolvePairSamples());
 
@@ -1148,29 +1209,18 @@ namespace OpenVisionLab
             return tokens.All(token => searchable.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0);
         }
 
+        #endregion
+
+        #region Image Preview
+
         private static ImageSource LoadImageSource(string path)
         {
-            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
-            {
-                return null;
-            }
-
-            try
-            {
-                BitmapImage image = new BitmapImage();
-                image.BeginInit();
-                image.CacheOption = BitmapCacheOption.OnLoad;
-                image.DecodePixelWidth = 420;
-                image.UriSource = new Uri(path, UriKind.Absolute);
-                image.EndInit();
-                image.Freeze();
-                return image;
-            }
-            catch
-            {
-                return null;
-            }
+            return OpenVisionBitmapImagePreviewFactory.TryCreateFromPath(path, decodePixelWidth: 420);
         }
+
+        #endregion
+
+        #region Localization Helpers
 
         private static string T(string key, string fallbackText)
         {
@@ -1186,5 +1236,7 @@ namespace OpenVisionLab
                 ? english ?? korean ?? string.Empty
                 : korean ?? english ?? string.Empty;
         }
+
+        #endregion
     }
 }

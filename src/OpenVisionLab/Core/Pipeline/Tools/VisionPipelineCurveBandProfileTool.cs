@@ -214,16 +214,13 @@ namespace OpenVisionLab
             };
 
             double pixelPerMm = GetDouble("PIXELPERMM", 0);
-            if (pixelPerMm > 0)
-            {
-                metrics[VisionPipelineKnownMetrics.DistanceMmMin] = metrics[VisionPipelineKnownMetrics.DistancePxMin] * pixelPerMm;
-                metrics[VisionPipelineKnownMetrics.DistanceMmMax] = metrics[VisionPipelineKnownMetrics.DistancePxMax] * pixelPerMm;
-                metrics[VisionPipelineKnownMetrics.DistanceMmAvg] = metrics[VisionPipelineKnownMetrics.DistancePxAvg] * pixelPerMm;
-                metrics[VisionPipelineKnownMetrics.DistanceMmRange] = metrics[VisionPipelineKnownMetrics.DistancePxRange] * pixelPerMm;
-                metrics[VisionPipelineKnownMetrics.CurveOuterArcLengthMm] = outerArcLength * pixelPerMm;
-                metrics[VisionPipelineKnownMetrics.CurveInnerArcLengthMm] = innerArcLength * pixelPerMm;
-                metrics[VisionPipelineKnownMetrics.CurveCenterArcLengthMm] = centerArcLength * pixelPerMm;
-            }
+            VisionPipelineMetricEnrichmentService.AddConvertedMetric(metrics, VisionPipelineKnownMetrics.DistancePxMin, VisionPipelineKnownMetrics.DistanceMmMin, pixelPerMm);
+            VisionPipelineMetricEnrichmentService.AddConvertedMetric(metrics, VisionPipelineKnownMetrics.DistancePxMax, VisionPipelineKnownMetrics.DistanceMmMax, pixelPerMm);
+            VisionPipelineMetricEnrichmentService.AddConvertedMetric(metrics, VisionPipelineKnownMetrics.DistancePxAvg, VisionPipelineKnownMetrics.DistanceMmAvg, pixelPerMm);
+            VisionPipelineMetricEnrichmentService.AddConvertedMetric(metrics, VisionPipelineKnownMetrics.DistancePxRange, VisionPipelineKnownMetrics.DistanceMmRange, pixelPerMm);
+            VisionPipelineMetricEnrichmentService.AddConvertedMetric(metrics, VisionPipelineKnownMetrics.CurveOuterArcLengthPx, VisionPipelineKnownMetrics.CurveOuterArcLengthMm, pixelPerMm);
+            VisionPipelineMetricEnrichmentService.AddConvertedMetric(metrics, VisionPipelineKnownMetrics.CurveInnerArcLengthPx, VisionPipelineKnownMetrics.CurveInnerArcLengthMm, pixelPerMm);
+            VisionPipelineMetricEnrichmentService.AddConvertedMetric(metrics, VisionPipelineKnownMetrics.CurveCenterArcLengthPx, VisionPipelineKnownMetrics.CurveCenterArcLengthMm, pixelPerMm);
 
             return metrics;
         }

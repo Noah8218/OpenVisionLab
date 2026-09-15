@@ -91,6 +91,21 @@ namespace OpenVisionLab
                     return pipeline;
                 }
 
+                if (loadException is VisionPipelineXmlSchemaException schemaException
+                    && schemaException.PreserveOriginal)
+                {
+                    SetPersistenceState(
+                        path,
+                        new VisionPipelinePersistenceState(
+                            VisionPipelinePersistenceStateKind.LoadFailed,
+                            recipeName,
+                            defaultPipeline.Name,
+                            path,
+                            string.Empty,
+                            schemaException.Message));
+                    return defaultPipeline;
+                }
+
                 if (!File.Exists(path))
                 {
                     ClearPersistenceState(path);

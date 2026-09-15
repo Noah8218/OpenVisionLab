@@ -83,30 +83,7 @@ namespace OpenVisionLab
 
             if (item.Menu == VISION_MENU.Pipeline)
             {
-                string title = OpenVisionLanguageService.T("PipelineReview.Title");
-                timing.Title = title;
-                timing.Path = "Pipeline";
-                phaseStopwatch.Restart();
-                OpenVisionRecipeContext recipeContext = ResolveRecipeContext();
-                if (!documentController.TryRestorePipelineReview(recipeContext, out OpenVisionPipelineReviewDocument pipelineReviewDocument))
-                {
-                    pipelineReviewDocument = CreatePipelineReviewDocument(recipeContext);
-                    documentController.ActivatePipelineReview(pipelineReviewDocument);
-                }
-                else
-                {
-                    pipelineReviewDocument.RefreshIfPipelineChanged();
-                }
-                timing.ActivateDocumentMs = phaseStopwatch.ElapsedMilliseconds;
-                timing.Document = pipelineReviewDocument.View?.GetType().Name ?? pipelineReviewDocument.GetType().Name;
-                ShowDockedDocumentWorkspace(pipelineReviewDocument.View, title, 1180, 760, timing);
-                phaseStopwatch.Restart();
-                CompleteToolSelection(title, hasDisplayablePreviewResult: false, refreshLayerRows: false);
-                timing.CompleteSelectionMs = phaseStopwatch.ElapsedMilliseconds;
-                timing.TotalMs = totalStopwatch.ElapsedMilliseconds;
-                timing.DetailText = OpenVisionToolOpenProfiler.Consume();
-                LastTiming = timing;
-                return true;
+                return ShowPipelineReview(phaseStopwatch, totalStopwatch, timing);
             }
 
             phaseStopwatch.Restart();
@@ -145,6 +122,43 @@ namespace OpenVisionLab
             ShowPendingToolWindow(item, timing);
             phaseStopwatch.Restart();
             CompleteToolSelection(item.Title, hasDisplayablePreviewResult: false);
+            timing.CompleteSelectionMs = phaseStopwatch.ElapsedMilliseconds;
+            timing.TotalMs = totalStopwatch.ElapsedMilliseconds;
+            timing.DetailText = OpenVisionToolOpenProfiler.Consume();
+            LastTiming = timing;
+            return true;
+        }
+
+        /// <summary>
+        /// Opens Pipeline Review through its cached document and docked document workspace.
+        /// Keeping this path named makes the document owner and docking boundary visible from
+        /// <see cref="ShowSelectedTool(OpenVisionShellNavItem)"/> without changing the runtime contract.
+        /// </summary>
+        private bool ShowPipelineReview(
+            Stopwatch phaseStopwatch,
+            Stopwatch totalStopwatch,
+            OpenVisionToolOpenTiming timing)
+        {
+            string title = OpenVisionLanguageService.T("PipelineReview.Title");
+            timing.Title = title;
+            timing.Path = "Pipeline";
+            phaseStopwatch.Restart();
+            OpenVisionRecipeContext recipeContext = ResolveRecipeContext();
+            if (!documentController.TryRestorePipelineReview(recipeContext, out OpenVisionPipelineReviewDocument pipelineReviewDocument))
+            {
+                pipelineReviewDocument = CreatePipelineReviewDocument(recipeContext);
+                documentController.ActivatePipelineReview(pipelineReviewDocument);
+            }
+            else
+            {
+                pipelineReviewDocument.RefreshIfPipelineChanged();
+            }
+
+            timing.ActivateDocumentMs = phaseStopwatch.ElapsedMilliseconds;
+            timing.Document = pipelineReviewDocument.View?.GetType().Name ?? pipelineReviewDocument.GetType().Name;
+            ShowDockedDocumentWorkspace(pipelineReviewDocument.View, title, 1180, 760, timing);
+            phaseStopwatch.Restart();
+            CompleteToolSelection(title, hasDisplayablePreviewResult: false, refreshLayerRows: false);
             timing.CompleteSelectionMs = phaseStopwatch.ElapsedMilliseconds;
             timing.TotalMs = totalStopwatch.ElapsedMilliseconds;
             timing.DetailText = OpenVisionToolOpenProfiler.Consume();

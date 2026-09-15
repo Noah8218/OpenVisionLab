@@ -238,6 +238,14 @@ namespace OpenVisionLab
                 return "LEARN_PRODUCT_SAMPLES.md";
             }
 
+            // The Geometry path can select a multi-tool fixture pipeline that also
+            // contains Threshold. Keep the explicitly selected leaf path authoritative
+            // so the guide follows the operator's current learning task.
+            if (string.Equals(learnPath?.Id?.Trim(), "geometry", StringComparison.OrdinalIgnoreCase))
+            {
+                return "LEARN_GEOMETRY_TRANSFORM.md";
+            }
+
             if (Contains(sampleText, "EdgeBased"))
             {
                 return "LEARN_EDGE_BASED_MATCHING.md";

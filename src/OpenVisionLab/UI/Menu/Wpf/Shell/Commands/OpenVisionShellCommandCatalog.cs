@@ -1,6 +1,8 @@
 using MahApps.Metro.IconPacks;
 using OpenVisionLab.Mvvm;
 using OpenVisionLab.ViewModels;
+using OpenVisionLab.Vision2D.Pipeline;
+using OpenVisionLab.Core;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -197,6 +199,56 @@ namespace OpenVisionLab
             }
 
             ApplyToolReadiness();
+        }
+
+        /// <summary>
+        /// Recomputes the tool readiness state from the current workspace and
+        /// repository. The host View forwards lifecycle notifications here so
+        /// readiness policy stays with the state owner instead of code-behind.
+        /// </summary>
+        public void RefreshToolReadiness(IDisplayManager displayManager, VisionToolRepository repository)
+        {
+            if (displayManager == null)
+            {
+                throw new ArgumentNullException(nameof(displayManager));
+            }
+
+            ArithmeticToolSettings arithmeticSettings = OpenVisionNativeToolSettingsStore.Load(
+                OpenVisionNativeToolSettingsStore.CreateConfigName("Arithmetic"),
+                new ArithmeticToolSettings());
+            bool arithmeticInputLayerBRequired = VisionPipelineArithmeticStep.RequiresInputLayerB(
+                arithmeticSettings.UseOffsetMode
+                    ? VisionPipelineArithmeticStep.ModeOffset
+                    : VisionPipelineArithmeticStep.ModeOperation,
+                arithmeticSettings.SelectedOperation,
+                arithmeticSettings.UseConstantInput);
+
+            SetToolReadiness(
+                displayManager.GetLayerImage("Main") != null,
+                arithmeticInputLayerBRequired,
+                HasSecondaryWorkspaceImage(displayManager),
+                repository);
+        }
+
+        private static bool HasSecondaryWorkspaceImage(IDisplayManager displayManager)
+        {
+            int imageCount = 0;
+            for (int index = 0; index < displayManager.LayerCount; index++)
+            {
+                System.Drawing.Bitmap image = displayManager.GetLayerImage(index);
+                if (image == null || DisplayManagerImageExtensions.IsPlaceholderBitmap(image))
+                {
+                    continue;
+                }
+
+                imageCount++;
+                if (imageCount >= 2)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public string SelectedToolPreviewTitle => SelectedItem == null

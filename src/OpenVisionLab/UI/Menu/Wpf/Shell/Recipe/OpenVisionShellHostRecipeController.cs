@@ -40,6 +40,26 @@ namespace OpenVisionLab
             this.refreshDirectRouteText = refreshDirectRouteText ?? throw new ArgumentNullException(nameof(refreshDirectRouteText));
         }
 
+        public void SwitchRuntimeRecipe(string recipeName)
+        {
+            GlobalState global = runtimeContext.Global;
+            global.Recipe.Name = recipeName;
+            string selected = global.Recipe.Name;
+            if (string.IsNullOrWhiteSpace(selected)
+                || string.Equals(global.System.LastRecipe, selected, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            global.System.LastRecipe = selected;
+            global.System.SaveConfig();
+        }
+
+        public bool SaveRuntimeRecipeTools()
+        {
+            return runtimeContext.Global?.Recipe?.SaveTools() == true;
+        }
+
         public void OnRecipeChanged(object sender, EventArgs e)
         {
             // Recipe changes reload repository-owned Property objects. Cached native tool views must be rebuilt

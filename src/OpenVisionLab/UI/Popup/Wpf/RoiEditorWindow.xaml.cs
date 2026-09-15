@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing.Imaging;
-using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -151,11 +150,11 @@ namespace OpenVisionLab
         {
             if (!viewModel.IsTrainingMode) { return; }
 
-            if (!string.IsNullOrWhiteSpace(imagePath) && File.Exists(imagePath))
+            if (!string.IsNullOrWhiteSpace(imagePath))
             {
                 try
                 {
-                    using Bitmap patternBitmap = new Bitmap(imagePath);
+                    using Bitmap patternBitmap = OpenVisionBitmapImagePreviewFactory.LoadBitmap(imagePath, "pattern");
                     viewModel.PatternPreviewImage = CreateBitmapSource(patternBitmap);
                     return;
                 }

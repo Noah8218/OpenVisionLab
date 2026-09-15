@@ -16,6 +16,7 @@ namespace OpenVisionLab
             StepName = step?.Name ?? string.Empty;
             ToolType = step?.ToolType ?? string.Empty;
             StepStatus = step?.Status ?? string.Empty;
+            AcceptanceEvaluated = step?.AcceptanceEvaluated == true;
             AcceptancePassed = step?.AcceptancePassed == true;
             AcceptanceMessage = step?.AcceptanceMessage ?? string.Empty;
             DrawingImagePath = drawingImagePath ?? string.Empty;
@@ -29,6 +30,8 @@ namespace OpenVisionLab
         public string ToolType { get; }
 
         public string StepStatus { get; }
+
+        public bool AcceptanceEvaluated { get; }
 
         public bool AcceptancePassed { get; }
 
@@ -48,9 +51,11 @@ namespace OpenVisionLab
             + " | "
             + (string.IsNullOrWhiteSpace(StepStatus) ? "-" : StepStatus);
 
-        public string AcceptanceText => string.IsNullOrWhiteSpace(AcceptanceMessage)
-            ? OpenVisionRecipeText.Local("판정 메시지 없음", "No acceptance message")
-            : (AcceptancePassed ? "PASS: " : "NG: ") + AcceptanceMessage.Trim();
+        public string AcceptanceText => !AcceptanceEvaluated
+            ? OpenVisionRecipeText.Local("미평가: 적용 기준 없음", "Not evaluated: no acceptance criteria")
+            : string.IsNullOrWhiteSpace(AcceptanceMessage)
+                ? OpenVisionRecipeText.Local("판정 메시지 없음", "No acceptance message")
+                : (AcceptancePassed ? "PASS: " : "NG: ") + AcceptanceMessage.Trim();
 
         private static string BuildMetricSummary(IEnumerable<VisionPipelineMetricRunReport> metrics)
         {

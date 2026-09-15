@@ -35,6 +35,9 @@
     <Compile Include="..\..\src\OpenVisionLab\UI\Popup\Wpf\ImageCompare\ImageCompareImageResource.cs">
       <Link>ImageCompare\ImageCompareImageResource.cs</Link>
     </Compile>
+    <Compile Include="..\..\src\OpenVisionLab\UI\Popup\Wpf\ImageCompare\ImageCompareDirectoryPolicy.cs">
+      <Link>ImageCompare\ImageCompareDirectoryPolicy.cs</Link>
+    </Compile>
   </ItemGroup>
 
   <Target Name="RemoveUnusedImageCompareRuntimeFiles" AfterTargets="Publish">

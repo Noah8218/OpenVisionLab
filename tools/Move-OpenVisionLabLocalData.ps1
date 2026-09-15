@@ -85,6 +85,29 @@ function Get-JunctionTargetPath {
     return [System.IO.Path]::GetFullPath([string]$target[0]).TrimEnd('\', '/')
 }
 
+function Set-LocalMountVisibility {
+    param(
+        [string]$Path,
+        [bool]$Hidden
+    )
+
+    if (-not (Test-Path -LiteralPath $Path -PathType Container)) {
+        return
+    }
+
+    $item = Get-Item -LiteralPath $Path -Force
+    $attributes = [System.IO.File]::GetAttributes($item.FullName)
+    $hiddenAttribute = [System.IO.FileAttributes]::Hidden
+    if ($Hidden) {
+        $attributes = $attributes -bor $hiddenAttribute
+    }
+    else {
+        $attributes = $attributes -band (-bnot [int]$hiddenAttribute)
+    }
+
+    [System.IO.File]::SetAttributes($item.FullName, $attributes)
+}
+
 function Convert-ToExtendedPath {
     param([string]$Path)
 
@@ -254,7 +277,17 @@ foreach ($candidate in $candidates) {
         }
 
         if ($null -ne $junctionTarget) {
-            if ($junctionTarget -ne $candidate.Destination.TrimEnd('\', '/')) {
+            $expectedDestination = $candidate.Destination.TrimEnd('\', '/')
+            if ($junctionTarget -ne $expectedDestination) {
+                if ($junctionTarget.StartsWith($externalPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+                    $stats = Get-DirectoryStats $junctionTarget
+                    $existing++
+                    $totalFiles += $stats.FileCount
+                    $totalBytes += $stats.Bytes
+                    $results.Add([pscustomobject]@{ Path = $candidate.Relative; State = 'ExistingCustomTarget'; Files = $stats.FileCount; Bytes = $stats.Bytes })
+                    continue
+                }
+
                 throw "Existing junction has a different target: $($candidate.Relative) -> $junctionTarget"
             }
             $stats = Get-DirectoryStats $candidate.Destination
@@ -271,6 +304,7 @@ foreach ($candidate in $candidates) {
                 $parent = Split-Path -Parent $candidate.Source
                 New-Item -ItemType Directory -Path $parent -Force | Out-Null
                 New-Item -ItemType Junction -Path $candidate.Source -Target $candidate.Destination | Out-Null
+                Set-LocalMountVisibility -Path $candidate.Source -Hidden:$true
             }
             $stats = Get-DirectoryStats $candidate.Destination
             $moved++
@@ -284,6 +318,7 @@ foreach ($candidate in $candidates) {
             if ($PSCmdlet.ShouldProcess($candidate.Source, "Complete verified partial move to $($candidate.Destination) and create junction")) {
                 $afterRecovery = Move-DirectoryVerified $candidate.Source $candidate.Destination
                 New-Item -ItemType Junction -Path $candidate.Source -Target $candidate.Destination | Out-Null
+                Set-LocalMountVisibility -Path $candidate.Source -Hidden:$true
             }
             else {
                 $afterRecovery = Get-DirectoryStats $candidate.Destination
@@ -298,6 +333,7 @@ foreach ($candidate in $candidates) {
         if ($PSCmdlet.ShouldProcess($candidate.Source, "Move to $($candidate.Destination) and create junction")) {
             $after = Move-DirectoryVerified $candidate.Source $candidate.Destination
             New-Item -ItemType Junction -Path $candidate.Source -Target $candidate.Destination | Out-Null
+            Set-LocalMountVisibility -Path $candidate.Source -Hidden:$true
         }
         else {
             $after = Get-DirectoryStats $candidate.Source
@@ -336,6 +372,7 @@ foreach ($candidate in $candidates) {
         if ($PSCmdlet.ShouldProcess($candidate.Source, "Remove junction and restore from $($candidate.Destination)")) {
             [System.IO.Directory]::Delete($candidate.Source)
             $after = Move-DirectoryVerified $candidate.Destination $candidate.Source
+            Set-LocalMountVisibility -Path $candidate.Source -Hidden:$false
         }
         else {
             $after = $before
@@ -344,6 +381,25 @@ foreach ($candidate in $candidates) {
         $totalFiles += $before.FileCount
         $totalBytes += $before.Bytes
         $results.Add([pscustomobject]@{ Path = $candidate.Relative; State = 'Restored'; Files = $before.FileCount; Bytes = $before.Bytes })
+    }
+}
+
+# These are repository-local compatibility mount points for generated or local-only
+# data. Keep their stable names for build/tool contracts, but hide the mounts in the
+# default Explorer view so the source ownership folders remain easy to scan. Apply
+# this after the move/restore loop so a failed path validation cannot partially change
+# the root presentation.
+$rootVisibilityCandidates = @('.codex', '.codex-temp', '.vs', 'artifacts', 'bin', 'obj', 'Sample', 'tmp', 'dist')
+foreach ($relative in $rootVisibilityCandidates) {
+    $path = Join-Path $repoPath $relative
+    if (-not (Test-Path -LiteralPath $path -PathType Container)) { continue }
+
+    $item = Get-Item -LiteralPath $path -Force
+    if (($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -or $RestoreToRepo) {
+        $visibility = if ($RestoreToRepo) { 'visible' } else { 'hidden' }
+        if ($PSCmdlet.ShouldProcess($path, "Make local mount $visibility")) {
+            Set-LocalMountVisibility -Path $path -Hidden:(-not $RestoreToRepo)
+        }
     }
 }
 

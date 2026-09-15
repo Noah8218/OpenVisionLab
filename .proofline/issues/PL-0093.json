@@ -1,0 +1,186 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0093",
+    "aliases": [
+      "2D-036"
+    ],
+    "type": "task",
+    "mode": "simple",
+    "title": "Guard impossible transform output allocations before native execution",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "scheduled 2D task",
+    "summary": "The 2D-036 task requires checked output-size and byte estimates before Affine/RotateScale native allocation, while the measured 2D-034 baseline does not authorize a new product-wide memory cap.",
+    "refs": [
+      "C:/Users/USER/Downloads/OpenVisionLab_2D_tasks.json",
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "docs/reports/OPENVISIONLAB_2D_VIDEO_SIZE_MEMORY_BASELINE_20260916.md"
+    ]
+  },
+  "state": {
+    "status": "blocked",
+    "current_summary": "The latest smoke binaries pass the 2D-036 output-allocation contract in Debug and Release after the dispatcher correction; the focused WPF smoke remains green. The memory-budget/cap portion is still blocked for the explicit product decision.",
+    "next_action": "Obtain an explicit product memory-budget/cap decision or explicitly accept arithmetic-only preflight; then define and verify the corresponding low-memory failure/recovery contract.",
+    "blocker": "No approved product memory budget or user-facing cap exists. The 2D-034 baseline explicitly does not authorize inferring one from observed private-memory values.",
+    "unblock_condition": "The product owner supplies the memory budget/cap, setting scope, failure message, and recovery behavior, or explicitly closes the memory-budget portion as out of scope."
+  },
+  "objective": {
+    "summary": "Reject impossible Affine and RotateScale output dimensions or unrepresentable width×height×element-byte estimates before the SDK allocates native output, while preserving the existing successful result layer and leaving automatic downscaling and a product-wide memory cap out of scope.",
+    "constraints": [
+      "Reuse VisionPipelineExecutionService, VisionPipelineValidation, existing Affine 32768 policy, and existing Preview executors.",
+      "Do not modify the vendored OpenVisionLab Vision SDK DLLs.",
+      "Do not introduce an inferred user-facing memory cap, cache policy, parallelism policy, or automatic downscale.",
+      "Keep test artifacts under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The shared guard derives Affine output dimensions from 0-or-explicit values and RotateScale dimensions from finite positive scales, rejects unsupported/overflow dimensions and checked byte multiplication before native execution, and reports an actionable error.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E6",
+        "E7",
+        "E8",
+        "E9"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "Focused contract evidence shows a normal Affine/RotateScale transform still succeeds, an impossible RotateScale or Affine output is rejected without native allocation, and a prior successful layer/result remains available after the rejected step.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E4",
+        "E5",
+        "E6",
+        "E7",
+        "E8",
+        "E9"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "The owner, call path, no-cap decision, report, stable contract, documentation map, and handoff identify the remaining product memory-budget decision and unverified WPF runtime states separately from the completed core guard.",
+      "evidence_refs": [
+        "E3",
+        "E4",
+        "E5"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0092"
+    }
+  ],
+  "context": [
+    {
+      "kind": "source",
+      "location": "src/OpenVisionLab/Core/Pipeline/Execution/VisionPipelineExecutionService.cs",
+      "summary": "Recipe execution owner and native-call boundary."
+    },
+    {
+      "kind": "source",
+      "location": "src/OpenVisionLab/Core/Pipeline/Validation/VisionPipelineValidation.cs",
+      "summary": "Existing Affine output dimension validation."
+    },
+    {
+      "kind": "source",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/NativeTools/Preview/OpenVisionNativeToolPreviewExecutor.cs",
+      "summary": "Direct Affine Preview native-call owner."
+    },
+    {
+      "kind": "source",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/NativeTools/Preview/OpenVisionNativeSimplePreprocessPreviewExecutor.cs",
+      "summary": "Direct RotateScale Preview native-call owner."
+    },
+    {
+      "kind": "dependency",
+      "location": "dll/OpenVisionLab-Vision-SDK/OpenVisionLab.Vision2D.dll",
+      "summary": "Vendored SDK contains the native transform implementations and is not modified."
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d036-debug-20260916-run2\\output-allocation-preflight-contract.txt",
+      "observation": "Debug output-allocation preflight contract passed: normal RotateScale/Affine execution, non-finite and overflowing RotateScale rejection, Affine 32768 boundary, prior-result preservation, and direct Preview guard wiring.",
+      "observed_at": "2026-09-16T02:11:33+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d036-release-20260916-run1\\output-allocation-preflight-contract.txt",
+      "observation": "Release output-allocation preflight contract passed with the same normal, rejected-output, prior-result, and Preview-owner cases.",
+      "observed_at": "2026-09-16T02:11:33+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "review",
+      "location": "docs/reports/OPENVISIONLAB_2D_OUTPUT_ALLOCATION_PREFLIGHT_20260916.md",
+      "observation": "The report records the guard owner/call path, mutable layer writer, no-inferred-RAM-cap decision, stable contract and documentation-map updates, and the remaining WPF/low-memory/cancellation/runtime boundaries.",
+      "observed_at": "2026-09-16T02:11:33+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d036-wpf-debug-20260916-run2\\ui_precheck_report.md",
+      "observation": "Focused Debug WPF smoke passed for RotateScale and Affine. Fresh screenshots show the RotateScale preview output/status and Affine review/overlay. The initial run's cross-thread exception was corrected by dispatcher-marshalling the two direct Preview adapters.",
+      "observed_at": "2026-09-16T02:20:00+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d036-wpf-release-20260916-run1\\ui_precheck_report.md",
+      "observation": "Focused Release WPF smoke passed for RotateScale and Affine with screenshot and layout/text checks OK at the current environment.",
+      "observed_at": "2026-09-16T02:20:00+09:00"
+    },
+    {
+      "id": "E6",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d036-debug-20260916-final\\output-allocation-preflight-contract.txt",
+      "observation": "Final Debug smoke contract passed after the dispatcher correction: normal RotateScale/Affine, non-finite/overflow rejection, Affine boundary, prior-result preservation, and Preview owner wiring.",
+      "observed_at": "2026-09-16T02:22:00+09:00"
+    },
+    {
+      "id": "E7",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d036-release-20260916-final\\output-allocation-preflight-contract.txt",
+      "observation": "Final Release smoke contract passed after the dispatcher correction with the same output-allocation and prior-result cases.",
+      "observed_at": "2026-09-16T02:22:00+09:00"
+    },
+    {
+      "id": "E8",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d036-debug-20260916-final2\\output-allocation-preflight-contract.txt",
+      "observation": "Latest Debug contract run passed after the final smoke rebuild; the arithmetic preflight and normal/rejected transform cases all exit 0.",
+      "observed_at": "2026-09-16T02:23:23+09:00"
+    },
+    {
+      "id": "E9",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d036-release-20260916-final2\\output-allocation-preflight-contract.txt",
+      "observation": "Latest Release contract run passed after the final smoke rebuild; the arithmetic preflight and normal/rejected transform cases all exit 0.",
+      "observed_at": "2026-09-16T02:23:23+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-16T02:11:33+09:00",
+      "from": "doing",
+      "to": "blocked",
+      "summary": "Safe arithmetic and native-dimension preflight is verified in Debug and Release; full 2D-036 memory-budget behavior is paused for the required product decision."
+    }
+  ],
+  "created_at": "2026-09-16T00:00:00+09:00",
+  "updated_at": "2026-09-16T02:23:23+09:00"
+}

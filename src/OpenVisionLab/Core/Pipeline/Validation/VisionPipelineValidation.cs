@@ -24,6 +24,28 @@ namespace OpenVisionLab
         }
     }
 
+    public sealed class VisionPipelineValidationException : InvalidOperationException
+    {
+        internal VisionPipelineValidationException(VisionPipelineValidationResult validation)
+            : base(CreateMessage(validation))
+        {
+            Errors = Array.AsReadOnly((validation?.Errors ?? new List<string>()).ToArray());
+            Warnings = Array.AsReadOnly((validation?.Warnings ?? new List<string>()).ToArray());
+        }
+
+        public IReadOnlyList<string> Errors { get; }
+
+        public IReadOnlyList<string> Warnings { get; }
+
+        private static string CreateMessage(VisionPipelineValidationResult validation)
+        {
+            string details = validation?.FormatErrors();
+            return string.IsNullOrWhiteSpace(details)
+                ? "Pipeline validation failed."
+                : "Pipeline validation failed." + Environment.NewLine + details;
+        }
+    }
+
     internal static class VisionPipelineValidator
     {
         private static readonly HashSet<string> SupportedToolTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -333,7 +355,7 @@ namespace OpenVisionLab
             ValidateDerivativePair(result, label, step, "ScharrDegreeX", "ScharrDegreeY");
             ValidateOddKernelInRange(result, label, step, "SobelKernelSize", 1, 31);
             ValidatePositiveInt(result, label, step, "LaplacianKernelSize", oddOnly: true);
-            ValidateNonNegativeDouble(result, label, step, "PIXELPERMM");
+            ValidatePixelPerMm(result, label, step);
             ValidateGrayValueRange(result, label, step, "DarkThreshold");
             ValidateGrayValueRange(result, label, step, "ForegroundThreshold");
             ValidateUnitInterval(result, label, step, "MinDarkCoverageRatio");
@@ -353,6 +375,78 @@ namespace OpenVisionLab
             ValidateGeometryParameters(result, label, step);
             ValidateAffineParameters(result, label, step);
             ValidateUniqueEdgeMatchContract(result, label, step);
+            ValidateRoiParameters(result, label, step);
+        }
+
+        private static void ValidateRoiParameters(
+            VisionPipelineValidationResult result,
+            string label,
+            VisionPipelineStep step)
+        {
+            if (!bool.TryParse(ReadParameter(step, "USE_ROI"), out bool useRoi) || !useRoi)
+            {
+                return;
+            }
+
+            bool useMultiRoi = bool.TryParse(ReadParameter(step, "USE_MULTI_ROI"), out bool multiRoi) && multiRoi;
+            string parameterName = useMultiRoi ? "CvROIS" : "CvROI";
+            string value = ReadParameter(step, parameterName);
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                result.Errors.Add($"{label} '{step.Name}': {parameterName} is required when USE_ROI=true.");
+                return;
+            }
+
+            string[] entries = useMultiRoi
+                ? value.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
+                : new[] { value };
+            if (entries.Length == 0)
+            {
+                result.Errors.Add($"{label} '{step.Name}': {parameterName} must contain at least one ROI.");
+                return;
+            }
+
+            for (int index = 0; index < entries.Length; index++)
+            {
+                string entry = entries[index].Trim();
+                string entryLabel = useMultiRoi ? $"{parameterName} #{index + 1}" : parameterName;
+                if (!TryParseRoi(entry, out int x, out int y, out int width, out int height))
+                {
+                    result.Errors.Add(
+                        $"{label} '{step.Name}': {entryLabel} must be four comma-separated integers (x,y,width,height).");
+                    continue;
+                }
+
+                if (width <= 0 || height <= 0)
+                {
+                    result.Errors.Add(
+                        $"{label} '{step.Name}': {entryLabel} width and height must be greater than zero.");
+                }
+                else if (x < 0 || y < 0)
+                {
+                    result.Errors.Add(
+                        $"{label} '{step.Name}': {entryLabel} x and y must be non-negative.");
+                }
+            }
+        }
+
+        private static bool TryParseRoi(
+            string value,
+            out int x,
+            out int y,
+            out int width,
+            out int height)
+        {
+            x = 0;
+            y = 0;
+            width = 0;
+            height = 0;
+            string[] parts = (value ?? string.Empty).Split(',');
+            return parts.Length == 4
+                && int.TryParse(parts[0].Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out x)
+                && int.TryParse(parts[1].Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out y)
+                && int.TryParse(parts[2].Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out width)
+                && int.TryParse(parts[3].Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out height);
         }
 
         private static void ValidateAffineParameters(
@@ -1152,10 +1246,34 @@ namespace OpenVisionLab
         private static void ValidateMetricCalibration(VisionPipelineValidationResult result, string label, VisionPipelineStep step)
         {
             if (TryGetDouble(step, "PIXELPERMM", out double mmPerPixel)
+                && IsFinite(mmPerPixel)
                 && mmPerPixel <= 0
                 && (step.AcceptanceMetricName ?? string.Empty).IndexOf("Mm", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 result.Errors.Add($"{label} '{step.Name}': PIXELPERMM must be greater than 0 when an mm acceptance metric is used.");
+            }
+        }
+
+        private static void ValidatePixelPerMm(
+            VisionPipelineValidationResult result,
+            string label,
+            VisionPipelineStep step)
+        {
+            foreach (string key in new[] { "PIXELPERMM", "LeftPIXELPERMM", "RightPIXELPERMM" })
+            {
+                if (!TryGetDouble(step, key, out double value))
+                {
+                    continue;
+                }
+
+                if (!IsFinite(value))
+                {
+                    result.Errors.Add($"{label} '{step.Name}': {key} must be finite.");
+                }
+                else if (value < 0D)
+                {
+                    result.Errors.Add($"{label} '{step.Name}': {key} cannot be negative.");
+                }
             }
         }
 
@@ -1237,6 +1355,11 @@ namespace OpenVisionLab
         private static double GetDoubleOrDefault(VisionPipelineStep step, string key, double defaultValue)
         {
             return TryGetDouble(step, key, out double value) ? value : defaultValue;
+        }
+
+        private static bool IsFinite(double value)
+        {
+            return !double.IsNaN(value) && !double.IsInfinity(value);
         }
 
         private static int GetIntOrDefault(

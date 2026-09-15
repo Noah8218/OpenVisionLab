@@ -1,5 +1,7 @@
 using System;
 using OpenVisionLab.ImageCanvas.Dialogs;
+using OpenVisionLab.ImageCanvas.Presentation;
+using OpenVisionLab.ImageCanvas.Rendering;
 using OpenVisionLab.ImageCanvas.ViewModels;
 using System.Windows;
 using System.Windows.Controls;
@@ -10,6 +12,7 @@ namespace OpenVisionLab.ImageCanvas.Views
 {
 	public partial class RoiImageCanvasView : UserControl, IDisposable, IImageCanvasContextMenuHost
 	{
+		private readonly RoiImageCanvasPresentation presentation = new RoiImageCanvasPresentation();
 		private RoiImageCanvasViewModel attachedViewModel;
 		private readonly IImageCanvasDialogHost imageCanvasDialogHost = new RoiImageCanvasDialogHost();
 		private DispatcherOperation pendingImageViewerRefresh;
@@ -54,6 +57,8 @@ namespace OpenVisionLab.ImageCanvas.Views
 			set => SetValue(ShowToolBarProperty, value);
 		}
 
+		internal ImageCanvasControl ImageViewerForTest => presentation.Control;
+
 		private static void OnChromeVisibilityChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
 		{
 			if (d is RoiImageCanvasView view)
@@ -97,7 +102,7 @@ namespace OpenVisionLab.ImageCanvas.Views
 				DetachImageViewer();
 			}
 
-			if (IsLoaded)
+			if (DataContext is RoiImageCanvasViewModel)
 			{
 				AttachImageViewer();
 			}
@@ -105,10 +110,17 @@ namespace OpenVisionLab.ImageCanvas.Views
 
 		private void DetachImageViewer()
 		{
+			if (pendingImageViewerRefresh?.Status == DispatcherOperationStatus.Pending)
+			{
+				pendingImageViewerRefresh.Abort();
+			}
+			pendingImageViewerRefresh = null;
+
 			if (attachedViewModel != null)
 			{
 				attachedViewModel.ImageDialogHost = null;
 				attachedViewModel.ContextMenuHost = null;
+				presentation.Detach(attachedViewModel);
 			}
 
 			if (imageBoxCameraTwoD != null)
@@ -126,14 +138,15 @@ namespace OpenVisionLab.ImageCanvas.Views
 
 		private void AttachImageViewer()
 		{
-			if (DataContext is RoiImageCanvasViewModel viewModel && viewModel.ImageViewer != null)
+			if (DataContext is RoiImageCanvasViewModel viewModel)
 			{
 				if (!ReferenceEquals(attachedViewModel, viewModel))
 				{
 					attachedViewModel = viewModel;
+					presentation.Attach(viewModel);
 					viewModel.ImageDialogHost = imageCanvasDialogHost;
 					viewModel.ContextMenuHost = this;
-					imageBoxCameraTwoD.Child = viewModel.ImageViewer;
+					imageBoxCameraTwoD.Child = presentation.Control;
 					MainGrid.ContextMenu.DataContext = viewModel;
 
 					if (viewModel.LoadedCommand?.CanExecute(null) == true)
@@ -147,14 +160,13 @@ namespace OpenVisionLab.ImageCanvas.Views
 				pendingImageViewerRefresh = Dispatcher.BeginInvoke(new System.Action(() =>
 				{
 					pendingImageViewerRefresh = null;
-					if (disposed || viewModel.ImageViewer == null)
+					if (disposed || !ReferenceEquals(attachedViewModel, viewModel))
 					{
 						return;
 					}
 
 					SyncHostedImageViewerBounds();
-					viewModel.ImageViewer.Reshape();
-					viewModel.ImageViewer.RefreshGL();
+					presentation.ReshapeAndRefresh();
 				}), DispatcherPriority.Loaded);
 			}
 		}
@@ -223,18 +235,9 @@ namespace OpenVisionLab.ImageCanvas.Views
 			Unloaded -= ImageCanvasView_Unloaded;
 			PreviewKeyDown -= ImageCanvasView_PreviewKeyDown;
 			KeyUp -= ImageCanvasView_KeyUp;
-			if (attachedViewModel != null)
-			{
-				attachedViewModel.ImageDialogHost = null;
-				attachedViewModel.ContextMenuHost = null;
-			}
-
-			attachedViewModel = null;
-			if (MainGrid?.ContextMenu != null)
-			{
-				MainGrid.ContextMenu.DataContext = null;
-			}
+			DetachImageViewer();
 			DataContext = null;
+			presentation.Dispose();
 			imageBoxCameraTwoD?.Dispose();
 			Content = null;
 			GC.SuppressFinalize(this);

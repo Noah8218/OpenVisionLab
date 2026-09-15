@@ -2,7 +2,6 @@ using OpenVisionLab.ImageCanvas.ViewModels;
 using System;
 using System.Drawing;
 using System.IO;
-using System.Linq;
 
 namespace OpenVisionLab
 {
@@ -30,10 +29,15 @@ namespace OpenVisionLab
 
         public int ImagePixelHeight => currentImage?.Height ?? 0;
 
-        public int TextureTileCount => canvasViewModel?.ImageViewer?.TextureAreas?.Values.Sum(items => items.Count) ?? 0;
+        public int TextureTileCount => canvasViewModel?.TextureTileCount ?? 0;
 
         public void SetBitmap(Bitmap image, string imageName)
         {
+            if (disposed)
+            {
+                return;
+            }
+
             string nextImageName = string.IsNullOrWhiteSpace(imageName) ? fallbackImageName : imageName;
             fitImageOnNextRefresh = currentImage == null
                 || image == null
@@ -48,34 +52,38 @@ namespace OpenVisionLab
 
         public void RefreshCanvas()
         {
-            if (canvasViewModel == null)
+            if (disposed)
             {
                 return;
             }
 
             if (currentImage == null)
             {
-                canvasViewModel.ImageViewer.ClearTexture();
-                canvasViewModel.ImageViewer.RefreshGL();
+                canvasViewModel.ClearImage();
                 return;
             }
 
             // One presenter owns bitmap-to-OpenGL upload and save callback wiring for every shell preview canvas.
-            canvasViewModel.ImageViewer.ClearTexture();
+            canvasViewModel.ClearImage();
             canvasViewModel.LoadImage(currentImage, currentImageName, SaveCurrentImageFromCurrentBitmap);
             if (fitImageOnNextRefresh)
             {
                 // Keep user zoom stable while a tool repeatedly updates the same layer image.
-                canvasViewModel.ImageViewer.ZoomToFit();
+                canvasViewModel.FitImageToView();
                 fitImageOnNextRefresh = false;
             }
 
-            canvasViewModel.ImageViewer.RefreshGL();
+            canvasViewModel.RefreshCanvas();
         }
 
         public void FitImageToView()
         {
-            canvasViewModel?.FitImageToView();
+            if (disposed)
+            {
+                return;
+            }
+
+            canvasViewModel.FitImageToView();
         }
 
         public bool SaveCurrentImage(string path)

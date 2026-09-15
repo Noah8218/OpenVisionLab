@@ -122,7 +122,7 @@ if ($SkipLaunch) {
     $distributionArguments += "-SkipLaunch"
 }
 Invoke-NativeStep "Release distribution contract" {
-    & powershell @distributionArguments
+    & pwsh @distributionArguments
 }
 
 $catalogSummaryPath = Join-Path $catalogOutput "sample_catalog_summary.json"

@@ -805,6 +805,9 @@ namespace OpenVisionLab
             Statistics = statistics ?? new VisionPipelineBatchRunSummaryStorage.BatchRunStatistics();
             StepTimingAnalysis = stepTimingAnalysis ?? new VisionPipelineBatchRunSummaryStorage.BatchStepTimingAnalysis();
             RunSummary = runSummary;
+            ConfusionMatrix = VisionPipelineBatchOutcomeContract.BuildConfusionMatrix(
+                runSummary?.Results,
+                runSummary?.InputSampleCount ?? 0);
             AnalyticsText = FormatAnalyticsText(Statistics, IsJudgmentSuite ? SampleResults : null);
             StepTimingStatusText = FormatStepTimingStatusText(StepTimingAnalysis);
             StepTimingRows = StepTimingAnalysis.Steps
@@ -825,6 +828,8 @@ namespace OpenVisionLab
         internal VisionPipelineBatchRunSummaryStorage.BatchStepTimingAnalysis StepTimingAnalysis { get; }
 
         internal VisionPipelineBatchRunSummary RunSummary { get; }
+
+        internal VisionPipelineBatchConfusionMatrix ConfusionMatrix { get; }
 
         public string AnalyticsText { get; }
 

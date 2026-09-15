@@ -1,6 +1,7 @@
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
@@ -39,6 +40,61 @@ namespace OpenVisionLab
             return CreateBitmapImage(preview);
         }
 
+        public static BitmapSource CreateFromPath(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+            {
+                throw new FileNotFoundException("The packet overlay file is missing.", path);
+            }
+
+            return CreateBitmapSourceFromPath(path, decodePixelWidth: 0);
+        }
+
+        public static BitmapImage TryCreateFromPath(string path, int decodePixelWidth)
+        {
+            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+            {
+                return null;
+            }
+
+            try
+            {
+                return CreateBitmapSourceFromPath(path, decodePixelWidth);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public static Bitmap LoadBitmap(string path, string role)
+        {
+            try
+            {
+                using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                using System.Drawing.Image decoded = System.Drawing.Image.FromStream(
+                    stream,
+                    useEmbeddedColorManagement: false,
+                    validateImageData: true);
+                return new Bitmap(decoded);
+            }
+            catch (Exception exception)
+            {
+                throw new InvalidOperationException(
+                    (role ?? "Image") + " image could not be loaded: " + path,
+                    exception);
+            }
+        }
+
+        public static (int Width, int Height) ReadPixelSize(string path)
+        {
+            BitmapFrame frame = BitmapFrame.Create(
+                new Uri(path, UriKind.Absolute),
+                BitmapCreateOptions.DelayCreation,
+                BitmapCacheOption.OnLoad);
+            return (frame.PixelWidth, frame.PixelHeight);
+        }
+
         private static BitmapSource CreateBitmapImage(Bitmap image)
         {
             IntPtr hBitmap = IntPtr.Zero;
@@ -64,6 +120,22 @@ namespace OpenVisionLab
                     DeleteObject(hBitmap);
                 }
             }
+        }
+
+        private static BitmapImage CreateBitmapSourceFromPath(string path, int decodePixelWidth)
+        {
+            BitmapImage image = new BitmapImage();
+            image.BeginInit();
+            image.CacheOption = BitmapCacheOption.OnLoad;
+            if (decodePixelWidth > 0)
+            {
+                image.DecodePixelWidth = decodePixelWidth;
+            }
+
+            image.UriSource = new Uri(Path.GetFullPath(path), UriKind.Absolute);
+            image.EndInit();
+            image.Freeze();
+            return image;
         }
 
         [DllImport("gdi32.dll")]

@@ -9,6 +9,9 @@ namespace OpenVisionLab
 
         public static string PreviewNg => T("VisionTool.Status.PreviewNg", "Preview NG");
 
+        public static string InspectionJudgmentNotEvaluated =>
+            T("VisionTool.Status.InspectionJudgmentNotEvaluated", "Inspection judgment not evaluated");
+
         public static string PreviewNotRun => T("VisionTool.Verification.PreviewNotRun", "Preview not run");
 
         public static string RunPreview => T("VisionTool.Verification.RunPreview", "Run Preview");

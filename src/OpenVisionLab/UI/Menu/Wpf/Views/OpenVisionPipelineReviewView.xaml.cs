@@ -1,22 +1,27 @@
+using DrawingBitmap = System.Drawing.Bitmap;
 using OpenVisionLab.Pipeline.Controls;
 using OpenVisionLab.Vision2D.Pipeline;
 using OpenVisionLab.Vision2D.Result;
-using MahApps.Metro.IconPacks;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Globalization;
 using System.Linq;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using WpfImage = System.Windows.Controls.Image;
+using WpfPoint = System.Windows.Point;
 
 namespace OpenVisionLab
 {
     public partial class OpenVisionPipelineReviewView : UserControl
     {
+        #region Core
+
         private IReadOnlyList<VisionPipelineObjectResult> objectResults = Array.Empty<VisionPipelineObjectResult>();
-        private Bitmap objectResultBaseImage;
-        private Bitmap objectMetricSourceImage;
         private VisionPipelineStep objectMetricStep;
         private VisionPipelineObjectMetricKind objectMetricKind = VisionPipelineObjectMetricKind.Area;
         private VisionPipelineObjectMetricDistribution objectMetricDistribution;
@@ -29,23 +34,43 @@ namespace OpenVisionLab
         private VisionPipelineCircleEvidence circleEvidence;
         private IReadOnlyList<VisionPipelineCircleSampleEvidence> circleSamples =
             Array.Empty<VisionPipelineCircleSampleEvidence>();
-        private Bitmap circleSourceImage;
         private VisionToolSignalEvidence circleResidualSignal;
         private bool suppressCircleSelection;
         private bool showCircleProfile;
-        private OpenVisionPipelineReviewMatcherDiagnosticState matcherDiagnosticState;
         private IReadOnlyList<VisionPipelineGeometryFeatureResult> scaleCalibrationPoints = Array.Empty<VisionPipelineGeometryFeatureResult>();
-        private Bitmap scaleCalibrationBaseImage;
         private bool suppressScaleCalibrationSelection;
         private bool suppressFixtureConsumerSelection;
         private bool hasScaleCalibrationRecord;
-        private bool useCompactImageLayout;
-        private bool reviewDetailsExpanded;
-        private bool stepFlowExpanded = true;
+        private readonly OpenVisionPipelineReviewLayoutController layoutController;
+        private readonly OpenVisionPipelineReviewImageResourceOwner imageResources =
+            new OpenVisionPipelineReviewImageResourceOwner();
 
         public OpenVisionPipelineReviewView()
         {
             InitializeComponent();
+            layoutController = new OpenVisionPipelineReviewLayoutController(
+                T,
+                reviewSummaryGrid,
+                reviewSummaryRow,
+                reviewSummaryGapRow,
+                reviewDetailHost,
+                reviewDetailTabs,
+                reviewDetailSplitter,
+                reviewDetailGapRow,
+                reviewDetailRow,
+                btnReviewGuideToggle,
+                btnReviewDetailsToggle,
+                reviewDetailsToggleIcon,
+                matcherDiagnosticTab,
+                objectInspectorTab,
+                circleEvidenceTab,
+                btnStepFlowToggle,
+                stepFlowColumn,
+                stepFlowPanel,
+                lblStepFlow,
+                stepFlowFocusHost,
+                pipelineFlowView,
+                stepFlowToggleIcon);
             ViewModel = new OpenVisionPipelineReviewViewModel();
             DataContext = ViewModel;
             pipelineFlowView.StepSelected += OnPipelineFlowStepSelected;
@@ -69,8 +94,7 @@ namespace OpenVisionLab
             btnStepFlowToggle.Checked += OnStepFlowToggleChanged;
             btnStepFlowToggle.Unchecked += OnStepFlowToggleChanged;
             Unloaded += OnUnloaded;
-            UpdateReviewDetailRowHeight();
-            UpdateStepFlowLayout();
+            layoutController.Initialize();
         }
 
         public event EventHandler<PipelineFlowStepSelectedEventArgs> StepSelected = delegate { };
@@ -169,16 +193,7 @@ namespace OpenVisionLab
             btnStepFlowToggle.Checked -= OnStepFlowToggleChanged;
             btnStepFlowToggle.Unchecked -= OnStepFlowToggleChanged;
             Unloaded -= OnUnloaded;
-            objectResultBaseImage?.Dispose();
-            objectResultBaseImage = null;
-            objectMetricSourceImage?.Dispose();
-            objectMetricSourceImage = null;
-            circleSourceImage?.Dispose();
-            circleSourceImage = null;
-            matcherDiagnosticState?.Dispose();
-            matcherDiagnosticState = null;
-            scaleCalibrationBaseImage?.Dispose();
-            scaleCalibrationBaseImage = null;
+            imageResources.Dispose();
         }
 
         private void ApplyLocalization()
@@ -283,8 +298,8 @@ namespace OpenVisionLab
             btnFixtureProducerEdit.ToolTip = T("PipelineReview.FixtureDesigner.EditProducerToolTip", "Open the fixture Matching Step in the authoritative Recipe Manager PropertyGrid");
             btnFixtureMeasurementEdit.ToolTip = T("PipelineReview.FixtureDesigner.EditMeasurementToolTip", "Open the downstream reference-coordinate ROI Step in the authoritative Recipe Manager PropertyGrid");
             btnFixtureRun.ToolTip = T("PipelineReview.FixtureDesigner.RunToolTip", "Run the pipeline explicitly and refresh fixture evidence");
-            UpdateReviewDetailsToggleVisuals();
-            UpdateStepFlowToggleVisuals();
+            layoutController.UpdateReviewDetailsToggleVisuals();
+            layoutController.UpdateStepFlowToggleVisuals();
         }
 
         private static string T(string key, string fallbackText)
@@ -370,8 +385,7 @@ namespace OpenVisionLab
             objectResults = (results ?? Enumerable.Empty<VisionPipelineObjectResult>()).ToList();
             objectMetricStep = step;
             objectMetricKind = VisionPipelineObjectMetricKind.Area;
-            objectMetricSourceImage?.Dispose();
-            objectMetricSourceImage = sourceImage == null ? null : new Bitmap(sourceImage);
+            imageResources.ReplaceObjectMetricSourceImage(sourceImage);
             objectResultsGrid.ItemsSource = objectResults;
             objectInspectorTab.Visibility = isSupportedTool
                 ? System.Windows.Visibility.Visible
@@ -386,7 +400,7 @@ namespace OpenVisionLab
             suppressObjectSelection = false;
             HasObjectHighlight = false;
             RefreshObjectMetricDistribution(resultImage);
-            UpdateReviewDetailRowHeight();
+            layoutController.UpdateReviewDetailRowHeight();
 
             if (isSupportedTool)
             {
@@ -463,7 +477,7 @@ namespace OpenVisionLab
                 instanceResults.Count(item => !item.Accepted));
             instanceResultsGrid.SelectedItem = null;
             suppressInstanceSelection = false;
-            UpdateReviewDetailRowHeight();
+            layoutController.UpdateReviewDetailRowHeight();
 
             if (isSupportedTool)
             {
@@ -497,14 +511,13 @@ namespace OpenVisionLab
             circleEvidenceTab.Visibility = isCircleGauge
                 ? System.Windows.Visibility.Visible
                 : System.Windows.Visibility.Collapsed;
-            UpdateReviewDetailRowHeight();
-            circleSourceImage?.Dispose();
-            circleSourceImage = sourceImage == null ? null : new Bitmap(sourceImage);
+            layoutController.UpdateReviewDetailRowHeight();
+            imageResources.ReplaceCircleSourceImage(sourceImage);
             circleResidualSignal = circleEvidence == null
                 ? null
                 : OpenVisionPipelineReviewCircleEvidencePresenter.CreateResidualEvidence(
                     circleEvidence,
-                    circleSourceImage,
+                    imageResources.CircleSourceImage,
                     resultImage);
             showCircleProfile = false;
             circleEvidenceSummaryText.Text = circleEvidence?.SummaryText
@@ -543,27 +556,26 @@ namespace OpenVisionLab
             IReadOnlyDictionary<string, double> metrics,
             Bitmap sourceImage)
         {
-            matcherDiagnosticState?.Dispose();
-            matcherDiagnosticState = OpenVisionPipelineReviewMatcherDiagnosticPresenter.Create(
+            imageResources.ReplaceMatcherDiagnosticState(OpenVisionPipelineReviewMatcherDiagnosticPresenter.Create(
                 evidence,
                 metrics,
-                sourceImage);
+                sourceImage));
             matcherDiagnosticTab.Visibility = isEdgeBasedMatching
                 ? System.Windows.Visibility.Visible
                 : System.Windows.Visibility.Collapsed;
             matcherDiagnosticGrid.ItemsSource =
-                matcherDiagnosticState?.Rows
+                imageResources.MatcherDiagnosticState?.Rows
                 ?? (IReadOnlyList<OpenVisionPipelineReviewMatcherDiagnosticRow>)
                     Array.Empty<OpenVisionPipelineReviewMatcherDiagnosticRow>();
             ViewModel.SetMatcherDiagnosticPreviews(
-                matcherDiagnosticState?.ModelPreview,
-                matcherDiagnosticState?.CandidatePreview);
-            matcherDiagnosticSummaryText.Text = matcherDiagnosticState?.SummaryText
+                imageResources.MatcherDiagnosticState?.ModelPreview,
+                imageResources.MatcherDiagnosticState?.CandidatePreview);
+            matcherDiagnosticSummaryText.Text = imageResources.MatcherDiagnosticState?.SummaryText
                 ?? T(
                     "PipelineReview.MatcherDiagnostics.NoEvidence",
                     "Run Review explicitly to retain model, pyramid, candidate, and decision diagnostics.");
             matcherDiagnosticSummaryText.ToolTip = matcherDiagnosticSummaryText.Text;
-            UpdateReviewDetailRowHeight();
+            layoutController.UpdateReviewDetailRowHeight();
 
             if (isEdgeBasedMatching)
             {
@@ -577,8 +589,8 @@ namespace OpenVisionLab
                 objectMetricStep,
                 objectResults,
                 objectMetricKind,
-                objectMetricSourceImage,
-                resultImage ?? objectResultBaseImage);
+                imageResources.ObjectMetricSourceImage,
+                resultImage ?? imageResources.ObjectResultBaseImage);
             objectMetricPlot.SetEvidence(objectMetricDistribution?.Evidence);
             objectMetricSummaryText.Text = objectMetricDistribution?.SummaryText
                 ?? T(
@@ -629,165 +641,46 @@ namespace OpenVisionLab
             }
         }
 
-        private void UpdateReviewDetailRowHeight()
-        {
-            bool compactGuideExpanded = useCompactImageLayout && btnReviewGuideToggle.IsChecked == true;
-            bool detailsVisible = reviewDetailsExpanded && !compactGuideExpanded;
-            reviewDetailHost.Visibility = compactGuideExpanded
-                ? System.Windows.Visibility.Collapsed
-                : System.Windows.Visibility.Visible;
-            reviewDetailTabs.Visibility = detailsVisible
-                ? System.Windows.Visibility.Visible
-                : System.Windows.Visibility.Collapsed;
-            reviewDetailSplitter.Visibility = detailsVisible
-                ? System.Windows.Visibility.Visible
-                : System.Windows.Visibility.Collapsed;
-            reviewDetailGapRow.Height = new System.Windows.GridLength(detailsVisible ? 8D : 4D);
-            reviewDetailRow.MinHeight = compactGuideExpanded ? 0D : 34D;
-            if (compactGuideExpanded)
-            {
-                reviewDetailRow.Height = new System.Windows.GridLength(0D);
-                return;
-            }
-
-            if (!detailsVisible)
-            {
-                reviewDetailRow.Height = new System.Windows.GridLength(34D);
-                return;
-            }
-
-            if (useCompactImageLayout)
-            {
-                double compactHeight = matcherDiagnosticTab.Visibility == System.Windows.Visibility.Visible
-                    ? 240D
-                    : circleEvidenceTab.Visibility == System.Windows.Visibility.Visible
-                        ? 220D
-                        : 220D;
-                reviewDetailRow.Height = new System.Windows.GridLength(compactHeight);
-                return;
-            }
-
-            double height = matcherDiagnosticTab.Visibility == System.Windows.Visibility.Visible
-                ? 300D
-                : objectInspectorTab.Visibility == System.Windows.Visibility.Visible
-                    ? 240D
-                : circleEvidenceTab.Visibility == System.Windows.Visibility.Visible
-                    ? 280D
-                    : 240D;
-            reviewDetailRow.Height = new System.Windows.GridLength(height);
-        }
-
         private void OnViewSizeChanged(object sender, System.Windows.SizeChangedEventArgs e)
         {
-            bool compact = ActualHeight < 650D;
-            if (compact == useCompactImageLayout)
-            {
-                return;
-            }
-
-            useCompactImageLayout = compact;
-            reviewSummaryGrid.Visibility = compact
-                ? System.Windows.Visibility.Collapsed
-                : System.Windows.Visibility.Visible;
-            reviewSummaryRow.Height = compact
-                ? new System.Windows.GridLength(0D)
-                : System.Windows.GridLength.Auto;
-            reviewSummaryGapRow.Height = new System.Windows.GridLength(compact ? 0D : 8D);
-            UpdateReviewDetailRowHeight();
+            layoutController.OnSizeChanged(ActualHeight);
         }
 
         private void OnReviewGuideToggleChanged(object sender, System.Windows.RoutedEventArgs e)
         {
-            UpdateReviewDetailRowHeight();
+            layoutController.OnReviewGuideToggleChanged();
         }
 
         private void OnReviewDetailsToggleChanged(object sender, System.Windows.RoutedEventArgs e)
         {
-            reviewDetailsExpanded = btnReviewDetailsToggle.IsChecked == true;
-            UpdateReviewDetailsToggleVisuals();
-            UpdateReviewDetailRowHeight();
+            layoutController.OnReviewDetailsToggleChanged();
         }
 
         private void OnStepFlowToggleChanged(object sender, System.Windows.RoutedEventArgs e)
         {
-            stepFlowExpanded = btnStepFlowToggle.IsChecked == true;
-            UpdateStepFlowLayout();
-        }
-
-        private void UpdateReviewDetailsToggleVisuals()
-        {
-            if (btnReviewDetailsToggle == null)
-            {
-                return;
-            }
-
-            reviewDetailsExpanded = btnReviewDetailsToggle.IsChecked == true;
-            reviewDetailsToggleIcon.RenderTransform = new System.Windows.Media.RotateTransform(
-                reviewDetailsExpanded ? 180D : 0D);
-            btnReviewDetailsToggle.ToolTip = reviewDetailsExpanded
-                ? T("PipelineReview.Details.HideToolTip", "Hide review details")
-                : T("PipelineReview.Details.ShowToolTip", "Show review details");
-        }
-
-        private void UpdateStepFlowLayout()
-        {
-            if (btnStepFlowToggle == null)
-            {
-                return;
-            }
-
-            stepFlowExpanded = btnStepFlowToggle.IsChecked == true;
-            stepFlowColumn.Width = new System.Windows.GridLength(stepFlowExpanded ? 300D : 44D);
-            stepFlowPanel.Padding = stepFlowExpanded
-                ? new System.Windows.Thickness(10D)
-                : new System.Windows.Thickness(4D);
-            lblStepFlow.Visibility = stepFlowExpanded
-                ? System.Windows.Visibility.Visible
-                : System.Windows.Visibility.Collapsed;
-            stepFlowFocusHost.Visibility = stepFlowExpanded
-                ? System.Windows.Visibility.Visible
-                : System.Windows.Visibility.Collapsed;
-            pipelineFlowView.Visibility = stepFlowExpanded
-                ? System.Windows.Visibility.Visible
-                : System.Windows.Visibility.Collapsed;
-            stepFlowToggleIcon.Kind = stepFlowExpanded
-                ? PackIconMaterialKind.ChevronLeft
-                : PackIconMaterialKind.ChevronRight;
-            btnStepFlowToggle.ToolTip = stepFlowExpanded
-                ? T("PipelineReview.StepFlow.HideToolTip", "Collapse Step Flow")
-                : T("PipelineReview.StepFlow.ShowToolTip", "Expand Step Flow");
-        }
-
-        private void UpdateStepFlowToggleVisuals()
-        {
-            if (btnStepFlowToggle == null)
-            {
-                return;
-            }
-
-            UpdateStepFlowLayout();
+            layoutController.OnStepFlowToggleChanged();
         }
 
         internal bool MatcherDiagnosticTabVisibleForTest =>
             matcherDiagnosticTab.Visibility == System.Windows.Visibility.Visible;
 
         internal string MatcherDiagnosticStateForTest =>
-            matcherDiagnosticState?.State ?? string.Empty;
+            imageResources.MatcherDiagnosticState?.State ?? string.Empty;
 
         internal string MatcherDiagnosticEvidenceIdForTest =>
-            matcherDiagnosticState?.EvidenceId ?? string.Empty;
+            imageResources.MatcherDiagnosticState?.EvidenceId ?? string.Empty;
 
         internal int MatcherDiagnosticRowCountForTest =>
-            matcherDiagnosticState?.Rows?.Count ?? 0;
+            imageResources.MatcherDiagnosticState?.Rows?.Count ?? 0;
 
         internal int MatcherDiagnosticModelPointCountForTest =>
-            matcherDiagnosticState?.ModelPointCount ?? 0;
+            imageResources.MatcherDiagnosticState?.ModelPointCount ?? 0;
 
         internal bool MatcherDiagnosticHasSelectedCandidateForTest =>
-            matcherDiagnosticState?.HasSelectedCandidate == true;
+            imageResources.MatcherDiagnosticState?.HasSelectedCandidate == true;
 
         internal bool MatcherDiagnosticHasAlternativeForTest =>
-            matcherDiagnosticState?.HasStrongestSpatialAlternative == true;
+            imageResources.MatcherDiagnosticState?.HasStrongestSpatialAlternative == true;
 
         internal int CircleEvidenceSampleCountForTest => circleSamples.Count;
 
@@ -865,8 +758,8 @@ namespace OpenVisionLab
                 ? OpenVisionPipelineReviewCircleEvidencePresenter.CreateProfileEvidence(
                     circleEvidence,
                     selected,
-                    circleSourceImage,
-                    objectResultBaseImage,
+                    imageResources.CircleSourceImage,
+                    imageResources.ObjectResultBaseImage,
                     circleResidualSignal?.SourceSha256,
                     circleResidualSignal?.ResultSha256)
                 : circleResidualSignal;
@@ -943,8 +836,7 @@ namespace OpenVisionLab
                 txtScaleCalibrationResult.Text = T("PipelineReview.ScaleCalibration.NotTaught", "Not taught");
             }
 
-            scaleCalibrationBaseImage?.Dispose();
-            scaleCalibrationBaseImage = coordinateImage == null ? null : new Bitmap(coordinateImage);
+            imageResources.ReplaceScaleCalibrationBaseImage(coordinateImage);
             suppressScaleCalibrationSelection = false;
             SetScaleCalibrationStatus(statusText);
             RefreshScaleCalibrationPreview();
@@ -955,7 +847,7 @@ namespace OpenVisionLab
             txtScaleCalibrationStatus.Text = string.IsNullOrWhiteSpace(statusText)
                 ? T("PipelineReview.ScaleCalibration.Waiting", "Run Review to obtain two typed points.")
                 : statusText.Trim();
-            btnCalculateScaleCalibration.IsEnabled = scaleCalibrationPoints.Count >= 2 && scaleCalibrationBaseImage != null;
+            btnCalculateScaleCalibration.IsEnabled = scaleCalibrationPoints.Count >= 2 && imageResources.ScaleCalibrationBaseImage != null;
             btnApplyScaleCalibration.IsEnabled = hasScaleCalibrationRecord && cmbScaleTargetStep.SelectedItem != null;
         }
 
@@ -1162,14 +1054,615 @@ namespace OpenVisionLab
 
         private void ReplaceObjectResultBaseImage(Bitmap image)
         {
-            objectResultBaseImage?.Dispose();
-            objectResultBaseImage = image == null ? null : new Bitmap(image);
+            imageResources.ReplaceObjectResultBaseImage(image);
             HasObjectHighlight = false;
         }
 
+        #endregion
+
+        #region Events
+
+        private void OnPipelineFlowStepSelected(object sender, PipelineFlowStepSelectedEventArgs e)
+        {
+            if (e == null)
+            {
+                return;
+            }
+
+            StepSelected?.Invoke(this, e);
+        }
+
+        private void BtnReturnToRecipe_Click(object sender, RoutedEventArgs e)
+        {
+            ReturnToRecipeRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void BtnPreviousStep_Click(object sender, RoutedEventArgs e)
+        {
+            PreviousStepRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void BtnNextStep_Click(object sender, RoutedEventArgs e)
+        {
+            NextStepRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void BtnFirstIssueStep_Click(object sender, RoutedEventArgs e)
+        {
+            FirstIssueStepRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void BtnOpenSelectedToolLearn_Click(object sender, RoutedEventArgs e)
+        {
+            OpenSelectedToolLearnRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void BtnEditSelectedStep_Click(object sender, RoutedEventArgs e)
+        {
+            EditSelectedStepRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void BtnUseSelectedMatchingPose_Click(object sender, RoutedEventArgs e)
+        {
+            UseSelectedMatchingPoseRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void BtnEditFixtureProducer_Click(object sender, RoutedEventArgs e)
+        {
+            EditFixtureProducerRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void BtnEditFixtureMeasurement_Click(object sender, RoutedEventArgs e)
+        {
+            EditFixtureMeasurementRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void FixtureConsumerGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (suppressFixtureConsumerSelection
+                || fixtureConsumerGrid.SelectedItem is not OpenVisionPipelineReviewFixtureConsumerRow row)
+            {
+                return;
+            }
+
+            FixtureConsumerSelected?.Invoke(
+                this,
+                new OpenVisionPipelineReviewFixtureConsumerSelectedEventArgs(row.StepIndex));
+        }
+
+        private void BtnOpenPairSample_Click(object sender, RoutedEventArgs e)
+        {
+            OpenPairSampleRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void BtnRunReview_Click(object sender, RoutedEventArgs e)
+        {
+            RunReviewRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void ScalePoint_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (suppressScaleCalibrationSelection)
+            {
+                return;
+            }
+
+            RefreshScaleCalibrationPreview();
+            SetScaleCalibrationStatus(null);
+        }
+
+        private void BtnCalculateScaleCalibration_Click(object sender, RoutedEventArgs e)
+        {
+            VisionPipelineGeometryFeatureResult pointA = cmbScalePointA.SelectedItem as VisionPipelineGeometryFeatureResult;
+            VisionPipelineGeometryFeatureResult pointB = cmbScalePointB.SelectedItem as VisionPipelineGeometryFeatureResult;
+            if (pointA == null || pointB == null)
+            {
+                SetScaleCalibrationStatus(T("PipelineReview.ScaleCalibration.InvalidPoint", "Select two valid points."));
+                return;
+            }
+
+            if (!OpenVisionPipelineReviewViewRenderService.TryParsePositiveDouble(txtScaleKnownDistance.Text, out double knownDistance))
+            {
+                SetScaleCalibrationStatus(T("PipelineReview.ScaleCalibration.InvalidKnownDistance", "Known distance must be a positive number."));
+                return;
+            }
+
+            VisionScaleCalibrationUnit unit = VisionScaleCalibrationUnit.Millimeter;
+            if (cmbScaleUnit.SelectedItem is VisionScaleCalibrationUnitOption unitOption)
+            {
+                unit = unitOption.Unit;
+            }
+
+            ScaleCalibrationRequested?.Invoke(
+                this,
+                new VisionScaleCalibrationRequestedEventArgs(
+                    pointA.Identity,
+                    pointB.Identity,
+                    knownDistance,
+                    unit));
+        }
+
+        private void BtnApplyScaleCalibration_Click(object sender, RoutedEventArgs e)
+        {
+            if (cmbScaleTargetStep.SelectedItem is not VisionPipelineScaleTargetOption selectedTarget)
+            {
+                SetScaleCalibrationStatus(T("PipelineReview.ScaleCalibration.SelectTarget", "Select one compatible target Step."));
+                return;
+            }
+
+            ScaleCalibrationApplyRequested?.Invoke(
+                this,
+                new VisionScaleCalibrationApplyRequestedEventArgs(selectedTarget.StepIndex));
+        }
+
+        private void ImgOutputPreview_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is not WpfImage image)
+            {
+                return;
+            }
+
+            if (!TryTranslateImageClickToImagePoint(image, imageResources.ObjectResultBaseImage, e.GetPosition(image), out double x, out double y))
+            {
+                return;
+            }
+
+            if (sender == imgObjectResultPreview)
+            {
+                SelectObjectAtImagePointForTest(x, y);
+                e.Handled = true;
+                return;
+            }
+
+            SelectObjectAt(x, y);
+            e.Handled = true;
+        }
+
+        private void ImgGeometryResultPreview_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is not WpfImage image)
+            {
+                return;
+            }
+
+            if (!TryTranslateImageClickToImagePoint(image, imageResources.ObjectResultBaseImage, e.GetPosition(image), out double x, out double y))
+            {
+                return;
+            }
+
+            SelectGeometryAtImagePointForTest(x, y);
+            e.Handled = true;
+        }
+
+        private void ImgCircleEvidencePreview_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is not WpfImage image
+                || !TryTranslateImageClickToImagePoint(
+                    image,
+                    imageResources.ObjectResultBaseImage,
+                    e.GetPosition(image),
+                    out double x,
+                    out double y))
+            {
+                return;
+            }
+
+            SelectCircleSampleAtImagePointForTest(x, y);
+            e.Handled = true;
+        }
+
+        private void ObjectResultsGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (suppressObjectSelection)
+            {
+                return;
+            }
+
+            VisionPipelineObjectResult selected = objectResultsGrid?.SelectedItem as VisionPipelineObjectResult;
+            suppressObjectSelection = true;
+            ShowObjectHighlight(selected);
+            UpdateObjectMetricSelection();
+            suppressObjectSelection = false;
+        }
+
+        private void GeometryResultsGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (suppressGeometrySelection)
+            {
+                return;
+            }
+
+            VisionPipelineGeometryFeatureResult selected = geometryResultsGrid?.SelectedItem as VisionPipelineGeometryFeatureResult;
+            suppressGeometrySelection = true;
+            ShowGeometryHighlight(selected);
+            suppressGeometrySelection = false;
+        }
+
+        private void InstanceResultsGrid_SelectionChanged(
+            object sender,
+            SelectionChangedEventArgs e)
+        {
+            if (suppressInstanceSelection)
+            {
+                return;
+            }
+
+            VisionPipelineInstanceResult selected =
+                instanceResultsGrid?.SelectedItem as VisionPipelineInstanceResult;
+            suppressInstanceSelection = true;
+            ShowInstanceHighlight(selected);
+            suppressInstanceSelection = false;
+        }
+
+        private void CircleSamplesGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (suppressCircleSelection)
+            {
+                return;
+            }
+
+            VisionPipelineCircleSampleEvidence selected =
+                circleSamplesGrid?.SelectedItem as VisionPipelineCircleSampleEvidence;
+            if (selected == null)
+            {
+                RestoreObjectResultPreview();
+                RefreshCircleEvidencePlot();
+                return;
+            }
+
+            ShowCircleSampleHighlight(selected);
+            RefreshCircleEvidencePlot();
+        }
+
+        private void CircleEvidencePlot_SampleSelectionRequested(
+            object sender,
+            VisionToolSignalSampleSelectedEventArgs e)
+        {
+            if (showCircleProfile || circleSamples == null || circleSamples.Count == 0)
+            {
+                return;
+            }
+
+            int number = (int)Math.Round(e.X);
+            VisionPipelineCircleSampleEvidence selected =
+                circleSamples.OrderBy(item => Math.Abs(item.Number - number)).FirstOrDefault();
+            if (selected != null)
+            {
+                SelectCircleSampleInternal(selected);
+            }
+        }
+
+        private void ObjectMetricPlot_SampleSelectionRequested(
+            object sender,
+            VisionToolSignalSampleSelectedEventArgs e)
+        {
+            if (objectMetricDistribution == null || objectResults == null || objectResults.Count == 0)
+            {
+                return;
+            }
+
+            VisionPipelineObjectResult selected = objectResults
+                .OrderBy(item => Math.Abs(objectMetricDistribution.GetValue(item) - e.X))
+                .ThenBy(item => item.Number)
+                .FirstOrDefault();
+            if (selected != null)
+            {
+                SelectObjectAtInternal(selected);
+            }
+        }
+
+        private void BtnObjectMetricArea_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            SelectObjectMetricKindInternal(VisionPipelineObjectMetricKind.Area);
+        }
+
+        private void BtnObjectMetricWidth_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            SelectObjectMetricKindInternal(VisionPipelineObjectMetricKind.BoundsWidth);
+        }
+
+        private void BtnObjectMetricHeight_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            SelectObjectMetricKindInternal(VisionPipelineObjectMetricKind.BoundsHeight);
+        }
+
+        private void BtnCircleResidualPlot_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            showCircleProfile = false;
+            RefreshCircleEvidencePlot();
+        }
+
+        private void BtnCircleProfilePlot_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            showCircleProfile = true;
+            RefreshCircleEvidencePlot();
+        }
+
+        private void SelectObjectAt(double x, double y)
+        {
+            VisionPipelineObjectResult selected = objectResults
+                .Select(item =>
+                {
+                    if (item == null)
+                    {
+                        return (item: item, distance: double.PositiveInfinity);
+                    }
+
+                    double dx = x - item.CenterX;
+                    double dy = y - item.CenterY;
+                    return (item, distance: Math.Sqrt(dx * dx + dy * dy));
+                })
+                .Where(entry => entry.item != null && !double.IsInfinity(entry.distance))
+                .OrderBy(entry => entry.distance)
+                .FirstOrDefault()
+                .item;
+            if (selected == null)
+            {
+                return;
+            }
+
+            SelectObjectAtInternal(selected);
+        }
+
+        internal void SelectObjectAtImagePointForTest(double x, double y)
+        {
+            SelectObjectAt(x, y);
+        }
+
+        private void SelectObjectAtInternal(VisionPipelineObjectResult item)
+        {
+            if (objectResultsGrid == null)
+            {
+                return;
+            }
+
+            suppressObjectSelection = true;
+            objectResultsGrid.SelectedItem = item;
+            objectResultsGrid.ScrollIntoView(item);
+            ShowObjectHighlight(item);
+            UpdateObjectMetricSelection();
+            suppressObjectSelection = false;
+        }
+
+        internal bool SelectGeometryAtImagePointForTest(double x, double y)
+        {
+            if (geometryResults == null || geometryResults.Count == 0)
+            {
+                if (geometryResultsGrid != null)
+                {
+                    suppressGeometrySelection = true;
+                    geometryResultsGrid.SelectedItem = null;
+                    ShowGeometryHighlight(null);
+                    suppressGeometrySelection = false;
+                }
+
+                return false;
+            }
+
+            double tolerance = imageResources.ObjectResultBaseImage == null
+                ? 8D
+                : Math.Max(6D, Math.Min(imageResources.ObjectResultBaseImage.Width, imageResources.ObjectResultBaseImage.Height) / 80D);
+            (VisionPipelineGeometryFeatureResult feature, double distance) best = geometryResults
+                .Select(item => (item: item, distance: OpenVisionPipelineReviewViewRenderService.GeometryHitDistance(item, x, y)))
+                .Where(entry => entry.item != null && entry.distance <= tolerance)
+                .OrderBy(entry => entry.distance)
+                .FirstOrDefault();
+
+            if (geometryResultsGrid == null || best.feature == null)
+            {
+                return false;
+            }
+
+            suppressGeometrySelection = true;
+            geometryResultsGrid.SelectedItem = best.feature;
+            geometryResultsGrid.ScrollIntoView(best.feature);
+            ShowGeometryHighlight(best.feature);
+            suppressGeometrySelection = false;
+            return true;
+        }
+
+        internal string SelectedGeometryIdentityForTest =>
+            (geometryResultsGrid.SelectedItem as VisionPipelineGeometryFeatureResult)?.Identity ?? string.Empty;
+
+        private void RefreshScaleCalibrationPreview()
+        {
+            if (imageResources.ScaleCalibrationBaseImage == null)
+            {
+                ViewModel.SetScaleCalibrationPreview(null);
+                return;
+            }
+
+            VisionPipelineGeometryFeatureResult pointA = cmbScalePointA.SelectedItem as VisionPipelineGeometryFeatureResult;
+            VisionPipelineGeometryFeatureResult pointB = cmbScalePointB.SelectedItem as VisionPipelineGeometryFeatureResult;
+            if (pointA == null || pointB == null)
+            {
+                ViewModel.SetScaleCalibrationPreview(imageResources.ScaleCalibrationBaseImage);
+                return;
+            }
+
+            DrawingBitmap preview = OpenVisionPipelineReviewViewRenderService.CreateScaleCalibrationPreview(
+                imageResources.ScaleCalibrationBaseImage,
+                pointA,
+                pointB,
+                out string previewText);
+            if (preview == null)
+            {
+                ViewModel.SetScaleCalibrationPreview(imageResources.ScaleCalibrationBaseImage);
+            }
+            else
+            {
+                ViewModel.SetScaleCalibrationPreview(preview);
+            }
+
+            preview?.Dispose();
+
+            if (!string.IsNullOrWhiteSpace(previewText))
+            {
+                lblScaleCalibrationPreview.Text = previewText;
+            }
+        }
+
+        private void ShowObjectHighlight(VisionPipelineObjectResult item)
+        {
+            if (item == null || imageResources.ObjectResultBaseImage == null)
+            {
+                RestoreObjectResultPreview();
+                return;
+            }
+
+            DrawingBitmap preview = OpenVisionPipelineReviewViewRenderService.CreateObjectHighlight(imageResources.ObjectResultBaseImage, item);
+            if (preview == null)
+            {
+                RestoreObjectResultPreview();
+                return;
+            }
+
+            ViewModel.SetHighlightedOutputPreview(preview);
+            preview.Dispose();
+            HasObjectHighlight = true;
+        }
+
+        private void ShowGeometryHighlight(VisionPipelineGeometryFeatureResult item)
+        {
+            if (item == null || imageResources.ObjectResultBaseImage == null)
+            {
+                RestoreObjectResultPreview();
+                return;
+            }
+
+            DrawingBitmap preview = OpenVisionPipelineReviewViewRenderService.CreateGeometryHighlight(imageResources.ObjectResultBaseImage, item);
+            if (preview == null)
+            {
+                RestoreObjectResultPreview();
+                return;
+            }
+
+            ViewModel.SetHighlightedOutputPreview(preview);
+            preview.Dispose();
+            HasObjectHighlight = true;
+        }
+
+        private void ShowInstanceHighlight(VisionPipelineInstanceResult item)
+        {
+            if (item == null || imageResources.ObjectResultBaseImage == null)
+            {
+                RestoreObjectResultPreview();
+                return;
+            }
+
+            DrawingBitmap preview =
+                OpenVisionPipelineReviewInstanceRenderService.CreateHighlight(
+                    imageResources.ObjectResultBaseImage,
+                    item);
+            if (preview == null)
+            {
+                RestoreObjectResultPreview();
+                return;
+            }
+
+            ViewModel.SetHighlightedOutputPreview(preview);
+            preview.Dispose();
+            HasObjectHighlight = true;
+        }
+
+        private void ShowCircleSampleHighlight(VisionPipelineCircleSampleEvidence item)
+        {
+            if (item == null || imageResources.ObjectResultBaseImage == null || circleEvidence == null)
+            {
+                RestoreObjectResultPreview();
+                return;
+            }
+
+            DrawingBitmap preview =
+                OpenVisionPipelineReviewCircleEvidenceRenderService.CreateSampleHighlight(
+                    imageResources.ObjectResultBaseImage,
+                    circleEvidence,
+                    item);
+            if (preview == null)
+            {
+                RestoreObjectResultPreview();
+                return;
+            }
+
+            ViewModel.SetHighlightedOutputPreview(preview);
+            preview.Dispose();
+            HasObjectHighlight = true;
+        }
+
+        private void RestoreObjectResultPreview()
+        {
+            ViewModel.SetHighlightedOutputPreview(imageResources.ObjectResultBaseImage);
+            HasObjectHighlight = false;
+        }
+
+        private static bool TryTranslateImageClickToImagePoint(
+            WpfImage image,
+            DrawingBitmap imageBitmap,
+            WpfPoint controlPoint,
+            out double imageX,
+            out double imageY)
+        {
+            imageX = 0D;
+            imageY = 0D;
+
+            if (imageBitmap == null || image?.Source == null)
+            {
+                return false;
+            }
+
+            if (image.ActualWidth <= 0D
+                || image.ActualHeight <= 0D
+                || imageBitmap.Width <= 0
+                || imageBitmap.Height <= 0)
+            {
+                return false;
+            }
+
+            Rect displayedImage = GetDisplayedImageRect(image, imageBitmap);
+            if (!displayedImage.Contains(controlPoint) || displayedImage.Width <= 0D || displayedImage.Height <= 0D)
+            {
+                return false;
+            }
+
+            imageX = ((controlPoint.X - displayedImage.Left) / displayedImage.Width) * imageBitmap.Width;
+            imageY = ((controlPoint.Y - displayedImage.Top) / displayedImage.Height) * imageBitmap.Height;
+
+            imageX = Math.Max(0D, Math.Min(imageBitmap.Width - 1D, imageX));
+            imageY = Math.Max(0D, Math.Min(imageBitmap.Height - 1D, imageY));
+            return true;
+        }
+
+        private static Rect GetDisplayedImageRect(WpfImage image, DrawingBitmap imageBitmap)
+        {
+            if (image == null || imageBitmap == null || image.ActualWidth <= 0D || image.ActualHeight <= 0D)
+            {
+                return Rect.Empty;
+            }
+
+            double imageAspect = imageBitmap.Width / (double)imageBitmap.Height;
+            double controlAspect = image.ActualWidth / image.ActualHeight;
+            if (controlAspect > imageAspect)
+            {
+                double displayedWidth = image.ActualHeight * imageAspect;
+                return new Rect(
+                    (image.ActualWidth - displayedWidth) / 2D,
+                    0D,
+                    displayedWidth,
+                    image.ActualHeight);
+            }
+
+            double displayedHeight = image.ActualWidth / imageAspect;
+            return new Rect(
+                0D,
+                (image.ActualHeight - displayedHeight) / 2D,
+                image.ActualWidth,
+                displayedHeight);
+        }
+
+        #endregion
     }
 
-    internal sealed class VisionScaleCalibrationUnitOption
+internal sealed class VisionScaleCalibrationUnitOption
     {
         public VisionScaleCalibrationUnitOption(VisionScaleCalibrationUnit unit, string displayText)
         {

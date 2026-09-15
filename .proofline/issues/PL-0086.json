@@ -1,0 +1,123 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0086",
+    "aliases": [
+      "2D-028"
+    ],
+    "type": "task",
+    "mode": "simple",
+    "title": "Verify non-contiguous Mat stride ROI input ownership contract",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "scheduled-follow-up",
+    "summary": "2D-028 requires focused proof for non-contiguous Mat views, padded stride, ROI input, disposed inputs, and independent output ownership without reopening the PL-0006 converter implementation.",
+    "refs": [
+      "C:/Users/USER/Downloads/OpenVisionLab_2D_tasks.json#2D-028",
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      ".proofline/issues/PL-0006.json",
+      ".proofline/issues/PL-0085.json"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "2D-028 is complete as a focused converter ownership contract. Existing BitmapImageConverter behavior now has explicit evidence for non-contiguous ROI/padded-step pixels, caller/output independence, and disposed-input rejection; PL-0006 production behavior was not reopened."
+  },
+  "objective": {
+    "summary": "Prove that supported non-contiguous Mat/ROI and padded-stride conversions preserve visible pixels and row boundaries, reject disposed or unsupported inputs explicitly, do not release or mutate caller-owned inputs, and return independently owned outputs.",
+    "constraints": [
+      "Reuse src/OpenVisionLab/Common/Imaging/BitmapImageConverter.cs and the existing VisionRecipeRunnerSmoke bitmap converter contract.",
+      "Do not reopen or rewrite PL-0006, add zero-copy or unsafe architecture, or introduce a new image abstraction.",
+      "Use isolated evidence under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev; do not touch Original, release, deploy, hardware, or external systems."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "Continuous and non-contiguous ROI/padded-stride Mat and Bitmap inputs preserve visible pixel values and leave guard rows/columns unchanged; unsupported formats or disposed inputs fail explicitly without an output being returned.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "Conversion never disposes or mutates caller-owned input storage, and an allocated output remains usable after the caller releases its input.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "The focused Debug/Release contract passes and the owner/call path plus unverified WPF/runtime boundary are recorded in the stable contract and handoff documents.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ]
+    }
+  ],
+  "relations": [],
+  "context": [],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "test",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d028-debug-20260915/mat-view-ownership/mat_view_ownership_contract.txt",
+      "observation": "Debug D: executable contract passed 3/3: ROI and padded-stride pixels/guards, caller and output ownership, and disposed Bitmap/Mat rejection.",
+      "observed_at": "2026-09-15T23:20:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d028-release-20260915/mat-view-ownership/mat_view_ownership_contract.txt",
+      "observation": "Release D: executable contract passed 3/3 with the same ROI/stride, ownership, and disposed-input coverage.",
+      "observed_at": "2026-09-15T23:22:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "test",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d028-debug-20260915/pl0006-regression/bitmap_converter_contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d028-release-20260915/pl0006-regression/bitmap_converter_contract.txt",
+      "observation": "The existing PL-0006 regression contract passed 5/5 in both Debug and Release, preserving odd-width indexed guards, signed Bitmap stride, padded/submatrix destinations, color/palette conversion, round trips, and unsupported-format behavior.",
+      "observed_at": "2026-09-15T23:22:30+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "inspection",
+      "location": "docs/reports/OPENVISIONLAB_2D_MAT_VIEW_OWNERSHIP_20260915.md; docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "observation": "The owner/call path, mutable-state and lifetime ownership, acceptance scope, D: evidence, build warnings, and unverified WPF/runtime boundaries are recorded; the next slice is 2D-029.",
+      "observed_at": "2026-09-15T23:23:08+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-15T23:23:08+09:00",
+      "summary": "Keep BitmapImageConverter as the sole conversion owner and add only a focused MatViewOwnershipContract; do not reopen PL-0006 or introduce zero-copy/image abstractions.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-15T23:23:08+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "All 2D-028 criteria are satisfied by Debug/Release 3/3 focused contracts, PL-0006 5/5 regression contracts, and documented owner/lifetime boundaries."
+    }
+  ],
+  "created_at": "2026-09-15T23:12:45+09:00",
+  "updated_at": "2026-09-15T23:23:08+09:00"
+}

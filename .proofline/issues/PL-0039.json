@@ -1,0 +1,163 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0039",
+    "aliases": [],
+    "type": "task",
+    "mode": "composite",
+    "title": "Move Matching Tool sample property policy out of the View Partial",
+    "risk": "low"
+  },
+  "origin": {
+    "kind": "user-request",
+    "summary": "The user requested that Partial refactoring continue in scheduled cycles and that each remaining Partial be structurally corrected rather than mechanically split or deleted.",
+    "refs": [
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "docs/reports/OPENVISIONLAB_PARTIAL_STRUCTURAL_ELIMINATION_PLAN_20260913.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "MatchingToolWpfView의 샘플 template-path 해석과 common OpenCV/Matching property 복사 정책을 기존 VisionPipelineMatchingPropertyAdapter로 이동했다. View는 XAML/controller orchestration과 기존 public/test facade만 유지하며, Debug/Release contract/build와 Matching WPF smoke가 통과했다."
+  },
+  "objective": {
+    "summary": "Remove the concrete sample-property projection policy from MatchingToolWpfView.xaml.cs while preserving the existing template registration order, property values, list-copy semantics, binding/test facade, creation path, and lifetime ownership.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev; do not modify C:\\Git\\2D\\Original.",
+      "Reuse VisionPipelineMatchingPropertyAdapter; do not add a service, interface, manager, wrapper, forwarding Partial, or ViewModel split.",
+      "Preserve MatchingToolWpfView XAML names, Learn Matching topic 9, template status, public/test facade, and base disposal ownership.",
+      "Preserve SetTemplatePathForTest-before-ConfigurePropertyForTest ordering, AUTO_PREVIEW=false, all property assignments, and CvROIS/CvMASKS defensive copies.",
+      "Keep test outputs and evidence under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev.",
+      "Do not commit, push, tag, release, deploy, or mutate the Original repository."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The proof report records current/intended owners, call path, mutable-state writer, lifetime owner, binding/public/test contract, shortest reading order, and the reuse decision.",
+      "evidence_refs": ["E1"]
+    },
+    {
+      "id": "C2",
+      "text": "MatchingToolWpfView no longer owns sample mapping assignments or direct template-path policy; VisionPipelineMatchingPropertyAdapter owns the complete copy and clone policy.",
+      "evidence_refs": ["E1", "E2"]
+    },
+    {
+      "id": "C3",
+      "text": "Focused Debug/Release contracts and builds, Matching WPF smoke, monitor geometry, readiness, structural audit, documentation index, issue validation, and diff checks pass; broader UI/native matrices remain explicitly unverified.",
+      "evidence_refs": ["E2", "E3"]
+    }
+  ],
+  "milestones": [
+    {
+      "id": "M1",
+      "summary": "Inventory Matching View Partial, sample caller, mutable property, adapter, composition, binding/test facade, and lifetime owners.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": ["C1"],
+      "issue_refs": []
+    },
+    {
+      "id": "M2",
+      "summary": "Move template-path resolution and sample property projection to the existing Matching adapter without changing callback ordering or values.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": ["C2"],
+      "issue_refs": []
+    },
+    {
+      "id": "M3",
+      "summary": "Run focused source/build/WPF/monitor and repository hygiene proof and record durable evidence.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": ["C3"],
+      "issue_refs": []
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0038"
+    }
+  ],
+  "context": [
+    {
+      "kind": "source",
+      "location": "src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\ToolViews\\MatchingToolWpfView.xaml(.cs); src\\OpenVisionLab\\UI\\Menu\\Wpf\\Recipe\\PropertyGrid\\VisionPipelineMatchingPropertyAdapter.cs; src\\OpenVisionLab\\UI\\VisionTest\\ViewModels\\MatchingToolViewModel.cs"
+    },
+    {
+      "kind": "composition-owner",
+      "location": "src\\OpenVisionLab\\UI\\Menu\\Wpf\\NativeTools\\Documents\\OpenVisionNativeToolDocument.cs; src\\OpenVisionLab\\UI\\Menu\\Wpf\\NativeTools\\Documents\\OpenVisionNativePropertyGridToolFactory.cs; src\\OpenVisionLab\\UI\\VisionTest\\Composition\\VisionToolCompositionService.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Tooling\\SingleInput\\VisionToolSingleInputPropertyToolViewBase.cs"
+    },
+    {
+      "kind": "test-host",
+      "location": "tools\\VisionRecipeRunnerSmoke\\MatchingToolPartialBoundaryContract.cs; tools\\PipelineViewerScreenshotSmoke\\Program.cs; tools\\RunUiPrecheck.ps1"
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "screenshot",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\matching-tool-partial-boundary-20260914\\ui-precheck\\wpf_shell_host_matching_tool.png",
+      "summary": "Fresh 1600x900 Matching Tool WPF smoke screenshot after the structural policy move."
+    },
+    {
+      "kind": "screenshot",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\matching-tool-partial-boundary-20260914\\fixture-ui-precheck\\wpf_shell_host_recipe_fixture_properties.png",
+      "summary": "Fresh Recipe Fixture PropertyGrid WPF smoke screenshot covering the sample-step loading surface."
+    },
+    {
+      "kind": "geometry",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\matching-tool-partial-boundary-20260914\\monitor-geometry\\monitor-window-geometry.json",
+      "summary": "Fresh smoke process window geometry with one visible window intersecting the detected monitor."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source",
+      "location": "docs\\reports\\OPENVISIONLAB_MATCHING_TOOL_PARTIAL_BOUNDARY_20260914.md; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\ToolViews\\MatchingToolWpfView.xaml.cs; src\\OpenVisionLab\\UI\\Menu\\Wpf\\Recipe\\PropertyGrid\\VisionPipelineMatchingPropertyAdapter.cs",
+      "observation": "The View Partial now only orchestrates the existing controller and delegates sample mapping. The existing Matching adapter owns template-path resolution, all common/Matching assignments, AUTO_PREVIEW=false, and defensive ROI list copies. ViewModel, runtime/controller, factory/composition, and base lifetime owners remain unchanged.",
+      "observed_at": "2026-09-14T03:05:07+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\matching-tool-partial-boundary-20260914\\matching-tool-contract-debug.txt; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\matching-tool-partial-boundary-20260914\\matching-tool-contract-release.txt",
+      "observation": "MatchingToolPartialBoundaryContract passed 11/11 in Debug and Release, proving the retained XAML/controller contract, direct-policy removal, complete adapter mapping, callback ordering, composition path, mutable ViewModel state, runtime/controller/base lifetime, and absence of direct View persistence/dialog coupling.",
+      "observed_at": "2026-09-14T03:05:07+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\matching-tool-partial-boundary-20260914",
+      "observation": "VisionRecipeRunnerSmoke Debug/Release builds passed with 0 warnings/errors; PipelineViewerScreenshotSmoke Debug build passed with 0 errors and one pre-existing nullable warning; Matching and Recipe Fixture PropertyGrid WPF prechecks passed check=OK with layout/text/internal all zero; dynamic monitor detection reported one DISPLAY2 1920x1080 monitor and one intersecting visible smoke window for each target. Repository readiness, RefactorAudit, DocumentationIndex, issue validation, and diff checks are recorded in this evidence root. Full theme/DPI/input/native/hardware runtime remains unverified.",
+      "observed_at": "2026-09-14T03:05:07+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-14T03:05:07+09:00",
+      "summary": "The View's sample copy body was an independently testable policy. The existing VisionPipelineMatchingPropertyAdapter already owns Matching pipeline property mapping, so it is the smallest concrete owner; no new abstraction or Partial is justified.",
+      "evidence_refs": ["E1", "E2"]
+    },
+    {
+      "id": "D2",
+      "kind": "decision",
+      "at": "2026-09-14T03:05:07+09:00",
+      "summary": "PL-0039 is resolved only after focused Debug/Release contract/build, Matching WPF smoke, monitor geometry, repository gates, documentation, issue validation, and diff checks pass. Broader UI/native matrices remain outside this slice.",
+      "evidence_refs": ["E3"]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-14T03:05:07+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "The Matching sample-property policy moved to the existing adapter owner and focused source/build/runtime evidence was recorded. Do not reopen this boundary without a new requirement, reproducible defect, failed criterion, or changed dependency/lifetime boundary."
+    }
+  ],
+  "created_at": "2026-09-14T02:56:14+09:00",
+  "updated_at": "2026-09-14T03:05:07+09:00"
+}

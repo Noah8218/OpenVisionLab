@@ -1,0 +1,153 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0083",
+    "aliases": [
+      "OPENVISIONLAB-2D025-QUALIFICATION-IDENTITY-20260915"
+    ],
+    "type": "task",
+    "mode": "simple",
+    "title": "Invalidate qualified results when the current Recipe, inputs, or SDK identity changes",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "scheduled 2D task execution and current-source owner audit",
+    "summary": "2D-025 asked whether an old Good/Bad qualification could still look current after a Recipe parameter, same-filename input, dependency, or loaded SDK/runtime change. The existing immutable snapshot owner was reused before adding the smallest current-identity projection.",
+    "refs": [
+      "C:\\Users\\USER\\Downloads\\OpenVisionLab_2D_tasks.json",
+      "docs\\reports\\OPENVISIONLAB_2D_QUALIFICATION_IDENTITY_AUDIT_20260915.md",
+      "docs\\contracts\\openvisionlab\\OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md",
+      "docs\\admin\\OPENVISIONLAB_CURRENT_HANDOFF.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "The existing QualifiedRecipeSnapshotStore remains the immutable payload owner. Recipe Manager now compares the selected current Recipe/Pipeline bytes, actual input/dependency bytes and ordered Validation Set identity, and the loaded SDK/runtime path/version/size/SHA set. Any required difference is stale and Verify fails closed; historical payload/evidence remains readable and no approval is restored without explicit re-evaluation.",
+    "blocker": "",
+    "unblock_condition": ""
+  },
+  "objective": {
+    "summary": "Audit and enforce current identity/stale policy for qualified Recipe results without creating a second qualification system.",
+    "constraints": [
+      "Reuse QualifiedRecipeSnapshotStore, QualifiedRecipeSnapshotPreflight, existing Validation Set storage, and the Recipe Manager controller call path.",
+      "Do not delete or rewrite historical payloads/reports, auto-revoke lifecycle state, or make working copies inherit qualification.",
+      "Keep fixtures, generated evidence, and test outputs on D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev; do not modify C:\\Git\\2D\\Original, hardware, user data, or external services.",
+      "Do not commit, push, release, deploy, or perform external communication."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "Reopening an unchanged immutable Snapshot accepts the same Recipe/input/dependency/runtime identity.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "A current Recipe/Pipeline parameter, same-filename input bytes, or SDK/runtime replacement difference is stale; Verify and preflight creation do not restore the previous qualification.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Historical payload/evidence remains readable while stale, and the existing working-copy boundary remains qualification-free.",
+      "evidence_refs": [
+        "E1",
+        "E4"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0082"
+    }
+  ],
+  "context": [
+    {
+      "kind": "owner-map",
+      "location": "QualifiedRecipeSnapshotStore owns immutable manifest/inventory/archive verification; OpenVisionRecipeQualifiedSnapshotController owns Recipe Manager qualification projection; RecipeCommandSurface supplies the selected current Recipe/Pipeline/Validation Set context."
+    },
+    {
+      "kind": "call-path",
+      "location": "RecipeCommandSurface contextual List/Verify -> OpenVisionRecipeQualifiedSnapshotController.EvaluateCurrentIdentity -> QualifiedRecipeSnapshotStore.Verify plus current Pipeline, Validation Set source/dependency, and runtime fingerprint comparison."
+    },
+    {
+      "kind": "public-contract",
+      "location": "Any required current identity difference is displayed as Qualification stale and Verify fails closed. Payload/evidence is not deleted, and explicit re-evaluation is required before a current qualification is accepted."
+    },
+    {
+      "kind": "reading-order",
+      "location": "OPENVISIONLAB_2D_QUALIFICATION_IDENTITY_AUDIT_20260915.md -> OpenVisionRecipeQualifiedSnapshotController.cs -> QualifiedRecipeSnapshotStore.cs -> QualifiedRecipeSnapshotPreflight.cs -> RecipeCommandSurface.cs -> QualifiedRecipeSnapshotSmoke/Program.cs."
+    },
+    {
+      "kind": "boundary",
+      "location": "The current WPF target was rebuilt but stopped before Snapshot creation at the existing Batch row stored-source preflight; stale visual rendering, full theme/DPI, hardware, release, and Original repository mutation remain outside this evidence."
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "report",
+      "location": "docs/reports/OPENVISIONLAB_2D_QUALIFICATION_IDENTITY_AUDIT_20260915.md",
+      "summary": "Owner map, current identity/stale policy, acceptance matrix, verification, and WPF preflight boundary."
+    },
+    {
+      "kind": "evidence-directory",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d025-qualification-20260915",
+      "summary": "Debug/Release qualified snapshot smoke outputs and WPF target recheck outputs."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "test",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d025-qualification-20260915/debug-final/run/SMOKE_RESULT.txt",
+      "observation": "The focused Debug smoke passed same-identity reopen, Recipe edit stale, input-byte edit stale, SDK replacement stale, historical evidence readability, and re-evaluation-before-new-Snapshot checks.",
+      "observed_at": "2026-09-15T21:58:12+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d025-qualification-20260915/release-final/run/SMOKE_RESULT.txt",
+      "observation": "The same focused smoke passed against the Release binary with the same stale/current identity matrix.",
+      "observed_at": "2026-09-15T21:58:34+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "build",
+      "location": "C:/Git/2D/Dev/tools/QualifiedRecipeSnapshotSmoke/QualifiedRecipeSnapshotSmoke.csproj",
+      "observation": "Debug and Release builds completed with 0 warnings and 0 errors after the current-identity change; the targeted diff check reported no whitespace errors.",
+      "observed_at": "2026-09-15T21:57:48+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "runtime-check",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d025-qualification-20260915/wpf-debug-r2/wpf_shell_host_recipe_qualified_snapshot.png",
+      "observation": "The WPF target was rebuilt successfully but both fresh runs stopped before Snapshot creation with `BLOCKED | Batch row 1: stored source snapshot is missing or changed.` The failure is in the existing batch source-artifact preflight; no visual stale-state claim is made.",
+      "observed_at": "2026-09-15T21:53:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-15T21:58:50+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "2D-025 current Recipe/input/dependency/runtime identity is fail-closed through the existing qualification owner; historical evidence remains readable and the WPF fixture limitation is recorded rather than bypassed.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ]
+    }
+  ],
+  "created_at": "2026-09-15T21:55:50+09:00",
+  "updated_at": "2026-09-15T21:58:50+09:00"
+}

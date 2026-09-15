@@ -135,16 +135,28 @@ if (($entryAssemblyFile.Length -ne ([long]$runtimeBuildManifest.entryAssembly.by
     throw "Runtime build manifest entry assembly length or SHA-256 does not match OpenVisionLab.dll."
 }
 
-$entryAssembly = [System.Reflection.Assembly]::LoadFrom($entryAssemblyPath)
-$entryAssemblyMetadata = @{}
-foreach ($attribute in $entryAssembly.GetCustomAttributesData()) {
-    if (($attribute.AttributeType.FullName -cne "System.Reflection.AssemblyMetadataAttribute") -or
-        ($attribute.ConstructorArguments.Count -ne 2)) {
-        continue
-    }
+$metadataReaderProjectPath = Join-Path $repoRoot "tools\OpenVisionReadinessCheck\OpenVisionReadinessCheck.csproj"
+$metadataReaderOutput = & dotnet run `
+    --project $metadataReaderProjectPath `
+    -c Release `
+    --no-restore `
+    --no-build `
+    -- `
+    --read-assembly-metadata $entryAssemblyPath 2>&1
+if ($LASTEXITCODE -ne 0) {
+    throw "OpenVisionLab.dll metadata reader failed: $($metadataReaderOutput -join [Environment]::NewLine)"
+}
 
-    $metadataName = [string]$attribute.ConstructorArguments[0].Value
-    $entryAssemblyMetadata[$metadataName] = [string]$attribute.ConstructorArguments[1].Value
+try {
+    $metadataDocument = ($metadataReaderOutput -join [Environment]::NewLine) | ConvertFrom-Json
+}
+catch {
+    throw "OpenVisionLab.dll metadata reader returned invalid JSON: $($metadataReaderOutput -join [Environment]::NewLine)"
+}
+
+$entryAssemblyMetadata = @{}
+foreach ($property in $metadataDocument.PSObject.Properties) {
+    $entryAssemblyMetadata[$property.Name] = [string]$property.Value
 }
 
 $requiredAssemblyMetadata = [ordered]@{

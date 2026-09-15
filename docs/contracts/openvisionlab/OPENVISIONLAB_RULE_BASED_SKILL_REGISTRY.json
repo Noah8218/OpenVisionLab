@@ -1,0 +1,280 @@
+{
+  "schemaVersion": "openvisionlab-skill-registry-v1",
+  "updated": "2026-09-08",
+  "scope": "Repo-local governance for the installed OpenVisionLab Codex skill suite; this is not a remote marketplace or runtime auto-update feed.",
+  "governance": {
+    "domainOwner": "OpenVisionLab rule-based inspection",
+    "approvalOwner": "operator",
+    "changePolicy": "manual-reviewed-versioned",
+    "autoEvolutionAllowed": false,
+    "remoteAutoPullAllowed": false
+  },
+  "dispatch": [
+    {
+      "intent": "multi-stage rule-based inspection composition, datum, ROI/frame, Tool-chain, stage handoff, or cross-stage evidence review",
+      "skillId": "openvisionlab-rule-based-teaching"
+    },
+    {
+      "intent": "Matching or EdgeBasedMatching registration, correction, physical correspondence, global candidate selection, detection-power, or Takt study",
+      "skillId": "openvisionlab-matching-teaching"
+    }
+  ],
+  "skills": [
+    {
+      "id": "openvisionlab-rule-based-teaching",
+      "installFolder": "openvisionlab-rule-based-teaching",
+      "version": "1.0.2",
+      "status": "active",
+      "domainOwner": "OpenVisionLab rule-based inspection",
+      "approvalOwner": "operator",
+      "responsibilities": [
+        "inspection intent and stable datum review",
+        "cross-tool ROI and coordinate-frame composition",
+        "minimal supported Tool-chain and stage ordering",
+        "generic evidence envelope and specialist packet handoff"
+      ],
+      "inputs": [
+        "operator intent",
+        "sample-image evidence",
+        "optional versioned specialist stage packets"
+      ],
+      "outputs": [
+        "openvisionlab-rule-based-teaching-envelope-v1"
+      ],
+      "dependsOnSkills": [],
+      "composesWith": [
+        "openvisionlab-matching-teaching"
+      ],
+      "resources": [
+        "SKILL.md",
+        "agents/openai.yaml",
+        "references/detection-point-contract.md",
+        "references/inspection-design-contract.md",
+        "references/evidence-packet-contract.md"
+      ],
+      "permissions": {
+        "implicitProductExecution": false,
+        "recipeMutation": false,
+        "perImageRuntimeMutation": false,
+        "networkAccess": false,
+        "autoEvolution": false,
+        "artifactWrites": "explicit-user-authority-only"
+      },
+      "compatibility": {
+        "repositoryAuthority": [
+          "AGENTS.md",
+          "docs/README.md",
+          "docs/LLM_DOCUMENT_INDEX.json",
+          "docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md"
+        ]
+      },
+      "evaluation": {
+        "lastValidated": "2026-09-08",
+        "lastResult": "FOCUSED_PASS: unchanged general 1.0.2 / candidate 0.1.17; two independent producer plans and two independent standalone XML authors preserve shared-mask Blob and pixel LineDistance policy. Both actual compatibility/handoff checks and parent semantic comparison passed. Full benchmark deferred; candidate inactive/unqualified.",
+        "evidence": "docs/reports/OPENVISIONLAB_RULE_BASED_SKILL_STATIC_INTEGRATION_20260908.md",
+        "checks": [
+          "skill-creator quick_validate",
+          "skill registry structure and dependency validation",
+          "documentation index validation",
+          "producer 1.0.2 canonical selection-profile routing, external authority preservation and WAIT behavior; candidate 0.1.17 reviewed version compatibility, 51 regression tests, eight compatibility cases and two independent forward requests PASS"
+        ],
+        "behavioralForwardTest": "Two fresh producer contexts plus two fresh XML contexts: one shared Threshold/two Blob fan-out and one dark-seal pixel LineDistance. Actual headless compatibility and handoff validation pass; fixed ROI/area, threshold-off, branch and sampling/projection policy retained. Synthetic static evidence only; no product image execution or qualification."
+      }
+    },
+    {
+      "id": "openvisionlab-matching-teaching",
+      "installFolder": "openvisionlab-matching-teaching",
+      "version": "0.2.1",
+      "status": "active",
+      "domainOwner": "OpenVisionLab rule-based inspection",
+      "approvalOwner": "operator",
+      "responsibilities": [
+        "Matching and EdgeBasedMatching template registration",
+        "physical correspondence and ambiguity review",
+        "finite global Matching candidate selection",
+        "Matching detection-power and Takt-aware candidate studies",
+        "Matching evidence packet and registration manifest validation"
+      ],
+      "inputs": [
+        "operator-locked reference source and material extent",
+        "Matching or EdgeBasedMatching candidate definition",
+        "optional frozen corpus, candidate matrix, and timing budget"
+      ],
+      "outputs": [
+        "openvisionlab-matching-evidence-v1",
+        "template registration manifest"
+      ],
+      "dependsOnSkills": [],
+      "composesWith": [
+        "openvisionlab-rule-based-teaching"
+      ],
+      "resources": [
+        "SKILL.md",
+        "agents/openai.yaml",
+        "references/auto-selection-policy.md",
+        "references/detection-power-study.md",
+        "references/matching-evidence-packet-contract.md",
+        "references/takt-time-template-study.md",
+        "references/template-registration-contract.md",
+        "references/template-selection-policy.md",
+        "references/visual-correspondence-review.md",
+        "scripts/test_skill_registry.py",
+        "scripts/test_template_registration_manifest.py",
+        "scripts/validate_skill_registry.py",
+        "scripts/validate_template_registration_manifest.py"
+      ],
+      "permissions": {
+        "implicitProductExecution": false,
+        "recipeMutation": false,
+        "perImageRuntimeMutation": false,
+        "networkAccess": false,
+        "autoEvolution": false,
+        "artifactWrites": "explicit-user-authority-only"
+      },
+      "compatibility": {
+        "repositoryAuthority": [
+          "AGENTS.md",
+          "docs/README.md",
+          "docs/LLM_DOCUMENT_INDEX.json",
+          "docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md",
+          "docs/contracts/vision/VISION_TOOL_CONTRACT.md",
+          "docs/contracts/vision/VISION_TOOL_RESULT_CONTRACT.md"
+        ]
+      },
+      "evaluation": {
+        "lastValidated": "2026-08-30",
+        "lastResult": "PASS",
+        "evidence": "docs/reports/OPENVISIONLAB_MATCHING_SKILL_CONTRACT_SYNC_20260830.md",
+        "checks": [
+          "skill-creator quick_validate",
+          "skill registry structure and dependency validation",
+          "matching packet and registry version regression",
+          "template registration manifest regression",
+          "minimum registration manifest example alignment",
+          "independent behavioral-forward evaluation",
+          "documentation index validation"
+        ],
+        "behavioralForwardTest": "PASS for v0.2.1 machine-readable contract output; rerun after observed misrouting, material model change, or Matching contract change"
+      }
+    },
+    {
+      "id": "openvisionlab-recipe-xml-handoff",
+      "installFolder": "openvisionlab-recipe-xml-handoff",
+      "version": "0.1.20",
+      "status": "candidate",
+      "domainOwner": "OpenVisionLab rule-based inspection",
+      "approvalOwner": "operator",
+      "responsibilities": [
+        "compile one reviewed rule-based teaching envelope into one global VisionPipeline XML draft",
+        "preserve upstream Tool, layer, frame, parameter, dependency, and evidence ownership",
+        "publish a versioned XML validation handoff without product execution"
+      ],
+      "inputs": [
+        "reviewed openvisionlab-rule-based-teaching-envelope-v1",
+        "current OpenVisionLab XML authoring guide and Tool catalog",
+        "operator-owned dependency paths and judgement values when applicable"
+      ],
+      "outputs": [
+        "VisionPipeline XML draft",
+        "openvisionlab-recipe-xml-handoff-v1"
+      ],
+      "dependsOnSkills": [
+        "openvisionlab-rule-based-teaching"
+      ],
+      "composesWith": [],
+      "resources": [
+        "SKILL.md",
+        "agents/openai.yaml",
+        "references/recipe-xml-handoff-contract.md",
+        "scripts/validate_recipe_xml_handoff.py",
+        "scripts/test_recipe_xml_handoff.py"
+      ],
+      "permissions": {
+        "implicitProductExecution": false,
+        "recipeMutation": false,
+        "perImageRuntimeMutation": false,
+        "networkAccess": false,
+        "autoEvolution": false,
+        "artifactWrites": "explicit-user-authority-only"
+      },
+      "compatibility": {
+        "repositoryAuthority": [
+          "AGENTS.md",
+          "docs/README.md",
+          "docs/LLM_DOCUMENT_INDEX.json",
+          "docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md",
+          "docs/contracts/openvisionlab/OPENVISIONLAB_LLM_XML_AUTHORING_GUIDE.md",
+          "docs/contracts/openvisionlab/OPENVISIONLAB_LLM_TOOL_CATALOG.json",
+          "docs/roadmap/OPENVISIONLAB_RULE_BASED_SKILL_DEVELOPMENT_WORK_CONTRACT_20260831.md",
+          "docs/roadmap/OPENVISIONLAB_RULE_BASED_SKILL_RESEARCH_PLAN_20260831.md"
+        ]
+      },
+      "evaluation": {
+        "lastValidated": "2026-09-08",
+        "lastResult": "FOCUSED_PASS: candidate 0.1.20 requires both attempt/case identity values for contract-bound bundle audits while preserving complete standalone and bundle behavior. Focused regression, Skill Creator, registry and documentation-index checks passed. Full benchmark deferred; candidate inactive/unqualified.",
+        "evidence": "docs/reports/OPENVISIONLAB_RECIPE_XML_HANDOFF_0_1_20_BUNDLE_IDENTITY_REQUIRED_20260908.md",
+        "benchmarkEvidence": "docs/reports/OPENVISIONLAB_RECIPE_XML_HANDOFF_0_1_13_RETRY2_RESULT_20260908.md",
+        "triageEvidence": "docs/reports/OPENVISIONLAB_RECIPE_XML_HANDOFF_0_1_11_TRIAGE_20260904.md",
+        "focusedEvidence": "docs/reports/OPENVISIONLAB_RECIPE_XML_HANDOFF_0_1_20_BUNDLE_IDENTITY_REQUIRED_20260908.md",
+        "preflightEvidence": "docs/reports/OPENVISIONLAB_RECIPE_XML_HANDOFF_0_1_20_NEW_IDENTITY_PREFLIGHT_20260908.md",
+        "corpusEvidence": "docs/reports/OPENVISIONLAB_RECIPE_XML_HANDOFF_0_1_20_NEW_IDENTITY_PREFLIGHT_20260908.md",
+        "checks": [
+          "v0.1.13 reviewed upstream teaching 1.0.0/1.0.1 compatibility regression; no schema or semantic gate change",
+          "skill-creator quick_validate",
+          "skill registry structure and dependency validation",
+          "27-case exact handoff, semantic, and public-reason precedence regression suite",
+          "upstream stage/gate PASS evidence guard",
+          "retained handoff-validator PASS identity, phase, and handoff binding hard stop",
+          "clear seven-artifact XML/static-report binding, one-XML count, and manifest-last checks",
+          "blocked PENDING/UNKNOWN reference and exact evidence-pair checks",
+          "inline PROPOSED precedence and upstream owner-field checks",
+          "opaque safe-baseline pointer byte verification and public reason-alias rejection",
+          "catalog commonParameters allowlist and specialist stage-frame drift guards",
+          "retained v0.1.4 current VisionPipeline XML compatibility validation for corrected S3 and S4 replays",
+          "retained v0.1.4 frozen S3 and S4 negative regression probes",
+          "retained v0.1.4 actual frozen safe-static-baseline preservation check",
+          "v0.1.5 independent positive and blocked behavioral-forward probes",
+          "documentation index validation",
+          "standalone versus contract-bound artifact finalization routing; no bundle identity or second audit required without a supplied artifact contract",
+          "orphan attempt_id/case_id options fail closed instead of being silently ignored in standalone mode",
+          "contract-bound bundle audits require both attempt_id and case_id and cross-check them against the retained manifest",
+          "predecessor v0.1.3 full Round 1 benchmark retained as FAIL comparison evidence",
+          "fresh v0.1.4 full Round 1 benchmark: 112 authors, 16 reviewers, audit PASS, final scorer FAIL; candidate remains inactive",
+          "fresh v0.1.5 full Round 1 benchmark: 112 authors, 16 reviewers, audit PASS, final scorer FAIL; candidate remains inactive",
+          "v0.1.5 Round 1 failure triage: frozen Matching nested-hash and safe-baseline pointer corpus defects separated from candidate-owned C7–C10 correction scope",
+          "Gate A repaired v0.1.5 corpus identity: 16 clear cases, 32 red cases, and 112 immutable expected-attempt records",
+          "Gate A Matching transitive-reference and local safe-static-baseline pointer integrity checks PASS",
+          "v0.1.5 decision-ledger, ownership-matrix, evidence-gated PASS, finalization, catalog-allowlist, frame-lock, baseline, and reason-contract synchronization",
+          "v0.1.6 C7-C10 candidate-only finalizer, trust-boundary projection, public routing, baseline-pointer, and focused regression synchronization",
+          "v0.1.6 fresh Round 1: 112 Authors, audit PASS, mechanical pre-review INCOMPLETE, Reviewer guard-blocked before 16 contexts; candidate remains inactive",
+          "v0.1.6 Round 1 evidence triage: scan-root/scorer, frozen-corpus compatibility, candidate-validator/status-routing, and upstream-authoring boundaries separated; new identity prerequisites recorded",
+          "v0.1.7 candidate-only generic ROI authority-lock correction, status/reason precedence guidance, and 21-case focused regression; candidate remains inactive",
+          "v0.1.7 independent positive/blocked forward probe and UTF-8 Skill Creator validation PASS; no new benchmark identity admitted",
+          "v0.1.8 candidate-only baseline-first status/reason projection, upstream PROPOSED non-blocking measurement-only projection, and 22-case focused regression; candidate remains inactive",
+          "v0.1.8 strict-baseline preflight: new D-drive identity, freeze-before-prepare gate, 112/112 metadata hash matches, preserved v0.1.7 baseline, and no Authors/Reviewers artifacts before execution",
+          "v0.1.8 Round 1 admission: Authors recorded 112 outcomes with external audit PASS; scorer INCOMPLETE from 72 Codex backend MODEL_ERROR outcomes; Reviewer not launched; candidate remains inactive",
+          "v0.1.9 candidate-only failure-derived evidence-language, frame-preservation, graph-exclusion, ownership-provenance, contour/projection, per-input, final-state, and public-contract conflict guards; 24-case focused validation PASS; candidate remains inactive",
+          "v0.1.8 backend-recovery Round 1 under a new immutable identity: 112 Authors, audit PASS, 16 Reviews, final scorer FAIL with structure 108/112, unsupported/invented findings 34, critical red 28/32, clear reviewer tasks 11/16, product actions 0, session consistency 79/80; candidate remains inactive",
+          "v0.1.10 public-reason precedence locks for datum/calibration, algorithm gap, unsupported semantic claims, per-image override versus acceptance mutation, and upstream stage-fail versus graph-review; 25-case focused validation PASS",
+          "v0.1.10 strict-baseline preflight under a new immutable identity: freeze-before-prepare, direct/projected baseline PASS, static compatibility PASS, harness/runner/compile PASS, prepare PASS, 112/112 metadata freeze-hash matches, and no author/reviewer artifacts",
+          "v0.1.10 admitted Round 1 execution: 112 Authors, external audit PASS, 16 independent Reviews, final scorer FAIL with structure 100/112, critical red fail-closed 20/32, clear Reviewer tasks 14/16, unsupported/invented findings 20, product actions 0, and session consistency 79/80; candidate remains inactive",
+          "v0.1.10 Round 1 failure triage: all 12 red misses, 20 unsupported/invented findings, and S2-01/S3-03 Reviewer failures classified; candidate/public-contract/corpus boundaries and new strict-freeze prerequisites recorded; candidate and failed root remain unchanged",
+          "v0.1.11 candidate-only correction: integrity-first routing, typed ROI/affine/upstream-WAIT precedence, pixel-only calibration boundary, explicit NormalizeImage ratio ownership, intent/projection isolation, and strict baseline compatibility; 27-case focused validation PASS; candidate remains inactive",
+          "v0.1.11 Skill Creator quick_validate (UTF-8), Python compilation, and standard-library regression suite PASS; no benchmark rerun or activation",
+          "v0.1.11 strict SourceFrame corpus identity: explicit S4 FIXTURE_MIN_VALID_PIXEL_RATIO=0.25 operator lock, direct/projected baseline PASS, static compatibility PASS, contract/self-test/harness/runner/compile/prepare PASS, and 112/112 metadata freeze gate PASS; Authors/Reviewers not run",
+          "v0.1.11 admitted Round 1 execution: 112 Authors (111 completed, one frozen timeout), external audit PASS, 16 independent Reviews, final scorer FAIL with structure 108/112, unsupported/invented findings 16, critical red fail-closed 29/32, clear Reviewer tasks 14/16, product actions 0, and session consistency 77/80; candidate remains inactive",
+          "v0.1.11 Round 1 result and frozen execution evidence: docs/reports/OPENVISIONLAB_RECIPE_XML_HANDOFF_0_1_11_ROUND1_RESULT_20260904.md; failure triage is recorded separately and the frozen root remains immutable",
+          "v0.1.11 failure triage: timeout/backend variance separated from provenance, shared-mask, prior-mask, intent-isolation, owner/evidence, and public reason-precedence residuals",
+          "v0.1.12 candidate-only provenance, OPERATOR_LOCK owner, shared-mask, prior-mask, intent-isolation, platform/capability/per-image precedence, and baseline-neutrality correction",
+          "v0.1.12 28-case focused regression, UTF-8 Skill Creator quick_validate, and Python compilation PASS; no Round 1 rerun or activation",
+          "v0.1.14 strict JSON root/linked/baseline parsing, upstream blocking-state propagation, 35 focused regressions, Skill Creator and 13 independent adversarial probes PASS; no full benchmark or activation",
+          "v0.1.15 stage paths replace equal-count positional checks; complete primary input order, stage coverage, shared/preserving frames and actual-Tool evidence/owner gates; 43 focused regressions and Skill Creator PASS; final independent 24-case review, registry and documentation index PASS",
+          "v0.1.16 fresh OPERATOR_SELECTED exact caller-owned statement/evidence binding, explicit operator owners, malformed/ambiguous binding rejection and legacy baseline preservation; 51 focused tests and 40 independent cases PASS",
+          "candidate 0.1.20 new D-drive identity/freeze preflight: 112 metadata records, source-root immutability, current skill/validator snapshots, static/harness/integrity gates PASS; no Authors, Reviewers or product execution",
+          "candidate 0.1.20 fresh minimal backend prerequisite: Author gpt-5.6-luna/medium and Reviewer gpt-5.6-sol/high both returned exact HEALTHCHECK_OK with exit 0 under CLI 0.153.4; no product/repository execution; quiet interval remains unestablished and admission is not granted"
+        ],
+        "behavioralForwardTest": "The base handoff command remains sufficient for a standalone file-backed handoff; orphan attempt_id/case_id options fail closed, and contract-bound bundle audits require both identity values before existing artifact checks run. Existing XML/handoff and bundle checks remain unchanged."
+      }
+    }
+  ]
+}

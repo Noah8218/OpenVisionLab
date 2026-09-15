@@ -1,0 +1,150 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0014",
+    "aliases": [
+      "OPENVISIONLAB-SHELL-COMPOSITION-NAVIGATION-20260911"
+    ],
+    "type": "task",
+    "mode": "simple",
+    "title": "Make Shell composition initialization easy to follow",
+    "risk": "medium"
+  },
+  "origin": {
+    "kind": "user request and independent junior-readability review",
+    "summary": "The user asked to continue refactoring and to evaluate each change from a first-time developer perspective.",
+    "refs": [
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "docs/admin/CODEBASE_STRUCTURE.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "PL-0014 is verified: the existing Shell constructor remains the readonly composition owner, named phase markers and an owner map make its order searchable, the source/binding/lifetime contracts are unchanged, focused Debug/Release checks pass, and the first-time-contributor review plus runtime boundaries are recorded."
+  },
+  "objective": {
+    "summary": "Expose the existing Shell composition order through named in-constructor phase markers and an owner map without adding a wrapper, interface, manager, or changing ownership or behavior.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev and preserve the existing dirty worktree.",
+      "Do not reopen or split completed PL-0013 partial owners.",
+      "Keep OpenVisionShellHostView as the WPF composition owner and preserve field ownership, event order, binding names, callbacks, and Dispose order.",
+      "Do not move business policy, persistence, inspection logic, or device ownership into the View.",
+      "Do not wait for user input, hardware, or unbounded UI runtime; record those boundaries as unverified.",
+      "Run a focused Debug/Release build and Shell lifecycle/readiness contracts after the change."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The constructor contains named phase markers with an explicit order, and the durable owner map names the existing concrete owners and state writers for each phase.",
+      "evidence_refs": [
+        "E1"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "No new abstraction or duplicate owner is introduced, and XAML, command, callback, event subscription, and Dispose contracts remain unchanged.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E5"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "The affected solution and focused Shell/Recipe readiness checks pass in Debug and Release, with stale direct-owner or old-path searches recorded.",
+      "evidence_refs": [
+        "E3",
+        "E4",
+        "E5"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "The completion record includes a first-time developer reading route and explicitly states runtime UI/theme/DPI/monitor/hardware boundaries not executed.",
+      "evidence_refs": [
+        "E1",
+        "E6"
+      ]
+    }
+  ],
+  "relations": [],
+  "context": [
+    {
+      "kind": "current-owner",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/OpenVisionShellHostView.xaml.cs"
+    },
+    {
+      "kind": "route",
+      "location": "Program.Main -> OpenVisionLabApplication.Run -> OpenVisionShellHostWindow -> OpenVisionShellHostView"
+    },
+    {
+      "kind": "verification",
+      "location": "tools/VisionRecipeRunnerSmoke/ShellRecipeBasicLifecycleViewContract.cs; tools/OpenVisionReadinessCheck/Program.cs"
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/OpenVisionShellHostView.xaml.cs; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0014-shell-composition-navigation-20260911\\phase-map.txt",
+      "observation": "The constructor contains five ordered phase markers for runtime owners, visual wiring, Workspace/Recipe, commands/session/layer/test adapters, and event/release callbacks; the durable map names the existing call path and owners.",
+      "observed_at": "2026-09-11T13:20:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "static",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0014-shell-composition-navigation-20260911\\constructor-token-contract.txt",
+      "observation": "Constructor body token contract passed with 22534 tokens before and after comments-only editing; no assignment, callback, event, or Dispose order changed.",
+      "observed_at": "2026-09-11T13:21:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "build",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0014-shell-composition-navigation-20260911\\solution-debug-build.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0014-shell-composition-navigation-20260911\\solution-release-build.log",
+      "observation": "OpenVisionLab.sln Debug and Release builds completed with 0 warnings and 0 errors.",
+      "observed_at": "2026-09-11T13:30:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0014-shell-composition-navigation-20260911\\shell-basic-debug\\shell-recipe-basic-lifecycle-view-contract.txt; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0014-shell-composition-navigation-20260911\\shell-basic-release\\shell-recipe-basic-lifecycle-view-contract.txt; readiness-debug.log; readiness-release.log",
+      "observation": "ShellRecipeBasicLifecycleViewContract passed 7/7 in Debug and Release; OpenVisionReadinessCheck passed in Debug and Release.",
+      "observed_at": "2026-09-11T13:27:00+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0014-shell-composition-navigation-20260911\\refactor-audit; documentation-index.log; git-diff-check.log",
+      "observation": "RefactorAudit returned REFACTOR_AUDIT=PASS, DocumentationIndex returned PASS, and git diff --check returned exit code 0; only existing line-ending conversion warnings were emitted by Git.",
+      "observed_at": "2026-09-11T13:31:00+09:00"
+    },
+    {
+      "id": "E6",
+      "kind": "review",
+      "location": "docs/reports/OPENVISIONLAB_JUNIOR_NAVIGATION_AND_SHELL_REVIEW_20260910.md; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0014-shell-composition-navigation-20260911\\junior-review.txt",
+      "observation": "Independent junior-readability review recommends accepting the change: the five-phase constructor route is easier to search, while the large constructor and controller tracing remain explicit residual costs. Runtime UI, theme, DPI, monitor, hardware, native hang, and long-run shutdown boundaries remain unverified.",
+      "observed_at": "2026-09-11T13:33:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-11T13:12:00+09:00",
+      "summary": "Keep readonly field assignments in the constructor. Do not add a Shell composition wrapper or remove readonly guarantees merely to create helper methods; make the existing sequence navigable with named phase comments and an explicit owner map.",
+      "evidence_refs": []
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-11T13:35:00+09:00",
+      "from": "open",
+      "to": "resolved",
+      "summary": "All PL-0014 criteria are evidenced. The source-only navigation change is accepted without reopening or splitting the completed Shell owners."
+    }
+  ],
+  "created_at": "2026-09-11T13:04:29+09:00",
+  "updated_at": "2026-09-11T13:35:00+09:00"
+}

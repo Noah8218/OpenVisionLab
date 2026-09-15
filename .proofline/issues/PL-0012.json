@@ -16,9 +16,8 @@
     ]
   },
   "state": {
-    "status": "doing",
-    "current_summary": "The Dev precheck now accepts an explicit catalog path, release policy selects the public catalog, and the Windows PowerShell tutorial-term encoding failure is corrected. The current Dev public precheck passed; a clean reviewed candidate remains to be prepared separately.",
-    "next_action": "Review the Dev diff, obtain separate commit authorization, then build and verify a clean candidate before any new tag or release action."
+    "status": "resolved",
+    "current_summary": "Implementation and local release-gate evidence remain resolved at f35994b3c152b056c3649ef2a668083ba407122e. Hosted GitHub Actions verification remains externally blocked before job steps by the account billing/spending-limit error, now reconfirmed on the post-recording main commit 40eb9a0390ca6de19597e0e9b13db83e9bc622a5; no source failure was executed or observed."
   },
   "objective": {
     "summary": "Make the release platform precheck reproducibly validate the repository-portable public sample contract while retaining the legacy catalog for explicit local historical checks.",
@@ -48,7 +47,9 @@
     {
       "id": "C3",
       "text": "A clean reviewed candidate is rebuilt from the corrected source and passes the repository release gate before any new release tag or publication is considered.",
-      "evidence_refs": []
+      "evidence_refs": [
+        "E3"
+      ]
     }
   ],
   "milestones": [
@@ -74,8 +75,8 @@
     },
     {
       "id": "M3",
-      "summary": "Prepare and verify a clean candidate under separate release-stage authorization.",
-      "status": "pending",
+      "summary": "Prepare and verify a clean candidate under the existing release gate; completed for the pushed Dev main commit with launch explicitly skipped.",
+      "status": "done",
       "required": true,
       "criteria_refs": [
         "C3"
@@ -140,6 +141,27 @@
       "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/rc2_public_platform_precheck_20260826_r2/platform_precheck_summary.json",
       "observation": "Current Dev RunVisionPlatformPrecheck.ps1 -SkipUi with CatalogPath docs\\samples\\OpenVisionLab.PublicSampleCatalog.csv completed with Status=OK; all 13 gates were OK, public sample GateStatus=OK, RunnableRows=33, OKRows=33, NGRows=0, FailedSamples=0, MetadataIssueCount=0, and ArtifactIssueCount=0.",
       "observed_at": "2026-08-26T17:37:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "release-gate",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\release-candidate-main-20260911\\artifacts\\release_candidate_main_f359_20260911\\release_candidate_summary.json",
+      "observation": "The last verified Dev main commit f35994b3c152b056c3649ef2a668083ba407122e passed VerifyReleaseCandidate.ps1 -SkipLaunch. Debug/Release builds, readiness, external references, NOTICE coverage, public sample policy and 33 public sample rows, clean publish, manifest/archive verification all passed; framework-dependent win-x64 payload count was 77 and archive SHA-256 was 40A45ED2EA09D1A63172D00A8FF0D26545D4ED981DAE3E112023312A31E00B52.",
+      "observed_at": "2026-09-11T23:37:38+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "hosted-ci",
+      "location": "https://github.com/Noah8218/OpenVisionLab_Dev/actions/runs/34606460933",
+      "observation": "Runs 34606460933 (2ffaabb4), 34605772634 (f35994b3), and 34604956854 (37971e3a) completed with failure before any job step. The check-run annotation reports: recent account payments have failed or the spending limit needs to be increased. No hosted build, test, or source failure log was produced.",
+      "observed_at": "2026-09-11T13:48:53Z"
+    },
+    {
+      "id": "E5",
+      "kind": "hosted-ci",
+      "location": "https://github.com/Noah8218/OpenVisionLab_Dev/actions/runs/34607252607",
+      "observation": "Workflow run 34607252607 for 40eb9a03 completed failure before any workflow step. Job 103288610783 had runner_id 0, and its annotation reports failed recent account payments or an increased spending limit. No hosted build, test, or source failure log was produced.",
+      "observed_at": "2026-09-11T13:57:09Z"
     }
   ],
   "events": [
@@ -152,8 +174,43 @@
         "E1",
         "E2"
       ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-11T23:37:38+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "PL-0012 resolved: public-catalog routing and the last verified Dev main clean non-UI release gate passed; later documentation-only commits and desktop launch/publication remain separate.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "D2",
+      "kind": "decision",
+      "at": "2026-09-11T14:48:53Z",
+      "summary": "Treat the hosted CI failure as an external GitHub account billing/spending-limit prerequisite: the three recent runs stopped before any workflow step, so do not retry or change source until billing is repaired.",
+      "evidence_refs": [
+        "E4"
+      ]
+    },
+    {
+      "id": "D3",
+      "kind": "decision",
+      "at": "2026-09-11T14:59:00Z",
+      "summary": "The first CI run for the billing-blocker record commit reproduced the same pre-step GitHub account billing/spending-limit failure; keep the hosted verification boundary blocked and do not retry or change source until billing is repaired.",
+      "evidence_refs": [
+        "E4",
+        "E5"
+      ],
+      "supersedes": [
+        "D2"
+      ]
     }
   ],
   "created_at": "2026-08-26T17:38:49+09:00",
-  "updated_at": "2026-08-26T17:38:49+09:00"
+  "updated_at": "2026-09-11T23:59:00+09:00"
 }

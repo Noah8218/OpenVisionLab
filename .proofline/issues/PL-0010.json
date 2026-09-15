@@ -20,11 +20,8 @@
     ]
   },
   "state": {
-    "status": "blocked",
-    "current_summary": "PL-0010 C1 baseline is complete: the current Blob/Contour path measured a primary and a relaxed audit execution, retained five representative object rows with one accepted and four rejected candidates, and source-confirmed the accepted-only fallback when audit capture fails. One-pass removal is blocked because the vendored SDK 3.0.0 result contract does not expose applied limits, accepted state, or reject reasons.",
-    "next_action": "Obtain or explicitly coordinate an updated Vision SDK result contract and manifest, then rerun C2/C4 parity for candidate identity, measurements, limits, acceptance, reject reasons, drawings, metrics, reports, timing, and selection before changing OpenVisionLab.",
-    "blocker": "The vendored OpenVisionLab Vision SDK 3.0.0 and its current manifest do not provide the one-pass fields required by the existing object-review contract, and no updated SDK package or coordinated release-order change is available.",
-    "unblock_condition": "A documented SDK release with stable per-candidate identity, raw measurements, applied limits, accepted state, reject reason, and required geometry is supplied with an updated manifest; focused app parity evidence then passes before audit removal."
+    "status": "resolved",
+    "current_summary": "현재 SDK/app 조합의 PL-0010 C4 bounded parity가 통과했다. Blob mask, Blob/Contour Multi-ROI, source-coordinate 후보 행, selection/drawing, reject reason, metrics, Run Report/Run History timing, public Good/Bad replay, 그리고 현재 소스 WPF Pipeline Review/Run History 스모크가 모두 같은 실행 계약을 보존한다."
   },
   "problem": {
     "claims": [
@@ -59,20 +56,41 @@
       "id": "C2",
       "text": "One SDK Tool execution returns stable candidate IDs, measured values, applied limits, accepted state, and exact reject reasons needed by current review and reports.",
       "evidence_refs": [
-        "E3"
+        "E3",
+        "E4",
+        "E5",
+        "E6",
+        "E7",
+        "E8",
+        "E10"
       ]
     },
     {
       "id": "C3",
       "text": "OpenVisionLab removes the audit rerun and silent catch only after the vendored SDK identity and manifest are updated through their normal release order.",
       "evidence_refs": [
-        "E3"
+        "E3",
+        "E4",
+        "E5",
+        "E6",
+        "E7",
+        "E8",
+        "E9"
       ]
     },
     {
       "id": "C4",
       "text": "Object rows, drawings, selection highlighting, reject reasons, metrics, acceptance, run reports, timing, and public samples remain equivalent or any approved contract change is explicit.",
-      "evidence_refs": []
+      "evidence_refs": [
+        "E8",
+        "E9",
+        "E10",
+        "E11",
+        "E12",
+        "E13",
+        "E14",
+        "E15"
+      ]
     }
   ],
   "relations": [],
@@ -108,6 +126,90 @@
       "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0010_baseline_20260825_r4\\observations.txt",
       "observation": "Runtime reflection against SDK assembly 3.0.0.0 found BlobResult properties Angle, Area, Bounding, Center, Index, UseDefect and ContourResult properties Angle, Area, Bounding, Center, Contours, Index. AppliedLimits, AcceptedState, and RejectReason are absent from both result types.",
       "observed_at": "2026-08-25T18:19:31+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "repository-inspection",
+      "location": "dll/OpenVisionLab-Vision-SDK/sdk-manifest.json; docs/reports/OPENVISIONLAB_BLOB_CONTOUR_AUDIT_BASELINE_20260825.md; current Dev source tree",
+      "observation": "The current manifest still records OpenVisionLab Vision SDK 3.0.0 at source commit ba0055b713e0bf434b9d0a7fd3f4b0e445c1f982 with the existing vendored file identities. The current documented result inventory still lacks AppliedLimits, AcceptedState, and RejectReason for BlobResult and ContourResult; no updated SDK contract is available in the current Dev tree.",
+      "observed_at": "2026-08-26T13:44:48+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "repository-inspection",
+      "location": "C:\\Git\\OpenVisionLab-Vision-SDK @ f4f0c0dc8bee5b7a849ae6eb66a5307bed4b8a6b; docs/OBJECT_CANDIDATE_CONTRACT.md",
+      "observation": "SDK main was clean before the change. Commit f4f0c0d adds the additive VisionObjectCandidate contract, optional dimension-limit property interface, Blob/Contour candidate publication, SDK smoke coverage, and package-consumer coverage. No SDK push or package publication was performed.",
+      "observed_at": "2026-08-26T22:24:00+09:00"
+    },
+    {
+      "id": "E6",
+      "kind": "test",
+      "location": "C:\\Git\\OpenVisionLab-Vision-SDK; dotnet build OpenVisionLab.VisionSdk.sln -c Debug/Release; dotnet run tests\\OpenVisionLab.Inspection.Smoke",
+      "observation": "SDK Debug and Release builds completed with 0 warnings and 0 errors. The complete deterministic inspection smoke suite passed 187/187 in both configurations, including the new Blob and Contour candidate cases.",
+      "observed_at": "2026-08-26T22:18:00+09:00"
+    },
+    {
+      "id": "E7",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab-Vision-SDK\\candidate-20260826-r2; isolated package-only consumer",
+      "observation": "Five SDK packages were packed with immutable version 3.0.1-dev.20260826.candidate.2, restored using a dedicated D: cache and package-only source, and the consumer passed while directly checking Blob/Contour candidate IDs, acceptance, generation stage, coordinate frame, and drawing presence.",
+      "observed_at": "2026-08-26T22:28:00+09:00"
+    },
+    {
+      "id": "E8",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\vision-sdk-candidate-f4f0c0d\\app-object-dimension-r3",
+      "observation": "Dev Debug solution and VisionRecipeRunnerSmoke builds completed with 0 warnings and 0 errors. The current Runner object-dimension contract passed for Blob and Contour: one accepted and four rejected rows, exact dimension reject text/codes, unique candidate IDs/native indexes, SourceImage metadata, accepted overlays, and persisted Blob Run History metadata. The test also confirmed legacy missing-dimension XML still returns five area-valid objects.",
+      "observed_at": "2026-08-26T22:55:00+09:00"
+    },
+    {
+      "id": "E9",
+      "kind": "repository-inspection",
+      "location": "C:\\Git\\OpenVisionLab_Dev\\src\\OpenVisionLab\\Core\\Pipeline\\Execution\\VisionPipelineObjectResults.cs; dll\\OpenVisionLab-Vision-SDK\\sdk-manifest.json; docs/contracts/openvisionlab/OPENVISIONLAB_EXTERNAL_BINARY_MANIFEST.json",
+      "observation": "The Dev source contains no TryCaptureUnfiltered, auditTool.Execute, or CloneForAreaAudit path. The SDK manifest records source commit f4f0c0d and the copied Release DLL lengths/SHA-256 values; the external binary manifest and vendored-DLL gate match. This proves source/manifest alignment, not complete UI selection or production performance equivalence.",
+      "observed_at": "2026-08-26T22:51:00+09:00"
+    },
+    {
+      "id": "E10",
+      "kind": "test",
+      "location": "C:\\Git\\OpenVisionLab-Vision-SDK @ 87a42ed; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\vision-sdk-candidate-f4f0c0d\\public-blob-direct-r1",
+      "observation": "SDK Debug and Release smoke suites passed 189/189 after the mask/multi-ROI test-only follow-up commit. Current Dev direct replay passed the public Blob Good sample with ResultCount=12/OK and the sparse Bad sample with ResultCount=3/expected NG.",
+      "observed_at": "2026-08-26T23:11:43+09:00"
+    },
+    {
+      "id": "E11",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\vision-sdk-candidate-f4f0c0d\\ui-object-parity-r1",
+      "observation": "Current-source cvr05_object_metric_distribution direct WPF view smoke passed selection/distribution checks. Broader wpf_shell_host_pipeline_review, wpf_shell_host_pipeline_review_ng, and wpf_shell_host_workspace_sample_pipeline_review_metrics targets failed after explicit review with `리뷰 실행 필요` and no completed step-result presentation; these targets are not used as C4 proof.",
+      "observed_at": "2026-08-26T23:11:43+09:00"
+    },
+    {
+      "id": "E12",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0010-c4-parity-20260827-r4",
+      "observation": "Current Dev Runner object-candidate parity contract passed. Blob mask retained five candidates with one Masked reject, four accepted overlays, and ResultCount=4; Blob/Contour Multi-ROI retained RegionIndex 0/1 and source-coordinate geometry; persisted Run History preserved rows, overlays, candidate identity, applied limits, and timing; public Blob/Contour Good/Bad replay preserved expected outcomes, ResultCount, source hashes, rows, overlays, and timing.",
+      "observed_at": "2026-08-27T13:04:00+09:00"
+    },
+    {
+      "id": "E13",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0010-c4-ui-cvr05-20260827-r3; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0010-c4-ui-blob-good-20260827-r4; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0010-c4-ui-contour-ng-20260827-r2",
+      "observation": "Current-source WPF cvr05 Object Results selection/distribution, public Blob Good Pipeline Review, and public Contour Missing Bad Pipeline Review targets passed at 1180x890/1600x900. Evidence shows selected-object highlighting, accepted/rejected drawings, source/output previews, NG result and reason, and no layout/execution regression.",
+      "observed_at": "2026-08-27T13:07:00+09:00"
+    },
+    {
+      "id": "E14",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0010-c4-ui-run-history-20260827-r14; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0010-c4-ui-pipeline-20260827-r4; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0010-c4-ui-pipeline-ng-20260827-r3; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\pl0010-c4-ui-pipeline-20260827-r4-compact",
+      "observation": "Current-source WPF Run History review-queue, normal/NG Pipeline Review, and compact image-first targets passed. Run History internal checks covered recent batch/sample lists, NG-only filter, comparison/baseline guidance, failure review actions, source/output evidence, copy actions, and timing/report rows. The normal and compact captures retained image-first previews and existing review detail access.",
+      "observed_at": "2026-08-27T13:08:00+09:00"
+    },
+    {
+      "id": "E15",
+      "kind": "repository-inspection",
+      "location": "src/OpenVisionLab/Core/Pipeline/Execution/VisionPipelineObjectResults.cs; src/OpenVisionLab/Core/Pipeline/Storage/VisionPipelineRunReportStorage.cs; src/OpenVisionLab/UI/Menu/Wpf/PipelineReview/Presenters/OpenVisionPipelineReviewObjectDistributionPresenter.cs; src/OpenVisionLab/UI/Menu/Wpf/Views/OpenVisionPipelineReviewView.xaml; src/OpenVisionLab/UI/Menu/Wpf/OpenVisionShellHostView.xaml.cs; docs/reports/OPENVISIONLAB_PL0010_C4_PARITY_REPLAY_20260827.md",
+      "observation": "Dev consumes one SDK object-candidate execution, persists candidate and RegionIndex/applied-limit metadata, presents Multi-ROI region text and a Region column, and avoids duplicate nested shell Content teardown that reproduced the WPF animation null-destination exception. The C4 report records the approved additive candidate/region contract and all stated boundaries.",
+      "observed_at": "2026-08-27T13:10:00+09:00"
     }
   ],
   "events": [
@@ -128,8 +230,68 @@
       "from": "open",
       "to": "blocked",
       "summary": "C1 baseline evidence is now recorded; implementation is blocked at the external SDK contract boundary and current stable audit behavior remains unchanged."
+    },
+    {
+      "id": "D2",
+      "kind": "decision",
+      "at": "2026-08-26T13:44:48+09:00",
+      "summary": "Reconfirm the explicit PL-0010 defer. Do not change the application, vendored DLL, manifest, audit rerun, or accepted-only fallback until a coordinated SDK result contract and manifest are supplied and parity is proven.",
+      "evidence_refs": [
+        "E4"
+      ]
+    },
+    {
+      "id": "D3",
+      "kind": "decision",
+      "at": "2026-08-26T23:10:00+09:00",
+      "summary": "정확한 SDK 원본 경로 `C:\\Git\\OpenVisionLab-Vision-SDK`에서 단일 실행 object-candidate 계약을 구현·검증하고, 해당 커밋의 Release DLL/manifest를 Dev에 반영했다. Dev는 새 후보를 소비하며 이전 audit 재실행 경로를 유지하지 않는다. 전체 parity가 끝날 때까지 PL-0010은 doing으로 둔다.",
+      "evidence_refs": [
+        "E5",
+        "E6",
+        "E7",
+        "E8",
+        "E9"
+      ]
+    },
+    {
+      "id": "T2",
+      "kind": "transition",
+      "at": "2026-08-26T23:10:00+09:00",
+      "from": "blocked",
+      "to": "doing",
+      "summary": "SDK candidate contract and app manifest are now available; bounded one-pass evidence is implemented, while full parity remains open."
+    },
+    {
+      "id": "D4",
+      "kind": "decision",
+      "at": "2026-08-26T23:12:00+09:00",
+      "summary": "SDK-level mask/multi-ROI and public Blob Good/Bad replay evidence is accepted, but the current WPF host Pipeline Review failure keeps PL-0010 in doing; investigate the exact current-build review execution boundary before C4 or Viewer work is admitted.",
+      "evidence_refs": [
+        "E10",
+        "E11"
+      ]
+    },
+    {
+      "id": "D5",
+      "kind": "decision",
+      "at": "2026-08-27T13:10:00+09:00",
+      "summary": "현재 Dev SDK/app parity replay와 WPF Run History/Pipeline Review targets가 통과했다. C4를 resolved로 전환하고, owning Window가 host detachment를 담당하는 경계에 맞춰 nested shell Content teardown을 제거했다. Contour mask, EXE/DPI/theme/monitor, release, push, deployment는 범위 밖으로 유지한다.",
+      "evidence_refs": [
+        "E12",
+        "E13",
+        "E14",
+        "E15"
+      ]
+    },
+    {
+      "id": "T3",
+      "kind": "transition",
+      "at": "2026-08-27T13:10:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "PL-0010 C4 bounded Dev parity acceptance criteria passed; next admitted work is the separate IMAGE-CANVAS-EXTERNAL-CONSUMER-CONTRACT Viewer slice."
     }
   ],
   "created_at": "2026-08-25T11:56:04+09:00",
-  "updated_at": "2026-08-25T18:19:31+09:00"
+  "updated_at": "2026-08-27T13:10:00+09:00"
 }

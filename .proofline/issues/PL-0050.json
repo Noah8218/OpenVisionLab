@@ -1,0 +1,154 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0050",
+    "aliases": [],
+    "type": "task",
+    "mode": "simple",
+    "title": "Retain Grayscale Learn View Partial after concrete owner audit",
+    "risk": "low"
+  },
+  "origin": {
+    "kind": "user-request",
+    "summary": "The user requested that Partial refactoring continue in scheduled cycles and that each remaining Partial be structurally reviewed rather than mechanically deleted or split.",
+    "refs": [
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "docs/reports/OPENVISIONLAB_PARTIAL_STRUCTURAL_ELIMINATION_PLAN_20260913.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "GrayscaleLearnView.xaml.cs의 concrete owner 감사가 완료되었다. View Partial은 required XAML/presentation adapter로 유지되고, GrayscaleLearnPresenter, Learn Window topic/action composition, and View-owned WPF cell/marker/brush/timer owners가 lesson state, routing, presentation, lifetime, and test boundaries를 각각 소유한다. 독립 seam이 없어 production split은 만들지 않았으며, focused source/build/WPF/monitor and documentation evidence가 통과했다."
+  },
+  "objective": {
+    "summary": "Audit GrayscaleLearnView's Partial structure and retain it only if existing concrete owners already provide lesson state, topic routing, timer lifetime, binding, and test boundaries without a new split.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev; do not modify C:\\Git\\2D\\Original.",
+      "Do not add a service, interface, manager, wrapper, forwarding Partial, or ViewModel split for file length alone.",
+      "Preserve GrayscaleLearnView XAML names, automation IDs, Apply/Close/ThresholdTool event contracts, topic routing, animation behavior, test facade, and Unloaded timer cleanup.",
+      "Keep test outputs and evidence under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev.",
+      "Do not commit, push, tag, release, deploy, or mutate the Original repository."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The proof report records current/intended owners, caller path, mutable-state writer, lifetime owner, binding/public/test contract, shortest reading order, and the reason no production split is justified.",
+      "evidence_refs": [
+        "E1"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "The source contract proves that GrayscaleLearnView has no direct persistence/file-dialog/OpenCV/tool-factory coupling and that the existing presenter, Learn Window composition, timer lifetime, callback, explicit result events, and XAML/test owners are wired.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Focused Debug/Release contracts and builds plus Grayscale Learn WPF smoke and dynamic monitor geometry pass; broader theme/DPI/input/native related-tool/camera/SDK/GPU runtime remains explicitly unverified.",
+      "evidence_refs": [
+        "E2",
+        "E3",
+        "E4"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0049"
+    }
+  ],
+  "context": [
+    {
+      "kind": "source",
+      "location": "src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Learn\\GrayscaleLearnView.xaml(.cs); src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Learn\\GrayscaleLearnPresenter.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Learn\\OpenVisionLearnWindow.xaml.cs"
+    },
+    {
+      "kind": "test-host",
+      "location": "tools\\VisionRecipeRunnerSmoke\\GrayscaleLearnPartialBoundaryContract.cs; tools\\VisionRecipeRunnerSmoke\\LearnGrayscalePresentationContract.cs; tools\\PipelineViewerScreenshotSmoke\\LearnGrayscaleSmoke.cs; tools\\RunUiPrecheck.ps1"
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "screenshot",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\grayscale-learn-partial-retention-20260914\\ui-precheck\\wpf_openvision_learn_grayscale_contract.png",
+      "summary": "Fresh Debug Grayscale Learn contract WPF smoke screenshot."
+    },
+    {
+      "kind": "screenshot",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\grayscale-learn-partial-retention-20260914\\ui-precheck-release\\wpf_openvision_learn_grayscale_view.png",
+      "summary": "Fresh Release Grayscale Learn view WPF smoke screenshot."
+    },
+    {
+      "kind": "geometry",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\grayscale-learn-partial-retention-20260914\\monitor-moved\\monitor-window-geometry.json",
+      "summary": "Dynamic monitor/window geometry after explicit placement on the selected smaller-left monitor."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source",
+      "location": "docs\\reports\\OPENVISIONLAB_GRAYSCALE_LEARN_PARTIAL_RETENTION_20260914.md; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Learn\\GrayscaleLearnView.xaml.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Learn\\GrayscaleLearnPresenter.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Learn\\OpenVisionLearnWindow.xaml.cs",
+      "observation": "GrayscaleLearnView remains a required XAML/presentation adapter. GrayscaleLearnPresenter owns threshold/brightness/arithmetic/filter lesson state, simulation/evaluation decisions, staged guidance and fixed Tool text; OpenVisionLearnWindow owns topic/action composition and the public/test facade; and the View owns only WPF cell/marker/brush projection, callback forwarding, explicit Apply/Close/ThresholdToolRequested result events, and timer attach/detach. The View has no direct file, dialog, OpenCV, tool-factory, persistence, or inspection coupling, so no independent production seam was found.",
+      "observed_at": "2026-09-14T07:22:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\grayscale-learn-partial-retention-20260914\\debug\\grayscale-learn-partial-boundary-contract.txt; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\grayscale-learn-partial-retention-20260914\\release\\grayscale-learn-partial-boundary-contract.txt",
+      "observation": "GrayscaleLearnPartialBoundaryContract passed all 11/11 source checks in Debug and Release. VisionRecipeRunnerSmoke Debug and Release builds completed with 0 warnings and 0 errors.",
+      "observed_at": "2026-09-14T07:22:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\grayscale-learn-partial-retention-20260914\\ui-precheck\\ui_precheck_report.md; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\grayscale-learn-partial-retention-20260914\\ui-precheck-release\\ui_precheck_report.md",
+      "observation": "RunUiPrecheck passed wpf_openvision_learn_grayscale_contract and wpf_openvision_learn_grayscale_view in Debug and Release with OK 2/2, layout/text/internal counts zero, and fresh 1040x700 and 760x700 PNGs. Broader theme/DPI/input, native related-tool click/file association, camera/SDK/GPU and long-running runtime matrices remain unverified.",
+      "observed_at": "2026-09-14T07:22:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\grayscale-learn-partial-retention-20260914\\monitor-moved\\monitor-window-geometry.json",
+      "observation": "Dynamic monitor probing selected the smaller-left monitor \\\\.\\DISPLAY2 with bounds X=-1920,Y=365,1920x1080; the Grayscale Learn smoke window was explicitly moved there and the resulting window intersected the selected monitor. MoveSucceeded is true and IntersectingWindowCount is 1.",
+      "observed_at": "2026-09-14T07:22:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-14T07:22:00+09:00",
+      "summary": "GrayscaleLearnView Partial은 required XAML/presentation adapter이며, GrayscaleLearnPresenter, Learn Window topic/action composition, and View-owned WPF cell/marker/brush/timer owners가 독립 책임과 lifetime을 이미 제공한다. 새 seam 없이 분리하면 forwarding wrapper나 WPF control leakage가 되므로 no-change로 유지한다.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "D2",
+      "kind": "decision",
+      "at": "2026-09-14T07:22:00+09:00",
+      "summary": "PL-0050의 세 completion criteria가 현재 source, contract, build, WPF smoke, monitor, and documentation evidence로 충족되어 resolved로 닫는다. 전체 theme/DPI/input, native related-tool click/file association, camera/SDK/GPU 및 long-running native runtime은 이 slice의 검증 범위가 아니다.",
+      "evidence_refs": [
+        "E3",
+        "E4"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-14T07:22:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "The Grayscale Learn View Partial retained-owner audit found no independent boundary that justified a production split; focused source/build/WPF/monitor/documentation evidence was recorded. Do not reopen without a new requirement, reproducible defect, failed criterion, or changed dependency/lifetime boundary."
+    }
+  ],
+  "created_at": "2026-09-14T07:19:34+09:00",
+  "updated_at": "2026-09-14T07:22:00+09:00"
+}

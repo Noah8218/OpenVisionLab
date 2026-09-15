@@ -52,6 +52,7 @@ Runnable public samples:
 
 - `../OpenVisionLab.PublicSampleCatalog.csv`: GitHub-safe sample catalog with Matching, Matching-to-Blob Fixture, Blob, Contour, Threshold, Filter, EdgeDetection, Morphology, Mean, Arithmetic, HSV, FeatureMatching, EdgeBasedMatching, LineDistance Good/Bad pairs, and a RotateScale geometry benchmark.
 - `../OpenVisionLab.ProductSampleCatalog.csv`: product-domain sample catalog with secondary battery, display, and semiconductor Good/Bad pairs.
+- `ExpectedFailure` rows may optionally declare `ExpectedOutcome`, `ExpectedError`, and `ExpectedFailedStep`; blank fields preserve legacy compatibility but are reported as `Legacy`. Quality NG and controlled no-result are distinct from runner execution errors.
 - `Public_Matching_DiePad.pipeline.xml`: Matching benchmark using the synthetic template.
 - `Public_Matching_FixturePad.pipeline.xml`: Matching fixture translation plus downstream Blob ROI inspection benchmark.
 - `Public_Locator_Relative_Blob_Integration.recipe.json`: locator-relative-blob recipe used by the Machine Studio cross-process handoff smoke.

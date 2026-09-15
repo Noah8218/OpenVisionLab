@@ -1,0 +1,162 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0073",
+    "aliases": [
+      "OPENVISIONLAB-2D015-LAYER-REFERENCE-INVARIANT-20260915"
+    ],
+    "type": "task",
+    "mode": "simple",
+    "title": "Verify Layer and fixture references after Step graph edits",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "scheduled 2D task execution and source review",
+    "summary": "2D-015 requires delete, duplicate, reorder, and Layer rename operations to preserve valid connections or produce explicit errors, with Undo/Cancel preserving the original graph.",
+    "refs": [
+      "C:\\Users\\USER\\Downloads\\OpenVisionLab_2D_tasks.json",
+      "docs\\contracts\\openvisionlab\\OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md",
+      "docs\\admin\\OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "AGENTS.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "The existing VisionPipelineValidator, LineFixture/Affine reference owners, normalizer, and SerializeHelper were reused. A focused graph contract proves serial, branch, Arithmetic B, fixture, and detected-point Affine references fail closed after delete, duplicate, reorder, or stale rename; explicit reference updates restore validity; XML round-trip and discarded edit clones preserve the original graph."
+  },
+  "objective": {
+    "summary": "Produce deterministic evidence for Layer/Step reference invariants without adding a speculative editor or automatic reconnect layer.",
+    "constraints": [
+      "Reuse existing Validator, editor/storage, normalizer, LineFixture, and Affine owners.",
+      "Do not guess or reorder references automatically.",
+      "Keep test artifacts on D: and do not modify C:\\Git\\2D\\Original or external systems."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "A representative serial/branch/Arithmetic B/fixture/Affine graph validates and a valid Arithmetic B route executes.",
+      "evidence_refs": [
+        "E2"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "Delete, duplicate, reorder, stale Layer rename, stale fixture rename, stale branch, missing Arithmetic B, and later Affine source cases fail closed; explicit reference updates restore validity.",
+      "evidence_refs": [
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "XML save/reopen preserves the serial, Arithmetic B, fixture, and Affine reference strings and validation outcome.",
+      "evidence_refs": [
+        "E2"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "The normalizer does not silently reconnect a broken reference and discarding a mutated clone leaves the original graph valid and unchanged.",
+      "evidence_refs": [
+        "E2"
+      ]
+    },
+    {
+      "id": "C5",
+      "text": "The smoke project builds in Debug and Release with zero errors, the focused contract passes in both configurations, and no Original repository or external system is mutated.",
+      "evidence_refs": [
+        "E3"
+      ]
+    },
+    {
+      "id": "C6",
+      "text": "Completion evidence records the current owners, call path, mutable graph writer, binding/XML contract, reading order, focused checks, and unverified runtime/UI boundary.",
+      "evidence_refs": [
+        "E1",
+        "E4"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0072"
+    }
+  ],
+  "context": [
+    {
+      "kind": "owner-map",
+      "location": "VisionPipelineValidator owns admission; VisionPipelineNormalizer owns limited sequential/preprocessing normalization; VisionPipelineLineFixtureService and VisionPipelineAffinePointBindingService own typed references; RecipeCommandSurface/Recipe Manager edit and VisionPipelineStorage/SerializeHelper own persistence boundaries."
+    },
+    {
+      "kind": "state-writer",
+      "location": "VisionPipeline.Steps and VisionPipelineStep.InputLayer/OutputLayer/Parameters are the mutable graph; Step edit/storage commands write them; Validator writes only errors/warnings; the contract mutates cloned graphs only."
+    },
+    {
+      "kind": "call-path",
+      "location": "Recipe Manager Step edit or XML load -> VisionPipeline model -> VisionPipelineValidator.Validate -> VisionRecipeRunner admission; reference-specific checks flow through LineFixture/Affine services."
+    },
+    {
+      "kind": "reading-order",
+      "location": "VisionPipelineValidation.cs -> VisionPipelineLineFixtureService.cs -> VisionPipelineAffinePointBindingService.cs -> VisionPipelineNormalizer.cs -> SerializeHelper/VisionPipelineStorage.cs -> PipelineLayerReferenceInvariantContract.cs -> stable contract/current handoff."
+    },
+    {
+      "kind": "boundary",
+      "location": "This is a deterministic source/in-process contract. Actual WPF editor clicks, desktop EXE monitor placement, theme/DPI/keyboard matrix, camera/hardware, and physical metrology remain unverified."
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "evidence-directory",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d015-layer-reference-invariant-20260915",
+      "summary": "Baseline and mutation XML fixtures plus the focused invariant report. Release repeat is under the sibling -release directory."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "review",
+      "location": "src/OpenVisionLab/Core/Pipeline/Validation/VisionPipelineValidation.cs; src/OpenVisionLab/Core/Pipeline/Tools/VisionPipelineLineFixtureService.cs; src/OpenVisionLab/Core/Pipeline/Execution/VisionPipelineAffinePointBindingService.cs; src/OpenVisionLab/Core/Pipeline/Definition/VisionPipelineNormalizer.cs; src/OpenVisionLab/Common/Persistence/SerializeHelper.cs; src/OpenVisionLab/Core/Pipeline/Storage/VisionPipelineStorage.cs",
+      "observation": "Source review confirmed the existing Validator checks ordered layer availability, Arithmetic InputLayerB, typed earlier LineFixture sources, and distinct earlier Affine Point references. Display-layer rename/delete owners intentionally do not rewrite recipe routes, so no production reconnect patch was justified.",
+      "observed_at": "2026-09-15T17:52:28.8339994+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d015-layer-reference-invariant-20260915/pipeline-layer-reference-invariant-contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d015-layer-reference-invariant-20260915-release/pipeline-layer-reference-invariant-contract.txt",
+      "observation": "The focused contract passed in Debug and Release. Baseline and XML round-trip were valid; delete/reorder/stale rename/missing B/fixture deletion/ambiguous duplicate/later Affine source failed closed; explicit updates restored validity; normalizer did not reconnect; clone discard preserved the original; valid Arithmetic B executed.",
+      "observed_at": "2026-09-15T17:52:28.8339994+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "build",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d015-layer-reference-invariant-20260915/build-smoke-debug.log; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d015-layer-reference-invariant-20260915/build-smoke-release.log",
+      "observation": "VisionRecipeRunnerSmoke Debug and Release builds completed with 0 warnings and 0 errors; the new invariant contract introduced no nullable warning.",
+      "observed_at": "2026-09-15T17:52:28.8339994+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "review",
+      "location": "docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md; tools/VisionRecipeRunnerSmoke/PipelineLayerReferenceInvariantContract.cs; tools/VisionRecipeRunnerSmoke/Program.cs",
+      "observation": "The stable contract, smoke dispatch, and current handoff record the fail-closed reference policy, existing owners/call path, focused command, evidence directory, next 2D-016 boundary, and the unverified WPF/EXE/UI boundary.",
+      "observed_at": "2026-09-15T17:52:28.8339994+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-15T17:52:28.8339994+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "Close 2D-015 after focused Debug/Release reference-invariant, XML round-trip, explicit-repair, clone-discard, and Arithmetic B execution evidence.",
+      "evidence_refs": [
+        "E2",
+        "E3",
+        "E4"
+      ]
+    }
+  ],
+  "created_at": "2026-09-15T17:52:28.8339994+09:00",
+  "updated_at": "2026-09-15T17:52:28.8339994+09:00"
+}

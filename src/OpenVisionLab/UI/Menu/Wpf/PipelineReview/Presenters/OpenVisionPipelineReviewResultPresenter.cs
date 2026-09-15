@@ -41,7 +41,7 @@ namespace OpenVisionLab
             {
                 TF("PipelineReview.RunLog.ReviewStateFormat", "Review state: {0}", SafeText(statusText, "WAIT")),
                 TF("PipelineReview.RunLog.ValidationFormat", "Validation: {0}", SafeText(validationStatus, "NOT RUN")),
-                TF("PipelineReview.RunLog.ResultFormat", "Result: {0}", FormatResultSummary(summary)),
+                TF("PipelineReview.RunLog.ResultFormat", "Result: {0}", FormatResultSummary(step, summary)),
                 TF("PipelineReview.RunLog.PreviewModeFormat", "Preview mode: {0}", mode),
                 TF("PipelineReview.RunLog.InputImageFormat", "Input image: {0}", FormatImageState(step?.InputLayer, inputImage)),
                 TF("PipelineReview.RunLog.OutputImageFormat", "Output image: {0}", FormatImageState(step?.OutputLayer, outputImage))
@@ -71,11 +71,72 @@ namespace OpenVisionLab
             return status;
         }
 
+        public static string FormatResultSummary(VisionPipelineStep step, VisionPipelineStepResultSummary summary)
+        {
+            string status = FormatResultSummary(summary);
+            if (summary == null || step == null)
+            {
+                return status;
+            }
+
+            return status + " / " + FormatProcessingAndAcceptance(step, summary);
+        }
+
+        private static string FormatProcessingAndAcceptance(
+            VisionPipelineStep step,
+            VisionPipelineStepResultSummary summary)
+        {
+            if (summary.Skipped
+                || string.Equals(
+                    summary.ExecutionState,
+                    VisionPipelineResultSummaryService.DisabledState,
+                    StringComparison.Ordinal))
+            {
+                return LocalText("건너뜀 / 판정 미평가", "Skipped / Judgement not evaluated");
+            }
+
+            if (string.Equals(
+                summary.ExecutionState,
+                VisionPipelineResultSummaryService.NotRunAfterFailureState,
+                StringComparison.Ordinal))
+            {
+                return LocalText("이전 Step 실패로 미실행", "Not run after an earlier step failed");
+            }
+
+            if (string.Equals(
+                summary.ExecutionState,
+                VisionPipelineResultSummaryService.CancelledState,
+                StringComparison.Ordinal))
+            {
+                return LocalText("취소됨 / 판정 미평가", "Cancelled / Judgement not evaluated");
+            }
+
+            bool toolSucceeded = summary.IsAcceptanceNg || (summary.Success && !summary.IsToolError);
+            if (!toolSucceeded)
+            {
+                return LocalText("처리 NG / 판정 미평가", "Tool NG / Judgement not evaluated");
+            }
+
+            if (summary.IsAcceptanceNg)
+            {
+                return LocalText("처리 OK / 판정 NG", "Tool OK / Judgement NG");
+            }
+
+            return step.UseAcceptance
+                ? LocalText("처리 OK / 판정 PASS", "Tool OK / Judgement PASS")
+                : LocalText("처리 OK / 판정 미평가", "Tool OK / Judgement not evaluated");
+        }
+
         public static string FormatResultDetails(VisionPipelineStep step, VisionPipelineStepResultSummary summary)
         {
             if (summary == null)
             {
                 return T("PipelineReview.NoRunResultForStep", "No run result for selected step.");
+            }
+
+            if (!summary.Executed)
+            {
+                return summary.Message;
             }
 
             List<string> parts = new List<string>();

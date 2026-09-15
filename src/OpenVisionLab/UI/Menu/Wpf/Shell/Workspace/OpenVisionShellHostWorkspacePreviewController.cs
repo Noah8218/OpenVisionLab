@@ -26,6 +26,11 @@ namespace OpenVisionLab
 
         public void SetLayer(OpenVisionShellHostLayerDetailState detail, Action<Bitmap> rebindBorrower)
         {
+            if (disposed)
+            {
+                return;
+            }
+
             ImageSpaceImageLease nextLease = string.IsNullOrWhiteSpace(detail?.LayerTitle)
                 ? null
                 : displayManager.ImageSpace.AcquireImage(detail.LayerTitle);

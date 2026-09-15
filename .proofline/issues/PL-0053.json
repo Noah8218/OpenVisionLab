@@ -1,0 +1,149 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0053",
+    "aliases": [],
+    "type": "task",
+    "mode": "simple",
+    "title": "Retain Metrics Acceptance Learn View Partial after concrete owner audit",
+    "risk": "low"
+  },
+  "origin": {
+    "kind": "user-request",
+    "summary": "The user requested that Partial refactoring continue in scheduled cycles and that each remaining Partial be structurally reviewed rather than mechanically deleted or split.",
+    "refs": [
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "docs/reports/OPENVISIONLAB_PARTIAL_STRUCTURAL_ELIMINATION_PLAN_20260913.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "MetricsAcceptanceLearnView.xaml.cs의 concrete owner 감사가 완료되었다. View Partial은 required XAML/presentation adapter로 유지되고, MetricsAcceptanceLearnPresenter, Learn Window topic/refresh composition, and View-owned WPF sample-cell/brush/text/button/timer owners가 sample-gate state, presentation, lifetime, and test boundaries를 각각 소유한다. 독립 seam이 없어 production split은 만들지 않았으며, focused source/build/WPF/monitor and documentation evidence가 통과했다."
+  },
+  "objective": {
+    "summary": "Audit MetricsAcceptanceLearnView's Partial structure and retain it only if existing concrete owners already provide sample-gate state, topic routing, timer lifetime, binding, and test boundaries without a new split.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev; do not modify C:\\Git\\2D\\Original.",
+      "Do not add a service, interface, manager, wrapper, forwarding Partial, or ViewModel split for file length alone.",
+      "Preserve Metrics Acceptance XAML names, automation IDs, fixed sample/gate stages, Play/Step/Reset behavior, cheat-sheet state, test facade, and Unloaded timer cleanup.",
+      "Keep test outputs and evidence under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev.",
+      "Do not commit, push, tag, release, deploy, or mutate the Original repository."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The proof report records current/intended owners, caller path, mutable-state writer, lifetime owner, binding/public/test contract, shortest reading order, and the reason no production split is justified.",
+      "evidence_refs": [
+        "E1"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "The source contract proves that MetricsAcceptanceLearnView has no direct persistence/file-dialog/OpenCV/real-Recipe/tool-factory coupling and that the existing presenter, Learn Window composition, timer lifetime, XAML contract, and test owners are wired.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Focused Debug/Release contracts and builds plus Metrics Acceptance WPF smoke and dynamic monitor geometry pass; broader theme/DPI/input/native Tool/camera/SDK/GPU/actual Recipe runtime remains explicitly unverified.",
+      "evidence_refs": [
+        "E2",
+        "E3",
+        "E4"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0052"
+    }
+  ],
+  "context": [
+    {
+      "kind": "source",
+      "location": "src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Learn\\MetricsAcceptanceLearnView.xaml(.cs); src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Learn\\MetricsAcceptanceLearnPresenter.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Learn\\OpenVisionLearnWindow.xaml.cs"
+    },
+    {
+      "kind": "test-host",
+      "location": "tools\\VisionRecipeRunnerSmoke\\MetricsAcceptanceLearnPartialBoundaryContract.cs; tools\\VisionRecipeRunnerSmoke\\LearnMetricsAcceptanceContract.cs; tools\\PipelineViewerScreenshotSmoke\\LearnMetricsAcceptanceSmoke.cs; tools\\RunUiPrecheck.ps1"
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "report",
+      "location": "docs\\reports\\OPENVISIONLAB_METRICS_ACCEPTANCE_LEARN_PARTIAL_RETENTION_20260914.md",
+      "summary": "Owner map, no-change structural decision, verification and unverified runtime boundaries."
+    },
+    {
+      "kind": "evidence-root",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\metrics-acceptance-learn-partial-retention-20260914",
+      "summary": "Debug/Release source contracts, presenter contracts, WPF prechecks, screenshots, and monitor geometry."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source",
+      "location": "docs\\reports\\OPENVISIONLAB_METRICS_ACCEPTANCE_LEARN_PARTIAL_RETENTION_20260914.md; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Learn\\MetricsAcceptanceLearnView.xaml.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Learn\\MetricsAcceptanceLearnPresenter.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Learn\\OpenVisionLearnWindow.xaml.cs",
+      "observation": "MetricsAcceptanceLearnView remains a required XAML/presentation adapter. MetricsAcceptanceLearnPresenter owns fixed samples, average/range/maximum statistics, average/outlier gate decisions, animation stages, formulas, status text, and numeric sample text; OpenVisionLearnWindow owns topic visibility, refresh, public/test facade, and child close lifetime; and the View owns only WPF cell/brush/text/button projection and timer attach/detach. The View and presenter have no direct persistence, file-dialog, OpenCV, real Recipe execution, Tool factory, or algorithm lifetime coupling, so no independent production seam was found.",
+      "observed_at": "2026-09-14T08:32:30+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\metrics-acceptance-learn-partial-retention-20260914\\debug\\metrics-acceptance-learn-partial-boundary-contract.txt; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\metrics-acceptance-learn-partial-retention-20260914\\release\\metrics-acceptance-learn-partial-boundary-contract.txt; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\metrics-acceptance-learn-partial-retention-20260914\\debug\\learn-metrics-acceptance-contract\\learn-metrics-acceptance-contract.txt; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\metrics-acceptance-learn-partial-retention-20260914\\release\\learn-metrics-acceptance-contract\\learn-metrics-acceptance-contract.txt",
+      "observation": "MetricsAcceptanceLearnPartialBoundaryContract passed all 12/12 source checks in Debug and Release. The existing LearnMetricsAcceptanceContract passed 3/3 in both configurations. VisionRecipeRunnerSmoke Debug completed with 0 errors and 2 existing MSB3270 architecture warnings; Release completed with 0 warnings and 0 errors.",
+      "observed_at": "2026-09-14T08:32:30+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\metrics-acceptance-learn-partial-retention-20260914\\ui-precheck\\ui_precheck_report.md; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\metrics-acceptance-learn-partial-retention-20260914\\ui-precheck-release\\ui_precheck_report.md",
+      "observation": "RunUiPrecheck passed wpf_openvision_learn_metrics_acceptance_contract and wpf_openvision_learn_metrics_acceptance_view in Debug and Release with OK 2/2, layout/text/internal counts zero, and fresh 1040x700 and 760x700 PNGs. Broader theme/DPI/input, native Tool/file association, camera/SDK/GPU, actual Recipe execution/persistence and long-running runtime remain unverified; the documented legacy target wording mismatch was not weakened or deleted.",
+      "observed_at": "2026-09-14T08:32:30+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\metrics-acceptance-learn-partial-retention-20260914\\monitor-moved\\monitor-window-geometry.json; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\metrics-acceptance-learn-partial-retention-20260914\\monitor-moved-release\\monitor-window-geometry.json",
+      "observation": "Dynamic Debug and Release monitor probes detected two monitors and selected the smaller-left \\\\.\\DISPLAY2 with bounds X=-1920,Y=365,1920x1080. Each Metrics Acceptance smoke window was explicitly placed there; MoveSucceeded is true, IntersectingWindowCount is 1, IntersectsSelectedMonitor is true, and the focused smoke contract files contain only PASS lines.",
+      "observed_at": "2026-09-14T08:32:30+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-14T08:32:30+09:00",
+      "summary": "MetricsAcceptanceLearnView Partial은 required XAML/presentation adapter이며, MetricsAcceptanceLearnPresenter, Learn Window topic/refresh composition, and View-owned WPF sample-cell/brush/text/button/timer owners가 독립 책임과 lifetime을 이미 제공한다. 새 seam 없이 분리하면 forwarding wrapper나 WPF control leakage가 되므로 no-change로 유지한다.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "D2",
+      "kind": "decision",
+      "at": "2026-09-14T08:32:30+09:00",
+      "summary": "PL-0053의 세 completion criteria가 current source, contract, build, WPF smoke, monitor, and documentation evidence로 충족되어 resolved로 닫는다. 전체 theme/DPI/input, native Tool/file association, camera/SDK/GPU, actual Recipe execution/persistence 및 long-running native runtime은 이 slice의 검증 범위가 아니다.",
+      "evidence_refs": [
+        "E3",
+        "E4"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-14T08:32:30+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "The Metrics Acceptance Learn View Partial retained-owner audit found no independent boundary that justified a production split; focused source/build/WPF/monitor/documentation evidence was recorded. Do not reopen without a new requirement, reproducible defect, failed criterion, or changed dependency/lifetime boundary."
+    }
+  ],
+  "created_at": "2026-09-14T08:31:25+09:00",
+  "updated_at": "2026-09-14T08:32:30+09:00"
+}

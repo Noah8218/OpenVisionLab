@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace OpenVisionLab
 {
@@ -189,6 +190,69 @@ namespace OpenVisionLab
             return string.Empty;
         }
 
+        internal static VisionPipelineBatchConfusionMatrix BuildConfusionMatrix(
+            IEnumerable<VisionPipelineBatchSampleRunResult> results,
+            int inputSampleCount)
+        {
+            int observedCount = 0;
+            int truePositiveCount = 0;
+            int trueNegativeCount = 0;
+            int falsePositiveCount = 0;
+            int falseNegativeCount = 0;
+            int executionErrorCount = 0;
+            int unknownLabelCount = 0;
+
+            foreach (VisionPipelineBatchSampleRunResult result in results ?? Array.Empty<VisionPipelineBatchSampleRunResult>())
+            {
+                observedCount++;
+                if (result == null || !IsExecutionCompleted(result))
+                {
+                    executionErrorCount++;
+                    continue;
+                }
+
+                if (!TryResolveExpectedSuccess(result, out bool expectedSuccess))
+                {
+                    unknownLabelCount++;
+                    continue;
+                }
+
+                if (!TryResolveActualSuccess(result, out bool actualSuccess))
+                {
+                    executionErrorCount++;
+                    continue;
+                }
+
+                if (expectedSuccess && actualSuccess)
+                {
+                    truePositiveCount++;
+                }
+                else if (!expectedSuccess && !actualSuccess)
+                {
+                    trueNegativeCount++;
+                }
+                else if (!expectedSuccess)
+                {
+                    falsePositiveCount++;
+                }
+                else
+                {
+                    falseNegativeCount++;
+                }
+            }
+
+            int normalizedInputCount = Math.Max(inputSampleCount, observedCount);
+            return new VisionPipelineBatchConfusionMatrix(
+                normalizedInputCount,
+                truePositiveCount,
+                trueNegativeCount,
+                falsePositiveCount,
+                falseNegativeCount,
+                executionErrorCount,
+                normalizedInputCount - observedCount,
+                unknownLabelCount);
+        }
+
         internal static string ToOutcome(bool success)
         {
             return success ? OkOutcome : NgOutcome;
@@ -211,5 +275,75 @@ namespace OpenVisionLab
             success = false;
             return false;
         }
+    }
+
+    internal sealed class VisionPipelineBatchConfusionMatrix
+    {
+        internal VisionPipelineBatchConfusionMatrix(
+            int inputSampleCount,
+            int truePositiveCount,
+            int trueNegativeCount,
+            int falsePositiveCount,
+            int falseNegativeCount,
+            int executionErrorCount,
+            int notRunCount,
+            int unknownLabelCount)
+        {
+            InputSampleCount = Math.Max(0, inputSampleCount);
+            TruePositiveCount = Math.Max(0, truePositiveCount);
+            TrueNegativeCount = Math.Max(0, trueNegativeCount);
+            FalsePositiveCount = Math.Max(0, falsePositiveCount);
+            FalseNegativeCount = Math.Max(0, falseNegativeCount);
+            ExecutionErrorCount = Math.Max(0, executionErrorCount);
+            NotRunCount = Math.Max(0, notRunCount);
+            UnknownLabelCount = Math.Max(0, unknownLabelCount);
+        }
+
+        internal int InputSampleCount { get; }
+
+        internal int TruePositiveCount { get; }
+
+        internal int TrueNegativeCount { get; }
+
+        internal int FalsePositiveCount { get; }
+
+        internal int FalseNegativeCount { get; }
+
+        internal int ExecutionErrorCount { get; }
+
+        internal int NotRunCount { get; }
+
+        internal int UnknownLabelCount { get; }
+
+        internal int EvaluatedCount => TruePositiveCount
+            + TrueNegativeCount
+            + FalsePositiveCount
+            + FalseNegativeCount;
+
+        internal int AccountedCount => EvaluatedCount
+            + ExecutionErrorCount
+            + NotRunCount
+            + UnknownLabelCount;
+
+        internal bool IsBalanced => AccountedCount == InputSampleCount;
+
+        internal static string FormatRate(int numerator, int denominator)
+        {
+            return denominator <= 0
+                ? "N/A"
+                : (100D * numerator / denominator).ToString("0.0", System.Globalization.CultureInfo.CurrentCulture) + "%";
+        }
+
+        internal string AccuracyText => FormatRate(
+            TruePositiveCount + TrueNegativeCount,
+            EvaluatedCount);
+
+        internal string FalseAcceptRateText => FormatRate(
+            FalsePositiveCount,
+            FalsePositiveCount + TrueNegativeCount);
+
+        internal string FalseRejectRateText => FormatRate(
+            FalseNegativeCount,
+            FalseNegativeCount + TruePositiveCount);
     }
 }

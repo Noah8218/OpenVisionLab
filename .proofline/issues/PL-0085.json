@@ -1,0 +1,112 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0085",
+    "aliases": [
+      "2D-027"
+    ],
+    "type": "task",
+    "mode": "simple",
+    "title": "Separate execution errors and not-run samples in the evaluation confusion matrix",
+    "risk": "medium"
+  },
+  "origin": {
+    "kind": "scheduled-follow-up",
+    "summary": "The 2D-027 task requires evaluation statistics to distinguish quality judgments from execution errors and samples that were not run.",
+    "refs": [
+      "C:/Users/USER/Downloads/OpenVisionLab_2D_tasks.json#2D-027",
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      ".proofline/issues/PL-0084.json"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "2D-027 is implemented through the existing batch outcome and Run History owners. The matrix separates TP/TN/FP/FN from execution errors, not-run rows, and unknown labels; persisted input denominators and legacy fallback are verified."
+  },
+  "objective": {
+    "summary": "Provide a confusion-matrix projection for validation results where quality TP/TN/FP/FN, execution errors, not-run samples, and unknown labels are separate and every count reconciles to the input sample count.",
+    "constraints": [
+      "Reuse VisionPipelineBatchOutcomeContract, VisionPipelineBatchRunSummaryStorage, and the existing run-history/Validation Set projection.",
+      "Keep raw result records and existing legacy aggregate fields compatible; do not add a new screen, dataset database, qualification system, or Labeling integration.",
+      "Treat OK as the positive acceptance class so false accept maps to FP and false reject maps to FN; do not invent accuracy or confidence data without a denominator.",
+      "Keep test data and evidence on D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev; do not change Original, release, deploy, hardware, or external systems."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "A four-cell TP/TN/FP/FN matrix is derived from explicit expected/actual outcomes, with execution errors, not-run samples, and unknown labels reported in separate counts.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "The accounted count equals the persisted input sample count for full and partial runs; zero denominators render N/A instead of 0%.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "The existing run-history projection exposes the matrix without changing raw result records, and focused contract/build checks cover save/reload-compatible legacy data.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3"
+      ]
+    }
+  ],
+  "relations": [],
+  "context": [],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "test",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d027-confusion-matrix-20260915-final/confusion-matrix-contract.txt",
+      "observation": "Debug focused confusion-matrix contract passed 3/3: four-cell TP/TN/FP/FN, execution error/not-run/unknown label reconciliation, zero-denominator N/A, and save/reload projection.",
+      "observed_at": "2026-09-15T23:03:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d027-confusion-matrix-20260915-release-final/confusion-matrix-contract.txt",
+      "observation": "Release focused confusion-matrix contract passed 3/3 with the same classification and persisted-denominator coverage.",
+      "observed_at": "2026-09-15T23:04:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "inspection",
+      "location": "docs/reports/OPENVISIONLAB_2D_CONFUSION_MATRIX_20260915.md; docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md",
+      "observation": "Owner map, positive-class definition, persisted input denominator, legacy fallback, separate error/not-run/unknown counts, N/A rate rule, and unverified WPF boundary are recorded.",
+      "observed_at": "2026-09-15T23:05:24+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-15T23:05:24+09:00",
+      "summary": "Keep VisionPipelineBatchOutcomeContract and Run History projection as the single owner; persist only the input denominator needed to distinguish partial-run not-run rows.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-15T23:05:24+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "All 2D-027 criteria are satisfied by the Debug/Release focused contracts, save/reload evidence, and documented owner path."
+    }
+  ],
+  "created_at": "2026-09-15T22:51:00+09:00",
+  "updated_at": "2026-09-15T23:05:24+09:00"
+}

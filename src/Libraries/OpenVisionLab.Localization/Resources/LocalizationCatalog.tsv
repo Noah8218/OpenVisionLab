@@ -322,6 +322,12 @@ PipelineReview.Guide.ValidationDecision	아직 Pipeline 판정 불가	Pipeline c
 PipelineReview.Guide.ValidationDetail	검증 상세를 열어 라우트 또는 파라미터를 먼저 수정하십시오.	Open the validation detail and fix the route or parameters first.
 PipelineReview.Guide.DisabledNext	Step을 켠 뒤 판정	Enable this step before judging it
 PipelineReview.Guide.DisabledDetail	이 Step은 꺼져 있어서 리뷰 중 건너뜁니다.	This step is skipped during review because it is disabled.
+PipelineReview.Guide.NotRunAfterFailureNext	앞선 실패 Step을 수정한 뒤 재리뷰	Fix the earlier failed step, then rerun review
+PipelineReview.Guide.NotRunAfterFailureDecision	앞선 실패 이후 미실행	Not run after an earlier failure
+PipelineReview.Guide.NotRunAfterFailureDetail	앞선 Step이 실패하여 이 Step은 실행되지 않았습니다. 이 tail은 추가 NG가 아닙니다.	This step was not run because an earlier step failed; its tail is not an additional NG result.
+PipelineReview.Guide.CancelledNext	리뷰를 다시 실행해 이 Step 판정	Rerun review to evaluate this step
+PipelineReview.Guide.CancelledDecision	취소됨 / 미판정	Cancelled / not judged
+PipelineReview.Guide.CancelledDetail	리뷰 실행이 취소되어 이 Step은 판정되지 않았습니다.	This step was not evaluated because the review run was cancelled.
 PipelineReview.Guide.InputMissingNext	입력 레이어 연결 또는 이미지 로드	Connect or load the input layer
 PipelineReview.Guide.InputMissingDetail	선택한 입력 레이어에 이미지가 없어 아직 이 Step을 판정할 수 없습니다.	The selected input layer has no image, so this step cannot be judged yet.
 PipelineReview.Guide.InputPendingNext	리뷰 실행으로 이전 Step 입력 생성	Run Review to create this input from the earlier step
@@ -400,6 +406,7 @@ Morphology.Shape.Rect	사각	Rect
 Morphology.Shape.Ellipse	타원	Ellipse
 Morphology.Shape.Cross	십자	Cross
 VisionTool.Status.PreviewOk	미리보기 OK	Preview OK
+VisionTool.Status.InspectionJudgmentNotEvaluated	검사 판정 미평가	Inspection judgment not evaluated
 VisionTool.Status.PreviewNg	미리보기 NG	Preview NG
 VisionTool.Affine.ResultSummaryFormat	Affine 2x3 / {0} / 유효 픽셀 {1:0.0}%	Affine 2x3 / {0} / valid pixels {1:0.0}%
 VisionTool.Affine.MatrixLabel	행렬	Matrix

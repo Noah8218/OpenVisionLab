@@ -156,6 +156,11 @@ namespace OpenVisionLab
             toolRuntime.SetStatus(status);
         }
 
+        public void ClearResultReview()
+        {
+            toolRuntime.ClearResultReview();
+        }
+
         public void SetResultReview(string title, IEnumerable<MatchingResult> results, TimeSpan? tactTime = null)
         {
             toolRuntime.SetResultReview(title, results, tactTime);

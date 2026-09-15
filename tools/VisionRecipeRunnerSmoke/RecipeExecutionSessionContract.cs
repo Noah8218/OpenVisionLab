@@ -92,6 +92,26 @@ internal static class RecipeExecutionSessionContract
                 RequireReports(summary, 1);
             }, observations, failures);
 
+            await RunCaseAsync("scope dispatch routes Good/Bad suite through the execution owner", async () =>
+            {
+                OpenVisionRecipeExecutionSessionViewModel session = new();
+                await ObserveRunAsync(session, recipeName, PipelineName,
+                    () => session.RunValidationSuiteAsync(
+                        OpenVisionRecipeValidationSuiteScopeOption.GoodBadPairKey,
+                        recipeName,
+                        PipelineName,
+                        goodOption,
+                        null),
+                    () => session.IsPairCheckRunning && !session.IsValidationSuiteRunning,
+                    expectedSaves: 1);
+                VisionPipelineBatchRunSummary summary = LatestSummary(recipeName, "GoodBadPair");
+                Require(summary.Results.Select(result => result.SampleName).SequenceEqual(new[] { "Pair_Good", "Pair_Bad" })
+                    && session.LatestPairRunSummary.HasResult
+                    && session.LatestPairRunSummary.Succeeded,
+                    "Validation-suite scope dispatch did not preserve the Good/Bad execution owner contract.");
+                RequireReports(summary, 2);
+            }, observations, failures);
+
             await RunCaseAsync("pair retains Good/Bad order and successful rejection", async () =>
             {
                 OpenVisionRecipeExecutionSessionViewModel session = new();

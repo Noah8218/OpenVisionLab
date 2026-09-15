@@ -33,6 +33,9 @@ namespace OpenVisionLab
         public string ExpectedMetricName { get; set; } = string.Empty;
         public string ExpectedMetricMinimum { get; set; } = string.Empty;
         public string ExpectedMetricMaximum { get; set; } = string.Empty;
+        public string ExpectedOutcome { get; set; } = string.Empty;
+        public string ExpectedError { get; set; } = string.Empty;
+        public string ExpectedFailedStep { get; set; } = string.Empty;
         public string Notes { get; set; } = string.Empty;
         public string ReferenceImagePath { get; set; } = string.Empty;
         public string PairGroup { get; set; } = string.Empty;
@@ -501,6 +504,9 @@ namespace OpenVisionLab
                     ExpectedMetricName = GetValue(row, "ExpectedMetricName"),
                     ExpectedMetricMinimum = GetValue(row, "ExpectedMetricMinimum"),
                     ExpectedMetricMaximum = GetValue(row, "ExpectedMetricMaximum"),
+                    ExpectedOutcome = GetValue(row, "ExpectedOutcome"),
+                    ExpectedError = GetValue(row, "ExpectedError"),
+                    ExpectedFailedStep = GetValue(row, "ExpectedFailedStep"),
                     Notes = GetValue(row, "Notes"),
                     ReferenceImagePath = GetValue(row, "ReferenceImagePath"),
                     PairGroup = GetValue(row, "PairGroup"),

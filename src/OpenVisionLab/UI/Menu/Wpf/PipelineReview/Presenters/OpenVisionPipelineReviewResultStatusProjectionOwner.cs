@@ -118,6 +118,19 @@ namespace OpenVisionLab
                     continue;
                 }
 
+                if (!summary.Executed)
+                {
+                    continue;
+                }
+
+                if (string.Equals(
+                    summary.ExecutionState,
+                    VisionPipelineResultSummaryService.CancelledState,
+                    StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
                 if (summary.Success && !summary.IsAcceptanceNg)
                 {
                     okCount++;

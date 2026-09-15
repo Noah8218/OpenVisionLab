@@ -28,6 +28,7 @@ namespace OpenVisionLab
             {
                 Owner = ownerProvider()
             };
+            learnWindow.SetOpenLearnDocumentAction(OpenVisionWorkspaceLearnDocumentService.OpenLearnDocumentFile);
             learnWindow.Closed += LearnWindow_Closed;
             learnWindow.Show();
         }

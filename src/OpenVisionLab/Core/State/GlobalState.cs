@@ -6,7 +6,7 @@ namespace OpenVisionLab
 {
     public static class AppVersion
     {
-        public static string VERSION { get; set; } = "2.2.0-dev.1";
+        public static string VERSION { get; set; } = "2.2.0-dev.3";
         public static string DATETIME_UPDATED { get; set; } = "2026/06/08 /*18:00*/";
         public static string MANAGER { get; set; } = "NOAH";
     }

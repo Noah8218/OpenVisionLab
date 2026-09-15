@@ -1,0 +1,133 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0067",
+    "aliases": [
+      "OPENVISIONLAB-2D009-PREVALIDATION-20260915"
+    ],
+    "type": "bug",
+    "mode": "simple",
+    "title": "Align UI and public Runner pre-validation contracts",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "scheduled 2D task execution and source review",
+    "summary": "2D-009 requires the UI and public Runner/TCP execution boundary to reject the same invalid recipe structure before native calculation, while preserving the existing validator and normalization owners.",
+    "refs": [
+      "C:\\Users\\USER\\Downloads\\OpenVisionLab_2D_tasks.json",
+      "AGENTS.md",
+      "docs\\contracts\\openvisionlab\\OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md",
+      "C:\\Users\\USER\\.codex\\docs\\WPF_UI_UX_RULES.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "The public VisionRecipeRunner now applies the existing VisionPipelineValidator to the normalized execution copy before native execution and exposes the shared errors through VisionPipelineValidationException. Valid object and XML paths, unsupported ToolType, missing layer, invalid parameter, and invalid acceptance cases are covered by the focused contract; the existing Pipeline Review execution and TCP smoke builds remain green."
+  },
+  "problem": {
+    "claims": [
+      {
+        "id": "P1",
+        "state": "confirmed",
+        "text": "The UI Review path calls VisionPipelineValidator.Validate, but the public VisionRecipeRunner path does not call that validator before VisionPipelineExecutionService.RunPreparedAsync; TCP inspection inherits the Runner path.",
+        "evidence_refs": [
+          "E1"
+        ]
+      }
+    ],
+    "impact": "The same recipe can be visibly rejected in UI while a headless or TCP-triggered run proceeds to native execution and reports a later runtime failure or different reason."
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "VisionRecipeRunner performs the existing VisionPipelineValidator pre-validation on the normalized execution copy before creating the execution context or entering native step execution, and exposes a typed rejection carrying the validator errors.",
+      "evidence_refs": [
+        "E2"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "A valid XML and object pipeline accepted by the existing UI validator remains runnable through VisionRecipeRunner, while unsupported ToolType, missing layer, invalid parameter, and invalid acceptance structures are rejected before execution with the same error text as VisionPipelineValidator.",
+      "evidence_refs": [
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "The existing UI Review validator owner and TCP routing remain intact, and the focused Debug build plus pre-validation contract pass without changes to the Original repository or external integration.",
+      "evidence_refs": [
+        "E3",
+        "E4"
+      ]
+    }
+  ],
+  "relations": [],
+  "context": [
+    {
+      "kind": "owner-map",
+      "location": "OpenVisionPipelineReviewDocument.RefreshLayerState/RefreshInputLayerState -> VisionPipelineValidator.Validate; VisionRecipeRunner.RunAsync -> VisionPipelineExecutionPlan.Create -> VisionPipelineExecutionService.RunPreparedAsync; TwoDIntegrationExchange.ProcessInspectionAsync -> VisionRecipeRunner.RunAsync."
+    },
+    {
+      "kind": "state-writer",
+      "location": "VisionPipelineValidator owns definition Errors/Warnings; VisionRecipeRunner owns public execution admission; VisionPipelineExecutionService owns per-step runtime validation and results."
+    },
+    {
+      "kind": "reading-order",
+      "location": "VisionPipelineValidation.cs -> OpenVisionPipelineReviewDocument.cs -> VisionRecipeRunner.cs -> TwoDIntegrationExchange.cs -> focused VisionRecipeRunnerSmoke contract."
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "review",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/Documents/OpenVisionPipelineReviewDocument.cs:168,226,711,1335,1398; src/OpenVisionLab/Core/Pipeline/Execution/VisionRecipeRunner.cs:98-149; src/OpenVisionLab/Core/Integration/TwoDIntegrationExchange.cs:434-458",
+      "observation": "The WPF Review document calls VisionPipelineValidator.Validate with display-layer names during refresh and blocks RunReviewAsync when validationResult.Errors is non-empty. VisionRecipeRunner builds VisionPipelineExecutionPlan and calls VisionPipelineExecutionService.RunPreparedAsync without the validator. TwoDIntegrationExchange invokes VisionRecipeRunner for non-locator and generated locator pipelines, so TCP inherits the public Runner admission path.",
+      "observed_at": "2026-09-15T15:07:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d009-prevalidation-20260915/pipeline-prevalidation-contract.txt",
+      "observation": "The focused VisionRecipeRunnerSmoke contract passed. A valid object pipeline and valid XML runner path completed; unsupported ToolType, missing input layer, invalid parameter, and invalid acceptance cases were rejected before native execution by VisionPipelineValidationException, with exception.Errors exactly matching VisionPipelineValidator.Errors.",
+      "observed_at": "2026-09-15T15:21:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d009-prevalidation-20260915/pipeline-review/pipeline-review-execution-contract.txt",
+      "observation": "The existing Pipeline Review execution contract passed with timeout/cancellation distinction, generation guard, duplicate-run rejection, and disposal drain. The UI execution owner remains intact after the Runner admission change.",
+      "observed_at": "2026-09-15T15:21:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "build",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d009-prevalidation-20260915/openvisionlab-debug-build.log; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d009-prevalidation-20260915/vision-recipe-runner-smoke-build.log; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d009-prevalidation-20260915/tcp-smoke-build.log",
+      "observation": "OpenVisionLab, VisionRecipeRunnerSmoke, and TwoDIntegrationTcpSmoke Debug builds completed with 0 warnings and 0 errors. TCP source routing remains through TwoDIntegrationExchange -> VisionRecipeRunner; no Original repository or external integration was changed.",
+      "observed_at": "2026-09-15T15:21:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-15T15:21:00+09:00",
+      "summary": "Reuse the existing Validator and normalization owner. Add only a typed admission exception at the public Runner boundary; do not create a second validation framework or alter the TCP protocol.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E4"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-15T15:21:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "PL-0067 resolved after the shared Validator admission boundary and typed Runner rejection passed focused valid/invalid object/XML checks, the Pipeline Review execution contract remained green, and the app/Runner/TCP Debug builds passed."
+    }
+  ],
+  "created_at": "2026-09-15T15:07:00+09:00",
+  "updated_at": "2026-09-15T15:21:00+09:00"
+}

@@ -1,0 +1,230 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0025",
+    "aliases": [],
+    "type": "task",
+    "mode": "composite",
+    "title": "Move RecipeCommandSurface UI dispatcher scheduling to Shell composition",
+    "risk": "medium"
+  },
+  "origin": {
+    "kind": "explicit user request to continue RecipeCommandSurface refactoring",
+    "summary": "The user asked for RecipeCommandSurface refactoring to continue until the remaining proven responsibility boundaries are complete. A post-PL-0024 source audit found direct Dispatcher.Yield and Application.Current.Dispatcher calls inside the command surface.",
+    "refs": [
+      "current user request",
+      "PL-0024",
+      "AGENTS.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "PL-0025 resolved: direct WPF dispatcher scheduling was moved from RecipeCommandSurface to existing OpenVisionShellHostView callbacks, focused scheduler and regression contracts passed, Debug builds passed with zero warnings/errors, and the final owner/navigation audit is recorded."
+  },
+  "objective": {
+    "summary": "Move UI dispatcher yielding and render flushing out of RecipeCommandSurface into existing OpenVisionShellHostView composition callbacks while preserving recipe selection/creation behavior, status transitions, command names, and shutdown ownership.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev; keep C:\\Git\\2D\\Original read-only.",
+      "Do not reopen or repeat PL-0022, PL-0023, or PL-0024.",
+      "Keep RecipeCommandSurface responsible for recipe state, command state, and status projection; OpenVisionShellHostView owns the WPF Dispatcher implementation.",
+      "Do not add an interface, manager, factory, provider, event bus, wrapper, or manual partial.",
+      "Add callbacks only at the end of the constructor parameter list so existing callers remain source-compatible.",
+      "Preserve the existing DispatcherPriority.Background yield and DispatcherPriority.Render flush semantics.",
+      "Do not include locator overlay image loading in this issue; audit it separately only if an independent owner is proven.",
+      "Store generated evidence under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\recipe-command-surface-dispatch-boundary-20260912.",
+      "Do not commit, push, tag, release, deploy, or modify Original from this refactoring slice."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The current and intended dispatcher owner, caller, dependency direction, mutable-state writer, lifetime owner, XAML contract, and shortest reading route are documented from source.",
+      "evidence_refs": [
+        "E1",
+        "E4"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "RecipeCommandSurface contains no direct WPF Dispatcher or Application.Current dispatcher calls; OpenVisionShellHostView supplies the concrete callbacks while recipe state and status remain owned by the Surface.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Focused injected scheduler contracts prove that recipe selection and recipe creation invoke the scheduler callbacks and preserve the existing switch status path, and the required Debug builds pass.",
+      "evidence_refs": [
+        "E3",
+        "E4"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "Handoff and codebase navigation record the new scheduler boundary, preserved public/XAML contracts, first-contributor reading route, changed files, and the remaining Surface debt; runtime UI limits are explicit.",
+      "evidence_refs": [
+        "E4"
+      ]
+    }
+  ],
+  "milestones": [
+    {
+      "id": "M1",
+      "summary": "Audit dispatcher calls and prove the smallest Shell-owned scheduling boundary.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1",
+        "C2"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M2",
+      "summary": "Route recipe selection and creation scheduling through existing Shell callbacks without adding an abstraction layer.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1",
+        "C2"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M3",
+      "summary": "Run focused injected scheduler contracts and Debug builds.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C3"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M4",
+      "summary": "Complete owner, MVVM, command/binding, partial/folder, navigation, and first-contributor audit.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1",
+        "C3",
+        "C4"
+      ],
+      "issue_refs": []
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0024"
+    }
+  ],
+  "context": [
+    {
+      "kind": "source",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/Recipe/CommandSurface/RecipeCommandSurface.cs"
+    },
+    {
+      "kind": "composition-owner",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/OpenVisionShellHostView.xaml.cs"
+    },
+    {
+      "kind": "contract-project",
+      "location": "tools/VisionRecipeRunnerSmoke"
+    },
+    {
+      "kind": "live-status",
+      "location": "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md"
+    },
+    {
+      "kind": "owner-registry",
+      "location": "docs/admin/CODEBASE_STRUCTURE.md"
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "evidence-root",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\recipe-command-surface-dispatch-boundary-20260912",
+      "summary": "Focused evidence for the RecipeCommandSurface WPF Dispatcher boundary."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\recipe-command-surface-dispatch-boundary-20260912\\m1-audit",
+      "observation": "The source audit records two Dispatcher.Yield calls and one Application.Current.Dispatcher Render flush inside RecipeCommandSurface. The owner map records the before/after call path, mutable-state writer, Shell composition/lifetime owner, preserved XAML contract, and the reason this is an independent external WPF scheduling boundary. Locator image loading and recipe/file policy are explicitly excluded as separate concerns.",
+      "observed_at": "2026-09-12T22:20:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\recipe-command-surface-dispatch-boundary-20260912\\m2-callback-boundary",
+      "observation": "RecipeCommandSurface now calls yieldToUi and flushUi callbacks at the two former scheduling points. OpenVisionShellHostView supplies the concrete WPF Dispatcher implementation. A direct WPF Dispatcher/Application.Current search in the Surface is clear; the only remaining scheduler names are callback fields and their call sites. No new abstraction or partial was introduced.",
+      "observed_at": "2026-09-12T22:35:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\recipe-command-surface-dispatch-boundary-20260912\\m3-focused",
+      "observation": "VisionRecipeRunnerSmoke x64 Debug and OpenVisionLab.sln Debug builds passed with 0 warnings and 0 errors. Copied-runtime Dispatcher boundary passed 2/2; Clipboard regression passed 3/3; RefreshOptions passed 1/1; Validation Set success projection passed 1/1; Validation Set error projection passed 1/1. A direct Dispatcher/Application.Current search in RecipeCommandSurface returned no matches. Actual desktop WPF, device, and long-run limits remain unverified.",
+      "observed_at": "2026-09-12T22:45:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\recipe-command-surface-dispatch-boundary-20260912\\m4-final-audit",
+      "observation": "The final audit records Surface/Shell owners, callback dependency direction, mutable-state and lifetime owners, preserved XAML command/property contracts, the shortest reading route, no partial/folder addition, and the explicit overlay/file-policy boundary. Documentation index, RefactorAudit, readiness, issue-ledger validation, and git diff checks passed; the final Debug builds and copied-runtime contracts are recorded in m3-focused. Actual WPF visual and long-running runtime matrices remain unverified.",
+      "observed_at": "2026-09-12T22:55:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-12T22:20:00+09:00",
+      "summary": "Move only UI dispatcher scheduling to two optional callbacks supplied by the existing OpenVisionShellHostView composition owner. Keep recipe state, command state, status projection, XAML names, and image/file policy in their current owners.",
+      "evidence_refs": [
+        "E1"
+      ]
+    },
+    {
+      "id": "D2",
+      "kind": "decision",
+      "at": "2026-09-12T22:35:00+09:00",
+      "summary": "Use two optional concrete callbacks appended to the existing constructor instead of a scheduler interface or wrapper. Preserve Background yield, Render flush, constructor compatibility, and Shell lifetime ownership.",
+      "evidence_refs": [
+        "E2"
+      ]
+    },
+    {
+      "id": "D3",
+      "kind": "decision",
+      "at": "2026-09-12T22:45:00+09:00",
+      "summary": "Keep the callback-only scheduler boundary after the copied-runtime contract proved selection and creation callback invocation and the existing Clipboard, RefreshOptions, and Validation Set projection regressions remained green. No desktop WPF matrix is claimed.",
+      "evidence_refs": [
+        "E3"
+      ]
+    },
+    {
+      "id": "D4",
+      "kind": "decision",
+      "at": "2026-09-12T22:55:00+09:00",
+      "summary": "Close the Dispatcher boundary: the existing Shell owns concrete WPF scheduling, the Surface retains protected recipe and XAML state, no manual partial or new folder is justified, and the remaining overlay/file policy requires a new independent proof before reopening.",
+      "evidence_refs": [
+        "E4"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-12T23:00:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "PL-0025 resolved after all four milestones and criteria were evidenced. No further RecipeCommandSurface split is justified by this source audit; reopen only for a new independent boundary, reproducible defect, failed criterion, or changed dependency contract."
+    }
+  ],
+  "created_at": "2026-09-12T22:15:00+09:00",
+  "updated_at": "2026-09-12T23:00:00+09:00"
+}

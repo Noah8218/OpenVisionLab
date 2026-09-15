@@ -45,7 +45,7 @@ namespace OpenVisionLab
 
         public void RefreshRows()
         {
-            OpenVisionShellHostLayerListRefreshResult result = layerListPresenter.Refresh();
+            LayerListRefreshResult result = layerListPresenter.Refresh();
             updateLayerOptions?.Invoke(layerListPresenter.LayerTitles, result.SelectedLayerTitle);
             dockedLayerWorkspace.SyncLayerDocuments(CreateWorkspaceLayerTitleSnapshot());
             SetSelection(result.SelectedIndex);

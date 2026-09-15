@@ -72,6 +72,7 @@ namespace OpenVisionLab
                 ? new OpenVisionLearnWindow(127, 255, false, (int)topicIndex.Value)
                 : new OpenVisionLearnWindow();
             learnWindow.Owner = ownerProvider();
+            learnWindow.SetOpenLearnDocumentAction(OpenVisionWorkspaceLearnDocumentService.OpenLearnDocumentFile);
             learnWindow.SetOpenPracticeSamplesAction(openPracticeSamples);
             learnWindow.SetOpenRelatedToolAction(selectToolMenu);
             learnWindow.Closed += LearnWindow_Closed;

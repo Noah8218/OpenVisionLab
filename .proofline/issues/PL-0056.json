@@ -1,0 +1,139 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0056",
+    "aliases": [],
+    "type": "task",
+    "mode": "simple",
+    "title": "Retain Vision Tool Double-Input Custom Tool Shell Partial after structural audit",
+    "risk": "low"
+  },
+  "origin": {
+    "kind": "user-request",
+    "summary": "The user requested that all remaining Partial boundaries continue to be structurally refactored on a recurring cycle, with no mechanical split or deletion.",
+    "refs": [
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "docs/reports/OPENVISIONLAB_PARTIAL_STRUCTURAL_ELIMINATION_PLAN_20260913.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "PL-0056 resolved: VisionToolDoubleInputCustomToolShell remains a bounded XAML/dependency-property visual adapter; existing double-input runtime/controller/base View and dock/Learn owners retain state, callbacks, policy and lifetime. Focused source/build/WPF/monitor evidence is recorded, while broader runtime remains explicitly unverified."
+  },
+  "objective": {
+    "summary": "Audit VisionToolDoubleInputCustomToolShell.xaml.cs, retain or restructure it only when the current owner map and focused runtime evidence justify the boundary.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev; do not modify C:\\Git\\2D\\Original.",
+      "Do not add a service, interface, manager, wrapper, forwarding Partial, or ViewModel split for file length alone.",
+      "Preserve the XAML namescope, dependency-property bindings, visual facade, docking density, Learn action, shared double-input runtime/controller/base lifetime and Arithmetic tool behavior.",
+      "Keep test outputs and evidence under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev.",
+      "Do not commit, push, tag, release, deploy, or mutate the Original repository."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The proof report records current owners, call path, mutable-state writer, lifetime/release owner, binding/public/test contract, shortest reading order, and why no production split is justified.",
+      "evidence_refs": [
+        "E1"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "The source contract proves the shell Partial is a bounded XAML/dependency-property presentation adapter and that dock, Learn, runtime, controller and base lifetime responsibilities remain with their existing concrete owners.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Focused Debug/Release contracts and builds, representative Arithmetic WPF smoke, and dynamic monitor geometry pass; broader Tool consumer/theme/DPI/input/native/device/inspection runtime remains explicitly unverified.",
+      "evidence_refs": [
+        "E2",
+        "E3",
+        "E4"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0055"
+    }
+  ],
+  "context": [
+    {
+      "kind": "source",
+      "location": "src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Tooling\\DoubleInput\\VisionToolDoubleInputCustomToolShell.xaml(.cs); VisionToolDoubleInputCustomToolRuntime.cs; VisionToolDoubleInputCustomToolController.cs; VisionToolDoubleInputCustomToolViewBase.cs; ToolViews\\ArithmeticToolWpfView.xaml(.cs); UI\\Menu\\Wpf\\Docking\\OpenVisionToolDockModeHelper.cs; UI\\VisionTest\\Wpf\\Learn\\VisionToolLearnWindowController.cs"
+    },
+    {
+      "kind": "test-host",
+      "location": "tools\\VisionRecipeRunnerSmoke\\VisionToolDoubleInputCustomToolShellPartialBoundaryContract.cs; tools\\PipelineViewerScreenshotSmoke\\Program.cs; tools\\RunUiPrecheck.ps1"
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "report",
+      "location": "docs\\reports\\OPENVISIONLAB_DOUBLE_INPUT_SHELL_PARTIAL_RETENTION_20260914.md",
+      "summary": "Owner map, retained Partial decision, binding/public contract, verification and remaining runtime boundary."
+    },
+    {
+      "kind": "evidence-root",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\double-input-shell-partial-retention-20260914",
+      "summary": "Debug/Release source contracts, WPF precheck screenshots/reports, and dynamic monitor geometry."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source",
+      "location": "docs\\reports\\OPENVISIONLAB_DOUBLE_INPUT_SHELL_PARTIAL_RETENTION_20260914.md; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Tooling\\DoubleInput\\VisionToolDoubleInputCustomToolShell.xaml(.cs); VisionToolDoubleInputCustomToolRuntime.cs; VisionToolDoubleInputCustomToolController.cs; VisionToolDoubleInputCustomToolViewBase.cs; ToolViews\\ArithmeticToolWpfView.xaml(.cs)",
+      "observation": "The shell Partial is a required XAML/DP/visual and dock-density adapter. Existing runtime/controller/base View, concrete Arithmetic collaborators, dock helper and Learn controller own callbacks, mutable layer/preview state, policy, Window composition and release lifetime; no independent state/lifetime/test seam justifies a split.",
+      "observed_at": "2026-09-14T10:00:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\double-input-shell-partial-retention-20260914\\double-input-shell-partial-boundary-contract.txt",
+      "observation": "VisionToolDoubleInputCustomToolShellPartialBoundaryContract passed all 12/12 checks in Debug and Release. VisionRecipeRunnerSmoke Debug and Release builds completed with zero warnings and zero errors.",
+      "observed_at": "2026-09-14T10:00:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\double-input-shell-partial-retention-20260914\\ui-precheck-debug\\ui_precheck_report.md; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\double-input-shell-partial-retention-20260914\\ui-precheck-release\\ui_precheck_report.md",
+      "observation": "Debug and Release RunUiPrecheck passed wpf_arithmetic_tool_learn_button and wpf_layer_selection_arithmetic_tool with OK checks, zero layout/text/internal diagnostics, and fresh PNG evidence.",
+      "observed_at": "2026-09-14T10:00:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\double-input-shell-partial-retention-20260914\\monitor-debug\\monitor-window-geometry.json; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\double-input-shell-partial-retention-20260914\\monitor-release\\monitor-window-geometry.json",
+      "observation": "Dynamic Debug and Release probes selected the smaller-left \\\\.\\DISPLAY2 monitor with bounds X=-1920,Y=365,1920x1080, moved the actual smoke window, verified MoveSucceeded=true, IntersectingWindowCount=1 and a passing target PNG. Full Tool consumer/theme/DPI/input, native SDK/GPU/camera, inspection execution/persistence and long-running runtime remain unverified.",
+      "observed_at": "2026-09-14T10:00:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-14T10:00:00+09:00",
+      "summary": "Retain the DoubleInput custom tool shell Partial. It is a required WPF visual/namescope boundary; its nested layout controller is presentation-only, while existing runtime/controller/base/concrete View owners provide state, callbacks, policy and lifetime. Do not add a new split or wrapper.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-14T10:00:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "All PL-0056 criteria are satisfied by the owner report, 12/12 Debug/Release source contracts, zero-warning/error contract builds, representative Arithmetic WPF smoke, and dynamic monitor/window evidence. Do not reopen without a new requirement, reproducible defect, failed criterion, or changed dependency/lifetime boundary."
+    }
+  ],
+  "created_at": "2026-09-14T10:00:00+09:00",
+  "updated_at": "2026-09-14T10:00:00+09:00"
+}

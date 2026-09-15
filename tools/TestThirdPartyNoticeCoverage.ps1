@@ -7,6 +7,7 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = [System.IO.Path]::GetFullPath((Split-Path -Parent $PSScriptRoot))
 $manifestPath = Join-Path $repoRoot "docs\contracts\openvisionlab\OPENVISIONLAB_EXTERNAL_BINARY_MANIFEST.json"
+$sdkManifestPath = Join-Path $repoRoot "dll\OpenVisionLab-Vision-SDK\sdk-manifest.json"
 $defaultNoticePath = Join-Path $repoRoot "NOTICE"
 $noticeFullPath = if ([string]::IsNullOrWhiteSpace($NoticePath)) {
     $defaultNoticePath
@@ -28,11 +29,15 @@ $lines.Add("") | Out-Null
 if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) {
     $failures.Add("External binary manifest is missing: $manifestPath") | Out-Null
 }
+if (-not (Test-Path -LiteralPath $sdkManifestPath -PathType Leaf)) {
+    $failures.Add("Vision SDK provenance manifest is missing: $sdkManifestPath") | Out-Null
+}
 if (-not (Test-Path -LiteralPath $noticeFullPath -PathType Leaf)) {
     $failures.Add("NOTICE file is missing: $noticeFullPath") | Out-Null
 }
 
 $manifest = $null
+$sdkManifest = $null
 $noticeText = ""
 if ($failures.Count -eq 0) {
     try {
@@ -40,6 +45,13 @@ if ($failures.Count -eq 0) {
     }
     catch {
         $failures.Add("External binary manifest is not valid JSON: $manifestPath") | Out-Null
+    }
+
+    try {
+        $sdkManifest = Get-Content -LiteralPath $sdkManifestPath -Raw | ConvertFrom-Json
+    }
+    catch {
+        $failures.Add("Vision SDK provenance manifest is not valid JSON: $sdkManifestPath") | Out-Null
     }
 
     if ($null -ne $manifest) {
@@ -68,6 +80,36 @@ if ($failures.Count -eq 0) {
             }
             else {
                 $lines.Add("COVERED | $marker | $entryPath | $($entry.releasePolicy)") | Out-Null
+            }
+        }
+    }
+
+    if ($null -ne $sdkManifest) {
+        $noticeText = Get-Content -LiteralPath $noticeFullPath -Raw
+        $sdkSection = [regex]::Match(
+            $noticeText,
+            '(?s)OpenVisionLab Vision SDK(?<body>.*?)(?:\r?\nSharpGL\r?\n)')
+        if (-not $sdkSection.Success) {
+            $failures.Add("NOTICE does not contain a bounded OpenVisionLab Vision SDK section.") | Out-Null
+        }
+        else {
+            $sectionText = $sdkSection.Groups['body'].Value
+            $expectedVersion = [string]$sdkManifest.sdk.version
+            $expectedCommit = [string]$sdkManifest.sdk.commit
+            $noticeCommits = @([regex]::Matches($sectionText, '\b[0-9a-fA-F]{40}\b') | ForEach-Object { $_.Value })
+
+            if ([string]::IsNullOrWhiteSpace($expectedVersion) -or
+                $sectionText.IndexOf($expectedVersion, [System.StringComparison]::Ordinal) -lt 0) {
+                $failures.Add("NOTICE Vision SDK version does not match sdk-manifest.json: $expectedVersion") | Out-Null
+            }
+            if ([string]::IsNullOrWhiteSpace($expectedCommit) -or
+                $noticeCommits.Count -ne 1 -or
+                -not $noticeCommits[0].Equals($expectedCommit, [System.StringComparison]::OrdinalIgnoreCase)) {
+                $actualCommits = if ($noticeCommits.Count -eq 0) { "<none>" } else { $noticeCommits -join ', ' }
+                $failures.Add("NOTICE Vision SDK commit does not match sdk-manifest.json. Expected $expectedCommit; found $actualCommits") | Out-Null
+            }
+            else {
+                $lines.Add("PROVENANCE | OpenVisionLab Vision SDK $expectedVersion | $expectedCommit") | Out-Null
             }
         }
     }

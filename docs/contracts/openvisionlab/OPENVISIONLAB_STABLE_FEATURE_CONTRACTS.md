@@ -65,8 +65,19 @@ When a feature below is marked stable, do not refactor, simplify, replace, or re
 - A found Tool rail item may expose explicit Learn and public-sample shortcuts only when canonical existing destinations are available. Learn must reuse the Learn window and select the mapped topic. Samples must open the existing Sample Picker at the mapped Learn path; opening or cancelling the Picker must not load a sample, select/open the Tool View, run Preview/Run, create layers, or change workspace/input/output routing. Loading remains a separate explicit Picker confirmation.
 - A found Tool rail item may expose Guided Setup only for the five existing starter-intent contracts: Line -> pin gap/pitch, Blob -> count, Contour -> shape/count, Matching -> target presence, and Mean -> brightness. The shortcut must only open Recipe Manager, select the existing Guided Setup tab, and select the mapped intent. It must not create Starter XML, open the Tool View, run Preview/Run, create layers, or change workspace/input/output routing. Unsupported tools must not show a Guided Setup shortcut.
 - Do not label a generic Tool View as `ROI needed` merely because its property model exposes `USE_ROI`. Blob/Contour support full-image execution, Line supplies its full-image default on explicit Preview, and Matching-family tools have a template prerequisite. A fixture-consuming pipeline Step remains the proven required-ROI case and must fail closed through pipeline validation.
+- ROI meaning is explicit at the Pipeline boundary. `USE_ROI=false` is intentional full-image/unset state and ignores stale `CvROI` text. `USE_ROI=true` requires one valid in-image `CvROI` or a valid `CvROIS` list; malformed, empty, non-positive, negative-coordinate, overflow, and out-of-bounds entries are rejected rather than silently converted to unset or clipped. Definition syntax is rejected by `VisionPipelineValidator`, image bounds are rejected at execution, and save/reopen preserves the authored ROI text.
 - Recipe Manager review-bundle export is an explicit command separate from XML export. Schema v1 contains only `pipeline.xml` and `review-manifest.json`; the manifest records application version, validation, ToolTypes, Step routes, acceptance metrics, and referenced dependency/sample path status, size, and SHA-256. It must not copy referenced/private files, import a recipe, run Preview/Run, create layers, or change workspace/input/output routing. Any later asset-copy or import workflow must remain a separate explicit operator action with a review step.
 - Keep comments around non-obvious routing, viewer gesture, and preview/result separation logic. These are easy places for regressions.
+- 2D-036 output allocation preflight is a shared safety boundary for Affine and
+  RotateScale in both Recipe execution and direct Preview. It must reject
+  non-finite/invalid scales, native integer dimension overflow, and checked
+  `width × height × element-bytes` overflow before SDK/native execution. The
+  existing Affine `32768` per-dimension limit remains authoritative. This
+  boundary does not infer a product RAM cap, auto-downscale, cache eviction, or
+  parallel execution from measurement data; any operational memory budget needs
+  a separate product decision and contract. Direct Preview adapters must capture
+  View-backed properties on the View dispatcher before background native work;
+  any WPF result-review update must return to that dispatcher.
 - Public repository material must preserve `LICENSE`, `NOTICE`, copyright text, and attribution to `최노아(Noah-Choi)`. Do not remove or obscure these notices in README, package metadata, or redistributed source copies.
 - Public sample assets must be project-authored synthetic assets or otherwise clearly licensed for redistribution. The root `Sample/` folder is local/vendor sample reference material and must not be tracked or reintroduced into public GitHub output. Public sample and tutorial flows should use `docs/samples/public/` and `docs/samples/public/product/`.
 - Public README/tutorial/Learn content must not mention private goals such as portfolio, hiring, submission, or internal-only intent. Keep those notes in recovery/handoff documents only.
@@ -112,6 +123,23 @@ When a feature below is marked stable, do not refactor, simplify, replace, or re
 - `CanvasImageLoader.LoadMatFromFile` returns an independently owned
   OpenCvSharp Mat that the caller disposes. Do not reintroduce an Emgu
   DataPointer alias, `Emgu.CV.UI.dll`, `Emgu.CV.World.dll`, or `cvextern.dll`.
+- `BitmapImageConverter` is the existing Bitmap/Mat ownership boundary. Its
+  visible row-byte copy accepts supported continuous and non-contiguous
+  ROI/padded-step views, uses the signed source/destination row advances, and
+  leaves caller input ownership with the caller. Allocating `ToMat`/`ToBitmap`
+  results are independent caller-owned outputs; disposed inputs and unsupported
+  pixel formats fail closed before an output is returned. The focused 2D-028
+  contract and the PL-0006 regression contract are the evidence gate; this does
+  not claim 16-bit normalization or actual WPF/runtime qualification.
+- The inspection sample-check path preserves source image depth with
+  `ImreadModes.Unchanged` before constructing the legacy `Bitmap` adapter.
+  `CV_8U` Gray/BGR/BGRA input continues through `BitmapImageConverter` with its
+  existing channel meaning; non-`CV_8U` depth and decode failures are rejected
+  before Runner calculation. `CanvasImageLoader.LoadMatFromFile` remains a
+  display-only owner: its 16-bit-to-8-bit mapping and BGRA alpha drop must not be
+  reused as inspection input normalization. The focused 2D-029 contract proves
+  this separation; it does not claim 16-bit inspection support or actual WPF
+  pixel/theme/DPI/runtime qualification.
 - Main image application must not perform the same selected-detail or docked
   viewer image refresh more than once through one refresh chain. Removing a
   visual refresh must preserve Workspace/Layer command CanExecute
@@ -192,6 +220,9 @@ Stable behavior:
 - Matching fixture translation is an explicit pipeline runtime option. It may clone a downstream step and translate the clone's effective `CvROI`, but it must not rewrite the saved `CvROI`, change input/output routing, create layers outside normal explicit Run output, or trigger Preview/Run. Translation-only v1 requires one Matching result, one prior named frame, the same source layer, one ROI, and an angle delta within the configured limit; unsupported rotation, multi-ROI, mask, or missing-frame cases must fail closed.
 - Blob and Contour Tool Views may show a compact verification guide above the PropertyGrid. The guide is display-only and summarizes Preview state, area/threshold/ROI criteria, and next action; it must not replace the PropertyGrid or trigger Preview/Run/Add Pipeline.
 - Blob/Contour result explanation may translate area-style metrics into beginner-facing reasons through `VisionToolAreaResultExplanation`, including count, max area, max box size, and likely threshold/ROI/area failure-cause hints. This is presentation state only; it must not change Blob/Contour detection metrics, pass/fail logic, Preview/Run execution, layer routing, output layer creation, or pipeline step parameters.
+- 2D-032 Blob/Contour candidate explanation is one-execution evidence: `CandidateId`, native/region index, source-image geometry, `Accepted`, `RejectReasonCode`/text, `AppliedLimits`, generation stage, and coordinate frame come from the existing SDK candidate capture. Exact min/max equality remains accepted; below/above boundaries retain their reject reason, and final `ResultCount`, area/dimension metrics, accepted overlays, table rows, and Run History must project the same snapshot. Do not add a relaxed rerun or a new candidate collector.
+- 2D-033 Line/Length/Mean degenerate-input contract reuses the existing `LineGauge`, `VisionPipelineLineDistanceTool`, `MeanTool`, metric-enrichment, acceptance, overlay, and Run History owners. A valid LineDistance result publishes only positive finite pixel distances and finite mm conversions when the existing positive `PIXELPERMM` contract applies; zero-length, coincident, parallel, empty/uniform/no-edge, and empty-ROI cases fail closed with an explicit error/validation reason and must not publish NaN/Infinity as an accepted measurement. Mean keeps finite `MeanValueMin/Max/Avg` semantics; a uniform value may be valid but must still obey the configured acceptance band. Polarity and gray-value type remain explicit parameters, and this contract does not change the established LineIntersection no-cross presentation state.
+- 2D-034 is a measurement-only baseline owned by the existing `VisionRecipeRunner`, Mean tool, `VisionRecipeRunResult`, and `BitmapImageConverter` path. The focused harness records five warm-ups and thirty measured runs for 1MP, 4512², and 8192² single- and two-layer synthetic inputs, separating input conversion, Runner calculation, result/context clone, and bitmap publication while recording P50/P95 elapsed time, private-memory peak/after-run, managed GC bytes, result identity, and estimated layer/cache bytes with repository/SDK/Recipe SHA and host context. The 20000² case is preflight-only by default. These observations do not authorize a product size cap, cache eviction, diagnostic-output reduction, unbounded parallelism, or a production owner change; WPF/UI/DPI/monitor, cancellation, low-memory, camera, hardware, and long-duration boundaries remain separate evidence.
 - Line Tool View may show compact verification guidance in the shared summary/result area. The guide is display-only, summarizes Edge/Measure/Intersection Preview state and next action, and must not replace the Line PropertyGrid, Line A/B controls, ROI edit affordance, or trigger Preview/Run/Add Pipeline.
 - Line result explanation may translate Edge/Measure/Intersection metrics into beginner-facing reasons through `LineToolResultExplanation`, including edge-point count, fitted-line length, distance px/mm, cross/no-cross state, and likely ROI/contrast/polarity/scan-setting failure-cause hints. This is presentation state only; it must not change Line gauge metrics, distance/intersection semantics, Preview/Run execution, layer routing, output layer creation, or pipeline step parameters.
 - Tool View verification and result-review wording is presentation state. Shared helpers such as `VisionToolVerificationText`, `VisionToolAreaResultExplanation`, `VisionToolAreaVerificationGuidePresenter`, `VisionToolMatchingVerificationGuidePresenter`, and `LineToolVerificationGuidePresenter` may format beginner-facing text, but they must not execute Preview/Run, create layers, change routing, or replace the PropertyGrid model.
@@ -335,6 +366,7 @@ Stable behavior:
 - Matching angle range is edited through one RangeEditor row. `FIND_ANGLE_MAX` remains a model/descriptor companion for XML/execution and WPG endpoint editing, but the duplicate visual row must not be shown as a separate operator row.
 - Matching angle RangeEditor TextBoxes must allow transient edits, including clearing the value or typing `-`, until Enter/focus loss commits a valid numeric value.
 - Matching ordinary numeric TextBoxes such as `SCORE_MIN`, `NUM_MATCH`, and `MAGNIFIATION` must be committed before explicit Preview/Run/Add Pipeline. Typing a value and immediately clicking the command button must not execute with the previous value.
+- 2D-031 Matching boundary: the existing matcher owns `SCORE_MIN` as a `0..1` acceptance threshold while reported `ScoreMin`/`ScoreMax` remain percentage metrics, and `NUM_MATCH` owns the accepted result count. No-result is the existing `MatchingNoResult` outcome with no positive `ResultCount` or overlay; multiple results retain finite ordered score bounds and one rectangle overlay per accepted result. Acceptance, report, XML reopen, and Run History reuse the same execution snapshot; no score recomputation or new candidate abstraction is implied.
 - 2026-06-26 user verification: Matching PropertyGrid UX is verified by the operator. Do not reopen this area for broad refactoring unless there is a new concrete regression or an explicit redesign request.
 
 Do not:
@@ -387,6 +419,17 @@ Stable behavior:
 - Successful result review shows the authoritative 2 x 3 matrix, valid-pixel ratio,
   determinant, and source/destination triangle areas. The current-run output draws
   the three destination points, destination triangle, and transformed input frame.
+- The 2D-030 coordinate contract freezes identity, translation, 90-degree rotation,
+  and horizontal-flip behavior in the existing pixel frame. `AffineM11..AffineM23`,
+  destination point overlays, XML reopen, Run History metrics, and overlay export
+  must retain the same coordinates; operator-authored source/destination order is
+  never inferred or reordered.
+- Fixture translation remains the existing translation-only v1 owner: identity and
+  rounded translation change only the runtime effective ROI and
+  `FixtureOffsetX/Y`/`FixtureEffectiveRoiX/Y` metrics. Rotation beyond the configured
+  limit, missing frame, singular triangle, malformed/out-of-bounds ROI, and invalid
+  scalar calibration fail closed. An anisotropic affine transform remains pixel-space;
+  it must not be converted by inventing one scalar mm/px value.
 - The public known-matrix sample and focused contract are regression evidence, not
   automatic correspondence, homography, camera/lens calibration, calibrated-unit,
   industrial-accuracy, unseen-robustness, or field-qualification evidence.
@@ -471,6 +514,8 @@ Stable behavior:
 - Good/Bad pair sample picker UI may add a decision guide that explains which shared metrics separate OK and NG references, a compact validation checklist, and the recommended manual review order. This guide is display-only and must not run Preview/Run, open tools, create output layers, change routing, or rewrite recipe thresholds.
 - Good/Bad sample catalog coverage must keep representative public-safe pair groups for Blob, Contour, LineDistance, Matching, EdgeBasedMatching, FeatureMatching, Mean, Threshold, and product-domain flows. Each pair group must include both Good and Bad references, one shared baseline pipeline, bounded expected metrics, and at least one shared Good/Bad metric.
 - A Bad reference may be `ExpectedFailure` when the shared baseline pipeline intentionally rejects the sample through a stable metric acceptance gate. `Public_Mean_Brightness_Dark_Bad` is a controlled NG reference: the Mean tool still produces `MeanValueAvg`, but the public sample pipeline rejects values below the normal-brightness acceptance threshold.
+- `ExpectedFailure` is a typed outcome contract, not a nonzero-exit shortcut. A strict row may set optional `ExpectedOutcome=QualityNG` plus `ExpectedFailedStep`, or `ExpectedOutcome=ControlledNoResult` plus the existing typed `ExpectedError` and optional failed step. Quality NG requires a tool-successful step whose acceptance evaluation is NG; `ToolFactoryFailed`, timeout, cancellation, ROI/input/template errors, and unknown errors do not satisfy it. Rows with all three optional fields blank remain legacy-compatible but must be labeled `Legacy`, not presented as strong validation.
+- `VisionPipelineSampleCheckService` and `tools/RunVisionSampleCatalog.ps1` must retain metric, metadata, result-image, overlay-image, and raw-log assertions after ExpectedFailure classification. `NaN`, positive infinity, and negative infinity metrics or expected bounds fail closed. A declared controlled no-result may complete as a typed expected outcome, while an unclassified tool error is `ERROR`/incomplete execution rather than quality `NG`.
 - Feature score-discrimination Bad references are controlled NG references. `Public_Feature_Card.pipeline.xml` must gate acceptance on `ScoreMax` for the normal target range, so low-score/wrong-target Feature hypotheses can still produce a result image while Pipeline Review reports metric NG.
 - LineDistance Bad references may be controlled NG references when the shared pipeline measures edge spacing. `Public_Line_Pins_Distance.pipeline.xml` gates acceptance on `DistanceMmAvg` in the normal range, so width/spacing drift can still produce line overlays while Pipeline Review reports metric NG.
 - Pipeline `LineDistance` keeps raw edge-point intersections as the default. When both paired gauges carry the existing `USE_EXTEND_FIT_LINE=true`, distance samples are intersections against the two fitted edges; every reported endpoint must remain inside the source image and its configured gauge ROI. The runtime evidence must retain the measurement ROI, both fitted edges, and the final distance lines. `EXTEND_FIT_LINE_VALUE` continues to control the displayed fit-line extent; it is not a tolerance, calibration, or acceptance value.
@@ -576,13 +621,35 @@ Stable behavior:
 - Product language changes must refresh selected tool labels without reopening the selected tool document.
 - The guide strip is display-only. Opening Pipeline Review, selecting a step, or changing preview mode must not run Review/Preview, create layers, publish results to the main workspace, or change tool input routing.
 - `Run Review` remains the explicit execution command. Review execution caches result images inside the review document and updates the guide/result state from the run result.
+- Pipeline definition validation is shared with the public `VisionRecipeRunner` admission boundary used by TCP inspection. Unsupported tools, missing layer references, invalid parameters, and invalid acceptance structure are rejected before native execution with the same validator error text; the Runner exposes the rejection as `VisionPipelineValidationException` while Pipeline Review keeps its existing validation surface.
+- Recipe Step/layer graph edits are fail-closed. Deleting, duplicating, or reordering a producer must not guess a replacement for serial `InputLayer`, Arithmetic `InputLayerB`, LineFixture `SourceStep`/`SourceFeature`, or detected-point Affine `StepName/FeatureName` references. Renaming a producer Step or output layer is valid only after every dependent reference is explicitly updated; the shared Validator must reject stale, missing, later, ambiguous, wrong-kind, or wrong-coordinate-layer references before execution.
+- XML save/reopen must preserve those reference strings and validation outcome. A cancelled or discarded edit session must leave the original graph unchanged; the existing normalizer and editor/storage owners must not silently reconnect a broken graph. The focused `--pipeline-layer-reference-invariant-contract` covers serial/branch/Arithmetic B/fixture/Affine delete, duplicate, reorder, rename, XML round-trip, explicit repair, and clone-discard cases.
 - Pipeline Review opened from a sample workflow must use the active `Sample_` pipeline and expose sample-result metrics after explicit Review execution.
 - Pre-run guide state must not claim `OK`; completed OK/NG state must come from the review execution result.
 - Acceptance NG is a first-class review state. A step may execute successfully but fail metric acceptance; Pipeline Review must show an NG decision, a localized beginner-readable reason/next action, run-log context, and the failed step output image for visual inspection.
+- Review result rows preserve the full planned Step count after fail-fast execution. Each row exposes an `ExecutionState` of `Executed`, `Disabled`, `NotRunAfterFailure`, or `Cancelled`; disabled rows remain `SKIP`, an unexecuted failure tail is `NOT RUN` and is not counted as an additional NG, and cancellation remains `CANCEL` without synthetic images, objects, or metrics. Existing tool/acceptance, image ownership, and `ResultCount` semantics remain unchanged.
+- Each Review row/result identity is scoped to the ordered Step index of the current Run, not to the first matching Name/Tool/InputLayer/OutputLayer tuple. Duplicate names and identical routes therefore keep their own execution summary, metric, NG reason, disabled/skipped state, and intermediate output image; selecting a row uses that exact Step-index cache. Persisted XML order remains the compatibility contract; no GUID migration is implied.
+- Review execution seeds only explicit external input layers. Layers declared as outputs by the current effective pipeline, or previously produced by a Review run in the same document, are not reused as initial inputs after producer deletion, disablement, or reorder; an intentional external branch must set `ALLOW_BRANCH_INPUT=true` (or its established case variant). The default `Main` source remains available.
+- The deterministic Preview/Run equivalence baseline uses the same `OpenCvHelper.SetImageChannel1` input normalization at both entry points. For the public Mean, Blob, Contour, Matching, and Line samples, Preview and `VisionRecipeRunner` must agree on tool success, acceptance decision, integer metrics exactly, floating metrics within the declared `1e-5` tolerance, and overlay/object/geometry coordinates within `1e-3`; saving and reopening the XML must preserve those outcomes. PNG byte identity is not required, and this contract does not replace rendered WPF UI verification.
+- `PIXELPERMM` keeps its public legacy XML name and its runtime meaning is millimeters per pixel (`mm/px`). A positive finite scale converts pixel metrics by `px × mm/px`; `0` remains intentional pixel-only state. `NaN`, either infinity, negative values, malformed values, and products that overflow finite `double` must not publish millimeter metrics. The shared Validator rejects non-finite/negative scale parameters before execution, while the existing Line/Bounds/Circle/Geometry/Distance/Curve conversion owners fail closed at the conversion boundary. A positive configured scale is configuration evidence only, not physical calibration certification.
 
 Relevant smoke:
 - `wpf_shell_host_pipeline_review`
   - Covers selected step flow, previous/next navigation, branch input explanation, localized guide text, input/output preview modes, explicit Run Review, validation/result/run-log context, and the guide strip's pre-run/completed decision state.
+- `--pipeline-prevalidation-contract` in `VisionRecipeRunnerSmoke`
+  - Covers a valid object/XML Runner path plus unsupported ToolType, missing layer, invalid parameter, and invalid acceptance rejection against the shared Validator error list.
+- `--pipeline-review-duplicate-step-identity-contract` in `VisionRecipeRunnerSmoke`
+  - Covers duplicate Name/Tool/InputLayer/OutputLayer with different parameters and acceptance NG, same-route intermediate images, reorder, disabled-step mapping, and the legacy layer-only preview fallback.
+- `--pipeline-review-run-input-isolation-contract` in `VisionRecipeRunnerSmoke`
+  - Covers a retained A Run output after producer deletion, disablement, and reorder, plus explicit `ALLOW_BRANCH_INPUT` recovery; the B Run must fail closed instead of consuming the stale layer.
+- `--pipeline-not-run-tail-status-contract` in `VisionRecipeRunnerSmoke`
+  - Covers a five-Step fail-fast acceptance NG with disabled and unexecuted tail rows, cancellation of the current Step with a cancelled tail, Review flow/progress exclusion of synthetic tail rows from NG, and preservation of image/object ownership.
+- `--preview-run-reopen-equivalence-contract [evidenceDirectory]` in `VisionRecipeRunnerSmoke`
+  - Covers the public Mean, Blob, Contour, Matching, and Line samples through the shared Preview controller, headless Runner, XML save/reopen, missing-input/invalid-acceptance and finite/missing-metric gates, plus en-US/ko-KR locale stability. It is a deterministic core/transport baseline; rendered WPF pixels, EXE monitor placement, theme/DPI, and hardware remain separate evidence.
+- `--pixelpermm-finite-unit-contract [evidenceDirectory]` in `VisionRecipeRunnerSmoke`
+  - Covers the 100 px → 1 mm (`0.01 mm/px`) Line/Bounds/Circle/Geometry/Distance/Curve conversions, `NaN`/infinity/zero/negative and overflow fail-closed cases, shared Validator rejection, and legacy `PIXELPERMM` XML save/reopen.
+- `--pipeline-roi-meaning-contract` in `VisionRecipeRunnerSmoke`
+  - Covers intentional full-image unset, valid ROI/multi-ROI definitions, malformed/zero-size/negative definitions, overflow and out-of-bounds execution rejection, and direct EdgeDetection/HsvMask rejection without clipping.
 - `wpf_shell_host_pipeline_review_ng`
   - Covers acceptance NG after successful tool execution, metric target guidance, populated run-log context, and retained failed-step output preview.
 - `wpf_shell_host_workspace_sample_pipeline_review_metrics`
@@ -1029,6 +1096,42 @@ Relevant smoke:
 - `wpf_shell_host_recipe_review_bundle`
 - latest-build direct EXE `recipe-manager-tabs`
 
+## External Asset Reconnection And Qualified Recipe Portability
+
+Stable behavior:
+
+- Review-bundle dependency evidence distinguishes `Found`, `RelocationCandidate`,
+  `Missing`, and `ContentMismatch` using the recorded path, file size, and
+  SHA-256. A relocation candidate is limited to the deterministic file beside
+  the selected bundle; the application does not search recursively or infer a
+  replacement from a same-name file.
+- The dependency review identifies the owning Step and parameter. Missing,
+  relocation, and content-mismatch states remain blocking. A dry review does
+  not rewrite XML, copy files, import a Recipe, or execute Preview/Run.
+- Reconnection is an explicit operator sequence: verify the candidate, update
+  the XML path, validate again, and then explicitly import/copy. The copy owner
+  stores the adopted asset inside the Recipe workspace using a data-relative
+  path; the source asset is not modified. The saved Pipeline content/hash is
+  the Recipe revision boundary, and no automatic execution is implied.
+- Qualified Recipe snapshots remain a separate portability path. Their
+  preflight rejects missing or SHA-mismatched external dependencies, the
+  snapshot store archives and verifies dependency bytes, and a verified
+  working copy restores archived dependencies into a new Recipe without
+  inheriting qualification or Run History.
+
+Do not:
+
+- add a second asset bundle or duplicate `QualifiedRecipeSnapshotStore`;
+- auto-apply a relocation candidate, accept a same-name content mismatch, or
+  run Preview/Run while reviewing or reconnecting an asset;
+- treat a passing hash/relocation contract as field qualification or desktop
+  WPF/EXE interaction evidence.
+
+Relevant smoke:
+
+- `VisionRecipeRunnerSmoke --recipe-external-asset-reconnection-contract`
+- `tools\QualifiedRecipeSnapshotSmoke`
+
 ## Recipe Manager Pipeline Inventory
 
 Stable behavior:
@@ -1042,6 +1145,190 @@ Relevant smoke:
 
 - `wpf_shell_host_recipe_local_validation_set`
 - latest-build direct EXE `recipe-manager-tabs` with `PipelineInventory: valid VisionPipeline XML only`
+
+## Pipeline XML Schema Compatibility
+
+Stable behavior:
+
+- The supported Pipeline XML range is unversioned legacy XML and explicit schema version `1`. Unversioned files are interpreted as the current legacy contract; this does not rewrite their source bytes.
+- A future schema version (`> 1`), an unsupported version, an unknown unqualified critical element, an unknown critical attribute, or an unsupported namespace is rejected before deserialization/normalization/native execution. The error identifies that execution is blocked and the original XML must be preserved.
+- `VisionPipelineStorage.Load` returns an in-memory default for a semantic schema failure, records `LoadFailed`, does not create an `.invalid-*` backup, and does not overwrite the source file. The operator must repair or explicitly replace the source before Run.
+- XML comments and the named `<Extensions>` container or `urn:openvisionlab:extension` namespace are accepted as optional non-critical extension content. They are not interpreted as Pipeline semantics. Canonical model serialization may omit opaque extension/comment nodes; source preservation is guaranteed for blocked semantic files, not for a later canonical save of optional extension content.
+- The schema gate is centralized at the existing `SerializeHelper` Pipeline deserialization boundary and is repeated by `VisionPipelineExecutionPlan` for raw text/byte callers. Existing malformed XML replacement behavior remains unchanged.
+
+Do not:
+
+- silently deserialize a future Pipeline and execute the fields that happen to be understood;
+- broaden unknown-field acceptance to all unqualified elements or attributes;
+- treat an optional extension as a required Pipeline meaning without a versioned contract;
+- convert or overwrite a blocked future document during load recovery.
+
+Relevant smoke:
+
+- `--pipeline-xml-schema-compatibility-contract`
+- `--recipe-load-recovery-contract`
+- `--pipeline-layer-reference-invariant-contract`
+
+## Atomic XML Save Failure Boundary
+
+Stable behavior:
+
+- `SerializeHelper.SaveXmlFile` is the single XML write owner. It serializes the complete value to a hidden sibling temporary file, atomically replaces an existing target with `File.Replace` (or moves into a missing target), and removes any remaining temporary file in `finally`.
+- A write or replace failure never publishes partial XML: the previous target bytes and their hash remain unchanged. If cleanup itself cannot complete, the failed temporary path is recoverable evidence; removing that artifact must not touch the previous target or an invalid-file backup.
+- Existing callers keep the failure explicit. `RecipeState.SaveTools` stops before saving dependent Recipe data when a Tool write fails, while `VisionPipelineStorage.Save` and `RecipeDataStorage.Save` retain their persistence failure state until the existing explicit save/reopen recovery path succeeds. A normal retry after the failure is released publishes the new XML.
+- Invalid-file backup behavior remains separate: `LoadOrCreateXmlFile` preserves the damaged source and creates an `.invalid-*` backup before an explicit replacement save. Failure injection is an isolated test seam only and has no effect when no stage is configured.
+
+Do not:
+
+- write directly to the target before the complete temporary document is ready;
+- delete or overwrite the previous XML or its invalid backup when replace/cleanup fails;
+- treat a leftover temporary artifact as a successful save, clear persistence failure state, or enable Preview/Run.
+
+Relevant smoke:
+
+- `--recipe-save-failure-contract`
+- `--recipe-multi-file-save-recovery-contract`
+- `--recipe-persistence-execution-gate-contract`
+- `--recipe-load-recovery-contract`
+
+## Pipeline Lifecycle Journal Process Recovery
+
+Stable behavior:
+
+- `VisionPipelineStorage.TryRenamePipeline` and `TryDeletePipeline` are the single lifecycle owners. They write `pipeline.lifecycle.json`, create a validated transaction-owned backup, persist the target/pointer/source stages, and remove journal/backup only after the operation is proven complete.
+- Every storage reopen path enters the existing recovery owner. A journal left by a process stop is either rolled back to the byte-identical prior Pipeline or adopted as a proven completed rename/delete. If the journal, source, backup, pointer, or target cannot prove one of those states, recovery returns `LifecycleRecoveryRequired`, preserves uncertain operator files, and the existing persistence presenter provides review guidance.
+- The process-boundary contract uses a child process that waits after each durable stage, kills it, and reopens the same isolated data root. Six rename stages and the five applicable delete stages must produce exactly one valid prior/completed state, retain the expected active pointer, and leave no lifecycle journal, backup, or temporary pointer file. The same behavior is covered for apphost and `dotnet` DLL launchers.
+- The recovery result does not execute Preview/Run, create layers, or change input/output routing. The existing `LifecycleRecovered` state explains the reopen outcome; it is not a silent success toast substitute.
+
+Do not:
+
+- add a second journal, recovery service, database, or lifecycle writer;
+- infer a completed rename/delete from a partial file set, delete uncertain operator files, or silently choose a foreign pointer/backup;
+- treat process-kill evidence as proof of power loss, filesystem corruption, non-cooperative native worker shutdown, or full WPF/DPI/hardware qualification.
+
+Relevant smoke and evidence:
+
+- `--pipeline-persistence-recovery-contract`
+- `--pipeline-persistence-process-recovery-contract`
+- `--pipeline-persistence-process-recovery-probe`
+- `docs/reports/OPENVISIONLAB_OVL06_BEHAVIOR_REGRESSION_PROCESS_RECOVERY_20260907.md`
+
+## Public File Input Boundary — Pending Product Size Policy
+
+Current boundary audit:
+
+- `AppPathService` and the PL-0007 `RecipeWorkspaceService` owner keep new
+  storage paths inside the intended root and reject the existing traversal,
+  rooted, reserved-device, control-character, trailing-dot/space, and
+  case-collision cases before mutation.
+- `TwoDIntegrationExchange.ResolveArtifactPath` and
+  `EnsureNoReparsePoints` keep local integration artifacts transaction-relative
+  and reject existing symbolic-link/reparse segments. The generic contract
+  validator checks artifact identity, non-negative length, actual length, and
+  SHA-256.
+- The review-bundle owner rejects `pipeline.xml` above 5 MiB and
+  `review-manifest.json` above 2 MiB before parse/decompression. The shared TCP
+  transport defaults to 1,024 files, 4 GiB per file, 16 GiB per transaction,
+  1 MiB control frame, and 1 KiB UTF-8 relative paths; a product may lower
+  those bounds.
+
+This is not yet a uniform public-file size contract. General Pipeline XML,
+locator JSON, local integration messages, and generic local artifacts still
+read without a product-approved common maximum. Do not add an arbitrary limit,
+reopen PL-0007, or introduce a second filesystem/security framework until the
+product chooses the supported per-entry and aggregate ceilings and their typed
+error mapping. The bounded audit and evidence are recorded in
+`docs/reports/OPENVISIONLAB_2D_PUBLIC_FILE_INPUT_BOUNDARY_AUDIT_20260915.md`.
+
+Relevant existing smoke/evidence:
+
+- `--app-path-boundary-contract`
+- `--recipe-storage-path-contract`
+- `docs/reports/OPENVISIONLAB_OVL02_TWO_D_INTEGRATION_IDENTITY_20260907.md`
+- `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\2d023-file-input-20260915\source-and-upstream-audit.txt`
+
+## Recipe/Pipeline Persistence Recovery Gate
+
+Stable behavior:
+
+- A missing file for a new Recipe may create the existing default Pipeline or
+  Recipe data. This first-use path has no persistence failure and remains
+  available for normal setup.
+- A damaged existing Pipeline XML or Recipe data file returns an editable
+  substitute only for inspection/recovery, records `InvalidFileSubstituted` (or
+  `LoadFailed` when the source must be preserved without substitution), keeps
+  the canonical source bytes unchanged, and retains the `.invalid-*` backup when
+  one was created. The shared persistence presenter shows the Recipe/Pipeline,
+  source path, preserved backup, cause, and the explicit prohibition on Run,
+  validation, or qualification evidence.
+- A valid file written outside the persistence owner does not clear a stale
+  failure state. The existing explicit `VisionPipelineStorage.Save` or
+  `RecipeDataStorage.Save` path is required to transition the state to
+  `SaveRecovered` before the state can be used for execution.
+- `RecipeCommandSurface` keeps selected sample, sample-pair, catalog benchmark,
+  validation-suite, and local validation-set commands disabled while the
+  selected Recipe or Pipeline has a persistence failure. `OpenVisionPipelineReviewDocument`
+  applies the same gate immediately before Review Run and presents the shared
+  recovery guidance for both Pipeline and Recipe data failures.
+
+Do not:
+
+- treat the editable substitute as a normal saved Recipe or execute it before
+  explicit save/reopen recovery;
+- clear a failure state merely because another writer made the XML parseable;
+- overwrite or delete the damaged source while creating the recovery state;
+- broaden the raw `VisionRecipeRunner` path with UI persistence state when it is
+  executing an explicitly supplied/copy-isolated artifact rather than the
+  active Recipe workspace.
+
+Relevant smoke:
+
+- `--recipe-persistence-execution-gate-contract`
+- `--recipe-load-recovery-contract`
+- `--pipeline-xml-schema-compatibility-contract`
+- `--pipeline-layer-reference-invariant-contract`
+
+## Pipeline XML Current/Default/Unit/Locale Round-Trip
+
+Stable behavior:
+
+- The existing `SerializeHelper` and `VisionPipelineStepBuilder` remain the XML write
+  path. Typed numeric values are authored with invariant formatting, while free-form
+  identity and template-path strings (including Korean text) are preserved as strings.
+- Reopening the same Pipeline under `ko-KR`, `en-US`, and `de-DE` must preserve the
+  semantic projection, unit parameters such as `PIXELPERMM`, boolean/enum values, and
+  the shared Validator result. The focused contract also records that the generated
+  XML bytes remain identical across those cultures; byte identity and semantic identity
+  are separate checks and neither implies a canonical rewrite of user-authored XML.
+- Omitted tool parameters remain omitted on save/reopen. The existing
+  `VisionPipelineStepPropertyMapper` and app-tool defaults must produce the same
+  effective Blob defaults as an explicitly authored default set without injecting
+  parameters into the omitted source step.
+- A correctly declared UTF-16 Pipeline XML file, Korean pipeline identity, and Korean
+  template path remain loadable. A comma-decimal value or invalid enum remains
+  inspectable as source text but is rejected by invariant validation before native
+  execution; locale settings must not reinterpret typed values.
+- This contract does not introduce a new serializer or silently normalize authored
+  values. Any intentional run-time normalization remains a separate effective-XML
+  diff/provenance concern.
+
+Do not:
+
+- parse typed Pipeline numbers with `CurrentCulture` or silently accept a locale
+  separator that the invariant contract does not define;
+- rewrite omitted defaults into the source document merely because the mapper exposes
+  an effective default;
+- treat UTF-16 byte compatibility, semantic round-trip, and effective run XML as the
+  same evidence;
+- replace the existing serializer/property mapper with a parallel XML format.
+
+Relevant smoke:
+
+- `--pipeline-xml-roundtrip-compatibility-contract <evidenceDirectory>`
+- `dotnet run --project tools/RecipeXmlCompatibilityCheck/RecipeXmlCompatibilityCheck.csproj --no-restore -- bin\Debug docs\samples\public`
+- `--pipeline-xml-schema-compatibility-contract`
+- `--recipe-load-recovery-contract`
+- `--pipeline-layer-reference-invariant-contract`
 
 ## Recipe-Local Validation Sets
 
@@ -1066,6 +1353,28 @@ Relevant smoke:
 - `wpf_shell_host_recipe_local_validation_set`
 - latest-build direct EXE `recipe-manager-tabs`
 
+### Frozen split content identity
+
+- The PinArrayGap Train/Validation/Test identity owner reuses the existing local
+  Validation Set rows and computes a SHA-256 for every source image at freeze
+  time. Split paths must be disjoint, and byte-identical images must also be
+  disjoint even when their filenames or directories differ. Duplicate bytes
+  within one split are rejected as well.
+- The frozen record retains the explicit `Train`, `Validation`, and `Test` role
+  together with each selected set name and the split content hash. Re-evaluating
+  a renamed set or changed image returns a stale result and leaves the frozen
+  record unchanged; selection restoration reads the persisted role/set names.
+- This is exact-byte identity only. Re-encoded or perceptually similar images
+  are not declared duplicates. General Local Validation Sets and Tool View
+  N-image runs retain their existing `OK`/`NG` or `UNLABELED` semantics and do
+  not infer a tuning/evaluation role. No new dataset database or automatic role
+  assignment is introduced.
+
+Relevant smoke:
+
+- `--pinarraygap-validation-identity-owner-contract <evidenceDirectory>`
+- `docs/reports/OPENVISIONLAB_2D_VALIDATION_CONTENT_HASH_AUDIT_20260915.md`
+
 ## Run History Batch Analytics
 
 Stable behavior:
@@ -1083,6 +1392,9 @@ Stable behavior:
 - Enabled Step rows are ordered by descending p95 and expose timing coverage plus average, nearest-rank p95, and maximum. Non-positive, NaN, and infinite Step timings are excluded and remain visible through reduced coverage.
 - New saved batch summaries persist their deterministic review-queue policy, canonical SHA-256, selected result indices, and per-row reasons. Selection is derived once at save time so reopening Run History cannot silently change the reviewed population.
 - The v2 generic queue contains every explicit execution error, every false accept/false reject when expected roles exist, every missing or unreadable source/report/drawing evidence row, minimum and maximum rows for each varying finite Step metric, and three content-hash-ordered audit rows per declared role stratum (or `ALL`). An invariant metric must not generate fake minimum/maximum rows. Legacy rows retain the previous runtime-failure fallback.
+- Validation Set and other labelled batch results expose a confusion-matrix projection through the existing outcome contract and Run History summary. `OK` is the positive acceptance class: TP is expected-OK/actual-OK, TN is expected-NG/actual-NG, FP is false accept, and FN is false reject.
+- Execution errors, samples not reached in a partial run, and completed rows with an unknown expected label are separate from the four quality cells. Their counts, plus the four cells, must reconcile to the persisted input sample count; legacy summaries without that field fall back to their observed result count.
+- Accuracy, false-accept rate, and false-reject rate use their explicit denominators and render `N/A` when the denominator is zero. The matrix is a read-only projection and must not rerun a Pipeline, alter raw result rows, or introduce a second evaluation store.
 - Older saved summaries without this data must display the queue as unavailable and require a new explicit suite run. They must not recompute a different historical queue or claim equivalent evidence.
 - `검토 큐만` is a read-only filter, mutually exclusive with the existing NG/misclassification filter. Selecting a queued row and opening its retained drawing must reuse the current sample-result viewer and must not trigger Preview/Run, create layers, or change routing.
 
@@ -1100,6 +1412,7 @@ Stable behavior:
 - If an earlier enabled Step produces the input layer, the downstream Step remains `WAIT` until the operator explicitly runs Review.
 - Missing-input selection, Step navigation, and status refresh are read-only. They must not trigger Preview/Run, create layers, or change input/output routing.
 - Pipeline Review reuses the existing flow document/control and must not introduce partial-run semantics merely to display this state.
+- After a fail-fast NG or cancellation, the existing flow document keeps every planned Step visible: enabled tail rows show `NOT RUN` or `CANCEL` with no result evidence, while disabled rows remain `SKIP`. Only actually executed failure rows contribute to NG/first-issue counts.
 
 Relevant smoke:
 
@@ -1219,6 +1532,14 @@ Stable behavior:
 - Verification distinguishes intact payload from current-runtime fingerprint
   match, but the combined qualification verification fails closed for either
   mismatch and reports the exact reason.
+- Current verification is also bound to the selected Recipe/Pipeline and
+  Validation Set context. The controller recomputes the current Pipeline
+  bytes, every selected input/dependency SHA-256, the ordered input identity,
+  and the loaded SDK/runtime path, version, size, and SHA-256. Any required
+  identity difference is shown as `Qualification stale` and the Verify action
+  fails closed until an explicit re-evaluation creates a new immutable record.
+  This does not revoke or delete the old payload: historical evidence remains
+  read-only and readable, and a working copy never inherits qualification.
 - Product APIs never edit or delete a qualified payload. Supersede/revoke are
   create-once external lifecycle event files with a required reason; supersede
   also requires a different verified successor.
@@ -1242,6 +1563,7 @@ Relevant smoke:
 
 - `tools\QualifiedRecipeSnapshotSmoke`
 - `wpf_shell_host_recipe_qualified_snapshot`
+- `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\2d025-qualification-20260915`
 - retained evidence:
   `artifacts\qualified_recipe_snapshot_core_20260727\final` and
   `artifacts\qualified_recipe_snapshot_ui_20260727`

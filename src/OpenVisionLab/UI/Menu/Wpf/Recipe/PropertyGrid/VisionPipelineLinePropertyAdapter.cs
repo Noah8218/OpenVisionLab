@@ -93,6 +93,54 @@ namespace OpenVisionLab
             return false;
         }
 
+        internal static void ApplySampleProperty(LineGaugeProperty source, LineGaugeProperty target)
+        {
+            if (source == null || target == null)
+            {
+                return;
+            }
+
+            target.PIXELPERMM = source.PIXELPERMM;
+            target.USE_THRESHOLD = source.USE_THRESHOLD;
+            target.USE_BITWISENOT = source.USE_BITWISENOT;
+            target.THRESHOLD_TYPES = source.THRESHOLD_TYPES;
+            target.THRESHOLD = source.THRESHOLD;
+            target.USE_ADAPTIVE_THRESHOLD = source.USE_ADAPTIVE_THRESHOLD;
+            target.ADAPTIVE_THRESHOLD = source.ADAPTIVE_THRESHOLD;
+            target.ADAPTIVE_THRESHOLD_TYPES = source.ADAPTIVE_THRESHOLD_TYPES;
+            target.ADAPTIVE_THRESHOLD_ALGORITHM = source.ADAPTIVE_THRESHOLD_ALGORITHM;
+            target.BlockSize = source.BlockSize;
+            target.Weight = source.Weight;
+            target.USE_ROI = source.USE_ROI;
+            target.CvROI = source.CvROI;
+            target.USE_MULTI_ROI = source.USE_MULTI_ROI;
+            target.CvROIS = source.CvROIS == null
+                ? new List<Rect>()
+                : new List<Rect>(source.CvROIS);
+            target.USE_MASKING = source.USE_MASKING;
+            target.CvMASKS = source.CvMASKS == null
+                ? new List<Rect>()
+                : new List<Rect>(source.CvMASKS);
+            target.PRJ_PORALITY = source.PRJ_PORALITY;
+            target.PRJ_DIR = source.PRJ_DIR;
+            target.CONTRAST = source.CONTRAST;
+            target.THICKNESS = source.THICKNESS;
+            target.SAMPLING_STEP = source.SAMPLING_STEP;
+            target.VER_PRJ_DIR = source.VER_PRJ_DIR;
+            target.POINT_RANGE = source.POINT_RANGE;
+            target.USE_MANUAL_ANGLE = source.USE_MANUAL_ANGLE;
+            target.MANUAL_ANGLE_VALUE = source.MANUAL_ANGLE_VALUE;
+            target.USE_EXTEND_FIT_LINE = source.USE_EXTEND_FIT_LINE;
+            target.EXTEND_FIT_LINE_VALUE = source.EXTEND_FIT_LINE_VALUE;
+            target.AVERAGE_Diff = source.AVERAGE_Diff;
+            target.USE_AVERAGE_FILTER = source.USE_AVERAGE_FILTER;
+            target.AVERAGE_FILTER_TYPE = source.AVERAGE_FILTER_TYPE;
+            target.SHOW_VERTICAL_LINE = source.SHOW_VERTICAL_LINE;
+            target.SHOW_EDGE = source.SHOW_EDGE;
+            target.SHOW_CONTOUR = source.SHOW_CONTOUR;
+            target.SHOW_FITLINE = source.SHOW_FITLINE;
+        }
+
         private static PipelineLineGaugeProperty CreateSingleLineGaugeProperty(
             VisionPipelineStep step,
             string name)

@@ -13,16 +13,16 @@ namespace OpenVisionLab
 {
     public sealed partial class OpenVisionLearnWindow : Window
     {
-        private const int ColorHsvAnimationStepCount = 4;
         private readonly DispatcherTimer colorHsvAnimationTimer;
         private readonly Brush animationNeutralBrush;
         private readonly Brush animationCandidateBrush;
         private readonly Brush animationPassBrush;
         private readonly Brush animationWarningBrush;
         private Action<string> openPracticeSamplesAction;
+        private Action<string> openLearnDocumentAction;
         private Action<VISION_MENU> openRelatedToolAction;
         private readonly OpenVisionLearnTopicPresentationPolicy topicPresentationPolicy = new OpenVisionLearnTopicPresentationPolicy();
-        private int colorHsvAnimationStep = ColorHsvAnimationStepCount;
+        private readonly ColorHsvLearnPresenter colorHsvLearnPresenter = new ColorHsvLearnPresenter();
 
         public event EventHandler<OpenVisionLearnThresholdApplyEventArgs> ApplyThresholdRequested;
 
@@ -198,6 +198,11 @@ namespace OpenVisionLab
         {
             openPracticeSamplesAction = action;
             btnPracticeSamples.IsEnabled = action != null;
+        }
+
+        public void SetOpenLearnDocumentAction(Action<string> action)
+        {
+            openLearnDocumentAction = action;
         }
 
         public void SetOpenRelatedToolAction(Action<VISION_MENU> action)
@@ -560,7 +565,7 @@ namespace OpenVisionLab
 
         public string ColorHsvFormulaTextForTest => txtColorHsvFormula.Text ?? string.Empty;
 
-        public int ColorHsvAnimationStepForTest => colorHsvAnimationStep;
+        public int ColorHsvAnimationStepForTest => colorHsvLearnPresenter.AnimationStep;
 
         public string ColorHsvAnimationStatusTextForTest => txtColorHsvAnimationStatus.Text ?? string.Empty;
 
@@ -643,52 +648,26 @@ namespace OpenVisionLab
 
         private void UpdateColorHsvGuide()
         {
-            int hue = Math.Max(0, Math.Min(179, (int)Math.Round(colorHueSlider.Value)));
-            int value = Math.Max(40, Math.Min(255, (int)Math.Round(colorValueSlider.Value)));
-            int hueMin = Math.Max(0, hue - 10);
-            int hueMax = Math.Min(179, hue + 10);
-            const int saturationMinimum = 60;
-
-            txtColorHsvHue.Text = hue.ToString(CultureInfo.InvariantCulture) + " / 179";
-            txtColorHsvValue.Text = value.ToString(CultureInfo.InvariantCulture) + " / 255";
-            txtColorHsvFormula.Text = "HSV mask: H="
-                + hueMin.ToString(CultureInfo.InvariantCulture)
-                + ".."
-                + hueMax.ToString(CultureInfo.InvariantCulture)
-                + ", S>="
-                + saturationMinimum.ToString(CultureInfo.InvariantCulture)
-                + ", V>="
-                + value.ToString(CultureInfo.InvariantCulture)
-                + " -> OutputLayer=HSV_Mask, metric=MaskPixelRatio 또는 후속 ResultCount/Area";
-            txtColorHsvMeaning.Text = value < 110
-                ? "Value가 낮으면 색이 어둡습니다. Hue만으로 영역이 불안정하면 Mean/Histogram의 밝기 분포도 함께 확인하세요."
-                : "Hue는 색상 계열, Saturation은 회색 배경과의 차이, Value는 어두운 픽셀을 구분하는 기준입니다.";
-            txtColorHsvVec3bType.Text = "변환된 HSV Mat 픽셀 = Vec3b(H,S,V) = (45,221,185): 0~255의 8비트 채널 값 3개";
-            txtColorHsvScalarBounds.Text = "lower = Scalar("
-                + hueMin.ToString(CultureInfo.InvariantCulture)
-                + ",60,"
-                + value.ToString(CultureInfo.InvariantCulture)
-                + ") | upper = Scalar("
-                + hueMax.ToString(CultureInfo.InvariantCulture)
-                + ",255,255); Scalar는 값 4개를 담고 HSV에서는 앞의 3개를 사용합니다.";
-
-            PaintColorHsvAnimationFrame(hueMin, hueMax, saturationMinimum, value);
+            ColorHsvLearnGuide guide = colorHsvLearnPresenter.BuildGuide(colorHueSlider.Value, colorValueSlider.Value);
+            txtColorHsvHue.Text = guide.HueText;
+            txtColorHsvValue.Text = guide.ValueText;
+            txtColorHsvFormula.Text = guide.FormulaText;
+            txtColorHsvMeaning.Text = guide.MeaningText;
+            txtColorHsvVec3bType.Text = guide.Vec3bTypeText;
+            txtColorHsvScalarBounds.Text = guide.ScalarBoundsText;
+            PaintColorHsvAnimationFrame(guide);
         }
 
-        private void PaintColorHsvAnimationFrame(int hueMin, int hueMax, int saturationMinimum, int valueMinimum)
+        private void PaintColorHsvAnimationFrame(ColorHsvLearnGuide guide)
         {
-            const int sampleHue = 45;
-            const int sampleSaturation = 221;
-            const int sampleValue = 185;
-            int visibleStep = Math.Max(0, Math.Min(colorHsvAnimationStep, ColorHsvAnimationStepCount));
-            bool hueOk = sampleHue >= hueMin && sampleHue <= hueMax;
-            bool saturationOk = sampleSaturation >= saturationMinimum;
-            bool valueOk = sampleValue >= valueMinimum;
-            bool maskPass = hueOk && saturationOk && valueOk;
-            Color sampleColor = CreateColorFromOpenCvHsv(sampleHue, sampleSaturation, sampleValue);
+            int visibleStep = guide.VisibleStep;
+            Color sampleColor = CreateColorFromOpenCvHsv(
+                ColorHsvLearnGuide.SampleHue,
+                ColorHsvLearnGuide.SampleSaturation,
+                ColorHsvLearnGuide.SampleValue);
 
             Border[] channels = { colorHueChannel, colorSaturationChannel, colorValueChannel };
-            bool[] channelPass = { hueOk, saturationOk, valueOk };
+            bool[] channelPass = { guide.HuePass, guide.SaturationPass, guide.ValuePass };
             for (int i = 0; i < channels.Length; i++)
             {
                 channels[i].BorderBrush = visibleStep == 2
@@ -698,18 +677,20 @@ namespace OpenVisionLab
             }
 
             colorHsvPreviewSwatch.BorderBrush = visibleStep >= 4
-                ? maskPass ? animationPassBrush : animationWarningBrush
+                ? guide.MaskPass ? animationPassBrush : animationWarningBrush
                 : new SolidColorBrush(Color.FromRgb(203, 213, 225));
             colorHsvPreviewSwatch.BorderThickness = visibleStep >= 4 ? new Thickness(2) : new Thickness(1);
             colorHsvPreviewSwatch.Background = visibleStep >= 4
-                ? maskPass ? Brushes.White : Brushes.Black
+                ? guide.MaskPass ? Brushes.White : Brushes.Black
                 : new SolidColorBrush(sampleColor);
             txtColorHsvPreviewLabel.Text = visibleStep >= 4
-                ? "MASK " + (maskPass ? "255" : "0")
-                : "Sample H 45 / S 221 / V 185";
+                ? "MASK " + (guide.MaskPass ? "255" : "0")
+                : "Sample H " + ColorHsvLearnGuide.SampleHue
+                    + " / S " + ColorHsvLearnGuide.SampleSaturation
+                    + " / V " + ColorHsvLearnGuide.SampleValue;
             txtColorHsvPreviewLabel.Foreground = visibleStep >= 4
-                ? maskPass ? Brushes.Black : Brushes.White
-                : sampleValue < 150 ? Brushes.White : Brushes.Black;
+                ? guide.MaskPass ? Brushes.Black : Brushes.White
+                : ColorHsvLearnGuide.SampleValue < 150 ? Brushes.White : Brushes.Black;
             Brush defaultBorderBrush = new SolidColorBrush(Color.FromRgb(209, 213, 219));
             colorBgrPixelCard.BorderBrush = visibleStep == 0 ? animationCandidateBrush : defaultBorderBrush;
             colorHsvPixelCard.BorderBrush = visibleStep == 2 ? animationPassBrush : defaultBorderBrush;
@@ -724,43 +705,22 @@ namespace OpenVisionLab
             txtColorHsvScalarBounds.Opacity = visibleStep >= 3 ? 1D : 0.28D;
             txtColorHsvInRange.Opacity = visibleStep >= 3 ? 1D : 0.28D;
 
-            txtColorHsvAnimationStatus.Text = visibleStep switch
-            {
-                0 => "0 / 4 - BGR 입력: Vec3b(B,G,R)=(25,185,105) 픽셀부터 확인합니다.",
-                1 => "1 / 4 - Cv2.Split: B=25, G=185, R=105인 CV_8UC1 채널 Mat 3개로 분리합니다.",
-                2 => "2 / 4 - Cv2.Merge로 BGR을 복원하고 Cv2.CvtColor(BGR2HSV)로 H=45, S=221, V=185를 얻습니다.",
-                3 => "3 / 4 - 범위 판정: H "
-                    + (hueOk ? "OK" : "NG")
-                    + ", S "
-                    + (saturationOk ? "OK" : "NG")
-                    + ", V "
-                    + (valueOk ? "OK" : "NG")
-                    + " -> "
-                    + (maskPass ? "IN RANGE" : "OUT OF RANGE"),
-                _ => "4 / 4 - Mask="
-                    + (maskPass ? "255" : "0")
-                    + ": MaskPixelRatio와 후속 ResultCount/Area를 Preview/Run 후 검토합니다."
-            };
+            txtColorHsvAnimationStatus.Text = guide.AnimationStatusText;
         }
 
         private void ResetColorHsvAnimation()
         {
             colorHsvAnimationTimer.Stop();
             btnColorHsvPlay.Content = "Play";
-            colorHsvAnimationStep = 0;
+            colorHsvLearnPresenter.ResetAnimation();
             UpdateColorHsvGuide();
         }
 
         private void AdvanceColorHsvAnimation()
         {
-            if (colorHsvAnimationStep >= ColorHsvAnimationStepCount)
-            {
-                colorHsvAnimationStep = 0;
-            }
-
-            colorHsvAnimationStep++;
+            colorHsvLearnPresenter.AdvanceAnimation();
             UpdateColorHsvGuide();
-            if (colorHsvAnimationStep >= ColorHsvAnimationStepCount)
+            if (colorHsvLearnPresenter.IsAnimationComplete)
             {
                 colorHsvAnimationTimer.Stop();
                 btnColorHsvPlay.Content = "Play";
@@ -885,7 +845,7 @@ namespace OpenVisionLab
             {
                 colorHsvAnimationTimer.Stop();
                 btnColorHsvPlay.Content = "Play";
-                colorHsvAnimationStep = ColorHsvAnimationStepCount;
+                colorHsvLearnPresenter.CompleteAnimation();
                 UpdateColorHsvGuide();
             }
         }
@@ -899,7 +859,7 @@ namespace OpenVisionLab
                 return;
             }
 
-            if (colorHsvAnimationStep >= ColorHsvAnimationStepCount)
+            if (colorHsvLearnPresenter.IsAnimationComplete)
             {
                 ResetColorHsvAnimation();
             }
@@ -922,12 +882,12 @@ namespace OpenVisionLab
 
         private void OpenLearnDocsButton_Click(object sender, RoutedEventArgs e)
         {
-            OpenVisionWorkspaceLearnDocumentService.OpenLearnDocumentFile(ResolveSelectedTopicDocumentFileName(topicList.SelectedIndex));
+            openLearnDocumentAction?.Invoke(ResolveSelectedTopicDocumentFileName(topicList.SelectedIndex));
         }
 
         private void OpenFoundationDocsButton_Click(object sender, RoutedEventArgs e)
         {
-            OpenVisionWorkspaceLearnDocumentService.OpenLearnDocumentFile("LEARN_OPENCVSHARP_FOUNDATIONS.md");
+            openLearnDocumentAction?.Invoke("LEARN_OPENCVSHARP_FOUNDATIONS.md");
         }
 
         private void OpenPracticeSamplesButton_Click(object sender, RoutedEventArgs e)

@@ -79,9 +79,34 @@ namespace OpenVisionLab
                 ?? (originalXmlText == null
                     ? SerializePipeline(originalPipeline)
                     : Utf8NoBom.GetBytes(originalXmlText));
-            string sourceXml = originalXmlText ?? Utf8NoBom.GetString(originalBytes);
-            if (!SerializeHelper.TryLoadFromXmlText(sourceXml, out VisionPipeline effectivePipeline, out string loadError)
-                || effectivePipeline == null)
+            if (originalXmlBytes != null && originalXmlText == null)
+            {
+                VisionPipelineXmlSchemaPolicy.ThrowIfExecutionBlocked(originalBytes);
+            }
+            else if (originalXmlText != null)
+            {
+                VisionPipelineXmlSchemaPolicy.ThrowIfExecutionBlocked(originalXmlText);
+            }
+
+            VisionPipeline effectivePipeline;
+            string loadError = string.Empty;
+            bool loaded;
+            if (originalXmlBytes != null && originalXmlText == null)
+            {
+                loaded = SerializeHelper.TryLoadFromXmlBytes(
+                    originalBytes,
+                    out effectivePipeline,
+                    out Exception byteLoadException);
+                loadError = byteLoadException?.Message;
+            }
+            else
+            {
+                loaded = SerializeHelper.TryLoadFromXmlText(
+                    originalXmlText ?? Utf8NoBom.GetString(originalBytes),
+                    out effectivePipeline,
+                    out loadError);
+            }
+            if (!loaded || effectivePipeline == null)
             {
                 throw new InvalidOperationException(
                     string.IsNullOrWhiteSpace(loadError)

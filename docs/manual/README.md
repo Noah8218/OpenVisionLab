@@ -30,7 +30,7 @@
 생성 명령:
 
 ```powershell
-dotnet run --project tools/OpenVisionUserManualBuilder/OpenVisionUserManualBuilder.csproj -- C:\Git\OpenVisionLab_Dev
+dotnet run --project tools/OpenVisionUserManualBuilder/OpenVisionUserManualBuilder.csproj -- C:\Git\2D\Dev
 ```
 
 원본 Markdown 또는 UI 캡처를 수정한 뒤에는 생성 명령, readiness, clean runtime

@@ -1,0 +1,169 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0031",
+    "aliases": [],
+    "type": "task",
+    "mode": "composite",
+    "title": "Move N-image verification preview decoding to the existing image factory",
+    "risk": "medium"
+  },
+  "origin": {
+    "kind": "user-request",
+    "summary": "The user asked to resume the refactoring after the previous task appeared stuck in mobile status.",
+    "refs": [
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "docs/reports/OPENVISIONLAB_P1_VIEW_BOUNDARIES_20260913.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "PL-0031은 N-image verification preview decoding을 기존 OpenVisionBitmapImagePreviewFactory로 이동하는 구조 변경과 최종 검증을 완료했다. Controller의 직접 FileStream/BitmapImage/OnLoad coupling은 제거되었고 SelectedSourceImage/SelectedDrawingImage binding, selected-row state ownership, missing/corrupt null, frozen lifetime은 유지되었다. Debug/Release contract와 builds, RefactorAudit, Readiness, DocumentationIndex, issue-ledger, diff check가 통과했다. 전체 WPF/hardware/native 행렬은 미검증으로 기록했다."
+  },
+  "objective": {
+    "summary": "Move N-image verification source/drawing preview path decoding from VisionToolNImageVerificationController to OpenVisionBitmapImagePreviewFactory without changing binding names, BitmapImage result type, missing-path null behavior, or verification workflow.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev; do not modify C:\\Git\\2D\\Original.",
+      "Reuse OpenVisionBitmapImagePreviewFactory; do not add a new interface, manager, wrapper, registry, or Partial.",
+      "Preserve SelectedSourceImage and SelectedDrawingImage binding names and BitmapImage types, OnLoad/frozen behavior, and null behavior for missing/corrupt files.",
+      "Keep evidence and generated test output on D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev.",
+      "Do not create or reactivate a recurring schedule for this bounded slice."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The proof report records the current and intended owners, caller path, dependency direction, selected-row state writer, image lifetime owner, and preserved BitmapImage binding contract.",
+      "evidence_refs": [
+        "E1"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "VisionToolNImageVerificationController no longer contains the direct File.Exists/FileStream/BitmapImage decode policy for selected evidence; the existing preview factory owns it and missing/corrupt paths still return null while valid results remain OnLoad and frozen.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "A focused source/behavior contract, relevant Debug and Release builds, documentation index, issue-ledger validation, and targeted diff check pass; full WPF visual/hardware/native matrices remain explicitly unverified.",
+      "evidence_refs": [
+        "E2",
+        "E3"
+      ]
+    }
+  ],
+  "milestones": [
+    {
+      "id": "M1",
+      "summary": "Freeze the N-image preview owner, call path, and preserved binding/lifetime contract.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M2",
+      "summary": "Move path-backed N-image preview decoding to the existing concrete image factory.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C2"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M3",
+      "summary": "Run focused proof, builds, documentation, ledger, and diff checks.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C3"
+      ],
+      "issue_refs": []
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0030"
+    }
+  ],
+  "context": [
+    {
+      "kind": "source",
+      "location": "src\\OpenVisionLab\\UI\\Menu\\Wpf\\NativeTools\\Review\\VisionToolNImageVerificationController.cs"
+    },
+    {
+      "kind": "existing-owner",
+      "location": "src\\OpenVisionLab\\UI\\Menu\\Wpf\\Viewer\\OpenVisionBitmapImagePreviewFactory.cs"
+    },
+    {
+      "kind": "caller",
+      "location": "src\\OpenVisionLab\\UI\\Menu\\Wpf\\NativeTools\\Review\\VisionToolNImageVerificationWindow.xaml"
+    },
+    {
+      "kind": "test-host",
+      "location": "tools\\PipelineViewerScreenshotSmoke\\Program.cs"
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source",
+      "location": "docs\\reports\\OPENVISIONLAB_TOOL_N_IMAGE_VERIFICATION_IMAGE_BOUNDARY_20260913.md; src\\OpenVisionLab\\UI\\Menu\\Wpf\\NativeTools\\Review\\VisionToolNImageVerificationController.cs; src\\OpenVisionLab\\UI\\Menu\\Wpf\\Viewer\\OpenVisionBitmapImagePreviewFactory.cs",
+      "observation": "The proof report records the old and new owners, call path, SelectedRow state writer, BitmapImage binding contract, and removal of direct FileStream/BitmapImage OnLoad/Freeze decode policy from the N-image controller.",
+      "observed_at": "2026-09-13T23:45:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\tool-n-image-verification-image-boundary-20260913\\tool-n-image-verification-image-boundary-contract.txt",
+      "observation": "ToolNImageVerificationImageBoundaryContract passed 6/6: old coupling absence, factory ownership, BitmapImage binding preservation, valid dimensions/frozen lifetime, missing-path null, and corrupt-path null. VisionRecipeRunnerSmoke Debug build passed with 0 warnings and 0 errors.",
+      "observed_at": "2026-09-13T23:45:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\tool-n-image-verification-image-boundary-20260913\\phase-summary.txt",
+      "observation": "Debug/Release focused contracts passed 6/6, Smoke Debug/Release builds and serial Solution Release build passed with 0 warnings/errors, RefactorAudit passed with 54 Partial declarations and 0 project cycles, Readiness Debug/Release passed, DocumentationIndex reported IndexedPaths=300/Routes=17/RootRedirects=102, and targeted diff plus PL-0031 ledger validation passed.",
+      "observed_at": "2026-09-13T23:55:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-13T23:45:00+09:00",
+      "summary": "N-image verification controller의 중복 path-backed BitmapImage decode는 새 service가 아니라 기존 OpenVisionBitmapImagePreviewFactory.TryCreateFromPath(path, 0)로 이동한다. SelectedSourceImage/SelectedDrawingImage binding 타입과 selection/result state ownership은 유지한다.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "D2",
+      "kind": "decision",
+      "at": "2026-09-13T23:55:00+09:00",
+      "summary": "PL-0031의 M1 owner proof, M2 existing factory extraction, M3 final proof를 닫는다. Controller의 직접 file-backed WPF decode가 제거되었고, 기존 factory 재사용과 binding/state 보존이 focused Debug/Release 증거로 확인되었다. 미검증 UI/hardware/legal 행렬은 범위 밖 증거로 남긴다.",
+      "evidence_refs": [
+        "E3"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-13T23:55:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "PL-0031의 세 completion criteria와 세 milestone이 모두 current evidence로 충족되어 resolved로 닫는다. 동일 owner는 새 defect, requirement, failed criterion, 또는 dependency boundary가 생기기 전에는 다시 열지 않는다."
+    }
+  ],
+  "created_at": "2026-09-13T23:30:00+09:00",
+  "updated_at": "2026-09-13T23:55:00+09:00"
+}

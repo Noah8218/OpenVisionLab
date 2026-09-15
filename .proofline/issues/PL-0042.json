@@ -1,0 +1,154 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0042",
+    "aliases": [],
+    "type": "task",
+    "mode": "simple",
+    "title": "Retain Simple Preprocess Tool Partial after concrete owner audit",
+    "risk": "low"
+  },
+  "origin": {
+    "kind": "user-request",
+    "summary": "The user requested that Partial refactoring continue in scheduled cycles and that each remaining Partial be structurally reviewed rather than mechanically deleted or split.",
+    "refs": [
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "docs/reports/OPENVISIONLAB_PARTIAL_STRUCTURAL_ELIMINATION_PLAN_20260913.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "SimplePreprocessToolWpfView.xaml.cs를 no-change 구조 감사로 재확인했다. View Partial은 required XAML/composition adapter로 유지되고, parameter controller/text presenter/preview executor/property factory/document factory/base가 editor state, presentation, algorithm, persistence, creation, lifetime을 각각 소유한다. 독립 state/lifetime/test seam이 없어 production split은 만들지 않았으며, Debug/Release contract/build와 Simple Preprocess WPF smoke가 통과했다."
+  },
+  "objective": {
+    "summary": "Audit SimplePreprocessToolWpfView's Partial structure and retain it only if existing concrete owners already provide the required parameter, preview, signal, persistence, binding, and lifetime boundaries without a new split.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev; do not modify C:\\Git\\2D\\Original.",
+      "Do not add a service, interface, manager, wrapper, forwarding Partial, or ViewModel split for file length alone.",
+      "Preserve SimplePreprocessToolWpfView XAML names, parameter facade, Learn action, preview path, signal evidence, settings callback, and DisposeView lifetime.",
+      "Keep test outputs and evidence under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev.",
+      "Do not commit, push, tag, release, deploy, or mutate the Original repository."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The proof report records current/intended owners, caller path, mutable-state writer, lifetime owner, binding/public/test contract, shortest reading order, and the reason no production split is justified.",
+      "evidence_refs": [
+        "E1"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "The source contract proves that the View Partial has no direct persistence/file-dialog/algorithm-construction coupling and that existing parameter, presentation, property, preview, document, registry, and base lifetime owners are wired.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Focused Debug/Release contracts and builds plus relevant WPF smoke and dynamic monitor geometry pass; broader theme/DPI/input/camera/SDK/GPU/native runtime remains explicitly unverified.",
+      "evidence_refs": [
+        "E2",
+        "E3"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0041"
+    }
+  ],
+  "context": [
+    {
+      "kind": "source",
+      "location": "src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\ToolViews\\SimplePreprocessToolWpfView.xaml(.cs); src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Behaviors\\SimplePreprocessParameterController.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Tooling\\Presentation\\SimplePreprocessTextPresenter.cs"
+    },
+    {
+      "kind": "composition-owner",
+      "location": "src\\OpenVisionLab\\UI\\Menu\\Wpf\\NativeTools\\Documents\\OpenVisionNativeSimplePreprocessDocumentFactory.cs; src\\OpenVisionLab\\UI\\Menu\\Wpf\\NativeTools\\Documents\\OpenVisionNativeSimplePreprocessPropertyFactory.cs; src\\OpenVisionLab\\UI\\Menu\\Wpf\\NativeTools\\Preview\\OpenVisionNativeSimplePreprocessPreviewExecutor.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Tooling\\SingleInput\\VisionToolSingleInputCustomToolViewBase.cs"
+    },
+    {
+      "kind": "test-host",
+      "location": "tools\\VisionRecipeRunnerSmoke\\SimplePreprocessPartialBoundaryContract.cs; tools\\PipelineViewerScreenshotSmoke\\Program.cs; tools\\RunUiPrecheck.ps1"
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "screenshot",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\simple-preprocess-partial-retention-20260914\\ui-precheck\\wpf_shell_host_rotate_scale_tool.png",
+      "summary": "Fresh Rotate/Scale Simple Preprocess WPF smoke screenshot."
+    },
+    {
+      "kind": "screenshot",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\simple-preprocess-partial-retention-20260914\\ui-precheck\\wpf_simple_preprocess_result_review.png",
+      "summary": "Fresh Simple Preprocess result-review WPF smoke screenshot."
+    },
+    {
+      "kind": "geometry",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\simple-preprocess-partial-retention-20260914\\monitor\\wpf_shell_host_rotate_scale_tool\\monitor-window-geometry.json",
+      "summary": "Dynamic monitor/window geometry for the Rotate/Scale smoke."
+    },
+    {
+      "kind": "geometry",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\simple-preprocess-partial-retention-20260914\\monitor\\wpf_simple_preprocess_result_review\\monitor-window-geometry.json",
+      "summary": "Dynamic monitor/window geometry for the result-review smoke."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source",
+      "location": "docs\\reports\\OPENVISIONLAB_SIMPLE_PREPROCESS_PARTIAL_RETENTION_20260914.md; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\ToolViews\\SimplePreprocessToolWpfView.xaml.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Behaviors\\SimplePreprocessParameterController.cs; src\\OpenVisionLab\\UI\\Menu\\Wpf\\NativeTools\\Documents\\OpenVisionNativeSimplePreprocessDocumentFactory.cs",
+      "observation": "SimplePreprocessToolWpfView remains a required XAML/composition adapter. Existing parameter controller, text presenter, property factory, preview executor, document factory, registry, and base View provide concrete editor, presentation, property, algorithm/result, persistence/creation, registration, and lifetime owners. The View has no direct settings store, file dialog, System.IO, OpenCvSharp, or algorithm construction coupling.",
+      "observed_at": "2026-09-14T04:13:41+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\simple-preprocess-partial-retention-20260914\\simple-preprocess-contract-debug.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\simple-preprocess-partial-retention-20260914\\simple-preprocess-contract-release.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\simple-preprocess-partial-retention-20260914\\simple-preprocess-partial-boundary-contract.txt",
+      "observation": "SimplePreprocessPartialBoundaryContract passed 9/9 in Debug and Release. VisionRecipeRunnerSmoke Debug and Release builds passed with exit code 0.",
+      "observed_at": "2026-09-14T04:13:41+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\simple-preprocess-partial-retention-20260914",
+      "observation": "PipelineViewerScreenshotSmoke Debug build passed with exit code 0. WPF precheck passed wpf_shell_host_rotate_scale_tool, wpf_simple_preprocess_result_review, and wpf_simple_preprocess_tool_learn_button with check=OK and layout/text/internal counts zero. Sequential monitor probes for Rotate/Scale and result review each passed with one DISPLAY2 1920x1080 monitor and one intersecting visible window. Broader UI and native matrices remain unverified.",
+      "observed_at": "2026-09-14T04:13:41+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-14T04:13:41+09:00",
+      "summary": "SimplePreprocessToolWpfView Partial은 required XAML/composition adapter이고 기존 parameter/presentation/property/preview/document/base owners가 독립 책임과 lifetime을 이미 제공한다. 새 seam 없이 분리하면 wrapper나 중복 상태가 되므로 no-change로 유지한다.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "D2",
+      "kind": "decision",
+      "at": "2026-09-14T04:13:41+09:00",
+      "summary": "PL-0042의 세 completion criteria가 현재 증거로 충족되어 resolved로 닫는다. 전체 theme/DPI/input, camera/SDK/GPU 및 long-running native runtime은 이 slice의 검증 범위가 아니다.",
+      "evidence_refs": [
+        "E3"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-14T04:13:41+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "The Simple Preprocess Partial retained-owner audit found no independent boundary that justified a production split; focused source/build/WPF evidence was recorded. Do not reopen without a new requirement, reproducible defect, failed criterion, or changed dependency/lifetime boundary."
+    }
+  ],
+  "created_at": "2026-09-14T04:13:41+09:00",
+  "updated_at": "2026-09-14T04:13:41+09:00"
+}

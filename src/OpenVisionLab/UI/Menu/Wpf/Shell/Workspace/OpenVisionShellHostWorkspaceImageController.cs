@@ -11,6 +11,7 @@ namespace OpenVisionLab
 {
     internal sealed class OpenVisionShellHostWorkspaceImageController
     {
+        private readonly ApplicationRuntimeContext runtimeContext;
         private readonly IDisplayManager displayManager;
         private readonly OpenVisionShellHostDocumentController documentController;
         private readonly Action setDirectRunPending;
@@ -19,6 +20,7 @@ namespace OpenVisionLab
         private readonly Action refreshDirectRouteText;
 
         public OpenVisionShellHostWorkspaceImageController(
+            ApplicationRuntimeContext runtimeContext,
             IDisplayManager displayManager,
             OpenVisionShellHostDocumentController documentController,
             Action setDirectRunPending,
@@ -26,12 +28,34 @@ namespace OpenVisionLab
             Action refreshCommandCanExecute,
             Action refreshDirectRouteText)
         {
+            this.runtimeContext = runtimeContext ?? throw new ArgumentNullException(nameof(runtimeContext));
             this.displayManager = displayManager ?? throw new ArgumentNullException(nameof(displayManager));
             this.documentController = documentController ?? throw new ArgumentNullException(nameof(documentController));
             this.setDirectRunPending = setDirectRunPending ?? throw new ArgumentNullException(nameof(setDirectRunPending));
             this.refreshRows = refreshRows ?? throw new ArgumentNullException(nameof(refreshRows));
             this.refreshCommandCanExecute = refreshCommandCanExecute ?? throw new ArgumentNullException(nameof(refreshCommandCanExecute));
             this.refreshDirectRouteText = refreshDirectRouteText ?? throw new ArgumentNullException(nameof(refreshDirectRouteText));
+        }
+
+        public void RememberWorkspaceImagePath(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+            {
+                return;
+            }
+
+            string normalized = Path.GetFullPath(path);
+            SystemState system = runtimeContext.Global.System;
+            if (string.Equals(
+                    system.LastWorkspaceImagePath,
+                    normalized,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            system.LastWorkspaceImagePath = normalized;
+            system.SaveConfig();
         }
 
         public bool LoadImage(string path)

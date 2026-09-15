@@ -1,0 +1,200 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0063",
+    "aliases": [
+      "OPENVISIONLAB-2D005-INTEGRATION-RESULT-DISPOSITION-20260915"
+    ],
+    "type": "bug",
+    "mode": "simple",
+    "title": "Separate inspection NG from execution failures in the 2D Result",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "scheduled 2D task execution and source review",
+    "summary": "The 2D plan identified that the local 2D consumer always translated a failed Runner result into Completed/Ng. The bounded change uses the existing typed step status and error fields to preserve quality NG while publishing execution failures and cancellation with the existing v2 Result contract.",
+    "refs": [
+      "C:\\Users\\USER\\Downloads\\OpenVisionLab_2D_Audit_and_Plan.md",
+      "C:\\Users\\USER\\Downloads\\OpenVisionLab_2D_tasks.json",
+      "AGENTS.md",
+      "docs\\contracts\\vision\\VISION_TOOL_RESULT_CONTRACT.md",
+      "C:\\Users\\USER\\.nuget\\packages\\openvisionlab.integration.contracts\\0.2.0-alpha.3\\docs\\PROTOCOL.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "TwoDIntegrationExchange now classifies typed step outcomes before writing a run record: only acceptance NG publishes Completed/Ng; execution failures publish Failed/ExecutionError without run identity; cancellation publishes Cancelled/Indeterminate. Final Debug/Release contracts, app builds, and matching clean/dirty integration smokes pass.",
+    "next_action": null
+  },
+  "problem": {
+    "claims": [
+      {
+        "id": "P1",
+        "state": "confirmed",
+        "text": "RunAcceptedHandoffAsync previously selected Completed and then used VisionRecipeRunResult.Success to choose Pass or Ng, so a ToolFactoryFailed, InvalidRoi, StepTimeout, or cancellation represented by a failed step could be exposed as Completed/Ng instead of an execution or cancellation result.",
+        "evidence_refs": [
+          "E1"
+        ]
+      }
+    ],
+    "impact": "Downstream consumers could treat an execution failure as a normal inspected part and choose the wrong retry, alarm, or reject path."
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The existing TwoDIntegrationExchange owner classifies Result status/outcome from typed step status and fields: quality NG is Completed/Ng; execution failure is Failed/ExecutionError; cancellation is Cancelled/Indeterminate.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E5",
+        "E6",
+        "E9"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "ToolFactoryFailed, InvalidRoi, StepTimeout, unknown/incomplete states, and StepCanceled are covered by focused contract cases without guessing from exception-message text.",
+      "evidence_refs": [
+        "E2",
+        "E6"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "The existing Result correlation, run-record, metric, and consumer parser path remains intact for the existing 2D integration smoke; a dirty runtime remains fail-closed before acknowledgement/run.",
+      "evidence_refs": [
+        "E3",
+        "E5",
+        "E6",
+        "E8",
+        "E9"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "OpenVisionLab and VisionRecipeRunnerSmoke build cleanly in Debug and Release with no warnings or errors.",
+      "evidence_refs": [
+        "E4",
+        "E7"
+      ]
+    },
+    {
+      "id": "C5",
+      "text": "The existing v2 contract package, recipe XML format, TCP/ACK/Run separation, and Dev/Original boundary remain unchanged.",
+      "evidence_refs": [
+        "E1",
+        "E3",
+        "E4",
+        "E5",
+        "E7",
+        "E8",
+        "E9"
+      ]
+    }
+  ],
+  "relations": [],
+  "context": [
+    {
+      "kind": "owner-map",
+      "location": "TwoDIntegrationExchange.RunAcceptedHandoffCoreAsync -> VisionRecipeRunner.RunAsync -> ClassifyRunResult -> IntegrationResultV2 -> result.json"
+    },
+    {
+      "kind": "state-writer",
+      "location": "TwoDIntegrationExchange writes the immutable v2 Result; VisionRecipeRunResult.Steps owns typed step status/tool/error/acceptance state; RunLease owns transaction execution lifetime."
+    },
+    {
+      "kind": "reading-order",
+      "location": "TwoDIntegrationExchange.RunAcceptedHandoffCoreAsync -> ClassifyRunResult -> VisionRecipeRunResult/VisionRecipeStepRunSummary -> TwoDIntegrationResultDispositionContract -> TwoDIntegrationSmoke"
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "evidence-root",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d005-result-disposition-20260915",
+      "summary": "Focused result-disposition contracts, Debug/Release runner and app builds, and dirty-runtime integration fail-closed smoke logs."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "review",
+      "location": "src\\OpenVisionLab\\Core\\Integration\\TwoDIntegrationExchange.cs",
+      "observation": "The Result construction now calls ClassifyRunResult. The classifier uses VisionRecipeStepRunSummary.Status, ToolSuccess, AcceptancePassed, ErrorCode, and ErrorName: only typed NG is Completed/Ng; CANCEL is Cancelled/Indeterminate; other failed or incomplete states are Failed/ExecutionError with ExecutionFailed.",
+      "observed_at": "2026-09-15T12:10:06+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d005-result-disposition-20260915\\contract-debug\\run.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d005-result-disposition-20260915\\contract-release\\run.log",
+      "observation": "The focused 2D integration result-disposition contract passed 8/0 in Debug and 8/0 in Release, covering Pass, acceptance NG, ToolFactoryFailed, InvalidRoi, StepTimeout, StepCanceled, all-skipped, and unknown status cases.",
+      "observed_at": "2026-09-15T12:10:06+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d005-result-disposition-20260915\\integration-debug-dirty\\run.log",
+      "observation": "The existing integration smoke preserved ThreeD/HeightMap rejection, missing-manifest and identity/hash fail-closed checks, and dirty-runtime refusal before Result publication with exit 0.",
+      "observed_at": "2026-09-15T12:10:06+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "build",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d005-result-disposition-20260915\\runner-debug-build-initial.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d005-result-disposition-20260915\\runner-release-build.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d005-result-disposition-20260915\\app-debug-build.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d005-result-disposition-20260915\\app-release-build.log",
+      "observation": "VisionRecipeRunnerSmoke and OpenVisionLab Debug/Release builds completed with exit code 0, warnings 0, and errors 0.",
+      "observed_at": "2026-09-15T12:10:06+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "review",
+      "location": "src\\OpenVisionLab\\Core\\Integration\\TwoDIntegrationExchange.cs",
+      "observation": "The final call path classifies the VisionRecipeRunResult before creating a Run Record. Completed/Pass and Completed/Ng keep the existing run identity and record; Failed/ExecutionError and Cancelled/Indeterminate call PublishFailedResult with no run identity or Run Record, matching the v2 validator contract. Step detail remains typed Status/ErrorCode/ErrorName.",
+      "observed_at": "2026-09-15T12:17:36+09:00"
+    },
+    {
+      "id": "E6",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d005-result-disposition-20260915\\contract-debug-final2\\run.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d005-result-disposition-20260915\\contract-release-final2\\run.log",
+      "observation": "The final focused 2D integration result-disposition contract passed 9/0 in Debug and 9/0 in Release, including v2 validation of Failed/ExecutionError without run identity plus Pass, acceptance NG, ToolFactoryFailed, InvalidRoi, StepTimeout, StepCanceled, all-skipped, and unknown status cases.",
+      "observed_at": "2026-09-15T12:17:36+09:00"
+    },
+    {
+      "id": "E7",
+      "kind": "build",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d005-result-disposition-20260915\\runner-debug-build-final2.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d005-result-disposition-20260915\\runner-release-build-final2.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d005-result-disposition-20260915\\app-debug-build-final.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d005-result-disposition-20260915\\app-release-build-final.log",
+      "observation": "The final VisionRecipeRunnerSmoke and OpenVisionLab Debug/Release builds completed with exit code 0, warnings 0, and errors 0.",
+      "observed_at": "2026-09-15T12:17:36+09:00"
+    },
+    {
+      "id": "E8",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d005-result-disposition-20260915\\integration-debug-dirty-final2\\run.log",
+      "observation": "The matching-assembly dirty-runtime integration smoke passed after the final change: ThreeD/HeightMap rejection, missing-manifest, identity/hash tamper checks, and dirty-runtime refusal before acknowledgement/Result publication all passed with exit 0.",
+      "observed_at": "2026-09-15T12:17:36+09:00"
+    },
+    {
+      "id": "E9",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d005-result-disposition-20260915\\integration-clean-final\\run.log",
+      "observation": "A matching-assembly synthetic-clean Debug integration smoke passed after the final change: Good=Pass and Bad=Ng retained their Run IDs, run-record/metric correlation, concurrent-run lease guard, explicit rejection/tamper checks, and runtime identity fail-closed checks.",
+      "observed_at": "2026-09-15T12:20:10+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-15T12:10:06+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "The typed external-result disposition owner, focused failure/cancellation cases, dirty-runtime integration regression, and Debug/Release build gates are complete.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ]
+    }
+  ],
+  "created_at": "2026-09-15T12:10:06+09:00",
+  "updated_at": "2026-09-15T12:20:10+09:00"
+}

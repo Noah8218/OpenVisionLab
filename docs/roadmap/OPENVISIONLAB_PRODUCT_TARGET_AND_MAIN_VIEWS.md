@@ -219,6 +219,7 @@ Already completed enough to avoid redoing:
 - Public product sample catalog policy, Good/Bad sample pairs, expected metric gates, product sample runner, quality audit, and sample review smokes exist.
 - Recipe review shows Good/Bad role result cards after pair check, and a failed role can focus the failed Step with correction guidance without opening the saved run history first.
 - Recipe review also exposes immediate failed-Step rerun/comparison actions after focus: output layer, input layer, parameters, and Good/Bad rerun.
+- Corrected-output rerun is now blocked while the selected Step PropertyGrid edit is dirty. The panel shows an explicit apply-or-discard instruction, then restores the existing Good/Bad or same Validation Set rerun after XML apply without implicit Preview/Run.
 - Product sample catalog quality has passed recent gates. Do not add more samples until current UX/runtime changes are stabilized.
 
 Next development focus:
@@ -391,12 +392,7 @@ The user closed repeated image inspection, dataset tuning, and LLM validation as
 ## Session Start Checklist
 
 ```powershell
-cd C:\Git\OpenVisionLab_Dev
-git status --short
-git log --oneline -5
-
-cd C:\Git\OpenVisionLab
-git fetch origin
+cd C:\Git\2D\Dev
 git status --short
 git log --oneline -5
 ```
@@ -407,7 +403,7 @@ For code changes, run the smallest meaningful focused check plus the required po
 
 ```powershell
 dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"
-dotnet run --project tools\OpenVisionReadinessCheck\OpenVisionReadinessCheck.csproj -c Debug -- "C:\Git\OpenVisionLab_Dev"
+dotnet run --project tools\OpenVisionReadinessCheck\OpenVisionReadinessCheck.csproj -c Debug -- "C:\Git\2D\Dev"
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\TestExternalReferences.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\TestPublicSampleAssets.ps1
 ```

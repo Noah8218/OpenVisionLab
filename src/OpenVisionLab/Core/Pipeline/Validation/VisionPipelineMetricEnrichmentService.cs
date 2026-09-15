@@ -72,15 +72,12 @@ namespace OpenVisionLab
             metrics[VisionPipelineKnownMetrics.BoundsHeightMax] = rectangles.Max(overlay => overlay.Bounds.Height);
             metrics[VisionPipelineKnownMetrics.BoundsHeightAvg] = rectangles.Average(overlay => overlay.Bounds.Height);
 
-            if (pixelPerMm > 0)
-            {
-                metrics[VisionPipelineKnownMetrics.BoundsWidthMmMin] = metrics[VisionPipelineKnownMetrics.BoundsWidthMin] * pixelPerMm;
-                metrics[VisionPipelineKnownMetrics.BoundsWidthMmMax] = metrics[VisionPipelineKnownMetrics.BoundsWidthMax] * pixelPerMm;
-                metrics[VisionPipelineKnownMetrics.BoundsWidthMmAvg] = metrics[VisionPipelineKnownMetrics.BoundsWidthAvg] * pixelPerMm;
-                metrics[VisionPipelineKnownMetrics.BoundsHeightMmMin] = metrics[VisionPipelineKnownMetrics.BoundsHeightMin] * pixelPerMm;
-                metrics[VisionPipelineKnownMetrics.BoundsHeightMmMax] = metrics[VisionPipelineKnownMetrics.BoundsHeightMax] * pixelPerMm;
-                metrics[VisionPipelineKnownMetrics.BoundsHeightMmAvg] = metrics[VisionPipelineKnownMetrics.BoundsHeightAvg] * pixelPerMm;
-            }
+            AddConvertedMetric(metrics, VisionPipelineKnownMetrics.BoundsWidthMin, VisionPipelineKnownMetrics.BoundsWidthMmMin, pixelPerMm);
+            AddConvertedMetric(metrics, VisionPipelineKnownMetrics.BoundsWidthMax, VisionPipelineKnownMetrics.BoundsWidthMmMax, pixelPerMm);
+            AddConvertedMetric(metrics, VisionPipelineKnownMetrics.BoundsWidthAvg, VisionPipelineKnownMetrics.BoundsWidthMmAvg, pixelPerMm);
+            AddConvertedMetric(metrics, VisionPipelineKnownMetrics.BoundsHeightMin, VisionPipelineKnownMetrics.BoundsHeightMmMin, pixelPerMm);
+            AddConvertedMetric(metrics, VisionPipelineKnownMetrics.BoundsHeightMax, VisionPipelineKnownMetrics.BoundsHeightMmMax, pixelPerMm);
+            AddConvertedMetric(metrics, VisionPipelineKnownMetrics.BoundsHeightAvg, VisionPipelineKnownMetrics.BoundsHeightMmAvg, pixelPerMm);
         }
 
         private static void AddLineOverlayMetrics(
@@ -111,12 +108,9 @@ namespace OpenVisionLab
             metrics[VisionPipelineKnownMetrics.LineAngleMax] = lines.Max(line => line.Angle);
             metrics[VisionPipelineKnownMetrics.LineAngleAvg] = lines.Average(line => line.Angle);
 
-            if (pixelPerMm > 0)
-            {
-                metrics[VisionPipelineKnownMetrics.LineLengthMmMin] = metrics[VisionPipelineKnownMetrics.LineLengthMin] * pixelPerMm;
-                metrics[VisionPipelineKnownMetrics.LineLengthMmMax] = metrics[VisionPipelineKnownMetrics.LineLengthMax] * pixelPerMm;
-                metrics[VisionPipelineKnownMetrics.LineLengthMmAvg] = metrics[VisionPipelineKnownMetrics.LineLengthAvg] * pixelPerMm;
-            }
+            AddConvertedMetric(metrics, VisionPipelineKnownMetrics.LineLengthMin, VisionPipelineKnownMetrics.LineLengthMmMin, pixelPerMm);
+            AddConvertedMetric(metrics, VisionPipelineKnownMetrics.LineLengthMax, VisionPipelineKnownMetrics.LineLengthMmMax, pixelPerMm);
+            AddConvertedMetric(metrics, VisionPipelineKnownMetrics.LineLengthAvg, VisionPipelineKnownMetrics.LineLengthMmAvg, pixelPerMm);
         }
 
         private static (double Length, double Angle) CreateLineMetric(PointF start, PointF end)
@@ -132,7 +126,7 @@ namespace OpenVisionLab
             IDictionary<string, double> metrics,
             double millimetersPerPixel)
         {
-            if (metrics == null || millimetersPerPixel <= 0D)
+            if (metrics == null || !IsFinite(millimetersPerPixel) || millimetersPerPixel <= 0D)
             {
                 return;
             }
@@ -141,20 +135,50 @@ namespace OpenVisionLab
             AddConvertedMetric(metrics, VisionPipelineKnownMetrics.GeometrySignedClearancePx, VisionPipelineKnownMetrics.GeometrySignedClearanceMm, millimetersPerPixel);
             AddConvertedMetric(metrics, VisionPipelineKnownMetrics.CircleRadiusPx, VisionPipelineKnownMetrics.CircleRadiusMm, millimetersPerPixel);
             AddConvertedMetric(metrics, VisionPipelineKnownMetrics.CircleDiameterPx, VisionPipelineKnownMetrics.CircleDiameterMm, millimetersPerPixel);
+            AddConvertedMetric(metrics, VisionPipelineKnownMetrics.DistancePxMin, VisionPipelineKnownMetrics.DistanceMmMin, millimetersPerPixel);
+            AddConvertedMetric(metrics, VisionPipelineKnownMetrics.DistancePxMax, VisionPipelineKnownMetrics.DistanceMmMax, millimetersPerPixel);
+            AddConvertedMetric(metrics, VisionPipelineKnownMetrics.DistancePxAvg, VisionPipelineKnownMetrics.DistanceMmAvg, millimetersPerPixel);
+            AddConvertedMetric(metrics, VisionPipelineKnownMetrics.DistancePxRange, VisionPipelineKnownMetrics.DistanceMmRange, millimetersPerPixel);
+            AddConvertedMetric(metrics, VisionPipelineKnownMetrics.CurveOuterArcLengthPx, VisionPipelineKnownMetrics.CurveOuterArcLengthMm, millimetersPerPixel);
+            AddConvertedMetric(metrics, VisionPipelineKnownMetrics.CurveInnerArcLengthPx, VisionPipelineKnownMetrics.CurveInnerArcLengthMm, millimetersPerPixel);
+            AddConvertedMetric(metrics, VisionPipelineKnownMetrics.CurveCenterArcLengthPx, VisionPipelineKnownMetrics.CurveCenterArcLengthMm, millimetersPerPixel);
         }
 
-        private static void AddConvertedMetric(
+        internal static void AddConvertedMetric(
             IDictionary<string, double> metrics,
             string pixelMetric,
             string millimeterMetric,
             double millimetersPerPixel)
         {
-            if (metrics.TryGetValue(pixelMetric, out double value)
-                && !double.IsNaN(value)
-                && !double.IsInfinity(value))
+            if (metrics != null
+                && metrics.TryGetValue(pixelMetric, out double value)
+                && TryConvertPixelToMillimeters(value, millimetersPerPixel, out double converted))
             {
-                metrics[millimeterMetric] = value * millimetersPerPixel;
+                metrics[millimeterMetric] = converted;
             }
+        }
+
+        internal static bool TryConvertPixelToMillimeters(
+            double pixelValue,
+            double millimetersPerPixel,
+            out double millimeters)
+        {
+            millimeters = 0D;
+            if (!IsFinite(pixelValue)
+                || !IsFinite(millimetersPerPixel)
+                || millimetersPerPixel <= 0D)
+            {
+                return false;
+            }
+
+            double converted = pixelValue * millimetersPerPixel;
+            if (!IsFinite(converted))
+            {
+                return false;
+            }
+
+            millimeters = converted;
+            return true;
         }
 
         private static void AddMatchingCandidateMetrics(
@@ -194,9 +218,15 @@ namespace OpenVisionLab
             }
 
             return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out double parsed)
+                && IsFinite(parsed)
                 && parsed > 0
                     ? parsed
                     : 0d;
+        }
+
+        private static bool IsFinite(double value)
+        {
+            return !double.IsNaN(value) && !double.IsInfinity(value);
         }
     }
 }

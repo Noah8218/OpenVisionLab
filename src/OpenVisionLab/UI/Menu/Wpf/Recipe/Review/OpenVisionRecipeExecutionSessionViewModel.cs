@@ -168,6 +168,50 @@ namespace OpenVisionLab
             }
         }
 
+        public async Task RunValidationSuiteAsync(
+            string scope,
+            string recipeName,
+            string pipelineName,
+            OpenVisionRecipeSampleOption sampleOption,
+            OpenVisionRecipeValidationSetOption validationSetOption)
+        {
+            if (string.Equals(
+                    scope,
+                    OpenVisionRecipeValidationSuiteScopeOption.LocalValidationSetKey,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                if (validationSetOption?.Set == null)
+                {
+                    return;
+                }
+
+                await RunLocalValidationSetAsync(recipeName, pipelineName, validationSetOption);
+                return;
+            }
+
+            if (string.Equals(
+                    scope,
+                    OpenVisionRecipeValidationSuiteScopeOption.GoodBadPairKey,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                StatusText = LocalText("Good/Bad suite 실행 시작.", "Started Good/Bad suite.");
+                await RunSelectedSamplePairCheckAsync(recipeName, pipelineName, sampleOption);
+                return;
+            }
+
+            if (string.Equals(
+                    scope,
+                    OpenVisionRecipeValidationSuiteScopeOption.CatalogKey,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                StatusText = LocalText("Catalog suite 실행 시작.", "Started catalog suite.");
+                await RunCatalogBenchmarkAsync(recipeName, pipelineName);
+                return;
+            }
+
+            await RunSelectedSampleValidationSuiteAsync(recipeName, pipelineName, sampleOption);
+        }
+
         public async Task RunSelectedSampleValidationSuiteAsync(string recipeName, string pipelineName, OpenVisionRecipeSampleOption sampleOption)
         {
             StartValidationSuite(

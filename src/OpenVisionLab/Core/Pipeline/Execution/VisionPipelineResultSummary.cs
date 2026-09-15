@@ -17,6 +17,8 @@ namespace OpenVisionLab
         public string Status { get; set; } = string.Empty;
         public bool Success { get; set; }
         public bool Skipped { get; set; }
+        public bool Executed { get; set; } = true;
+        public string ExecutionState { get; set; } = string.Empty;
         public bool HasResultImage { get; set; }
         public int ResultImageWidth { get; set; }
         public int ResultImageHeight { get; set; }
@@ -50,12 +52,77 @@ namespace OpenVisionLab
 
     internal static class VisionPipelineResultSummaryService
     {
+        internal const string ExecutedState = "Executed";
+        internal const string DisabledState = "Disabled";
+        internal const string NotRunAfterFailureState = "NotRunAfterFailure";
+        internal const string CancelledState = "Cancelled";
+
         public static List<VisionPipelineStepResultSummary> CreateStepSummaries(VisionPipelineRunResult runResult)
         {
             List<VisionPipelineStepResult> results = runResult?.StepResults ?? new List<VisionPipelineStepResult>();
             return results
                 .Select((result, index) => CreateStepSummary(index + 1, result))
                 .ToList();
+        }
+
+        public static List<VisionPipelineStepResultSummary> CreateStepSummaries(
+            VisionPipeline pipeline,
+            VisionPipelineRunResult runResult)
+        {
+            if (pipeline?.Steps == null || pipeline.Steps.Count == 0)
+            {
+                return CreateStepSummaries(runResult);
+            }
+
+            List<VisionPipelineStepResult> results = runResult?.StepResults ?? new List<VisionPipelineStepResult>();
+            List<VisionPipelineStepResultSummary> summaries = new List<VisionPipelineStepResultSummary>(pipeline.Steps.Count);
+            int resultIndex = 0;
+            bool cancellationSeen = false;
+            for (int stepIndex = 0; stepIndex < pipeline.Steps.Count; stepIndex++)
+            {
+                VisionPipelineStep step = pipeline.Steps[stepIndex];
+                VisionPipelineStepResult stepResult = resultIndex < results.Count
+                    && ReferenceEquals(results[resultIndex]?.Step, step)
+                    ? results[resultIndex++]
+                    : resultIndex == stepIndex && resultIndex < results.Count
+                        ? results[resultIndex++]
+                        : null;
+
+                if (stepResult != null)
+                {
+                    VisionPipelineStepResultSummary summary = CreateStepSummary(stepIndex + 1, stepResult);
+                    summaries.Add(summary);
+                    if (summary.Executed && !summary.Success)
+                    {
+                        cancellationSeen = stepResult.ToolResult?.ErrorCode == VisionToolErrorCode.StepCanceled;
+                    }
+
+                    continue;
+                }
+
+                if (step?.Enabled != true)
+                {
+                    summaries.Add(CreateUnexecutedSummary(
+                        stepIndex + 1,
+                        step,
+                        DisabledState));
+                    continue;
+                }
+
+                summaries.Add(CreateUnexecutedSummary(
+                    stepIndex + 1,
+                    step,
+                    cancellationSeen
+                        ? CancelledState
+                        : NotRunAfterFailureState));
+            }
+
+            while (resultIndex < results.Count)
+            {
+                summaries.Add(CreateStepSummary(summaries.Count + 1, results[resultIndex++]));
+            }
+
+            return summaries;
         }
 
         public static VisionPipelineStepResultSummary CreateStepSummary(int index, VisionPipelineStepResult stepResult)
@@ -73,6 +140,12 @@ namespace OpenVisionLab
                 Status = ResolveStatus(stepResult),
                 Success = IsPassed(stepResult),
                 Skipped = stepResult?.Skipped == true,
+                Executed = stepResult?.Skipped != true,
+                ExecutionState = stepResult?.Skipped == true
+                    ? DisabledState
+                    : stepResult?.ToolResult?.ErrorCode == VisionToolErrorCode.StepCanceled
+                        ? CancelledState
+                        : ExecutedState,
                 HasResultImage = toolResult?.ResultImage != null && !toolResult.ResultImage.Empty(),
                 ResultImageWidth = toolResult?.ResultImage != null && !toolResult.ResultImage.Empty() ? toolResult.ResultImage.Width : 0,
                 ResultImageHeight = toolResult?.ResultImage != null && !toolResult.ResultImage.Empty() ? toolResult.ResultImage.Height : 0,
@@ -97,6 +170,33 @@ namespace OpenVisionLab
                 GeometryFeatures = VisionPipelineGeometryFeatureStore.Get(toolResult).Select(item => item.Clone()).ToList(),
                 CircleEvidence = VisionPipelineCircleEvidenceStore.Get(toolResult),
                 EdgeBasedMatchingDiagnostics = toolResult?.EdgeBasedMatchingDiagnostics?.Clone()
+            };
+        }
+
+        private static VisionPipelineStepResultSummary CreateUnexecutedSummary(
+            int index,
+            VisionPipelineStep step,
+            string executionState)
+        {
+            bool disabled = string.Equals(executionState, DisabledState, StringComparison.Ordinal);
+            bool cancelled = string.Equals(executionState, CancelledState, StringComparison.Ordinal);
+            return new VisionPipelineStepResultSummary
+            {
+                Index = index,
+                Name = step?.Name ?? string.Empty,
+                ToolType = step?.ToolType ?? string.Empty,
+                InputLayer = step?.InputLayer ?? string.Empty,
+                OutputLayer = step?.OutputLayer ?? string.Empty,
+                Status = disabled ? "SKIP" : cancelled ? "CANCEL" : "NOT RUN",
+                Success = disabled,
+                Skipped = disabled,
+                Executed = false,
+                ExecutionState = executionState,
+                Message = disabled
+                    ? "Step is disabled."
+                    : cancelled
+                        ? "Step was not run because pipeline execution was canceled."
+                        : "Step was not run after an earlier step failed."
             };
         }
 

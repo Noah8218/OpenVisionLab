@@ -1,0 +1,119 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0084",
+    "aliases": [
+      "2D-026"
+    ],
+    "type": "task",
+    "mode": "simple",
+    "title": "Reject execution errors as ExpectedFailure quality NG",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "user-request",
+    "summary": "2D-026 requires ExpectedFailure samples to distinguish controlled quality NG from crashes, timeouts, invalid tools, and partial execution errors.",
+    "refs": [
+      "C:/Users/USER/Downloads/OpenVisionLab_2D_tasks.json#2D-026",
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      ".proofline/issues/PL-0063.json"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "2D-026 remains resolved; final post-documentation Debug and Release builds/contracts also pass 8/8 with the same typed ExpectedFailure behavior."
+  },
+  "objective": {
+    "summary": "ExpectedFailure validation passes only controlled quality NG or an explicitly declared controlled no-result/error outcome, while arbitrary execution errors fail closed.",
+    "constraints": [
+      "Reuse VisionPipelineResultSummaryService, VisionPipelineBatchOutcomeContract, VisionPipelineSampleCheckService, and RunVisionSampleCatalog.ps1.",
+      "Keep existing CSV rows compatible; unspecified optional fields must be reported as legacy rather than claimed as strong contracts.",
+      "Preserve existing metric, artifact, metadata, Explore, Required, and CSV parsing behavior except for the required classification guard.",
+      "Keep test data and evidence on D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev; do not change Original, release, deploy, or external systems."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "A typed ExpectedFailure contract accepts controlled quality NG or explicitly allowed controlled no-result/error and rejects crash, timeout, invalid-tool, unknown-error, and partial-artifact execution failures.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E4"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "Existing metric, artifact, and metadata assertions remain active; non-finite metrics fail; Explore/Required policy is unchanged; rows without optional fields are visibly marked legacy.",
+      "evidence_refs": [
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Focused Debug and Release builds/contracts and a bounded catalog or runner fixture pass, with evidence recorded in the issue and handoff.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ]
+    }
+  ],
+  "relations": [],
+  "context": [],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "test",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d026-debug-20260915-r2/expected-failure-contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d026-release-20260915/expected-failure-contract.txt",
+      "observation": "Debug and Release ExpectedFailure contracts each passed 8/8, including strict quality NG, strict controlled no-result, legacy labeling, timeout rejection, invalid-tool rejection, error/step mismatch rejection, and two actual sample-service runs.",
+      "observed_at": "2026-09-15T22:35:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d026-script-pass-20260915/output/sample_catalog_summary.json; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d026-script-fail-20260915/output/sample_catalog_summary.json",
+      "observation": "The three-row strict catalog fixture completed with GateStatus=OK, OKRows=3, and artifact/metric checks intact. The invalid/missing-pipeline fixture returned nonzero with GateStatus=NG and preserved contract, metadata, metric, and missing-artifact failures.",
+      "observed_at": "2026-09-15T22:33:44+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "inspection",
+      "location": "docs/reports/OPENVISIONLAB_2D_EXPECTED_FAILURE_CONTRACT_20260915.md; docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md",
+      "observation": "The owner map, optional CSV contract, legacy boundary, typed error allow-list, finite metric rule, verification commands, and unverified runtime boundaries are recorded for developer navigation.",
+      "observed_at": "2026-09-15T22:36:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "test",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d026-debug-20260915-final/expected-failure-contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d026-release-20260915-final/expected-failure-contract.txt",
+      "observation": "After the final service-message preservation adjustment, Debug and Release builds completed with 0 errors and the ExpectedFailure contract again passed 8/8 in both configurations.",
+      "observed_at": "2026-09-15T22:41:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-15T22:36:00+09:00",
+      "summary": "Reuse existing typed runner summaries and keep controlled no-result compatibility; do not add a second runner or qualification state owner.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-15T22:36:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "All 2D-026 completion criteria are satisfied by current typed-contract, catalog-fixture, and build evidence."
+    }
+  ],
+  "created_at": "2026-09-15T22:17:54+09:00",
+  "updated_at": "2026-09-15T22:42:00+09:00"
+}

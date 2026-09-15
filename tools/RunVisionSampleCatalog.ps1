@@ -145,6 +145,155 @@ function Get-RunnerMetricMap {
     return $metrics
 }
 
+function Test-FiniteDouble {
+    param([double]$Value)
+
+    return -not ([double]::IsNaN($Value) -or [double]::IsInfinity($Value))
+}
+
+function Get-RunnerStepRecords {
+    param([object[]]$RunnerOutput)
+
+    $records = New-Object System.Collections.Generic.List[object]
+    foreach ($line in $RunnerOutput | ForEach-Object { $_.ToString() }) {
+        if ($line -notmatch '^\s*(?<Index>\d+)\s+\|\s*(?<Tool>[^|]+)\|\s*(?<Status>[^|]+)\|.*?Error=(?<ErrorCode>-?\d+):(?<ErrorName>[^\s|]+)') {
+            continue
+        }
+
+        $records.Add([pscustomobject][ordered]@{
+            Index = [int]$Matches.Index
+            Tool = $Matches.Tool.Trim()
+            Status = $Matches.Status.Trim()
+            ErrorCode = [int]$Matches.ErrorCode
+            ErrorName = $Matches.ErrorName.Trim()
+            Text = $line
+        }) | Out-Null
+    }
+
+    return @($records.ToArray())
+}
+
+function Resolve-ExpectedFailureAssessment {
+    param(
+        [object]$Row,
+        [object[]]$RunnerOutput,
+        [int]$ExitCode
+    )
+
+    $messages = New-Object System.Collections.Generic.List[string]
+    $expectedOutcome = (Get-OptionalCsvValue $Row "ExpectedOutcome").Trim()
+    $expectedError = (Get-OptionalCsvValue $Row "ExpectedError").Trim()
+    $expectedStep = (Get-OptionalCsvValue $Row "ExpectedFailedStep").Trim()
+    $hasExplicitContract = -not [string]::IsNullOrWhiteSpace($expectedOutcome) -or
+        -not [string]::IsNullOrWhiteSpace($expectedError) -or
+        -not [string]::IsNullOrWhiteSpace($expectedStep)
+    $strength = if ($hasExplicitContract) { "Strict" } else { "Legacy" }
+    $classification = "ExecutionError"
+    $successLine = $RunnerOutput | Where-Object { $_ -match '^Success=(True|False)$' } | Select-Object -First 1
+    $stepRecords = @(Get-RunnerStepRecords $RunnerOutput)
+    $failedStep = $stepRecords | Where-Object { $_.Status -notin @("OK", "SKIP") } | Select-Object -First 1
+    $failedStepIndex = 0
+    $failedStepName = ""
+    $firstFailedLine = $RunnerOutput | Where-Object { $_ -match '^FirstFailedStep=' } | Select-Object -First 1
+    if ($null -ne $firstFailedLine -and $firstFailedLine -match '^FirstFailedStep=(?<Index>\d+)\|(?<Name>[^|]+)\|') {
+        $failedStepIndex = [int]$Matches.Index
+        $failedStepName = $Matches.Name.Trim()
+    }
+    elseif ($null -ne $failedStep) {
+        $failedStepIndex = $failedStep.Index
+    }
+    $qualityNg = $null -ne $failedStep -and
+        [string]::Equals($failedStep.Status, "NG", [StringComparison]::OrdinalIgnoreCase) -and
+        $failedStep.ErrorCode -eq 0 -and
+        [string]::Equals($failedStep.ErrorName, "None", [StringComparison]::OrdinalIgnoreCase)
+    $controlledErrors = @(
+        "BlobNoResult", "ContourNoResult", "FeatureNoKeypoints", "FeatureNotEnoughMatches",
+        "FeatureHomographyFailed", "FeatureNoResult", "LineGaugeEdgeNotFound", "LineGaugeFitFailed", "MatchingNoResult"
+    )
+    $controlledNoResult = $null -ne $failedStep -and
+        $failedStep.ErrorCode -ne 0 -and
+        $controlledErrors -contains $failedStep.ErrorName
+
+    if ($null -eq $successLine) {
+        $messages.Add("Runner did not emit Success=True/False; classify as execution error.") | Out-Null
+    }
+    elseif ($successLine -match '^Success=True$' -or $ExitCode -eq 0) {
+        $messages.Add("Expected failure did not occur.") | Out-Null
+    }
+
+    if ([string]::IsNullOrWhiteSpace($expectedOutcome) -and
+        (-not [string]::IsNullOrWhiteSpace($expectedError) -or -not [string]::IsNullOrWhiteSpace($expectedStep))) {
+        $messages.Add("ExpectedOutcome is required when ExpectedError or ExpectedFailedStep is specified.") | Out-Null
+    }
+
+    $normalizedOutcome = ($expectedOutcome -replace '[ _-]', '')
+    if (-not [string]::IsNullOrWhiteSpace($expectedOutcome) -and
+        $normalizedOutcome -notin @("QualityNG", "NG", "ControlledNoResult", "NoResult")) {
+        $messages.Add("Unsupported ExpectedOutcome '$expectedOutcome'. Use QualityNG or ControlledNoResult.") | Out-Null
+    }
+
+    if ([string]::IsNullOrWhiteSpace($normalizedOutcome)) {
+        if ($qualityNg) {
+            $normalizedOutcome = "QualityNG"
+        }
+        elseif ($controlledNoResult) {
+            $normalizedOutcome = "ControlledNoResult"
+        }
+    }
+    elseif ($normalizedOutcome -eq "NG") {
+        $normalizedOutcome = "QualityNG"
+    }
+    elseif ($normalizedOutcome -eq "NoResult") {
+        $normalizedOutcome = "ControlledNoResult"
+    }
+
+    if ($normalizedOutcome -eq "QualityNG") {
+        $classification = "QualityNG"
+        if (-not $qualityNg) {
+            $messages.Add("ExpectedFailure requires a tool-successful step whose acceptance evaluation returned quality NG.") | Out-Null
+        }
+        if (-not [string]::IsNullOrWhiteSpace($expectedError) -and $expectedError -notin @("None", "0")) {
+            $messages.Add("QualityNG cannot declare a tool error in ExpectedError.") | Out-Null
+        }
+    }
+    elseif ($normalizedOutcome -eq "ControlledNoResult") {
+        $classification = "ControlledNoResult"
+        if (-not $controlledNoResult) {
+            $messages.Add("ControlledNoResult requires a supported controlled no-result error.") | Out-Null
+        }
+        elseif (-not [string]::IsNullOrWhiteSpace($expectedError) -and
+            -not [string]::Equals($expectedError, $failedStep.ErrorName, [StringComparison]::OrdinalIgnoreCase)) {
+            $messages.Add("ExpectedError '$expectedError' does not match '$($failedStep.ErrorName)'.") | Out-Null
+        }
+    }
+    else {
+        $messages.Add("ExpectedFailure produced no recognized quality NG or controlled no-result outcome.") | Out-Null
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($expectedStep)) {
+        $stepMatches = $null -ne $failedStep -and
+            ([string]::Equals($expectedStep, [string]$failedStepIndex, [StringComparison]::OrdinalIgnoreCase) -or
+             [string]::Equals($expectedStep, $failedStepName, [StringComparison]::OrdinalIgnoreCase))
+        if (-not $stepMatches) {
+            $messages.Add("ExpectedFailedStep '$expectedStep' does not match the first failed step.") | Out-Null
+        }
+    }
+
+    if ($messages.Count -eq 0 -and $strength -eq "Legacy") {
+        $messages.Add("Legacy ExpectedFailure accepted as $classification; add ExpectedOutcome/ExpectedError/ExpectedFailedStep for strict validation.") | Out-Null
+    }
+
+    return [pscustomobject][ordered]@{
+        IsValid = $messages.Count -eq 0 -or ($messages.Count -eq 1 -and $strength -eq "Legacy")
+        Strength = $strength
+        Classification = $classification
+        Messages = @($messages.ToArray())
+        FailedStep = $failedStep
+        QualityNg = $qualityNg
+        ControlledNoResult = $controlledNoResult
+    }
+}
+
 function Get-OptionalCsvValue {
     param(
         [object]$Row,
@@ -451,8 +600,8 @@ $report.Add("- Runner: ``$runnerExe``") | Out-Null
 $report.Add("- Catalog: ``$catalogFullPath``") | Out-Null
 $report.Add("- Output: ``$OutputDir``") | Out-Null
 $report.Add("") | Out-Null
-$report.Add("| Sample | Mode | Status | Input Image | Pipeline | Result | Expected Metric | Result Image | Overlay Image | Raw Log |") | Out-Null
-$report.Add("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |") | Out-Null
+$report.Add("| Sample | Mode | Status | ExpectedFailure Contract | Input Image | Pipeline | Result | Expected Metric | Result Image | Overlay Image | Raw Log |") | Out-Null
+$report.Add("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |") | Out-Null
 
 $failures = New-Object System.Collections.Generic.List[string]
 $resultRows = New-Object System.Collections.Generic.List[object]
@@ -547,8 +696,19 @@ foreach ($row in $runRows) {
             }
 
             $actualMetricValue = [double]$metrics[$expectedMetricName]
+            if (-not (Test-FiniteDouble $actualMetricValue)) {
+                $metricFailures.Add("$expectedMetricName=$actualMetricValue is non-finite.") | Out-Null
+                $expectedMetricParts.Add("$expectedMetricName=nonfinite") | Out-Null
+                continue
+            }
             $minimum = ConvertTo-NullableDouble $metricCheck.Minimum
             $maximum = ConvertTo-NullableDouble $metricCheck.Maximum
+            if ($null -ne $minimum -and -not (Test-FiniteDouble $minimum)) {
+                $metricFailures.Add("$expectedMetricName has a non-finite expected minimum.") | Out-Null
+            }
+            if ($null -ne $maximum -and -not (Test-FiniteDouble $maximum)) {
+                $metricFailures.Add("$expectedMetricName has a non-finite expected maximum.") | Out-Null
+            }
             $actualText = $actualMetricValue.ToString("0.###", [System.Globalization.CultureInfo]::InvariantCulture)
             $rangeText = ""
 
@@ -574,9 +734,13 @@ foreach ($row in $runRows) {
 
     $resultFailureMessages = New-Object System.Collections.Generic.List[string]
     $artifactFailures = New-Object System.Collections.Generic.List[string]
+    $expectedFailureAssessment = $null
     if ($isExpectedFailure) {
-        if ($exitCode -eq 0) {
-            $resultFailureMessages.Add("Expected failure did not occur.") | Out-Null
+        $expectedFailureAssessment = Resolve-ExpectedFailureAssessment -Row $row -RunnerOutput $runnerOutput -ExitCode $exitCode
+        if (-not $expectedFailureAssessment.IsValid) {
+            foreach ($assessmentMessage in $expectedFailureAssessment.Messages) {
+                $resultFailureMessages.Add($assessmentMessage) | Out-Null
+            }
         }
     }
     elseif ($exitCode -ne 0) {
@@ -607,15 +771,27 @@ foreach ($row in $runRows) {
     }
     Add-CatalogCategoryStat -Stats $categoryStats -Category $row.Category -Mode $row.ValidationMode -Status $status
 
+    $expectedFailureContractText = if ($isExpectedFailure -and $null -ne $expectedFailureAssessment) {
+        "$($expectedFailureAssessment.Strength)/$($expectedFailureAssessment.Classification)"
+    }
+    elseif ($isExpectedFailure) {
+        "Legacy/Unclassified"
+    }
+    else {
+        "-"
+    }
+
     $resultImageLink = if (Test-Path -LiteralPath $resultImagePath) { "[$safeName.result.png]($safeName.result.png)" } else { "-" }
     $overlayImageLink = if (Test-Path -LiteralPath $overlayImagePath) { "[$safeName.png]($safeName.png)" } else { "-" }
     $logLink = if (Test-Path -LiteralPath $rawLogPath) { "[$safeName.log]($safeName.log)" } else { "-" }
-    $report.Add("| $($row.SampleName) | $($row.ValidationMode) | $status | $inputImageText | $pipelineName | $resultText | $expectedMetricText | $resultImageLink | $overlayImageLink | $logLink |") | Out-Null
+    $report.Add("| $($row.SampleName) | $($row.ValidationMode) | $status | $expectedFailureContractText | $inputImageText | $pipelineName | $resultText | $expectedMetricText | $resultImageLink | $overlayImageLink | $logLink |") | Out-Null
     $resultRows.Add([pscustomobject][ordered]@{
         SampleName = $row.SampleName
         Category = $row.Category
         Mode = $row.ValidationMode
         Status = $status
+        ExpectedFailureValidation = if ($null -ne $expectedFailureAssessment) { $expectedFailureAssessment.Strength } else { "" }
+        ExpectedFailureClassification = if ($null -ne $expectedFailureAssessment) { $expectedFailureAssessment.Classification } else { "" }
         ExitCode = $exitCode
         InputImageWidth = $actualImageWidth
         InputImageHeight = $actualImageHeight
@@ -633,8 +809,8 @@ foreach ($row in $runRows) {
         LogPath = $rawLogPath
     }) | Out-Null
 
-    if ($isExpectedFailure -and $exitCode -eq 0) {
-        $failures.Add("$($row.SampleName) was expected to fail, but runner returned OK. See $rawLogPath") | Out-Null
+    if ($isExpectedFailure -and $null -ne $expectedFailureAssessment -and -not $expectedFailureAssessment.IsValid) {
+        $failures.Add("$($row.SampleName) ExpectedFailure contract failed: $([string]::Join(' ', @($expectedFailureAssessment.Messages))). See $rawLogPath") | Out-Null
     }
 
     if ($exitCode -ne 0 -and -not $isExpectedFailure -and ($isRequired -or ($FailOnExplore -and $isExplore))) {

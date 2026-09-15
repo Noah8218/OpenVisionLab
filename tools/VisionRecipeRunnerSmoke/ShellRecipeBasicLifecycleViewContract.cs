@@ -33,7 +33,7 @@ internal static class ShellRecipeBasicLifecycleViewContract
             "Recipe",
             "Views",
             "OpenVisionRecipeBasicLifecycleView.xaml"));
-        string lifecycleCodeBehind = File.ReadAllText(Path.Combine(
+        string lifecycleCodeBehindPath = Path.Combine(
             repositoryRoot,
             "src",
             "OpenVisionLab",
@@ -42,7 +42,7 @@ internal static class ShellRecipeBasicLifecycleViewContract
             "Wpf",
             "Recipe",
             "Views",
-            "OpenVisionRecipeBasicLifecycleView.xaml.cs"));
+            "OpenVisionRecipeBasicLifecycleView.xaml.cs");
         string recipeCommands = File.ReadAllText(Path.Combine(
             repositoryRoot,
             "src",
@@ -50,7 +50,9 @@ internal static class ShellRecipeBasicLifecycleViewContract
             "UI",
             "Menu",
             "Wpf",
-            "OpenVisionShellHostRecipeCommandSurface.cs"));
+            "Recipe",
+            "CommandSurface",
+            "RecipeCommandSurface.cs"));
 
         List<string> passed = new List<string>();
         List<string> failed = new List<string>();
@@ -127,14 +129,9 @@ internal static class ShellRecipeBasicLifecycleViewContract
             passed.Add("new view owns presentation layout without Shell toggle coupling");
 
             Require(
-                lifecycleCodeBehind.Contains(
-                    "public partial class OpenVisionRecipeBasicLifecycleView : UserControl",
-                    StringComparison.Ordinal)
-                && lifecycleCodeBehind.Contains("InitializeComponent();", StringComparison.Ordinal)
-                && !lifecycleCodeBehind.Contains(": Window", StringComparison.Ordinal)
-                && !lifecycleCodeBehind.Contains("MessageBox", StringComparison.Ordinal),
-                "Lifecycle view code-behind contains non-presentation workflow logic.");
-            passed.Add("view code-behind is limited to framework initialization");
+                !File.Exists(lifecycleCodeBehindPath),
+                "Lifecycle view retains a manual code-behind file even though its XAML has no view-specific behavior.");
+            passed.Add("view uses compiled XAML without a redundant manual code-behind file");
 
             Require(
                 recipeCommands.Contains("CreateNamedRecipeCommand", StringComparison.Ordinal)

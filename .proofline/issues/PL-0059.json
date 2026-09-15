@@ -1,0 +1,154 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0059",
+    "aliases": [
+      "OPENVISIONLAB-2D002-CANCELLATION-RESULT-CONTRACT-20260915"
+    ],
+    "type": "feature",
+    "mode": "simple",
+    "title": "Preserve failed result semantics for partial pipeline cancellation",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "explicit user request and current owner-map review",
+    "summary": "The user authorized starting the next 2D feature slice from the owner map. The existing execution service stopped before the next step without recording a failed result, allowing a partially completed run to appear successful to callers.",
+    "refs": [
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "docs/admin/CODEBASE_STRUCTURE.md",
+      "AGENTS.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "VisionPipelineExecutionService now records a StepCanceled failure for pre-step cancellation, forces cancellation acceptance to fail, and preserves the existing public VisionRecipeRunner projection. Debug/Release builds and focused cancellation/regression contracts pass.",
+    "next_action": null
+  },
+  "objective": {
+    "summary": "Make partial pipeline cancellation observable as a failed run while preserving completed step results, existing Preview/Run contracts, and public recipe result projection.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev; do not modify C:\\Git\\2D\\Original.",
+      "Reuse VisionPipelineExecutionService and VisionRecipeRunResult; add no new runtime service, interface, wrapper, or partial.",
+      "Keep SDK DLL pins, MVVM boundaries, UI layout, and release/deployment state unchanged.",
+      "Store generated logs and reports under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "Pre-step and between-step cancellation append a failed StepCanceled result, publish the existing CANCEL status update, and return overall failure without executing the canceled step.",
+      "evidence_refs": [
+        "E1"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "Cancellation cannot satisfy ExpectedSuccess=false acceptance, and the public VisionRecipeRunner result exposes Success=false, HasFailedStep=true, and the StepCanceled error code.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "An uncanceled two-step pipeline remains successful, and existing pipeline failure-lifetime and Pipeline Review execution contracts remain passing.",
+      "evidence_refs": [
+        "E1",
+        "E3"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "The changed execution service and smoke runner build cleanly in Debug and Release, with no solution or runner build errors.",
+      "evidence_refs": [
+        "E4"
+      ]
+    },
+    {
+      "id": "C5",
+      "text": "Completion evidence names the current owner, call path, mutable-state writer, lifetime owner, public contract, shortest reading order, focused checks, and the unverified UI/runtime boundary.",
+      "evidence_refs": [
+        "E5"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0057"
+    }
+  ],
+  "context": [
+    {
+      "kind": "owner-map",
+      "location": "VisionPipelineExecutionService -> VisionPipelineRunResult.StepResults -> VisionRecipeRunner/VisionRecipeRunResult"
+    },
+    {
+      "kind": "source",
+      "location": "src/OpenVisionLab/Core/Pipeline/Execution/VisionPipelineExecutionService.cs; src/OpenVisionLab/Core/Pipeline/Execution/VisionRecipeRunner.cs; tools/VisionRecipeRunnerSmoke/PipelineCancellationResultContract.cs"
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "evidence-root",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d002-cancellation-result-20260915",
+      "summary": "Debug/Release runner and solution build logs, cancellation contract reports, and regression contract reports."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d002-cancellation-result-20260915\\debug-contract-rerun\\pipeline-cancellation-result-contract.txt; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d002-cancellation-result-20260915\\release-contract-rerun\\pipeline-cancellation-result-contract.txt",
+      "observation": "The focused cancellation contract completed in both Debug and Release with exit code 0 and passed=5, failed=0. It covered pre-cancel, public runner projection, between-step cancellation, ExpectedSuccess=false acceptance, and uncanceled success.",
+      "observed_at": "2026-09-15T09:00:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "review",
+      "location": "src\\OpenVisionLab\\Core\\Pipeline\\Execution\\VisionPipelineExecutionService.cs:128-145; src\\OpenVisionLab\\Core\\Pipeline\\Execution\\VisionPipelineExecutionService.cs:325-331; src\\OpenVisionLab\\Core\\Pipeline\\Execution\\VisionPipelineExecutionService.cs:458-493; src\\OpenVisionLab\\Core\\Pipeline\\Execution\\VisionRecipeRunner.cs:139-184; src\\OpenVisionLab\\Core\\Pipeline\\Execution\\VisionRecipeRunner.cs:214-242",
+      "observation": "The existing VisionPipelineExecutionService remains the policy and mutable run-result owner. Its call path is OpenVisionPipelineReviewExecutionController/VisionRecipeRunner -> VisionPipelineExecutionService -> VisionPipelineRunResult.StepResults -> VisionRecipeRunResult. Cancellation writes StepResults through the service; VisionPipelineRunResult owns result disposal and VisionRecipeRunner projects Success/step summaries while disposing step images. The public contract and binding/UI owners are unchanged.",
+      "observed_at": "2026-09-15T09:00:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d002-cancellation-result-20260915\\regression-debug-pipeline-failure-lifetime-contract\\pipeline-failure-lifetime-contract.txt; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d002-cancellation-result-20260915\\regression-release-pipeline-failure-lifetime-contract\\pipeline-failure-lifetime-contract.txt; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d002-cancellation-result-20260915\\regression-debug-pipeline-review-execution-contract\\pipeline-review-execution-contract.txt; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d002-cancellation-result-20260915\\regression-release-pipeline-review-execution-contract\\pipeline-review-execution-contract.txt",
+      "observation": "Existing failure-lifetime contracts passed 7/0 in both configurations and existing Pipeline Review execution contracts exited 0 in both configurations after the service change.",
+      "observed_at": "2026-09-15T08:52:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "build",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d002-cancellation-result-20260915\\build-debug-rerun.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d002-cancellation-result-20260915\\build-release-rerun.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d002-cancellation-result-20260915\\solution-debug\\build.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d002-cancellation-result-20260915\\solution-release\\build.log",
+      "observation": "VisionRecipeRunnerSmoke Debug/Release rebuilds and full OpenVisionLab.sln Debug/Release builds completed with exit code 0, warnings 0, and errors 0.",
+      "observed_at": "2026-09-15T08:58:00+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "review",
+      "location": "src\\OpenVisionLab\\Core\\Pipeline\\Execution\\VisionPipelineExecutionService.cs; tools\\VisionRecipeRunnerSmoke\\PipelineCancellationResultContract.cs",
+      "observation": "Shortest developer reading order is VisionPipelineExecutionService cancellation branch and EvaluateAcceptance helper, then VisionRecipeRunner CreateResult/CreateStepSummaries, then the focused smoke contract. No WPF View or ViewModel changed; this slice has no visual UI mutation. In-process service/public-facade checks are complete, while actual desktop EXE cancellation interaction, alternate themes, DPI/input states, hardware, and SDK portability remain unverified.",
+      "observed_at": "2026-09-15T09:00:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-15T09:00:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "C1~C5 are satisfied by the service change, public projection contract, Debug/Release builds, focused regressions, and durable owner-map evidence. Close this bounded 2D-002 slice without reopening the completed owner or expanding into UI cancellation interaction.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E4",
+        "E5"
+      ]
+    }
+  ],
+  "created_at": "2026-09-15T09:00:00+09:00",
+  "updated_at": "2026-09-15T09:00:00+09:00"
+}

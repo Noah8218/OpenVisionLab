@@ -1,0 +1,150 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0080",
+    "aliases": [
+      "OPENVISIONLAB-2D022-LIFECYCLE-PROCESS-RECOVERY-20260915"
+    ],
+    "type": "task",
+    "mode": "simple",
+    "title": "Verify Recipe lifecycle journal process recovery",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "scheduled 2D task execution and current-source reconciliation",
+    "summary": "2D-022 asks for process-stop recovery at each Recipe Pipeline lifecycle journal stage. The same boundary already exists as the completed PL-0009/OVL-06a owner and process-boundary evidence.",
+    "refs": [
+      "C:\\Users\\USER\\Downloads\\OpenVisionLab_2D_tasks.json",
+      "docs\\reports\\OPENVISIONLAB_OVL06_BEHAVIOR_REGRESSION_PROCESS_RECOVERY_20260907.md",
+      "docs\\contracts\\openvisionlab\\OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md",
+      "docs\\admin\\OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "AGENTS.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "The existing VisionPipelineStorage lifecycle journal and OVL-06a parent/child process harness already satisfy 2D-022. Current lifecycle source has no diff after that evidence; apphost and dotnet DLL runs recovered all 11 stage cases without duplicate implementation or new runtime ownership."
+  },
+  "objective": {
+    "summary": "Reconcile 2D-022 with the existing lifecycle journal process-boundary owner, preserve the evidence-based recovery contract, and advance without reopening PL-0009.",
+    "constraints": [
+      "Reuse VisionPipelineStorage lifecycle journal, rollback/adoption logic, persistence states, and the existing process-recovery smoke harness; do not add a second journal or recovery service.",
+      "Use the existing isolated D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev evidence; do not modify user Recipes or C:\\Git\\2D\\Original.",
+      "Do not repeat implementation or process tests already protected as complete when the current lifecycle owner has no relevant source diff.",
+      "Do not commit, push, release, deploy, or perform external communication."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The current owner and call path show durable journal, backup, target, pointer, source, and recovery-state ownership with no competing lifecycle writer.",
+      "evidence_refs": [
+        "E1",
+        "E4"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "Existing apphost and dotnet process-boundary evidence covers six rename stages and five applicable delete stages, with 11/11 child kills and 11/11 valid prior/completed recoveries and no leftover journal/backup/tmp artifacts.",
+      "evidence_refs": [
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Stable contract, live handoff, issue ledger, and the active 5-minute automation record the completed boundary, unverified limits, and next 2D-023 handoff without reopening PL-0009.",
+      "evidence_refs": [
+        "E4"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0079"
+    }
+  ],
+  "context": [
+    {
+      "kind": "owner-map",
+      "location": "VisionPipelineStorage.TryRenamePipeline/TryDeletePipeline owns the journal and file lifecycle; TryRecoverPendingLifecycleTransactionCore owns reopen rollback/adoption and LifecycleRecoveryRequired/LifecycleRecovered states; the smoke parent/child boundary owns only process-stop reproduction."
+    },
+    {
+      "kind": "call-path",
+      "location": "VisionRecipeRunnerSmoke parent -> child process probe -> durable lifecycle stage -> parent Kill(entireProcessTree) -> storage reopen -> prior-state rollback or proven completed-state adoption -> artifact and state assertions."
+    },
+    {
+      "kind": "public-contract",
+      "location": "A process stop after a durable journal stage leaves exactly one valid prior or completed Pipeline state. Ambiguous foreign/invalid files yield LifecycleRecoveryRequired and remain available for operator review; no automatic Preview/Run or routing mutation occurs."
+    },
+    {
+      "kind": "reading-order",
+      "location": "VisionPipelineStorage.cs -> VisionPipelinePersistenceState.cs -> OpenVisionRecipePersistenceStatusPresenter.cs -> Program.cs RunPipelinePersistenceProcessRecoveryContract/probe -> OPENVISIONLAB_OVL06_BEHAVIOR_REGRESSION_PROCESS_RECOVERY_20260907.md."
+    },
+    {
+      "kind": "boundary",
+      "location": "Durable journal-stage process stop and same-data-root reopen are verified for apphost and dotnet DLL launches. Power loss, filesystem corruption, non-cooperative native worker termination, full WPF state/theme/layout/DPI/input, hardware, release/publication, and Original repository remain unverified or out of scope."
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "report",
+      "location": "docs/reports/OPENVISIONLAB_OVL06_BEHAVIOR_REGRESSION_PROCESS_RECOVERY_20260907.md",
+      "summary": "Existing OVL-06a source/call-path, acceptance, process-boundary, verification, and limitation record."
+    },
+    {
+      "kind": "evidence-directory",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/refactor-ovl06-process-recovery-20260907",
+      "summary": "Existing Release apphost and dotnet DLL process recovery evidence, same-process recovery, storage path, build, and diff checks."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "review",
+      "location": "src/OpenVisionLab/Core/Pipeline/Storage/VisionPipelineStorage.cs; tools/VisionRecipeRunnerSmoke/Program.cs; docs/reports/OPENVISIONLAB_OVL06_BEHAVIOR_REGRESSION_PROCESS_RECOVERY_20260907.md",
+      "observation": "Current-source review confirms the lifecycle owner and process harness remain the existing PL-0009/OVL-06a path. The lifecycle implementation has no relevant worktree diff after the process-boundary evidence; only an unrelated schema-load guard is present in the storage diff.",
+      "observed_at": "2026-09-15T20:40:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/refactor-ovl06-process-recovery-20260907/run-final/pipeline_persistence_process_recovery_contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/refactor-ovl06-process-recovery-20260907/build-runner-release-final-final.log",
+      "observation": "Release apphost process-boundary contract passed 11/11 cases: six rename stages and five applicable delete stages, with Cases=11, Recovered=11, ChildLaunches=11, ChildKills=11, prior/completed state assertions, and zero remaining journal/backup/temporary files.",
+      "observed_at": "2026-09-07T18:00:43+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/refactor-ovl06-process-recovery-20260907/run-dotnet-r2/pipeline_persistence_process_recovery_contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/refactor-ovl06-process-recovery-20260907/run-final/same-process/pipeline_persistence_recovery_contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/refactor-ovl06-process-recovery-20260907/run-final/storage-path/recipe_storage_path_contract.txt",
+      "observation": "The dotnet DLL process-boundary contract also passed 11/11; the same-process PL-0009 lifecycle recovery and storage-path regressions passed in the same isolated evidence set.",
+      "observed_at": "2026-09-07T18:00:43+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "review",
+      "location": "docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md; .proofline/issues/PL-0080.json; C:\\Users\\USER\\.codex\\automations\\openvisionlab-2d\\automation.toml",
+      "observation": "The current stable contract, live handoff, issue record, and sole ACTIVE five-minute automation now map 2D-022 to the existing completed owner, preserve its limits, and advance the next ready boundary to 2D-023.",
+      "observed_at": "2026-09-15T20:42:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-15T20:42:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "Close 2D-022 by reconciling the existing PL-0009/OVL-06a process-boundary evidence with the current unchanged lifecycle owner; do not duplicate implementation or tests.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ]
+    }
+  ],
+  "created_at": "2026-09-15T20:42:00+09:00",
+  "updated_at": "2026-09-15T20:42:00+09:00"
+}

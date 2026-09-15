@@ -1,0 +1,185 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0066",
+    "aliases": [
+      "OPENVISIONLAB-2D008-PREVIEW-UI-HEARTBEAT-BASELINE-20260915"
+    ],
+    "type": "bug",
+    "mode": "simple",
+    "title": "Introduce the single-input Preview async execution boundary after the heartbeat baseline",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "scheduled 2D task execution and source review",
+    "summary": "2D-008 identifies that long native Preview work is invoked synchronously from the WPF event path. The baseline is now measured and the smallest single-input boundary is being introduced in the existing owner before the user-facing click path receives its final runtime verification.",
+    "refs": [
+      "C:\\Users\\USER\\Downloads\\OpenVisionLab_2D_Audit_and_Plan.md",
+      "C:\\Users\\USER\\Downloads\\OpenVisionLab_2D_tasks.json",
+      "AGENTS.md",
+      "docs\\contracts\\openvisionlab\\OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md",
+      "C:\\Users\\USER\\.codex\\docs\\WPF_UI_UX_RULES.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "The baseline is preserved and the production single-input Preview owner now snapshots the input on the UI thread, computes only the native Mat delegate on a worker, and publishes or discards the owned bitmap on the Dispatcher. The boundary enforces one active slot, rejects duplicate starts, drains cancellation before disposing native data, and uses a generation/lifetime guard for late results. The actual VisionToolRunPreviewButton path passes rapid-click, input-change cancellation, recovery, and document-dispose checks; the focused ROI editor and PropertyGrid CommitPendingEdit/Dispose regression also passed on the changed Debug binary. Arithmetic Preview remains on the synchronous compatibility path until its separate risk is scheduled. An explicit user Cancel command is not required by the current 2D-008 acceptance contract and is left as a separate product decision rather than silently added here."
+  },
+  "problem": {
+    "claims": [
+      {
+        "id": "P1",
+        "state": "confirmed",
+        "text": "The native Preview delegate is called synchronously from the WPF event path, so a long native operation can block Dispatcher work and repeated clicks have no execution-slot guard.",
+        "evidence_refs": [
+          "E1"
+        ]
+      }
+    ],
+    "impact": "Operators may lose progress feedback, interact with a frozen WPF surface, or queue repeated requests without a defined cancellation, stale-result, or disposal contract."
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "A fresh actual desktop smoke reproduces the current synchronous boundary with a controlled slow Preview delegate and records the UI heartbeat window against the 250 ms proposal.",
+      "evidence_refs": [
+        "E2"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "The baseline report records the current owner and call path, the exact Debug executable, dynamic monitor placement/intersection, and the limitation that no async boundary has been introduced in this slice.",
+      "evidence_refs": [
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "The async single-input boundary smoke keeps Dispatcher ticks flowing during a controlled slow delegate, rejects a duplicate start, and discards a canceled late result without creating the canceled output layer.",
+      "evidence_refs": [
+        "E4",
+        "E5"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "The embedded Debug build and existing image-space Preview/Review snapshot contract pass with the synchronous compatibility path retained, and the actual smoke process exits without a remaining OpenVisionLab process.",
+      "evidence_refs": [
+        "E3",
+        "E6",
+        "E8"
+      ]
+    },
+    {
+      "id": "C5",
+      "text": "The focused ROI editor and PropertyGrid CommitPendingEdit/Dispose regression passes against the changed Debug binary, including the actual PropertyGrid ROI button path, and leaves no OpenVisionLab process behind.",
+      "evidence_refs": [
+        "E9"
+      ]
+    }
+  ],
+  "relations": [],
+  "context": [
+    {
+      "kind": "owner-map",
+      "location": "OpenVisionNativeToolDocument.RunPreview/RunArithmeticPreview -> OpenVisionNativePreviewExecutionController.RunSingleInput/RunArithmetic -> executePreview delegate; WPF event binder owns the Run Preview command path."
+    },
+    {
+      "kind": "state-writer",
+      "location": "OpenVisionNativeToolDocument owns HasPreviewResult, PreviewRunCount, LastStatusText, and result publication; OpenVisionNativePreviewLayerPublisher owns output-layer writes."
+    },
+    {
+      "kind": "reading-order",
+      "location": "OpenVisionNativeToolDocument.RunPreview -> OpenVisionNativePreviewExecutionController.RunSingleInput -> OpenVisionNativePreviewLayerPublisher.PublishPreviewBitmap -> ApplyPreviewExecutionResult; compare with OpenVisionPipelineReviewExecutionController for existing cancellation/generation/drain semantics."
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "review",
+      "location": "src\\OpenVisionLab\\UI\\Menu\\Wpf\\NativeTools\\Documents\\OpenVisionNativeToolDocument.cs:309-325, 828-839; src\\OpenVisionLab\\UI\\Menu\\Wpf\\NativeTools\\Preview\\OpenVisionNativePreviewExecutionController.cs:27-61",
+      "observation": "RunPreview and RunArithmeticPreview call RunSingleInput/RunArithmetic directly and apply the result before returning. The controller invokes executePreview(source) inline; the owner has no running flag, cancellation source, generation stamp, or asynchronous completion boundary.",
+      "observed_at": "2026-09-15T13:55:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d008-preview-ui-heartbeat-20260915/runtime-debug-baseline/report.txt",
+      "observation": "The fresh Debug desktop smoke passed with a controlled 420 ms slow delegate through the existing RunPreview -> RunSingleInput path. The synchronous call took 664 ms, DispatcherTicksBeforeRun was 10, DispatcherTicksDuringSynchronousRun was 0, and the 250 ms proposal was exceeded. The report records DISPLAY2 bounds 0,0,1920,1080 with the window intersecting the selected monitor, exact executable and managed assembly hashes, and NoAsyncBoundaryIntroduced=true.",
+      "observed_at": "2026-09-15T14:00:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "build",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d008-preview-ui-heartbeat-20260915/app-debug-embedded-build.log; tools/OpenVisionLab.DirectSmokeRunner/OpenVisionLabDirectSmokeRunner.cs",
+      "observation": "The embedded Debug OpenVisionLab build completed with 0 warnings and 0 errors for the baseline source. The baseline scenario exited deterministically and a post-run process check found no OpenVisionLab process remaining.",
+      "observed_at": "2026-09-15T14:00:10+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "review",
+      "location": "src\\OpenVisionLab\\UI\\Menu\\Wpf\\NativeTools\\Preview\\OpenVisionNativePreviewExecutionBoundary.cs; src\\OpenVisionLab\\UI\\Menu\\Wpf\\NativeTools\\Preview\\OpenVisionNativePreviewExecutionController.cs; src\\OpenVisionLab\\UI\\Menu\\Wpf\\NativeTools\\Documents\\OpenVisionNativeToolDocument.cs",
+      "observation": "The single-input path now captures an owned Bitmap snapshot before Task.Run, executes only Bitmap-to-Mat/native delegate work on the worker, and publishes the owned result bitmap through the existing preview publisher on the UI dispatcher. The boundary keeps one active cancellation source, rejects duplicate starts, increments a generation for discard/Dispose, drains and disposes late computation data, and leaves RunArithmetic synchronous. The ViewModel/View remains free of worker policy; OpenVisionNativeToolDocument owns the feature state transition.",
+      "observed_at": "2026-09-15T14:27:19+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d008-preview-ui-async-20260915-r6/report.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d008-preview-ui-async-20260915-r6/PreviewAsyncOutput.png",
+      "observation": "The fresh Debug desktop smoke passed on \\.\\DISPLAY2 with the window intersecting bounds 0,0,1920,1080. A 420 ms delegate produced 33 Dispatcher ticks during the async run, duplicate execution was rejected, the first result published, and CancelAndDiscard drained without publishing the canceled output layer. The report records SingleActiveSlot=true, GenerationDiscardGuard=true, and LateResultDrain=true; the process was absent after the follow-up check. Executable hash was E5164C5E20FE243A5C8AA925DE11B4BE1D4CCD083EAF24123485A39BC3CADAC4 and managed assembly hash was 99C7C84A6D42036EFDC69225DB7723408D3EE4C834A469B733EBF551424BA3A4.",
+      "observed_at": "2026-09-15T14:24:00+09:00"
+    },
+    {
+      "id": "E6",
+      "kind": "build",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d008-preview-ui-async-20260915-r6; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d008-preview-ui-async-20260915/image-space-contract/image-space-snapshot-contract.txt",
+      "observation": "The embedded OpenVisionLab Debug build completed with 0 warnings and 0 errors after the boundary change. VisionRecipeRunnerSmoke built with 0 warnings and 0 errors, and the existing image-space snapshot contract passed, covering synchronous native Preview and Arithmetic A/B snapshot paths. The boundary implementation and smoke source are local changes only; no commit, push, or Original repository mutation was performed.",
+      "observed_at": "2026-09-15T14:26:00+09:00"
+    },
+    {
+      "id": "E7",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d008-preview-ui-click-20260915-r5/report.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d008-preview-ui-click-20260915-r5/click-path-success.png; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d008-preview-ui-click-20260915-r5/click-path-after-dispose.png",
+      "observation": "The fresh Debug actual EXE smoke invoked the visible VisionToolRunPreviewButton through its WPF command contract on Blob. A 420 ms controlled delegate produced 6 Dispatcher ticks during the run, two rapid button invocations produced one delegate call and one Preview run, input-change invalidation discarded the late result, a fast click recovered the result, and document Dispose discarded another late result. The final screenshot shows the explicit `Preview CANCELED / 검사 판정 미평가 / document disposed` state instead of stale processing. Window and floating tool both intersected DISPLAY2 bounds 0,0,1920,1080; the follow-up process check found no OpenVisionLab process.",
+      "observed_at": "2026-09-15T14:45:00+09:00"
+    },
+    {
+      "id": "E8",
+      "kind": "build",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d008-preview-ui-click-20260915-r5; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d008-preview-ui-click-20260915-r5/image-space-contract/image-space-snapshot-contract.txt",
+      "observation": "After the cancellation-status and layer-route invalidation changes, the embedded OpenVisionLab Debug build and VisionRecipeRunnerSmoke build completed with 0 warnings and 0 errors, and the image-space snapshot contract passed. git diff --check reported no whitespace errors for the changed owner/smoke files; only the repository's existing LF-to-CRLF warnings were emitted.",
+      "observed_at": "2026-09-15T14:47:00+09:00"
+    },
+    {
+      "id": "E9",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d008-preview-roi-regression-20260915/report.txt",
+      "observation": "The changed Debug OpenVisionLab.exe passed the focused property-grid-roi-editor smoke. The actual PropertyGrid ROI editor button path was clicked (ClickedActualPropertyGridButton=True), the active input layer remained Main, the source image was 768x576, the executable hash was E5164C5E20FE243A5C8AA925DE11B4BE1D4CCD083EAF24123485A39BC3CADAC4, the managed assembly hash was C3DCD4598F1A0CB500A219D16311BA272F9500C735BAC540DC6252D9B3067466, and no OpenVisionLab process remained afterward. The runner report does not independently record a window rectangle or DPI/theme matrix; the monitor-aware click-path evidence remains E7 and those broader UI limits stay unverified.",
+      "observed_at": "2026-09-15T14:54:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-15T14:54:00+09:00",
+      "summary": "Close PL-0066 after the focused ROI editor and PropertyGrid CommitPendingEdit/Dispose regression passed. Do not add an explicit Cancel command without a separate product requirement; the current contract is satisfied by the single active slot, cancellation/discard state, input/layer invalidation, and dispose drain already verified.",
+      "evidence_refs": [
+        "E7",
+        "E9"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-15T14:54:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "PL-0066 resolved after the async boundary, actual click path, and focused ROI editor/PropertyGrid CommitPendingEdit/Dispose regression passed. Full theme/DPI/native hardware coverage remains unverified."
+    }
+  ],
+  "created_at": "2026-09-15T13:55:00+09:00",
+  "updated_at": "2026-09-15T14:54:00+09:00"
+}

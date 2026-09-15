@@ -1,0 +1,164 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0079",
+    "aliases": [
+      "OPENVISIONLAB-2D021-ATOMIC-XML-SAVE-FAILURE-20260915"
+    ],
+    "type": "task",
+    "mode": "simple",
+    "title": "Verify atomic XML save failure preservation",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "scheduled 2D task execution and source review",
+    "summary": "2D-021 requires write, replace, and cleanup failure boundaries to preserve the previous XML or an explicit recovery path without publishing a false save success.",
+    "refs": [
+      "C:\\Users\\USER\\Downloads\\OpenVisionLab_2D_tasks.json",
+      "docs\\contracts\\openvisionlab\\OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md",
+      "docs\\admin\\OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "AGENTS.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "The existing SerializeHelper atomic writer is covered by an isolated write/replace/cleanup failure contract. Failed saves preserve the prior XML hash and explicit failure state; a released failure retries successfully without changing user files."
+  },
+  "objective": {
+    "summary": "Verify the smallest existing XML persistence owner against 2D-021 and record the failure and retry contract for future Recipe work.",
+    "constraints": [
+      "Reuse SerializeHelper.SaveXmlFile, RecipeState.SaveTools, VisionPipelineStorage.Save, RecipeDataStorage.Save, and the existing multi-file recovery owner; do not rewrite the atomic writer.",
+      "Use only isolated fixtures and D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev evidence; do not modify user Recipes or C:\\Git\\2D\\Original.",
+      "The failure-injection seam is test-only and must be inactive during normal application execution.",
+      "Do not commit, push, release, deploy, or perform external communication."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "Injected write, replace, and cleanup failures leave the previous XML bytes/hash intact; temporary-file behavior is explicit and a normal retry writes the edited XML.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "RecipeState stops dependent data writes after a Tool save failure, multi-file recovery rolls back earlier writes, and persistence recovery contracts keep failure state explicit until an existing save path succeeds.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Debug and Release smoke builds and focused/regression contracts pass with no new compile errors.",
+      "evidence_refs": [
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "Stable contract, current handoff, owner/call path, reading order, evidence, next 2D-022 boundary, and the active 5-minute automation handoff are recorded.",
+      "evidence_refs": [
+        "E4"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0078"
+    }
+  ],
+  "context": [
+    {
+      "kind": "owner-map",
+      "location": "SerializeHelper.SaveXmlFile owns temporary serialization, atomic target replacement, and cleanup. RecipeState owns the dependent Tool/data save sequence; VisionPipelineStorage and RecipeDataStorage own persistence failure state and recovery transitions."
+    },
+    {
+      "kind": "call-path",
+      "location": "RecipeState.SaveTools -> SerializeHelper.SaveXmlFile per Tool -> dependent data save; VisionPipelineStorage.Save/RecipeDataStorage.Save -> SerializeHelper.SaveXmlFile -> persistence state/error propagation."
+    },
+    {
+      "kind": "public-contract",
+      "location": "A failed write or replace never publishes partial XML or clears a failure state. A cleanup failure may leave only the failed temporary artifact. Explicit save/reopen recovery is required before Preview/Run."
+    },
+    {
+      "kind": "reading-order",
+      "location": "SerializeHelper.cs -> RecipeState.cs -> VisionPipelineStorage.cs -> RecipeSaveFailureContract.cs -> RecipeMultiFileSaveRecoveryContract.cs."
+    },
+    {
+      "kind": "boundary",
+      "location": "Debug/Release in-process contracts and file-lock simulation passed. Rendered WPF/EXE UI, toast suppression, ACL/read-permission failure, themes/layouts/DPI/input, hardware, clean-checkout distribution, release/publication, and Original repository remain unverified or out of scope."
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "evidence-directory",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d021-save-failure-20260915-debug/injected-contract",
+      "summary": "Debug focused injected-save failure contract report and isolated fixtures."
+    },
+    {
+      "kind": "evidence-directory",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d021-save-failure-20260915-release/injected-contract",
+      "summary": "Release focused injected-save failure contract report and isolated fixtures."
+    },
+    {
+      "kind": "evidence-directory",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d021-save-failure-20260915",
+      "summary": "Debug/Release multi-file save recovery, persistence execution gate, and load recovery regressions."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "review",
+      "location": "src/OpenVisionLab/Common/Persistence/SerializeHelper.cs; src/OpenVisionLab/Core/Recipe/RecipeState.cs; src/OpenVisionLab/Core/Pipeline/Storage/VisionPipelineStorage.cs; tools/VisionRecipeRunnerSmoke/RecipeSaveFailureContract.cs; tools/VisionRecipeRunnerSmoke/RecipeMultiFileSaveRecoveryContract.cs",
+      "observation": "Source review confirmed one atomic XML writer owner, test-only stage injection, existing caller failure propagation, and existing multi-file rollback/retry ownership. No second writer or UI persistence owner was added.",
+      "observed_at": "2026-09-15T20:27:24+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d021-save-failure-20260915-debug/build-smoke-debug-injection.log; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d021-save-failure-20260915-debug/injected-contract/recipe-save-failure-contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d021-save-failure-20260915/debug-multi-file/recipe-multi-file-save-recovery-contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d021-save-failure-20260915/debug-persistence/recipe-persistence-execution-gate-contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d021-save-failure-20260915/debug-recovery/recipe-load-recovery-contract.txt",
+      "observation": "Debug VisionRecipeRunnerSmoke build completed with 0 errors and 16 existing nullable warnings outside this slice. The injected save contract passed 13/0, multi-file recovery 7/0, persistence execution gate 9/0, and load recovery 8/0.",
+      "observed_at": "2026-09-15T20:26:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d021-save-failure-20260915-release/build-smoke-release-injection.log; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d021-save-failure-20260915-release/injected-contract/recipe-save-failure-contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d021-save-failure-20260915/release-multi-file/recipe-multi-file-save-recovery-contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d021-save-failure-20260915/release-persistence/recipe-persistence-execution-gate-contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d021-save-failure-20260915/release-recovery/recipe-load-recovery-contract.txt",
+      "observation": "Release VisionRecipeRunnerSmoke build completed with 0 errors and the same 16 existing nullable warnings outside this slice. The injected save contract passed 13/0, multi-file recovery 7/0, persistence execution gate 9/0, and load recovery 8/0.",
+      "observed_at": "2026-09-15T20:27:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "review",
+      "location": "docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md; tools/VisionRecipeRunnerSmoke/RecipeSaveFailureContract.cs; src/OpenVisionLab/Common/Persistence/SerializeHelper.cs",
+      "observation": "The stable contract, live handoff, focused smoke reuse, owner/call path, reading order, evidence, remaining boundaries, and next 2D-022 handoff were recorded. The active 5-minute heartbeat automation is the sole continuation executor.",
+      "observed_at": "2026-09-15T20:28:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-15T20:28:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "Close 2D-021 after source review, isolated Debug/Release write-replace-cleanup failure injection, multi-file rollback, persistence execution, and load-recovery regression contracts.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ]
+    }
+  ],
+  "created_at": "2026-09-15T20:28:00+09:00",
+  "updated_at": "2026-09-15T20:28:00+09:00"
+}

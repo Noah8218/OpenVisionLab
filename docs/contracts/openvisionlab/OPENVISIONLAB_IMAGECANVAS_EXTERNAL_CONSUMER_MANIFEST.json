@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "contractId": "IMAGE-CANVAS-EXTERNAL-CONSUMER-CONTRACT",
   "status": "validated-prototype",
-  "updated": "2026-08-27",
+  "updated": "2026-09-15",
   "purpose": "Minimal .NET 8 WPF consumer boundary for displaying an image, drawing rectangle evidence, selecting one overlay, highlighting it, round-tripping view state, and showing validated read-only 3D-to-2D projection markers.",
   "sampleProject": "tools/ImageCanvasExternalConsumerSmoke/ImageCanvasExternalConsumerSmoke.csproj",
   "libraryProject": "src/Libraries/OpenVisionLab.ImageCanvas/OpenVisionLab.ImageCanvas.csproj",
@@ -20,6 +20,7 @@
     ],
     "libraryOwns": [
       "ImageCanvasControl",
+      "RoiImageCanvasPresentation",
       "RoiImageCanvasViewModel",
       "OpenGL texture and overlay lifetime"
     ]
@@ -71,7 +72,7 @@
       "FitImageToView"
     ],
     "threading": "Session calls that touch the viewer must run on the WPF UI dispatcher.",
-    "lifecycle": "Dispose is UI-thread-only, idempotent, and releases the native ImageCanvasControl through the existing ViewModel owner.",
+    "lifecycle": "Dispose is UI-thread-only and idempotent. ImageCanvasExternalConsumerSession releases RoiImageCanvasPresentation, which detaches input/render/timer callbacks and releases the native ImageCanvasControl; RoiImageCanvasViewModel releases its owned Mat state only.",
     "projection": "ImageCanvasExternalProjectionResultReader validates schema 1.0, paired transaction identity, dimensions, finite coordinates, and exposes only valid in-bounds 3D-to-2D points for read-only marker replacement."
   },
   "validation": {
@@ -90,7 +91,7 @@
       "3D Result watcher refreshes read-only reverse-projected markers after publication",
       "projection marker screen performs no pipeline execution or layer mutation"
     ],
-    "artifactExample": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/imagecanvas-external-consumer-20260827-r29",
+    "artifactExample": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/predevelopment-priorities-20260914/06-final-checkpoint/external-consumer-runtime-final",
     "crossModalArtifactExample": "D:/OpenVisionLab-TestData/OpenVisionLab-CrossRepo/projection/cross-modal-projection-20260827-163714-c93911d218f94f7e9b4586a7bda7dcae",
     "requiredEvidence": [
       "contract-smoke.txt",

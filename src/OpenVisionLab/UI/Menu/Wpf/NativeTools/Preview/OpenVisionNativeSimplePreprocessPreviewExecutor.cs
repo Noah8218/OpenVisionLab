@@ -1,4 +1,5 @@
 using OpenVisionLab.Vision2D;
+using OpenVisionLab.Vision2D.Property;
 using OpenVisionLab.Vision2D.Tool;
 using OpenCvSharp;
 using System;
@@ -19,9 +20,37 @@ namespace OpenVisionLab
 
         public static VisionToolResult ExecuteRotateScalePreview(Mat source, SimplePreprocessToolWpfView view)
         {
+            RotateScaleToolProperty property = CreateRotateScaleProperty(view);
+            VisionPipelineOutputAllocationPreflightResult allocationValidation =
+                VisionPipelineOutputAllocationGuard.Validate(
+                    VisionPipelineStepBuilder.FromRotateScaleProperty(
+                        property,
+                        "RotateScalePreview",
+                        VisionRecipeRunner.DefaultInputLayer,
+                        "Preview"),
+                    source);
+            if (!allocationValidation.Success)
+            {
+                return VisionToolResult.Failed(
+                    allocationValidation.ErrorCode,
+                    allocationValidation.Message,
+                    TimeSpan.Zero,
+                    null);
+            }
+
             using RotateScaleTool tool = new RotateScaleTool();
-            tool.SetProperty(OpenVisionNativeSimplePreprocessPropertyFactory.CreateRotateScaleProperty(view));
+            tool.SetProperty(property);
             return tool.Execute(source);
+        }
+
+        private static RotateScaleToolProperty CreateRotateScaleProperty(SimplePreprocessToolWpfView view)
+        {
+            if (view.Dispatcher.CheckAccess())
+            {
+                return OpenVisionNativeSimplePreprocessPropertyFactory.CreateRotateScaleProperty(view);
+            }
+
+            return view.Dispatcher.Invoke(() => OpenVisionNativeSimplePreprocessPropertyFactory.CreateRotateScaleProperty(view));
         }
 
         public static VisionToolResult ExecuteMeanPreview(Mat source, SimplePreprocessToolWpfView view)

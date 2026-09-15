@@ -73,10 +73,30 @@ namespace OpenVisionLab
 
         public static VisionToolResult ExecuteAffineTransformPreview(Mat source, AffineTransformToolWpfView view)
         {
+            AffineTransformProperty property = CreateAffineTransformProperty(view);
+            VisionPipelineOutputAllocationPreflightResult allocationValidation =
+                VisionPipelineOutputAllocationGuard.Validate(
+                    VisionPipelineStepBuilder.FromAffineTransformProperty(
+                        property,
+                        "AffineTransformPreview",
+                        VisionRecipeRunner.DefaultInputLayer,
+                        "Preview"),
+                    source);
+            if (!allocationValidation.Success)
+            {
+                VisionToolResult rejected = VisionToolResult.Failed(
+                    allocationValidation.ErrorCode,
+                    allocationValidation.Message,
+                    TimeSpan.Zero,
+                    null);
+                SetAffineTransformResultReview(view, rejected);
+                return rejected;
+            }
+
             using AffineTransformTool tool = new AffineTransformTool();
-            tool.SetProperty(view.CreateProperty());
+            tool.SetProperty(property);
             VisionToolResult result = tool.Execute(source);
-            view.SetResultReview(result);
+            SetAffineTransformResultReview(view, result);
             if (result?.ResultImage != null && !result.ResultImage.Empty())
             {
                 Mat visual = OpenVisionNativeToolPreviewOverlayRenderer.CreateAffineTransformPreviewImage(
@@ -87,6 +107,27 @@ namespace OpenVisionLab
             }
 
             return result;
+        }
+
+        private static AffineTransformProperty CreateAffineTransformProperty(AffineTransformToolWpfView view)
+        {
+            if (view.Dispatcher.CheckAccess())
+            {
+                return view.CreateProperty();
+            }
+
+            return view.Dispatcher.Invoke(view.CreateProperty);
+        }
+
+        private static void SetAffineTransformResultReview(AffineTransformToolWpfView view, VisionToolResult result)
+        {
+            if (view.Dispatcher.CheckAccess())
+            {
+                view.SetResultReview(result);
+                return;
+            }
+
+            view.Dispatcher.Invoke(() => view.SetResultReview(result));
         }
 
         public static VisionToolResult ExecuteLineGaugePreview(Mat source, LineToolWpfView view)

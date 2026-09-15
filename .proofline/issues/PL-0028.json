@@ -1,0 +1,976 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0028",
+    "aliases": [
+      "OPENVISIONLAB-PARTIAL-STRUCTURAL-ELIMINATION-20260913"
+    ],
+    "type": "task",
+    "mode": "composite",
+    "title": "Eliminate removable Partial boundaries through concrete owner extraction",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "explicit user request to structure and remove the 59 Partial declarations",
+    "summary": "The user clarified that the 59 Partial declarations must be structurally reviewed and removed where they hide real responsibilities, rather than mechanically merged or accepted as protected by PL-0013/D5.",
+    "refs": [
+      "current user request",
+      "docs/reports/OPENVISIONLAB_PARTIAL_RESPONSIBILITY_REVIEW_20260913.md",
+      "docs/reports/OPENVISIONLAB_PARTIAL_STRUCTURE_PLAN_20260911.md",
+      "AGENTS.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "PL-0028의 M1/M2/M3와 M4 최종 감사가 완료되었다. 기존 59행 baseline은 dead/중복 경계 제거와 Sample Picker child InitializeComponent 계약 복원 후 현재 source의 54 compiled Partial과 정합화되었다. 각 retained row는 owner/reason, caller, mutable-state writer, lifetime, binding/public/test contract를 가진다. RefactorAudit, Debug/Release solution과 Smoke build, readiness, focused contract, WPF smoke, DocumentationIndex, issue-ledger, diff check가 통과했으며 실제 전체 WPF/hardware/native 행렬은 미검증으로 기록했다."
+  },
+  "objective": {
+    "summary": "Reduce or eliminate removable Partial declarations by moving real workflow, mutable state, persistence, validation, or presentation policy into existing concrete responsibility owners, while preserving XAML/public contracts, native lifetime, disposal order, and behavior.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev; keep C:\\Git\\2D\\Original read-only.",
+      "Do not mechanically merge, delete, rename, or move Partial files by line count.",
+      "Reuse existing concrete ViewModel, Presenter, Controller, adapter, service, or test owner before adding any new type.",
+      "Do not add one-implementation interfaces, managers, providers, factories, forwarding wrappers, or new manual Partials without an independently owned state/lifetime/test seam.",
+      "Generated XAML/designer/native composition and test-host Partials may remain only with explicit compile, binding, lifetime, or test-contract proof.",
+      "Preserve XAML names, public constructors, Recipe/XML behavior, Preview/Run behavior, image ownership, cancellation, shutdown, and PropertyGrid contracts.",
+      "One heartbeat run may change one independently verifiable Partial boundary only; do not wait for optional user input or hardware.",
+      "Do not commit, push, tag, release, deploy, or modify C:\\Git\\2D\\Original from scheduled work."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "All 59 current Partial declarations have a current owner, intended owner or retained reason, caller path, mutable-state writer, lifetime/release owner, and binding/public/test contract recorded against current source.",
+      "evidence_refs": [
+        "E1",
+        "E57",
+        "E60"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "Each reviewed manual Partial with an independently owned responsibility is moved to an existing concrete owner, and the former Partial no longer owns that responsibility or direct coupling.",
+      "evidence_refs": [
+        "E2",
+        "E3",
+        "E5",
+        "E7",
+        "E9",
+        "E21",
+        "E23",
+        "E25",
+        "E39",
+        "E41",
+        "E43",
+        "E45",
+        "E47",
+        "E49",
+        "E51",
+        "E53",
+        "E55"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Any remaining generated, XAML, designer, native, or test Partial has an explicit reason that removal would break a framework/public/binding/lifetime/test contract, with no unreviewed business policy left in the retained declaration.",
+      "evidence_refs": [
+        "E2",
+        "E5",
+        "E7",
+        "E9",
+        "E11",
+        "E13",
+        "E15",
+        "E17",
+        "E19",
+        "E27",
+        "E29",
+        "E31",
+        "E33",
+        "E35",
+        "E37",
+        "E39",
+        "E41",
+        "E43",
+        "E45",
+        "E47",
+        "E49",
+        "E51",
+        "E53",
+        "E55",
+        "E57",
+        "E60"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "Every extraction slice passes a focused source contract, relevant build/test, forbidden-coupling search, and diff check while preserving existing observable behavior.",
+      "evidence_refs": [
+        "E3",
+        "E4",
+        "E6",
+        "E8",
+        "E10",
+        "E12",
+        "E14",
+        "E16",
+        "E18",
+        "E20",
+        "E22",
+        "E24",
+        "E26",
+        "E28",
+        "E30",
+        "E32",
+        "E34",
+        "E36",
+        "E38",
+        "E40",
+        "E42",
+        "E44",
+        "E46",
+        "E48",
+        "E50",
+        "E52",
+        "E54",
+        "E56",
+        "E58",
+        "E59",
+        "E61"
+      ]
+    },
+    {
+      "id": "C5",
+      "text": "The final audit, documentation index, Solution Debug/Release builds, relevant smoke contracts, issue ledger, and owner/navigation documents pass; actual WPF runtime, hardware, GPU/SDK, and long-running native limits are recorded separately as unverified when not run.",
+      "evidence_refs": [
+        "E61",
+        "E62"
+      ]
+    }
+  ],
+  "milestones": [
+    {
+      "id": "M1",
+      "summary": "Revalidate the 59-row Partial inventory and assign current/intended owner or explicit retained reason",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1",
+        "C3"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M2",
+      "summary": "Extract the first independently owned manual Partial responsibility to an existing concrete owner",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C2",
+        "C4"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M3",
+      "summary": "Process remaining removable Partial boundaries as one focused owner slice per heartbeat",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C2",
+        "C3",
+        "C4"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M4",
+      "summary": "Run final Partial count, owner map, build, focused contracts, documentation, and first-contributor review",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1",
+        "C3",
+        "C5"
+      ],
+      "issue_refs": []
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0027"
+    },
+    {
+      "type": "follow_up_to",
+      "target": "PL-0013"
+    }
+  ],
+  "context": [
+    {
+      "kind": "report",
+      "location": "docs/reports/OPENVISIONLAB_PARTIAL_RESPONSIBILITY_REVIEW_20260913.md"
+    },
+    {
+      "kind": "live-status",
+      "location": "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md"
+    },
+    {
+      "kind": "owner-registry",
+      "location": "docs/admin/CODEBASE_STRUCTURE.md"
+    },
+    {
+      "kind": "source-audit",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\p1-view-boundaries-20260913\\m4-partial-audit\\partial-structure-review.csv"
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m1-partial-revalidation\\source-revalidation.txt",
+      "observation": "Current source revalidation found 59 compiled Partial declarations and 2 literal smoke-contract matches. The 59-row owner review was copied into the new PL-0028 evidence root, and the former OpenVisionLearnWindow HSV state/calculation tokens are absent after the owner move.",
+      "observed_at": "2026-09-13T15:25:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "source",
+      "location": "src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Learn\\ColorHsvLearnPresenter.cs",
+      "observation": "ColorHsvLearnPresenter owns the animation step, HSV range evaluation, guide text, mask decision, and staged state transitions. OpenVisionLearnWindow now calls BuildGuide, ResetAnimation, AdvanceAnimation, CompleteAnimation, and keeps only WPF timer/control projection.",
+      "observed_at": "2026-09-13T15:25:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m2-color-hsv\\phase-summary.txt",
+      "observation": "VisionRecipeRunnerSmoke Debug build completed with 0 warnings and 0 errors, and ColorHsvLearnPresenterContract passed 5/5 checks for initial state, operator text, reset/advance transitions, and changed mask decision.",
+      "observed_at": "2026-09-13T15:25:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m2-color-hsv-release-phase-summary.txt",
+      "observation": "Solution Release and VisionRecipeRunnerSmoke Release builds completed with 0 warnings and 0 errors; ColorHsvLearnPresenterContract passed 5/5 in Release.",
+      "observed_at": "2026-09-13T15:45:00+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m3-basic-lifecycle\\phase-summary.txt",
+      "observation": "The redundant OpenVisionRecipeBasicLifecycleView.xaml.cs manual Partial was removed. The XAML x:Class remains composed by OpenVisionShellHostView, and the current static audit reports 58 compiled Partial declarations and 1 literal smoke-contract match.",
+      "observed_at": "2026-09-13T16:00:00+09:00"
+    },
+    {
+      "id": "E6",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m3-basic-lifecycle\\phase-summary.txt",
+      "observation": "Solution and VisionRecipeRunnerSmoke Debug/Release builds completed with 0 warnings and 0 errors. ShellRecipeBasicLifecycleViewContract passed 7/7 in both Debug and Release, and Invoke-RefactorAudit -Verify passed with PartialDeclarations=58, ProjectCycles=0, and ShellStorageCalls=0.",
+      "observed_at": "2026-09-13T16:00:00+09:00"
+    },
+    {
+      "id": "E7",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m4-validation-suite\\phase-summary.txt",
+      "observation": "The redundant OpenVisionRecipeValidationSuiteView.xaml.cs manual Partial was removed. The XAML x:Class, Shell composition, inherited DataContext, RecipeCommands bindings, and validation-suite AutomationIds remain intact; the current static audit reports 57 compiled Partial declarations and no literal smoke-contract matches.",
+      "observed_at": "2026-09-13T16:20:00+09:00"
+    },
+    {
+      "id": "E8",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m4-validation-suite\\phase-summary.txt",
+      "observation": "Solution Debug and Release builds completed with 0 warnings and 0 errors. PipelineViewerScreenshotSmoke Debug and Release focused builds completed with 0 errors and the existing CS8600 warning at Program.cs:10181; RecipeValidationSuiteViewContract passed 4/4 in both configurations. RefactorAudit and DocumentationIndex passed, git diff --check exited 0, and PL-0028 validated as v2.",
+      "observed_at": "2026-09-13T16:20:00+09:00"
+    },
+    {
+      "id": "E9",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m5-workspace-sample-picker\\phase-summary.txt",
+      "observation": "The redundant OpenVisionWorkspaceSamplePickerView.xaml.cs manual Partial was removed. XAML x:Class, SamplePicker Window composition, Shell workflow caller, and ViewModel command/state bindings remain intact. A refreshed owner-map artifact contains 56 current retained rows and lists the three verified removals; the current static audit reports 56 compiled Partial declarations and no literal smoke-contract matches.",
+      "observed_at": "2026-09-13T16:30:00+09:00"
+    },
+    {
+      "id": "E10",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m5-workspace-sample-picker\\phase-summary.txt",
+      "observation": "OpenVisionReadinessCheck Debug and Release builds and contracts passed with 0 warnings/errors. Solution Debug and Release builds passed with 0 warnings/errors. PipelineViewerScreenshotSmoke Release build had 0 errors and the existing CS8600 warning at Program.cs:10181. The source contract passed five checks, RefactorAudit passed with PartialDeclarations=56 and ProjectCycles=0, DocumentationIndex passed, git diff --check exited 0, and PL-0028 validated as v2.",
+      "observed_at": "2026-09-13T16:30:00+09:00"
+    },
+    {
+      "id": "E11",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m6-shell-host-window-retention\\phase-summary.txt",
+      "observation": "OpenVisionShellHostWindow.xaml.cs is the current WPF composition root and concrete lifetime owner. Source review proved its callers, Shell creation, startup/smoke projections, HWND hook, responsive scale state, and OnClosed disposal path; no independently owned non-UI replacement boundary was found, so the Partial is retained with an explicit reason.",
+      "observed_at": "2026-09-13T17:00:00+09:00"
+    },
+    {
+      "id": "E12",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m6-shell-host-window-retention\\phase-summary.txt",
+      "observation": "The focused Window source contract passed 7/7, OpenVisionLab Debug build completed with 0 warnings and 0 errors, RefactorAudit passed with PartialDeclarations=56 and ProjectCycles=0, DocumentationIndex passed, git diff --check exited 0, and PL-0028 validated as v2.",
+      "observed_at": "2026-09-13T17:00:00+09:00"
+    },
+    {
+      "id": "E13",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m7-pending-tool-retention\\phase-summary.txt",
+      "observation": "OpenVisionPendingToolView.xaml.cs is a narrow WPF adapter. The source call path proves constructor-provided ViewModel/DataContext composition, while OpenVisionPendingToolViewModel owns mutable text/language state and OpenVisionShellHostDocumentController owns the ViewModel lifetime and Dispose. No independent non-UI owner was found, so the Partial is retained with an explicit reason.",
+      "observed_at": "2026-09-13T17:30:00+09:00"
+    },
+    {
+      "id": "E14",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m7-pending-tool-retention\\phase-summary.txt",
+      "observation": "The focused Pending Tool source contract passed 8/8, OpenVisionLab and OpenVisionReadinessCheck Debug builds completed with 0 warnings and 0 errors, the Readiness contract passed, RefactorAudit passed with PartialDeclarations=56 and ProjectCycles=0, DocumentationIndex passed, git diff --check exited 0, and PL-0028 validated as v2.",
+      "observed_at": "2026-09-13T17:30:00+09:00"
+    },
+    {
+      "id": "E15",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m8-docking-workspace-retention\\phase-summary.txt",
+      "observation": "OpenVisionLayerDockWorkspaceView.xaml.cs is the concrete AvalonDock visual adapter. Source review proved its XAML namescope, DependencyProperties, docking event bridge, guide/geometry/snapshot responsibilities, and direct callers in existing composition/controllers. No independent non-UI owner was found, so the Partial is retained with an explicit framework/native visual reason.",
+      "observed_at": "2026-09-13T18:00:00+09:00"
+    },
+    {
+      "id": "E16",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m8-docking-workspace-retention\\phase-summary.txt",
+      "observation": "The focused Docking workspace source contract passed 9/9, OpenVisionLab.Docking.Controls Debug build completed with 0 warnings and 0 errors, RefactorAudit passed with PartialDeclarations=56 and ProjectCycles=0, DocumentationIndex passed, git diff --check exited 0, and PL-0028 validated as v2.",
+      "observed_at": "2026-09-13T18:00:00+09:00"
+    },
+    {
+      "id": "E17",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m9-docking-guide-overlay-retention\\phase-summary.txt",
+      "observation": "OpenVisionLayerDockingGuideOverlayView.xaml.cs is a concrete WPF visual adapter. Source review proved its XAML namescope, active-zone visibility/brush state, guide count, pane margin projection, and parent-only composition path; no persistence, inspection, Recipe, or native lifetime policy is present, so the Partial is retained with an explicit framework visual reason.",
+      "observed_at": "2026-09-13T18:30:00+09:00"
+    },
+    {
+      "id": "E18",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m9-docking-guide-overlay-retention\\phase-summary.txt",
+      "observation": "The focused Docking guide overlay source contract passed 9/9, OpenVisionLab.Docking.Controls Debug and Release builds completed with 0 warnings and 0 errors, RefactorAudit passed with PartialDeclarations=56 and ProjectCycles=0, DocumentationIndex passed, git diff --check exited 0, and PL-0028 remains valid v2.",
+      "observed_at": "2026-09-13T18:30:00+09:00"
+    },
+    {
+      "id": "E19",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m10-image-canvas-native-retention\\phase-summary.txt",
+      "observation": "Source review proved the ImageCanvasControl designer/main Partial pair share the SharpGL OpenGLControl namescope, event wiring, OpenGL rendering and P/Invoke state, texture/overlay state, and ReleaseOpenGlControl disposal path. RoiImageCanvasViewModel and the external consumer session use the same control and Dispose owner, so the pair is retained with an explicit native lifetime reason.",
+      "observed_at": "2026-09-13T19:00:00+09:00"
+    },
+    {
+      "id": "E20",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m10-image-canvas-native-retention\\phase-summary.txt",
+      "observation": "The focused ImageCanvas source contract passed 10/10, OpenVisionLab.ImageCanvas Debug and Release builds completed with 0 warnings and 0 errors, RefactorAudit passed with PartialDeclarations=56 and ProjectCycles=0, DocumentationIndex passed, git diff --check exited 0, and PL-0028 remains valid v2.",
+      "observed_at": "2026-09-13T19:00:00+09:00"
+    },
+    {
+      "id": "E21",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m11-add-roi-array-dead-partial-removal\\phase-summary.txt",
+      "observation": "The legacy AddRoiArrayView.xaml.cs and .xaml pair was not compiled and had no source or documentation callers. The concrete Compatibility/AddRoiArrayViewCompatibility.cs remains the single public type owner, and RoiInteractionMouseUp still creates it, assigns DataContext, and calls ShowDialog. Source contract checks passed 10/10 with no stale legacy paths.",
+      "observed_at": "2026-09-13T19:30:00+09:00"
+    },
+    {
+      "id": "E22",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m11-add-roi-array-dead-partial-removal\\phase-summary.txt",
+      "observation": "The AddRoiArrayView source contract passed 10/10, ROI_IMAGE_CANVAS_BOUNDARY_CONTRACT passed 6/6, OpenVisionLab.ImageCanvas Debug/Release and VisionRecipeRunnerSmoke Debug builds completed with 0 warnings and 0 errors, RefactorAudit passed with CSharpFiles=824, XamlFiles=59, PartialDeclarations=55, DocumentationIndex passed, git diff --check exited 0, and PL-0028 remains valid v2.",
+      "observed_at": "2026-09-13T19:30:00+09:00"
+    },
+    {
+      "id": "E23",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m12-auto-align-dead-feature-removal\\phase-summary.txt",
+      "observation": "AutoAlignTeachingView.xaml.cs, its XAML, and AutoAlignTeachingViewModel.cs were excluded from the ImageCanvas project and had no repository callers or compiled replacement. Source contract checks passed 8/8, no AutoAlign teaching references remain, and the existing ImageCanvas ROI owner is unchanged.",
+      "observed_at": "2026-09-13T20:00:00+09:00"
+    },
+    {
+      "id": "E24",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m12-auto-align-dead-feature-removal\\phase-summary.txt",
+      "observation": "The AutoAlign source contract passed 8/8, ROI_IMAGE_CANVAS_BOUNDARY_CONTRACT passed 6/6, OpenVisionLab.ImageCanvas Debug/Release and VisionRecipeRunnerSmoke Debug builds completed with 0 warnings and 0 errors, RefactorAudit passed with CSharpFiles=822, XamlFiles=58, PartialDeclarations=54, DocumentationIndex passed, git diff --check exited 0, and PL-0028 remains valid v2.",
+      "observed_at": "2026-09-13T20:00:00+09:00"
+    },
+    {
+      "id": "E25",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m13-auto-warpage-dead-feature-removal\\phase-summary.txt",
+      "observation": "AutoWarpageTeachingView.xaml.cs, its XAML, and AutoWarpageTeachingViewModel.cs were excluded from the ImageCanvas project and had no repository callers or compiled replacement. Source contract checks passed 8/8, no AutoWarpage teaching references remain, and the existing ImageCanvas ROI owner is unchanged.",
+      "observed_at": "2026-09-13T20:30:00+09:00"
+    },
+    {
+      "id": "E26",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m13-auto-warpage-dead-feature-removal\\phase-summary.txt",
+      "observation": "The AutoWarpage source contract passed 8/8, ROI_IMAGE_CANVAS_BOUNDARY_CONTRACT passed 6/6, OpenVisionLab.ImageCanvas Debug/Release and VisionRecipeRunnerSmoke Debug builds completed with 0 warnings and 0 errors, RefactorAudit passed with CSharpFiles=820, XamlFiles=57, PartialDeclarations=53, DocumentationIndex passed, git diff --check exited 0, and PL-0028 remains valid v2.",
+      "observed_at": "2026-09-13T20:30:00+09:00"
+    },
+    {
+      "id": "E27",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m14-roi-image-canvas-view-retention\\phase-summary.txt",
+      "observation": "RoiImageCanvasView.xaml.cs is a narrow concrete WPF/WindowsFormsHost adapter. Source checks proved its XAML namescope, chrome DependencyProperties, DataContext attach/detach, dialog/context-menu host wiring, WPF key event forwarding, pending dispatcher cancellation, and view-owned native host cleanup; RoiImageCanvasViewModel remains the state and Mat/native Dispose owner, so no independent replacement boundary was found.",
+      "observed_at": "2026-09-13T21:00:00+09:00"
+    },
+    {
+      "id": "E28",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m14-roi-image-canvas-view-retention\\phase-summary.txt",
+      "observation": "The RoiImageCanvasView source contract passed 10/10, ROI_IMAGE_CANVAS_BOUNDARY_CONTRACT passed 6/6, OpenVisionLab.ImageCanvas Debug/Release and VisionRecipeRunnerSmoke Debug builds completed with 0 warnings and 0 errors, RefactorAudit passed with CSharpFiles=820, XamlFiles=57, PartialDeclarations=53, DocumentationIndex passed, and git diff --check exited 0. WPF visual, theme, DPI, monitor, GPU/native long-run, and hardware execution were not run.",
+      "observed_at": "2026-09-13T21:00:00+09:00"
+    },
+    {
+      "id": "E29",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m15-log-panel-view-retention\\phase-summary.txt",
+      "observation": "LogPanelView.xaml.cs is a narrow cohesive WPF adapter. Source checks proved XAML/DataContext composition, compact layout and ScrollIntoView visual projection, deterministic event cleanup, and the absence of file/runtime log policy. LogPanelViewModel, LogPanelFileAccess, and RuntimeLogStream remain the concrete state, I/O, and display-buffer owners, so no independent replacement boundary was found.",
+      "observed_at": "2026-09-13T21:30:00+09:00"
+    },
+    {
+      "id": "E30",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m15-log-panel-view-retention\\phase-summary.txt",
+      "observation": "The LogPanelView source contract passed 10/10, OpenVisionLab.Logging.Controls Debug/Release builds completed with 0 warnings and 0 errors, PipelineViewerScreenshotSmoke Debug build completed with 0 errors and the existing CS8600 warning at Program.cs:10181, RefactorAudit passed with CSharpFiles=820, XamlFiles=57, PartialDeclarations=53, DocumentationIndex passed, and git diff --check exited 0. WPF visual/theme/DPI/monitor runtime and the log-panel screenshot target were not run.",
+      "observed_at": "2026-09-13T21:30:00+09:00"
+    },
+    {
+      "id": "E31",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m16-settings-designer-retention\\phase-summary.txt",
+      "observation": "Settings.Designer.cs is generated by SettingsSingleFileGenerator and defines the partial ApplicationSettingsBase Settings type, synchronized Default singleton, and 70 UserScopedSetting/DefaultSettingValue properties matching all Settings.settings entries. No current source Settings.Default caller was found; no independently owned workflow boundary exists.",
+      "observed_at": "2026-09-13T22:00:00+09:00"
+    },
+    {
+      "id": "E32",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m16-settings-designer-retention\\phase-summary.txt",
+      "observation": "The Settings source contract passed 10/10 with 70 entries/properties/attributes matched. OpenVisionLab Debug and Release builds completed with 0 warnings and 0 errors; RefactorAudit passed with CSharpFiles=820, XamlFiles=57, PartialDeclarations=53, DocumentationIndex passed, and git diff --check exited 0. User-config persistence, upgrade migration, reflection, and external deployment consumers were not run.",
+      "observed_at": "2026-09-13T22:00:00+09:00"
+    },
+    {
+      "id": "E33",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m17-tcp-integration-window-retention\\phase-summary.txt",
+      "observation": "OpenVisionTcpIntegrationWindow.xaml.cs is a narrow WPF Window adapter. Source checks proved XAML/DataContext composition, PasswordBox forwarding, controller-owned close guard, event unsubscription, and OnWindowClosed notification; the existing controller remains the TCP/settings/validation/cancellation/Dispose owner, so no independent replacement boundary was found.",
+      "observed_at": "2026-09-13T22:30:00+09:00"
+    },
+    {
+      "id": "E34",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m17-tcp-integration-window-retention\\phase-summary.txt",
+      "observation": "The TCP Window source contract passed 10/10, tcp-controller-disposal-contract passed, OpenVisionLab Debug/Release and VisionRecipeRunnerSmoke Debug builds completed with 0 warnings and 0 errors, RefactorAudit passed with CSharpFiles=820, XamlFiles=57, PartialDeclarations=53, DocumentationIndex passed, and git diff --check exited 0. Full WPF visual/theme/DPI/monitor and external TCP deployment were not run.",
+      "observed_at": "2026-09-13T22:30:00+09:00"
+    },
+    {
+      "id": "E35",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m18-n-image-verification-window-retention\\phase-summary.txt",
+      "observation": "VisionToolNImageVerificationWindow.xaml.cs is a narrow WPF visual/lifetime adapter. Source checks prove XAML/InitializeComponent/DataContext, two zoom controllers, selected-image reset projection, deterministic Closed cleanup, no workflow/file/pipeline policy in the View, controller-owned verification state and disposal, and the Document controller/window/owner/ShowDialog call path. No independent replacement owner exists.",
+      "observed_at": "2026-09-13T23:00:00+09:00"
+    },
+    {
+      "id": "E36",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m18-n-image-verification-window-retention\\phase-summary.txt",
+      "observation": "The N-image Window source contract passed 10/10. The existing wpf_tool_n_image_verification_window and wpf_tool_n_image_entry_side_effect_contract runtime smoke targets passed with fresh screenshots. OpenVisionLab Debug/Release and PipelineViewerScreenshotSmoke Debug builds completed with 0 warnings and 0 errors. RefactorAudit passed with CSharpFiles=820, XamlFiles=57, PartialDeclarations=53, PartialTextMatches=0, ProjectCycles=0, and ShellStorageCalls=0; DocumentationIndex passed with IndexedPaths=296, Routes=16, RootRedirects=102; git diff --check exited 0. Full WPF theme/DPI/monitor matrix, hardware/SDK, external deployment, and long-duration native run were not executed.",
+      "observed_at": "2026-09-13T23:00:00+09:00"
+    },
+    {
+      "id": "E37",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m19-shell-host-view-retention\\phase-summary.txt",
+      "observation": "OpenVisionShellHostView.xaml.cs is the required XAML composition root and concrete Shell visual/lifetime adapter. Source checks prove dependency-ordered existing-owner composition, WPF binding/event projection, tracked callback cleanup, Window->View Dispose ownership, test-surface compatibility, and absence of direct storage/pipeline/native/network policy that could form an independent owner.",
+      "observed_at": "2026-09-13T23:30:00+09:00"
+    },
+    {
+      "id": "E38",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m19-shell-host-view-retention\\phase-summary.txt",
+      "observation": "The Shell View source contract passed 12/12 with one manual partial source. OpenVisionReadinessCheck passed. wpf_shell_host_window_chrome, wpf_shell_host_workspace, and wpf_shell_host_workspace_image_load runtime smoke targets passed with fresh screenshots. OpenVisionLab Debug/Release, PipelineViewerScreenshotSmoke Debug, and OpenVisionReadinessCheck Debug builds completed with 0 warnings and 0 errors. RefactorAudit passed with CSharpFiles=820, XamlFiles=57, PartialDeclarations=53, PartialTextMatches=0, ProjectCycles=0, and ShellStorageCalls=0; DocumentationIndex passed with IndexedPaths=296, Routes=16, RootRedirects=102; git diff --check exited 0. Full WPF theme/DPI/monitor matrix, hardware/SDK, external deployment, and long-duration native shutdown were not executed.",
+      "observed_at": "2026-09-13T23:30:00+09:00"
+    },
+    {
+      "id": "E39",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m20-pending-edit-dialog-viewmodel-extraction\\phase-summary.txt",
+      "observation": "The Pending Edit Window retains only XAML namescope, DataContext wiring, modal Decision/DialogResult, Escape/button event handling, and close behavior. The non-WPF display projection is now owned by the concrete OpenVisionRecipePendingEditDialogViewModel.cs file. RecipeDialogAdapter owns Owner/ShowDialog/result and OpenVisionRecipePendingEditTransitionController owns workflow policy; no behavior or public binding contract changed.",
+      "observed_at": "2026-09-14T00:00:00+09:00"
+    },
+    {
+      "id": "E40",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m20-pending-edit-dialog-viewmodel-extraction\\phase-summary.txt",
+      "observation": "The source contract passed 10/10. The focused wpf_recipe_pending_edit_dialog smoke completed with exit 0 and a fresh screenshot. OpenVisionLab Debug/Release and PipelineViewerScreenshotSmoke Debug builds completed with 0 warnings/errors. The final RefactorAudit, DocumentationIndex, git diff check, and issue-ledger validation were recorded in the same evidence directory; PartialDeclarations remains 53.",
+      "observed_at": "2026-09-14T00:00:00+09:00"
+    },
+    {
+      "id": "E41",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m21-evidence-viewer-retention\\phase-summary.txt",
+      "observation": "Source proof shows the evidence View has no FileStream/Image.FromStream and routes decode through OpenVisionBitmapImagePreviewFactory.LoadBitmap. The View retains only evidence selection, status/error projection, and child viewer lifecycle; LayerViewer clones/releases Bitmap state; the window registry disposes hosted content; the controller disposes failed initial setup. No independent replacement owner remains.",
+      "observed_at": "2026-09-14T00:30:00+09:00"
+    },
+    {
+      "id": "E42",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m21-evidence-viewer-retention\\phase-summary.txt",
+      "observation": "Source contract passed 10/10 and RecipeRunEvidenceImageBoundaryContract passed 4/4. VisionRecipeRunnerSmoke Debug, OpenVisionLab Debug, and OpenVisionLab Release builds completed with 0 warnings/errors. The drawing-evidence WPF smoke was attempted but returned NG before opening the target because OPENVISIONLAB_VALIDATION_DATASET_ROOT was not configured; that dataset-dependent runtime path remains unverified.",
+      "observed_at": "2026-09-14T00:30:00+09:00"
+    },
+    {
+      "id": "E43",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m22-layer-viewer-retention\\phase-summary.txt",
+      "observation": "Source proof shows the Layer Viewer is the concrete visual/native owner for docked, floating, tool-preview, and evidence images. It clones incoming Bitmap data, releases prior/current owned image state, coordinates the canvas presenter/fallback/ROI control, and performs deterministic event and Dispose cleanup. Existing docking and floating-window owners dispose hosted content; no independent replacement owner remains.",
+      "observed_at": "2026-09-14T01:00:00+09:00"
+    },
+    {
+      "id": "E44",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m22-layer-viewer-retention\\phase-summary.txt",
+      "observation": "The Layer Viewer source contract passed 12/12. wpf_shell_host_layer_popout passed with a fresh screenshot. OpenVisionLab Debug/Release and PipelineViewerScreenshotSmoke Debug builds completed with 0 warnings/errors. RefactorAudit, DocumentationIndex, git diff check, and PL-0028 issue-ledger validation are recorded in the same evidence directory. Full WPF theme/DPI/monitor, hardware/GPU, and long-running native shutdown were not executed.",
+      "observed_at": "2026-09-14T01:00:00+09:00"
+    },
+    {
+      "id": "E45",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m23-shell-preview-retention\\phase-summary.txt",
+      "observation": "Source proof shows the Shell Preview View contains only XAML/DataContext composition and an Unloaded Dispose bridge. OpenVisionShellPreviewViewModel remains the concrete owner of navigation, selection, readiness, localization, commands, and language subscription; the production Shell composes that ViewModel directly. No independent replacement owner remains.",
+      "observed_at": "2026-09-14T01:30:00+09:00"
+    },
+    {
+      "id": "E46",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m23-shell-preview-retention\\phase-summary.txt",
+      "observation": "The Shell Preview source contract passed 10/10. wpf_shell_preview passed with a fresh screenshot. OpenVisionLab Debug/Release and PipelineViewerScreenshotSmoke Debug builds completed with 0 warnings/errors. RefactorAudit, DocumentationIndex, git diff check, and PL-0028 issue-ledger validation are recorded in the same evidence directory. Full WPF theme/DPI/monitor/input and long-running lifecycle matrices were not executed.",
+      "observed_at": "2026-09-14T01:30:00+09:00"
+    },
+    {
+      "id": "E47",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m24-pipeline-review-retention\\phase-summary.txt",
+      "observation": "Source proof maps the Pipeline Review View caller to OpenVisionPipelineReviewDocument and confirms mutable-state/lifetime ownership across the existing ViewModel, LayoutController, ExecutionController and ImageResourceOwner. The View retains only XAML namescope control projection, selection suppression, highlight state and visual event handlers; no direct file/pipeline execution/OpenCvSharp policy remains.",
+      "observed_at": "2026-09-14T02:00:00+09:00"
+    },
+    {
+      "id": "E48",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m24-pipeline-review-retention\\phase-summary.txt",
+      "observation": "Pipeline Review source contract passed 13/13. wpf_shell_host_pipeline_review passed with a fresh screenshot and exit 0. OpenVisionLab Debug/Release and PipelineViewerScreenshotSmoke Debug builds completed with 0 warnings/errors. RefactorAudit, DocumentationIndex and git diff check passed. Alternate WPF themes/DPI/monitor/input, hardware/GPU and long-running native shutdown were not executed.",
+      "observed_at": "2026-09-14T02:00:00+09:00"
+    },
+    {
+      "id": "E49",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m25-floating-tool-window-retention\\phase-summary.txt",
+      "observation": "Source proof maps all Floating Tool Window callers to the concrete Window adapter and existing host/registry/feature owners. The Window contains only XAML/chrome/content projection, airspace activation, dock event bridging and symmetric local event cleanup; host placement/close/dock and hosted-content Dispose remain outside the Partial.",
+      "observed_at": "2026-09-14T02:30:00+09:00"
+    },
+    {
+      "id": "E50",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m25-floating-tool-window-retention\\phase-summary.txt",
+      "observation": "Floating Tool Window source contract passed 14/14. wpf_tool_window_dock_float_cycle passed with a fresh screenshot and exit 0. OpenVisionLab Debug/Release and PipelineViewerScreenshotSmoke Debug builds completed with 0 warnings/errors. RefactorAudit and DocumentationIndex passed and git diff check exited 0. Alternate WPF themes/DPI/monitor/input, hardware/GPU and long-running native shutdown were not executed.",
+      "observed_at": "2026-09-14T02:30:00+09:00"
+    },
+    {
+      "id": "E51",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m26-startup-loading-window-retention\\phase-summary.txt",
+      "observation": "Source proof maps OpenVisionLabApplication and DirectSmoke callers to the concrete startup Window adapter. The Window contains only XAML/localization projection, render synchronization, close gating and symmetric framework behavior; Bootstrap and DirectSmoke retain lifecycle ownership and the source contract passed 12/12.",
+      "observed_at": "2026-09-14T03:00:00+09:00"
+    },
+    {
+      "id": "E52",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m26-startup-loading-window-retention\\phase-summary.txt",
+      "observation": "Startup-loading-feedback embedded EXE smoke passed with Korean/English localization, pre-completion close blocking, fresh screenshots and monitor intersection. Embedded OpenVisionLab Debug/Release builds completed with 0 warnings/errors; PipelineViewerScreenshotSmoke Debug completed with 0 errors and the existing nullable warning. RefactorAudit and DocumentationIndex passed and git diff check exited 0 after doc updates; alternate theme/DPI/input states, hardware/GPU and long-running native shutdown remain unverified.",
+      "observed_at": "2026-09-14T03:00:00+09:00"
+    },
+    {
+      "id": "E53",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m27-window-title-bar-retention\\phase-summary.txt",
+      "observation": "Source proof maps shared TitleBar callers to the concrete UserControl adapter. The partial contains only XAML namescope projection, window chrome framework actions, localized tooltip/accessibility projection, DockRequested bridging and symmetric event cleanup; parent windows retain product state and lifetime and the source contract passed 14/14.",
+      "observed_at": "2026-09-14T03:30:00+09:00"
+    },
+    {
+      "id": "E54",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m27-window-title-bar-retention\\phase-summary.txt",
+      "observation": "wpf_shell_host_window_chrome and wpf_shell_host_window_maximized passed with fresh screenshots, automation IDs and work-area/maximized bounds checks. OpenVisionLab Debug/Release builds completed with 0 warnings/errors; PipelineViewerScreenshotSmoke Debug completed with 0 errors and the existing nullable warning. RefactorAudit, DocumentationIndex, git diff check and PL-0028 ledger validation are recorded after doc updates; alternate themes/DPI/input, other parent-window matrices, hardware/GPU and long-running native shutdown remain unverified.",
+      "observed_at": "2026-09-14T03:30:00+09:00"
+    },
+    {
+      "id": "E55",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m28-workspace-sample-picker-window-retention\\phase-summary.txt",
+      "observation": "Source contract passed 14/14. The call path maps Shell command controller -> SamplePicker Window TrySelectSample -> existing ViewModel -> commands/selection state. The Window contains only modal WPF/framework ownership and explicit result conversion; the ViewModel retains catalog/filter/selection/Learn policy. The child UserControl constructor was restored because its deletion caused a reproducible empty visual body.",
+      "observed_at": "2026-09-13T15:05:00+09:00"
+    },
+    {
+      "id": "E56",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m28-workspace-sample-picker-window-retention\\phase-summary.txt",
+      "observation": "OpenVisionLab Debug build completed with 0 warnings/errors. PipelineViewerScreenshotSmoke Debug build completed with 0 errors and its existing CS8600 warning. wpf_shell_host_workspace_sample_picker and wpf_shell_host_workspace_sample_picker_maximized both returned OK with fresh screenshots, automation IDs, visible content, and work-area/maximized checks. OpenVisionLab Release build rerun completed with 0 warnings/errors after dotnet clean removed generated outputs; the log is at C:\\OpenVisionLab-TestFallback\\m28-workspace-sample-picker-window-retention\\openvisionlab-release-build-rerun.txt. RefactorAudit passed with PartialDeclarations=54, DocumentationIndex passed with IndexedPaths=296, and git diff --check exited 0. Alternate themes/DPI/input, hardware/GPU and long-running native shutdown remain unverified.",
+      "observed_at": "2026-09-13T15:05:00+09:00"
+    },
+    {
+      "id": "E57",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m29-image-compare-retention\\phase-summary.txt",
+      "observation": "The ImageCompareWindow owner map records the standalone EXE and screenshot-smoke callers, mutable-state writers, directory/resource lifetime owners, XAML/public binding contract, and deterministic Closed->Dispose path. Four static source assertions passed; the Window contains no ImageCompareDirectoryPolicy or ImageCompareImageResource direct coupling.",
+      "observed_at": "2026-09-13T15:53:51+09:00"
+    },
+    {
+      "id": "E58",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m29-image-compare-retention\\directory-policy\\image_compare_directory_policy_contract.txt; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m29-image-compare-retention\\resource\\image_compare_resource_contract.txt",
+      "observation": "ImageCompareDirectoryPolicyContract and ImageCompareResourceContract both passed. Directory save/reopen and invalid input behavior remained policy-owned; decoded Bitmap/frozen BitmapSource replacement and repeated disposal remained resource-owned.",
+      "observed_at": "2026-09-13T15:53:51+09:00"
+    },
+    {
+      "id": "E59",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m29-image-compare-retention\\phase-summary.txt",
+      "observation": "OpenVisionLab.ImageCompare Debug build passed with zero warnings/errors. PipelineViewerScreenshotSmoke wpf_image_compare passed at 1280x760 with layout/text/internal errors 0. The smoke used off-screen capture; monitor-visible EXE placement and full theme/DPI/input matrix remain unverified.",
+      "observed_at": "2026-09-13T15:53:51+09:00"
+    },
+    {
+      "id": "E60",
+      "kind": "audit",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m4-final-audit\\phase-summary.txt",
+      "observation": "Current RefactorAudit reports 823 C# files, 57 XAML files, 54 compiled Partial declarations, 0 literal Partial matches, 0 project cycles, and 0 shell storage calls. The historic 59-row baseline is reconciled by documented dead-row removal and restoration of the required Sample Picker child InitializeComponent boundary; retained rows have owner/reason evidence.",
+      "observed_at": "2026-09-13T16:20:00+09:00"
+    },
+    {
+      "id": "E61",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\partial-structural-elimination-20260913\\m4-final-audit",
+      "observation": "Solution and VisionRecipeRunnerSmoke Debug/Release builds passed with 0 warnings/errors; OpenVisionReadinessCheck Debug/Release, all nine focused contracts in both configurations, five-target WPF screenshot smoke, and targeted git diff check passed. UI smoke layout/text/internal diagnostics were 0.",
+      "observed_at": "2026-09-13T16:20:00+09:00"
+    },
+    {
+      "id": "E62",
+      "kind": "documentation",
+      "location": "docs\\reports\\OPENVISIONLAB_PROJECT_READINESS_AND_REFACTOR_CONTRACT_20260913.md; docs\\reports\\OPENVISIONLAB_PARTIAL_STRUCTURAL_ELIMINATION_PLAN_20260913.md; docs\\admin\\OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "observation": "The integrated report, Partial plan, handoff, documentation index route, and phase summary record the shortest reading route, owner/caller/state/lifetime/public-contract evidence, original-request recheck, and explicit unverified runtime/legal boundaries.",
+      "observed_at": "2026-09-13T16:20:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-13T15:00:00+09:00",
+      "summary": "Open a new bounded issue instead of reopening resolved PL-0027. Treat the 59 declarations as candidates for real owner extraction; do not promise mechanical elimination of framework-required Partial composition.",
+      "evidence_refs": []
+    },
+    {
+      "id": "D2",
+      "kind": "decision",
+      "at": "2026-09-13T15:25:00+09:00",
+      "summary": "For the first PL-0028 slice, reuse the existing Learn Presenter pattern and add one concrete ColorHsvLearnPresenter because OpenVisionLearnWindow owned animation state and HSV guide policy alongside WPF control projection. Keep the Window partial for XAML and move only independently testable state/text decisions.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "D3",
+      "kind": "decision",
+      "at": "2026-09-13T16:00:00+09:00",
+      "summary": "Delete OpenVisionRecipeBasicLifecycleView.xaml.cs because it contained only the framework initialization constructor and the XAML has no control event or view-specific behavior. Preserve the compiled x:Class contract and verify through the existing Shell Recipe lifecycle contract and Debug/Release builds.",
+      "evidence_refs": [
+        "E5",
+        "E6"
+      ]
+    },
+    {
+      "id": "D4",
+      "kind": "decision",
+      "at": "2026-09-13T16:20:00+09:00",
+      "summary": "Delete OpenVisionRecipeValidationSuiteView.xaml.cs because it contained only the framework initialization constructor and the XAML contains command bindings without view event, DataContext, persistence, or inspection policy. Preserve its inherited Shell DataContext and validate the existing validation-suite contract plus Debug/Release builds.",
+      "evidence_refs": [
+        "E7",
+        "E8"
+      ]
+    },
+    {
+      "id": "D5",
+      "kind": "decision",
+      "at": "2026-09-13T16:30:00+09:00",
+      "summary": "Delete OpenVisionWorkspaceSamplePickerView.xaml.cs because it contained only the framework initialization constructor and the XAML contains bindings and styles without view event, DataContext, persistence, or inspection policy. Preserve the SamplePicker Window composition, Shell command caller, and ViewModel-owned state. Update the existing readiness source-layout expectation for the prior ColorHsvLearnPresenter owner so the focused contract remains current.",
+      "evidence_refs": [
+        "E9",
+        "E10"
+      ]
+    },
+    {
+      "id": "D6",
+      "kind": "decision",
+      "at": "2026-09-13T17:00:00+09:00",
+      "summary": "Retain OpenVisionShellHostWindow.xaml.cs as the concrete WPF composition and lifetime owner. It creates OpenVisionShellHostView, owns HWND hook registration/removal and responsive Window scaling, exposes startup/smoke projections consumed by multiple callers, and disposes the Shell on close. Moving these responsibilities into a new wrapper or manager would hide the Window boundary and add no independent owner or test seam.",
+      "evidence_refs": [
+        "E11",
+        "E12"
+      ]
+    },
+    {
+      "id": "D7",
+      "kind": "decision",
+      "at": "2026-09-13T17:30:00+09:00",
+      "summary": "Retain OpenVisionPendingToolView.xaml.cs as a narrow WPF adapter. Its only manual behavior injects the existing OpenVisionPendingToolViewModel into DataContext and exposes the same instance for composition; state, language events, and Dispose belong to the ViewModel and OpenVisionShellHostDocumentController. Removing the Partial or adding a wrapper would break the XAML constructor/composition contract without creating an independent owner.",
+      "evidence_refs": [
+        "E13",
+        "E14"
+      ]
+    },
+    {
+      "id": "D8",
+      "kind": "decision",
+      "at": "2026-09-13T18:00:00+09:00",
+      "summary": "Retain OpenVisionLayerDockWorkspaceView.xaml.cs as the concrete WPF/AvalonDock visual adapter. Its DependencyProperties, native DockingManager event bridge, guide/geometry methods, visual snapshots, and header diagnostics are directly consumed by existing docking composition/controllers. Moving them would either break the public visual contract or add a wrapper around the same control state without an independent lifetime or test seam.",
+      "evidence_refs": [
+        "E15",
+        "E16"
+      ]
+    },
+    {
+      "id": "D9",
+      "kind": "decision",
+      "at": "2026-09-13T18:30:00+09:00",
+      "summary": "Retain OpenVisionLayerDockingGuideOverlayView.xaml.cs as the concrete XAML visual adapter for docking guide zones. It owns the generated namescope, active-zone visibility and brush state, guide-zone count, and pane margin projection, while OpenVisionLayerDockWorkspaceView is the existing composition caller. Moving these operations would only wrap the same control state without an independent owner, lifetime, or test seam.",
+      "evidence_refs": [
+        "E17",
+        "E18"
+      ]
+    },
+    {
+      "id": "D10",
+      "kind": "decision",
+      "at": "2026-09-13T19:00:00+09:00",
+      "summary": "Retain ImageCanvasControl.cs and ImageCanvasControl.designer.cs as one concrete SharpGL/WinForms native rendering and lifetime boundary. The designer Partial creates the OpenGLControl and generated disposal wiring, while the main Partial owns rendering, input event subscriptions, P/Invoke, texture/overlay state, and ReleaseOpenGlControl. Moving either side would split the same native lifetime without an independent owner or test seam.",
+      "evidence_refs": [
+        "E19",
+        "E20"
+      ]
+    },
+    {
+      "id": "D11",
+      "kind": "decision",
+      "at": "2026-09-13T19:30:00+09:00",
+      "summary": "Remove AddRoiArrayView.xaml.cs and AddRoiArrayView.xaml. Both files were explicitly excluded from the ImageCanvas project and had no repository path callers; the compiled Compatibility/AddRoiArrayViewCompatibility.cs already provides the same OpenVisionLab.ImageCanvas.Views.AddRoiArrayView public type, bindings, and RequestClose/DialogResult path used by RoiInteractionMouseUp. Remove the stale Compile/Page Remove entries and preserve the compatibility owner.",
+      "evidence_refs": [
+        "E21",
+        "E22"
+      ]
+    },
+    {
+      "id": "D12",
+      "kind": "decision",
+      "at": "2026-09-13T20:00:00+09:00",
+      "summary": "Remove AutoAlignTeachingView.xaml.cs, AutoAlignTeachingView.xaml, and AutoAlignTeachingViewModel.cs. The ImageCanvas project explicitly excluded all three and a repository-wide source search found no caller, public contract, or compiled replacement path. Remove their stale Compile/Page Remove entries, preserve EnumAutoAlignDirection unchanged, and do not invent a replacement UI.",
+      "evidence_refs": [
+        "E23",
+        "E24"
+      ]
+    },
+    {
+      "id": "D13",
+      "kind": "decision",
+      "at": "2026-09-13T20:30:00+09:00",
+      "summary": "Remove AutoWarpageTeachingView.xaml.cs, AutoWarpageTeachingView.xaml, and AutoWarpageTeachingViewModel.cs. The ImageCanvas project explicitly excluded all three and a repository-wide source search found no caller, public contract, or compiled replacement path. Remove their stale Compile/Page Remove entries and do not invent a replacement UI.",
+      "evidence_refs": [
+        "E25",
+        "E26"
+      ]
+    },
+    {
+      "id": "D14",
+      "kind": "decision",
+      "at": "2026-09-13T21:00:00+09:00",
+      "summary": "Retain RoiImageCanvasView.xaml.cs as the concrete WPF/WindowsFormsHost lifecycle adapter. It owns the XAML namescope, chrome DependencyProperties, DataContext attach/detach, dialog/context-menu host wiring, WPF key event forwarding, pending DispatcherOperation cancellation, and view-owned native host cleanup. RoiImageCanvasViewModel remains the concrete owner of ROI/mode/snapshot state, current Mat, ImageCanvasControl, refresh timer, and ViewModel Dispose. Moving the View code-behind to a wrapper or manual Partial would hide the same visual/native namescope without creating an independent state or lifetime owner.",
+      "evidence_refs": [
+        "E27",
+        "E28"
+      ]
+    },
+    {
+      "id": "D15",
+      "kind": "decision",
+      "at": "2026-09-13T21:30:00+09:00",
+      "summary": "Retain LogPanelView.xaml.cs as the cohesive WPF visual adapter. The View owns only ViewModel attachment, compact layout projection, ScrollIntoView, and event cleanup. LogPanelViewModel owns filter/summary/commands/timer/language state, LogPanelFileAccess owns file/folder I/O, and RuntimeLogStream owns the display buffer. Moving the code-behind would add a wrapper without an independent state or lifetime seam.",
+      "evidence_refs": [
+        "E29",
+        "E30"
+      ]
+    },
+    {
+      "id": "D16",
+      "kind": "decision",
+      "at": "2026-09-13T22:00:00+09:00",
+      "summary": "Retain src/OpenVisionLab/Properties/Settings.Designer.cs as the generated Settings framework boundary. SettingsSingleFileGenerator produces the partial ApplicationSettingsBase type, synchronized Default instance, and 70 UserScopedSetting/DefaultSettingValue properties from Settings.settings. No current source caller was found, but deletion or a hand-written replacement would be an unapproved settings migration and would change generated property/default/serialization behavior.",
+      "evidence_refs": [
+        "E31",
+        "E32"
+      ]
+    },
+    {
+      "id": "D17",
+      "kind": "decision",
+      "at": "2026-09-13T22:30:00+09:00",
+      "summary": "Retain OpenVisionTcpIntegrationWindow.xaml.cs as the concrete WPF Window adapter. It owns only XAML namescope, PasswordBox shared-key forwarding, controller-owned close guard, and Closing/Closed/PasswordChanged cleanup. OpenVisionTcpIntegrationController owns TCP exchange, settings JSON, validation, commands, cancellation, dispatcher callbacks, window reopen, and async disposal. The Window does not dispose the Shell-owned controller because the existing workflow can reopen the window.",
+      "evidence_refs": [
+        "E33",
+        "E34"
+      ]
+    },
+    {
+      "id": "D18",
+      "kind": "decision",
+      "at": "2026-09-13T23:00:00+09:00",
+      "summary": "Retain VisionToolNImageVerificationWindow.xaml.cs as the concrete WPF Window adapter for the N-image verification surface. It owns XAML namescope, source/drawing OpenVisionZoomableImageController instances, selected-image visual reset projection, test hooks, and deterministic Closed cleanup. VisionToolNImageVerificationController owns image selection, dialogs, verification execution, cancellation, result/export/promotion state, and internal resource disposal; OpenVisionNativeToolDocument constructs the controller/window, assigns the owner, and calls ShowDialog. No independent replacement owner was proven.",
+      "evidence_refs": [
+        "E35",
+        "E36"
+      ]
+    },
+    {
+      "id": "D19",
+      "kind": "decision",
+      "at": "2026-09-13T23:30:00+09:00",
+      "summary": "Retain OpenVisionShellHostView.xaml.cs as the single XAML Shell composition root and concrete WPF visual/lifetime adapter. OpenVisionShellHostWindow creates and owns the View and calls Dispose on close. The View composes existing session, recipe, layer, tool-window, workspace, preview, refresh, command-surface, presenter, and test owners in dependency order, projects WPF state/events, tracks callback cleanup, and delegates session/display release. No direct file I/O, Pipeline execution/storage, OpenCvSharp, network, or algorithm policy was found; no independent replacement owner was proven.",
+      "evidence_refs": [
+        "E37",
+        "E38"
+      ]
+    },
+    {
+      "id": "D20",
+      "kind": "decision",
+      "at": "2026-09-14T00:00:00+09:00",
+      "summary": "Retain OpenVisionRecipePendingEditDialog.xaml.cs as the required XAML Window Partial, but extract the independently testable non-WPF OpenVisionRecipePendingEditDialogViewModel into OpenVisionRecipePendingEditDialogViewModel.cs. Keep modal UI/result in the Window, Owner/ShowDialog/result conversion in RecipeDialogAdapter, and apply/discard/cancel workflow policy in OpenVisionRecipePendingEditTransitionController and RecipeCommandSurface. This removes mixed MVVM responsibility without changing XAML bindings or the dialog contract.",
+      "evidence_refs": [
+        "E39",
+        "E40"
+      ]
+    },
+    {
+      "id": "D21",
+      "kind": "decision",
+      "at": "2026-09-14T00:30:00+09:00",
+      "summary": "Retain OpenVisionRecipeRunEvidenceViewerView.xaml.cs as the required XAML evidence View partial and concrete visual/lifetime adapter. The existing OpenVisionBitmapImagePreviewFactory owns file-backed decode, OpenVisionLayerViewerView owns cloned Bitmap state, and OpenVisionLayerViewerWindowRegistry owns hosted-content disposal. The remaining selection/status projection has no independent state/lifetime owner, so no new ViewModel, wrapper, or Partial was added.",
+      "evidence_refs": [
+        "E41",
+        "E42"
+      ]
+    },
+    {
+      "id": "D22",
+      "kind": "decision",
+      "at": "2026-09-14T01:00:00+09:00",
+      "summary": "Retain OpenVisionLayerViewerView.xaml.cs as the cohesive image/native visual boundary. It is the shared XAML adapter for docked, floating, tool-preview, and evidence surfaces, owns cloned Bitmap state and visual/native cleanup, and is consumed through the existing IOpenVisionDockedLayerViewer contract. Dock workspace/window registries already own close-time Dispose, so extracting a wrapper or ViewModel would split the same lifetime without a new seam.",
+      "evidence_refs": [
+        "E43",
+        "E44"
+      ]
+    },
+    {
+      "id": "D23",
+      "kind": "decision",
+      "at": "2026-09-14T01:30:00+09:00",
+      "summary": "Retain OpenVisionShellPreviewView.xaml.cs as the required XAML preview adapter. It only creates the existing OpenVisionShellPreviewViewModel and bridges Unloaded to IDisposable; the ViewModel owns preview state, commands, readiness, localization, and language cleanup. No image/native/file policy or independent View owner exists, so no extraction or wrapper was added.",
+      "evidence_refs": [
+        "E45",
+        "E46"
+      ]
+    },
+    {
+      "id": "D24",
+      "kind": "decision",
+      "at": "2026-09-14T02:00:00+09:00",
+      "summary": "Retain OpenVisionPipelineReviewView.xaml.cs as the required Pipeline Review XAML visual adapter. OpenVisionPipelineReviewDocument owns the View and execution controller; OpenVisionPipelineReviewViewModel owns bindable review/readiness/preview state; OpenVisionPipelineReviewLayoutController owns layout state; OpenVisionPipelineReviewExecutionController owns run identity, cancellation, revision-gated callbacks and cached output images; OpenVisionPipelineReviewImageResourceOwner owns View-side Bitmap/diagnostic resources. Remaining selection/highlight/control-event methods mutate required WPF namescope state and no independent owner or test/lifetime seam was proven, so no wrapper or new partial was added.",
+      "evidence_refs": [
+        "E47",
+        "E48"
+      ]
+    },
+    {
+      "id": "D25",
+      "kind": "decision",
+      "at": "2026-09-14T02:30:00+09:00",
+      "summary": "Retain OpenVisionFloatingToolWindow.xaml.cs as the required WPF Window/chrome/content adapter. It owns XAML namescope, title/icon/content host projection, WinForms/OpenGL airspace activation, DockRequested bridge and symmetric local event cleanup. OpenVisionFloatingToolWindowHost owns create/reuse/placement/owner/close/dock routing, while OpenVisionLayerViewerWindowRegistry and feature controllers own hosted content disposal. No independent business, Recipe, pipeline, inspection, file, image or native policy remains to extract, so no wrapper or new partial was added.",
+      "evidence_refs": [
+        "E49",
+        "E50"
+      ]
+    },
+    {
+      "id": "D26",
+      "kind": "decision",
+      "at": "2026-09-14T03:00:00+09:00",
+      "summary": "Retain OpenVisionStartupLoadingWindow.xaml.cs as the required WPF startup Window adapter. It owns XAML title/detail localization projection, the ShowReady render pump, the Complete close gate and OnClosing premature-close guard. OpenVisionLabApplication.Run owns creation, display, Shell preparation completion and dispatcher shutdown; OpenVisionLabDirectSmokeRunner owns the startup-loading-feedback test scenario. No Recipe, Pipeline, inspection, file, native-resource or independent DataContext policy remains in the Window, so no concrete owner extraction or wrapper was added.",
+      "evidence_refs": [
+        "E51",
+        "E52"
+      ]
+    },
+    {
+      "id": "D27",
+      "kind": "decision",
+      "at": "2026-09-14T03:30:00+09:00",
+      "summary": "Retain OpenVisionWindowTitleBar.xaml.cs as the shared WPF UserControl/XAML chrome adapter. It owns title/icon and Dock visibility projection, localized tooltip/accessibility text, Window drag/minimize/maximize/close framework actions, DockRequested bridging and symmetric Loaded/Unloaded/language cleanup. Shell Host, Floating Tool Window and Sample Picker Window inject title/icon and own parent Window/content lifetime. No Recipe, Pipeline, inspection, file, native-resource or independent DataContext policy remains, so no concrete owner extraction or wrapper was added.",
+      "evidence_refs": [
+        "E53",
+        "E54"
+      ]
+    },
+    {
+      "id": "D28",
+      "kind": "decision",
+      "at": "2026-09-13T15:05:00+09:00",
+      "summary": "Retain OpenVisionWorkspaceSamplePickerWindow.xaml.cs as the required modal WPF adapter and move the Learn+sample acceptance policy behind the existing ViewModel. The Window owns DataContext/titlebar projection, owner/ShowDialog/result mapping, Cancel close, HWND work-area hook, and SelectionAccepted cleanup. OpenVisionWorkspaceSamplePickerViewModel owns catalog/filter/selection/Learn policy and exposes AcceptSelectionCommand/OpenLearnAndSelectCommand; SelectionAccepted is the explicit result contract. Restore OpenVisionWorkspaceSamplePickerView.xaml.cs because deleting its InitializeComponent constructor reproduced an empty UserControl in focused WPF smoke. No new Manager, Service, Factory, wrapper, or manual Partial was added.",
+      "evidence_refs": [
+        "E55",
+        "E56"
+      ]
+    },
+    {
+      "id": "D29",
+      "kind": "decision",
+      "at": "2026-09-13T15:53:51+09:00",
+      "summary": "Retain ImageCompareWindow.xaml.cs as the required WPF XAML/file-dialog/pointer/chrome adapter. ImageCompareViewModel, ImageCompareDirectoryPolicy, ImageCompareImageResource, and ImageCompareSlotViewModel already own state, directory persistence, decode, and resource replacement lifetime; no independent extraction seam was proven.",
+      "evidence_refs": [
+        "E57",
+        "E58",
+        "E59"
+      ]
+    },
+    {
+      "id": "D30",
+      "kind": "decision",
+      "at": "2026-09-13T16:20:00+09:00",
+      "summary": "M4 최종 감사는 현재 source count와 retained owner map을 PL-0028 문서·원장과 정합화하고, 문서 index, Debug/Release solution, 관련 Smoke/contract, readiness, issue-ledger, diff check를 통과했다. 파일 크기만으로 남은 WPF/generated/designer/native/test/cohesive Partial을 다시 나누지 않고, 전체 WPF/hardware/native 행렬은 미검증으로 남긴다.",
+      "evidence_refs": [
+        "E60",
+        "E61",
+        "E62"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-13T16:20:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "M4 최종 구조·owner·문서·검증 기준을 충족했으므로 PL-0028을 resolved로 닫는다. 새 defect, 요구사항, failed criterion 또는 dependency boundary가 생기기 전에는 Partial 경계를 다시 열지 않는다."
+    }
+  ],
+  "created_at": "2026-09-13T15:00:00+09:00",
+  "updated_at": "2026-09-13T16:20:00+09:00"
+}

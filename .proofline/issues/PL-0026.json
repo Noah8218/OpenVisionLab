@@ -1,0 +1,229 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0026",
+    "aliases": [],
+    "type": "task",
+    "mode": "composite",
+    "title": "Move RecipeCommandSurface WPF image-file decoding to the existing preview factory",
+    "risk": "medium"
+  },
+  "origin": {
+    "kind": "explicit user request to continue RecipeCommandSurface refactoring",
+    "summary": "The final PL-0025 audit found four repeated WPF image-file decoding sites in RecipeCommandSurface: one locator overlay BitmapImage loader and three BitmapFrame dimension reads. The existing OpenVisionBitmapImagePreviewFactory is a concrete UI image owner that can absorb these operations without a new abstraction layer.",
+    "refs": [
+      "current user request",
+      "PL-0025",
+      "AGENTS.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "PL-0026 resolved: repeated WPF image-file decoding moved to the existing OpenVisionBitmapImagePreviewFactory, the Surface retained its BitmapSource/state/status contracts, focused image and regression contracts passed, Debug builds passed with zero warnings/errors, and the final owner audit is recorded."
+  },
+  "objective": {
+    "summary": "Move WPF BitmapImage/BitmapFrame file decoding out of RecipeCommandSurface into the existing OpenVisionBitmapImagePreviewFactory while preserving overlay validation errors, ROI dimension behavior, status handling, and the existing XAML BitmapSource property contract.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev; keep C:\\Git\\2D\\Original read-only.",
+      "Do not reopen or repeat PL-0022, PL-0023, PL-0024, or PL-0025.",
+      "Reuse the existing concrete OpenVisionBitmapImagePreviewFactory; do not add an interface, manager, provider, wrapper, or manual partial.",
+      "Preserve existing missing-file and decode exception behavior so current status/error projections remain unchanged.",
+      "Keep RecipeCommandSurface responsible for recipe state, intent validation, status projection, and XAML BitmapSource binding; the factory owns only WPF file image decoding.",
+      "Do not move unrelated File.Exists, Path, XML, or recipe/pipeline storage policy in this slice.",
+      "Store generated evidence under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\recipe-command-surface-image-boundary-20260912.",
+      "Do not commit, push, tag, release, deploy, or modify Original from this refactoring slice."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The current and intended image-decoding owner, callers, dependency direction, mutable-state writer, lifetime owner, XAML contract, and shortest reading route are documented from source.",
+      "evidence_refs": [
+        "E1",
+        "E4"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "RecipeCommandSurface contains no direct BitmapImage or BitmapFrame file-decoding calls; the existing preview factory owns path decoding and pixel-size reads while Surface retains the BitmapSource binding property and state projection.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Focused image factory and Surface regression contracts prove valid path decoding, pixel-size reads, missing-file failure, and existing RecipeCommandSurface callback/status contracts; required Debug builds pass.",
+      "evidence_refs": [
+        "E3",
+        "E4"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "Handoff and codebase navigation record the image boundary, preserved public/XAML contracts, first-contributor route, changed files, and remaining File/XML policy; runtime UI limits are explicit.",
+      "evidence_refs": [
+        "E4"
+      ]
+    }
+  ],
+  "milestones": [
+    {
+      "id": "M1",
+      "summary": "Audit repeated WPF image-file decoding and prove the existing factory as the smallest owner.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1",
+        "C2"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M2",
+      "summary": "Extend the existing preview factory and route overlay/dimension reads through it without changing state or binding contracts.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1",
+        "C2"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M3",
+      "summary": "Run focused image and RecipeCommandSurface regression contracts and Debug builds.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C3"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M4",
+      "summary": "Complete owner, MVVM, partial/folder, navigation, and first-contributor audit.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1",
+        "C3",
+        "C4"
+      ],
+      "issue_refs": []
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0025"
+    }
+  ],
+  "context": [
+    {
+      "kind": "source",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/Recipe/CommandSurface/RecipeCommandSurface.cs"
+    },
+    {
+      "kind": "existing-owner",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/Viewer/OpenVisionBitmapImagePreviewFactory.cs"
+    },
+    {
+      "kind": "contract-project",
+      "location": "tools/VisionRecipeRunnerSmoke"
+    },
+    {
+      "kind": "live-status",
+      "location": "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md"
+    },
+    {
+      "kind": "owner-registry",
+      "location": "docs/admin/CODEBASE_STRUCTURE.md"
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "evidence-root",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\recipe-command-surface-image-boundary-20260912",
+      "summary": "Focused evidence for the RecipeCommandSurface WPF image-file boundary."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\recipe-command-surface-image-boundary-20260912\\m1-audit",
+      "observation": "The source audit records one BitmapImage overlay loader and three BitmapFrame pixel-size reads in RecipeCommandSurface. The owner map shows the shared file-image decoding responsibility, the existing OpenVisionBitmapImagePreviewFactory owner, the preserved BitmapSource XAML/state contract, and the explicit exclusion of unrelated recipe/file policy.",
+      "observed_at": "2026-09-12T23:15:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\recipe-command-surface-image-boundary-20260912\\m2-factory-boundary",
+      "observation": "OpenVisionBitmapImagePreviewFactory now contains CreateFromPath and ReadPixelSize. RecipeCommandSurface routes the former overlay and three dimension reads through those methods; a direct BitmapImage/BitmapFrame.Create/BitmapCacheOption search in the Surface is clear. BitmapSource and its XAML property remain as the protected presentation contract. No new abstraction or partial was added.",
+      "observed_at": "2026-09-12T23:35:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\recipe-command-surface-image-boundary-20260912\\m3-focused",
+      "observation": "VisionRecipeRunnerSmoke x64 Debug and OpenVisionLab.sln Debug builds passed with 0 warnings and 0 errors. Copied-runtime image factory contract passed 4/4, Dispatcher regression 2/2, Clipboard regression 3/3, RefreshOptions 1/1, Validation Set success 1/1, and Validation Set error 1/1. The image contract verified frozen OnLoad preview, pixel dimensions, and missing-file failure behavior. Desktop WPF, device, and long-run limits remain unverified.",
+      "observed_at": "2026-09-12T23:45:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\recipe-command-surface-image-boundary-20260912\\m4-final-audit",
+      "observation": "The final audit records the existing preview-factory owner, four changed call paths, frozen OnLoad lifetime, preserved BitmapSource/XAML and status contracts, no manual partial/folder or new abstraction, and the remaining multi-owner File/XML policy. Documentation index, RefactorAudit, readiness, issue-ledger validation, and git diff checks passed; M3 contains the final zero-warning Debug builds and copied-runtime contracts. Actual WPF visual and long-running runtime matrices remain unverified.",
+      "observed_at": "2026-09-13T00:05:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-12T23:15:00+09:00",
+      "summary": "Extend the existing OpenVisionBitmapImagePreviewFactory with path preview and pixel-size operations, then route all four Surface decode sites through it. Keep Surface state/status/XAML ownership and leave unrelated storage policy unchanged.",
+      "evidence_refs": [
+        "E1"
+      ]
+    },
+    {
+      "id": "D2",
+      "kind": "decision",
+      "at": "2026-09-12T23:35:00+09:00",
+      "summary": "Reuse the existing OpenVisionBitmapImagePreviewFactory directly instead of adding callbacks or a new image service. Its frozen OnLoad path preview and pixel-size methods preserve the old exceptions and caller behavior.",
+      "evidence_refs": [
+        "E2"
+      ]
+    },
+    {
+      "id": "D3",
+      "kind": "decision",
+      "at": "2026-09-12T23:45:00+09:00",
+      "summary": "Keep the factory-only image boundary after valid path, frozen OnLoad, pixel-size, and missing-file contracts passed; preserve the existing Surface status and validation flows and claim no unrun desktop UI matrix.",
+      "evidence_refs": [
+        "E3"
+      ]
+    },
+    {
+      "id": "D4",
+      "kind": "decision",
+      "at": "2026-09-13T00:05:00+09:00",
+      "summary": "Close the image boundary: the existing preview factory owns file-backed WPF decode and pixel-size reads, Surface retains state/status/XAML ownership, and unrelated storage policy remains untouched until a separate owner proof exists.",
+      "evidence_refs": [
+        "E4"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-13T00:10:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "PL-0026 resolved after all four milestones and criteria were evidenced. No further RecipeCommandSurface split is justified by this source audit; reopen only for a new independent boundary, reproducible defect, failed criterion, or changed dependency contract."
+    }
+  ],
+  "created_at": "2026-09-12T23:10:00+09:00",
+  "updated_at": "2026-09-13T00:10:00+09:00"
+}

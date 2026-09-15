@@ -15,6 +15,7 @@ namespace OpenVisionLab
             ViewModel = viewModel;
             InitializeComponent();
             DataContext = ViewModel;
+            ViewModel.SelectionAccepted += OnSelectionAccepted;
             samplePickerTitleBar.TitleText = ViewModel.DialogTitleText;
             samplePickerTitleBar.IconKind = PackIconMaterialKind.ImageMultipleOutline;
         }
@@ -32,6 +33,7 @@ namespace OpenVisionLab
 
         protected override void OnClosed(EventArgs e)
         {
+            ViewModel.SelectionAccepted -= OnSelectionAccepted;
             windowSource?.RemoveHook(WindowProc);
             windowSource = null;
             base.OnClosed(e);
@@ -73,36 +75,15 @@ namespace OpenVisionLab
             return accepted;
         }
 
-        private void Select_Click(object sender, RoutedEventArgs e)
+        private void OnSelectionAccepted(object sender, EventArgs e)
         {
-            AcceptSelectedSample();
-        }
-
-        private void OpenGuideAndSelect_Click(object sender, RoutedEventArgs e)
-        {
-            if (!ViewModel.CanOpenLearnAndSample)
-            {
-                return;
-            }
-
-            ViewModel.OpenLearnDocumentForSelection();
-            AcceptSelectedSample();
+            DialogResult = true;
+            Close();
         }
 
         private void Cancel_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = false;
-            Close();
-        }
-
-        private void AcceptSelectedSample()
-        {
-            if (!ViewModel.CanSelect)
-            {
-                return;
-            }
-
-            DialogResult = true;
             Close();
         }
 

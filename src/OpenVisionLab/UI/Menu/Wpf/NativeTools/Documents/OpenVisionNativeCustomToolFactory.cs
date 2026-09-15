@@ -22,7 +22,13 @@ namespace OpenVisionLab
                 repository => repository.Lines_R,
                 () => new LineGaugeProperty("Line(R)_1"));
             var viewModel = VisionToolCompositionService.CreateLineToolViewModel(lineAProperty, lineBProperty);
-            LineToolPresenter presenter = new LineToolPresenter(viewModel);
+            LineToolPresenter presenter = new LineToolPresenter(
+                viewModel,
+                () =>
+                {
+                    OpenVisionNativeToolPropertySessionStore.Save("Line(L)_1", lineAProperty);
+                    OpenVisionNativeToolPropertySessionStore.Save("Line(R)_1", lineBProperty);
+                });
             OpenVisionNativeToolDocument document =
                 OpenVisionNativeCustomToolDocumentBuilder.Create(
                 displayManager,

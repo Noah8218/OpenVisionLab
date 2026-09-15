@@ -1,0 +1,143 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0070",
+    "aliases": [
+      "OPENVISIONLAB-2D012-RUN-INPUT-ISOLATION-20260915"
+    ],
+    "type": "bug",
+    "mode": "simple",
+    "title": "Prevent prior Review output layers from becoming new Run inputs",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "scheduled 2D task execution and source review",
+    "summary": "2D-012 requires a new Pipeline Review run to distinguish external input layers from images produced by a prior run or declared as current pipeline outputs after a producer is deleted, disabled, or reordered.",
+    "refs": [
+      "C:\\Users\\USER\\Downloads\\OpenVisionLab_2D_tasks.json",
+      "AGENTS.md",
+      "docs\\contracts\\openvisionlab\\OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md",
+      "C:\\Users\\USER\\.codex\\docs\\WPF_UI_UX_RULES.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "Pipeline Review now seeds only eligible external display layers. Current effective-pipeline outputs and output layers observed from earlier Review runs are excluded from the next Run context, while an existing ALLOW_BRANCH_INPUT=true step may explicitly opt a prior layer back in; Main remains the default external source."
+  },
+  "problem": {
+    "claims": [
+      {
+        "id": "P1",
+        "state": "confirmed",
+        "text": "CreateReviewContextFromDisplayLayers previously copied every non-placeholder display layer into a new VisionPipelineContext. A retained A_Output therefore satisfied a B Run input even after B deleted, disabled, or reordered the producer, so the run could consume a stale derived image without an explicit branch decision.",
+        "evidence_refs": [
+          "E1",
+          "E2"
+        ]
+      }
+    ],
+    "impact": "A recipe edit could silently inspect an image produced by an earlier run instead of the declared current source, making result provenance and failure behavior dependent on workspace residue."
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "Review context creation excludes all output layers declared by the current effective pipeline, including disabled or reordered producers, so a producer-missing input fails closed at execution.",
+      "evidence_refs": [
+        "E3"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "Output layers actually produced by an earlier Review run in the same document remain excluded when the producer is deleted, while default Main and newly supplied non-produced external layers retain their existing input behavior.",
+      "evidence_refs": [
+        "E1",
+        "E3"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "An existing ALLOW_BRANCH_INPUT=true step can explicitly consume a prior layer, and affected Review generation, cache lifetime, stale callback, document revision, duplicate identity, and focused Debug build checks pass without Original or external mutation.",
+      "evidence_refs": [
+        "E3",
+        "E4",
+        "E5"
+      ]
+    }
+  ],
+  "relations": [],
+  "context": [
+    {
+      "kind": "owner-map",
+      "location": "OpenVisionPipelineReviewExecutionController.RunAsync owns the effective pipeline and Review context admission; CreateReviewContextFromDisplayLayers selects display seeds; ReplaceReviewStepImage records Review-produced output-layer provenance; VisionPipelineExecutionService owns missing-input failure; the focused PipelineReviewRunInputIsolationContract owns the A/B run fixture."
+    },
+    {
+      "kind": "state-writer",
+      "location": "The execution controller owns the run-scoped and document-lived reviewProducedOutputLayers set. DisplayManager remains the workspace image owner; VisionPipelineContext is a per-Run disposable snapshot and never writes workspace layers."
+    },
+    {
+      "kind": "reading-order",
+      "location": "OpenVisionPipelineReviewExecutionController.cs -> VisionPipelineNormalizer.cs (ALLOW_BRANCH_INPUT) -> VisionPipelineExecutionService.cs -> PipelineReviewRunInputIsolationContract.cs -> stable feature contracts and current handoff."
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "review",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/PipelineReview/Execution/OpenVisionPipelineReviewExecutionController.cs:265-271,502-575; src/OpenVisionLab/Core/Pipeline/Definition/VisionPipelineNormalizer.cs:216-220",
+      "observation": "Source review confirmed that the old context builder copied every non-placeholder display layer. The changed owner now computes current output layers, unions output layers produced by earlier Review steps, and removes only non-current outputs explicitly opted in by ALLOW_BRANCH_INPUT before seeding the disposable context.",
+      "observed_at": "2026-09-15T16:28:28+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d012-run-input-isolation-20260915/pipeline-review-run-input-isolation-baseline.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d012-run-input-isolation-20260915/baseline-build.log",
+      "observation": "The pre-patch contract reproduced the gap: after an A Run output was retained as A_Output, deleted-producer, disabled-producer, and reordered-producer B cases all consumed that layer; the explicit branch case passed. This is the baseline evidence for the source fix.",
+      "observed_at": "2026-09-15T16:24:22+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d012-run-input-isolation-20260915/pipeline-review-run-input-isolation-contract.txt",
+      "observation": "The post-change focused contract passed: deleted, disabled, and reordered producer cases failed with Input layer 'A_Output' has no image instead of consuming the retained output, and ALLOW_BRANCH_INPUT=true recovered the explicitly permitted external branch.",
+      "observed_at": "2026-09-15T16:25:38+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d012-run-input-isolation-20260915/pipeline-review-execution-contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d012-run-input-isolation-20260915/pipeline-review-cache-lifetime-contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d012-run-input-isolation-20260915/pipeline-review-stale-callback-contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d012-run-input-isolation-20260915/pipeline-review-document-revision-contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d012-run-input-isolation-20260915/pipeline-review-duplicate-step-identity-contract.txt",
+      "observation": "Existing Review execution-generation, image-cache lifetime, stale-callback, document revision, and duplicate Step identity contracts all passed against the changed Debug binary.",
+      "observed_at": "2026-09-15T16:26:06+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "build",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d012-run-input-isolation-20260915/vision-recipe-runner-smoke-build.log",
+      "observation": "VisionRecipeRunnerSmoke Debug build completed with 0 warnings and 0 errors. No desktop EXE or WPF UI interaction was launched in this slice; theme, DPI, monitor, and native hardware coverage remain unverified.",
+      "observed_at": "2026-09-15T16:25:34+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-15T16:28:28+09:00",
+      "summary": "Reuse the existing Review execution controller and VisionPipelineNormalizer branch opt-in. Exclude current and previously Review-produced output layers from context seeding, preserve Main, and do not add a pipeline-format migration or new provenance service.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-15T16:28:28+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "PL-0070 resolved after the baseline stale-layer reproduction, post-change input-isolation contract, lifecycle regressions, and focused Debug build passed; no Original or external mutation was performed."
+    }
+  ],
+  "created_at": "2026-09-15T16:24:22+09:00",
+  "updated_at": "2026-09-15T16:28:28+09:00"
+}

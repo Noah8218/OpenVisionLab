@@ -49,6 +49,7 @@ using CvMat = OpenCvSharp.Mat;
 using DrawingSize = System.Drawing.Size;
 using Graphics = System.Drawing.Graphics;
 using static OpenVisionLab.DEFINE;
+using static SmokeFixtureResources;
 
 internal static class Program
 {
@@ -466,9 +467,44 @@ internal static class Program
                 return ScreenshotPngWriterContract.Run(args.Length == 2 ? args[1] : null);
             }
             if ((args.Length == 1 || args.Length == 2)
+                && string.Equals(args[0], "--direct-smoke-screenshot-writer-contract", StringComparison.OrdinalIgnoreCase))
+            {
+                return DirectSmokeScreenshotWriterContract.Run(args.Length == 2 ? args[1] : null);
+            }
+            if ((args.Length == 1 || args.Length == 2)
+                && string.Equals(args[0], "--smoke-clipboard-retry-contract", StringComparison.OrdinalIgnoreCase))
+            {
+                return SmokeClipboardRetryContract.Run(args.Length == 2 ? args[1] : null);
+            }
+            if ((args.Length == 1 || args.Length == 2)
+                && string.Equals(args[0], "--smoke-task-waiter-contract", StringComparison.OrdinalIgnoreCase))
+            {
+                return SmokeTaskWaiterContract.Run(args.Length == 2 ? args[1] : null);
+            }
+            if ((args.Length == 1 || args.Length == 2)
+                && string.Equals(args[0], "--smoke-window-monitor-placement-contract", StringComparison.OrdinalIgnoreCase))
+            {
+                return SmokeWindowMonitorPlacementContract.Run(args.Length == 2 ? args[1] : null);
+            }
+            if ((args.Length == 1 || args.Length == 2)
+                && string.Equals(args[0], "--smoke-mouse-input-contract", StringComparison.OrdinalIgnoreCase))
+            {
+                return SmokeMouseInputContract.Run(args.Length == 2 ? args[1] : null);
+            }
+            if ((args.Length == 1 || args.Length == 2)
                 && string.Equals(args[0], "--screenshot-capture-lifecycle-contract", StringComparison.OrdinalIgnoreCase))
             {
                 return ScreenshotCaptureLifecycleContract.Run(args.Length == 2 ? args[1] : null);
+            }
+            if ((args.Length == 1 || args.Length == 2)
+                && string.Equals(args[0], "--smoke-fixture-resources-contract", StringComparison.OrdinalIgnoreCase))
+            {
+                return SmokeFixtureResourcesContract.Run(args.Length == 2 ? args[1] : null);
+            }
+            if ((args.Length == 1 || args.Length == 2)
+                && string.Equals(args[0], "--smoke-docking-state-files-contract", StringComparison.OrdinalIgnoreCase))
+            {
+                return SmokeDockingStateFilesContract.Run(args.Length == 2 ? args[1] : null);
             }
             if ((args.Length == 1 || args.Length == 2)
                 && string.Equals(args[0], "--validation-dataset-artifact-writer-contract", StringComparison.OrdinalIgnoreCase))
@@ -558,6 +594,11 @@ internal static class Program
             Console.Error.WriteLine("   or: PipelineViewerScreenshotSmoke --screenshot-bitmap-assertions-contract [evidenceDirectory]");
             Console.Error.WriteLine("   or: PipelineViewerScreenshotSmoke --screenshot-png-writer-contract [evidenceDirectory]");
             Console.Error.WriteLine("   or: PipelineViewerScreenshotSmoke --screenshot-capture-lifecycle-contract [evidenceDirectory]");
+            Console.Error.WriteLine("   or: PipelineViewerScreenshotSmoke --smoke-fixture-resources-contract [evidenceDirectory]");
+            Console.Error.WriteLine("   or: PipelineViewerScreenshotSmoke --smoke-docking-state-files-contract [evidenceDirectory]");
+            Console.Error.WriteLine("   or: PipelineViewerScreenshotSmoke --smoke-task-waiter-contract [evidenceDirectory]");
+            Console.Error.WriteLine("   or: PipelineViewerScreenshotSmoke --smoke-window-monitor-placement-contract [evidenceDirectory]");
+            Console.Error.WriteLine("   or: PipelineViewerScreenshotSmoke --smoke-mouse-input-contract [evidenceDirectory]");
             Console.Error.WriteLine("   or: PipelineViewerScreenshotSmoke --validation-dataset-artifact-writer-contract [evidenceDirectory]");
             Console.Error.WriteLine("   or: PipelineViewerScreenshotSmoke --recipe-context-fixture-contract [evidenceDirectory]");
             Console.Error.WriteLine("   or: PipelineViewerScreenshotSmoke --smoke-recipe-workspace-cleanup-contract [evidenceDirectory]");
@@ -10137,7 +10178,7 @@ internal static class Program
                     @"D:\OpenVisionLab-TestData\OpenVisionLab_Dev",
                     "locator-relative-blob-external-native-ic-frame4-review-decision-r4",
                     "evidence.packet.json");
-                OpenVisionRecipeLocatorRelativeBlobEvidencePacket runtimePilotPacket = null;
+                OpenVisionRecipeLocatorRelativeBlobEvidencePacket? runtimePilotPacket = null;
                 if (File.Exists(runtimePilotPacketPath))
                 {
                     OpenVisionRecipeLocatorRelativeBlobEvidencePacket.TryLoad(
@@ -12587,11 +12628,7 @@ internal static class Program
             }
 
             WriteCvr06MatcherDiagnosticMatrix(outputPath);
-            Window reviewWindow = GetActiveFloatingToolWindow("CVR-06 Matcher diagnostic");
-            reviewWindow.Width = 1500D;
-            reviewWindow.Height = 880D;
-            reviewWindow.Left = 20D;
-            reviewWindow.Top = 20D;
+            GetActiveToolVisualRoot("CVR-06 Matcher diagnostic");
             Pump(60);
         }, captureFloatingToolWindow: true);
     }
@@ -12798,13 +12835,21 @@ internal static class Program
                 shellHost.PipelineReviewRunLogText,
                 shellHost.PipelineReviewGuideResultDecisionText,
                 shellHost.PipelineReviewGuidePairMetricText);
-            Window reviewWindow = GetActiveFloatingToolWindow("Workspace Fixture sample Pipeline Review coherence");
-            TabItem stepDetailsTab = FindNamedVisualChild<TabItem>(reviewWindow, "stepDetailsTab")
+            DependencyObject reviewRoot = GetActiveToolVisualRoot("Workspace Fixture sample Pipeline Review coherence");
+            ToggleButton reviewDetailsToggle = FindNamedVisualChild<ToggleButton>(reviewRoot, "btnReviewDetailsToggle")
+                ?? throw new InvalidOperationException("Workspace Fixture review details toggle was not available.");
+            if (reviewDetailsToggle.IsChecked != true)
+            {
+                reviewDetailsToggle.IsChecked = true;
+                Pump(40);
+            }
+
+            TabItem stepDetailsTab = FindNamedVisualChild<TabItem>(reviewRoot, "stepDetailsTab")
                 ?? throw new InvalidOperationException("Workspace Fixture Step Details tab was not available.");
             stepDetailsTab.IsSelected = true;
             Pump(40);
             AssertVisibleAutomationIds(
-                reviewWindow,
+                reviewRoot,
                 "Workspace Fixture selected-tool Learn entry",
                 "PipelineReviewOpenSelectedToolLearnButton",
                 "PipelineReviewEditSelectedStepButton");
@@ -12819,7 +12864,7 @@ internal static class Program
             string executionStateBeforeLearn = shellHost.PipelineReviewExecutionState;
 
             ClickVisibleButtonByAutomationId(
-                reviewWindow,
+                reviewRoot,
                 "PipelineReviewOpenSelectedToolLearnButton",
                 "Workspace Fixture selected Blob Learn entry");
             Pump(24);
@@ -12833,8 +12878,6 @@ internal static class Program
 
             learnWindow.Close();
             Pump(16);
-            reviewWindow.Activate();
-            Pump(12);
             if (shellHost.NativePreviewRunCount != previewRunsBeforeLearn
                 || shellHost.LayerDocumentCount != layerCountBeforeLearn
                 || !string.Equals(shellHost.ActiveHostLayerTitle, activeLayerBeforeLearn, StringComparison.Ordinal)
@@ -12858,7 +12901,7 @@ internal static class Program
 
             shellHost.SelectPipelineReviewStepForTest(2, OpenVisionLab.Pipeline.Controls.PipelineFlowPreviewMode.Output);
             Pump(16);
-            Button unsupportedLearnButton = FindVisualChildren<Button>(reviewWindow)
+            Button unsupportedLearnButton = FindVisualChildren<Button>(reviewRoot)
                 .First(item => string.Equals(
                     AutomationProperties.GetAutomationId(item),
                     "PipelineReviewOpenSelectedToolLearnButton",
@@ -12871,7 +12914,7 @@ internal static class Program
             shellHost.SelectPipelineReviewStepForTest(1, OpenVisionLab.Pipeline.Controls.PipelineFlowPreviewMode.Output);
             Pump(16);
             AssertVisibleAutomationIds(
-                reviewWindow,
+                reviewRoot,
                 "Workspace Fixture restored Blob Learn entry",
                 "PipelineReviewOpenSelectedToolLearnButton");
             if (shellHost.NativePreviewRunCount != previewRunsBeforeLearn
@@ -12885,9 +12928,9 @@ internal static class Program
                     + $"Step='{shellHost.PipelineReviewSelectedStepName}'/'{selectedStepBeforeLearn}'");
             }
 
-            string selectedToolText = ReadVisibleTextByAutomationId(reviewWindow, "PipelineReviewSelectedToolSummary");
-            string selectedRouteText = ReadVisibleTextByAutomationId(reviewWindow, "PipelineReviewSelectedRouteSummary");
-            string selectedResultText = ReadVisibleTextByAutomationId(reviewWindow, "PipelineReviewSelectedResultSummary");
+            string selectedToolText = ReadVisibleTextByAutomationId(reviewRoot, "PipelineReviewSelectedToolSummary");
+            string selectedRouteText = ReadVisibleTextByAutomationId(reviewRoot, "PipelineReviewSelectedRouteSummary");
+            string selectedResultText = ReadVisibleTextByAutomationId(reviewRoot, "PipelineReviewSelectedResultSummary");
             if (!shellHost.PipelineReviewSelectedStepName.Contains("02  Inspect Fixture Pad", StringComparison.OrdinalIgnoreCase)
                 || shellHost.PipelineReviewSelectedStepName.Contains("02  02", StringComparison.OrdinalIgnoreCase)
                 || !shellHost.PipelineReviewGuideCurrentStepText.Contains("02 Inspect Fixture Pad", StringComparison.OrdinalIgnoreCase)
@@ -13040,8 +13083,16 @@ internal static class Program
                     + $"Text='{blobText}'");
             }
 
-            Window reviewWindow = GetActiveFloatingToolWindow("Fixture / relative-ROI designer");
-            TabItem fixtureDesignerTab = FindNamedVisualChild<TabItem>(reviewWindow, "fixtureDesignerTab")
+            DependencyObject reviewRoot = GetActiveToolVisualRoot("Fixture / relative-ROI designer");
+            ToggleButton reviewDetailsToggle = FindNamedVisualChild<ToggleButton>(reviewRoot, "btnReviewDetailsToggle")
+                ?? throw new InvalidOperationException("Fixture designer review details toggle was not available.");
+            if (reviewDetailsToggle.IsChecked != true)
+            {
+                reviewDetailsToggle.IsChecked = true;
+                Pump(40);
+            }
+
+            TabItem fixtureDesignerTab = FindNamedVisualChild<TabItem>(reviewRoot, "fixtureDesignerTab")
                 ?? throw new InvalidOperationException("Fixture designer tab was not visible for the existing fixture chain.");
             int layerCountBeforeDesigner = shellHost.LayerDocumentCount;
             string activeLayerBeforeDesigner = shellHost.ActiveHostLayerTitle;
@@ -13051,26 +13102,26 @@ internal static class Program
             Pump(120);
 
             System.Windows.Controls.Image sourcePreview = FindNamedVisualChild<System.Windows.Controls.Image>(
-                reviewWindow,
+                reviewRoot,
                 "fixtureSourcePreviewImage")
                 ?? throw new InvalidOperationException("Fixture designer source preview was not created.");
             System.Windows.Controls.Image normalizedPreview = FindNamedVisualChild<System.Windows.Controls.Image>(
-                reviewWindow,
+                reviewRoot,
                 "fixtureNormalizedPreviewImage")
                 ?? throw new InvalidOperationException("Fixture designer normalized preview was not created.");
             System.Windows.Controls.Image templatePreview = FindNamedVisualChild<System.Windows.Controls.Image>(
-                reviewWindow,
+                reviewRoot,
                 "fixtureTemplatePreviewImage")
                 ?? throw new InvalidOperationException("Fixture designer template preview was not created.");
-            Button teachButton = FindNamedVisualChild<Button>(reviewWindow, "btnUseSelectedMatchingPose")
+            Button teachButton = FindNamedVisualChild<Button>(reviewRoot, "btnUseSelectedMatchingPose")
                 ?? throw new InvalidOperationException("Fixture designer teach-reference action was not created.");
-            Button producerEditButton = FindNamedVisualChild<Button>(reviewWindow, "btnFixtureProducerEdit")
+            Button producerEditButton = FindNamedVisualChild<Button>(reviewRoot, "btnFixtureProducerEdit")
                 ?? throw new InvalidOperationException("Fixture designer producer edit action was not created.");
-            Button measurementEditButton = FindNamedVisualChild<Button>(reviewWindow, "btnFixtureMeasurementEdit")
+            Button measurementEditButton = FindNamedVisualChild<Button>(reviewRoot, "btnFixtureMeasurementEdit")
                 ?? throw new InvalidOperationException("Fixture designer measurement ROI edit action was not created.");
-            Button runButton = FindNamedVisualChild<Button>(reviewWindow, "btnFixtureRun")
+            Button runButton = FindNamedVisualChild<Button>(reviewRoot, "btnFixtureRun")
                 ?? throw new InvalidOperationException("Fixture designer explicit Run Review action was not created.");
-            DataGrid consumerGrid = FindNamedVisualChild<DataGrid>(reviewWindow, "fixtureConsumerGrid")
+            DataGrid consumerGrid = FindNamedVisualChild<DataGrid>(reviewRoot, "fixtureConsumerGrid")
                 ?? throw new InvalidOperationException("Fixture designer ROI-consumer table was not created.");
             OpenVisionPipelineReviewFixtureConsumerRow? datumConsumer =
                 consumerGrid.Items.Count > 0
@@ -13123,7 +13174,7 @@ internal static class Program
             }
 
             AssertVisibleTextContains(
-                reviewWindow,
+                reviewRoot,
                 "Fixture / relative-ROI designer",
                 "PartFrame",
                 "Locate And Publish Reference Pose",
@@ -13482,6 +13533,36 @@ internal static class Program
                 throw new InvalidOperationException("Fixture selected Step XML apply command was disabled after editing MIN_AREA.");
             }
 
+            Button pendingRerunButton = FindVisualChildren<Button>(shellHost)
+                .FirstOrDefault(item => item.IsVisible
+                    && string.Equals(
+                        AutomationProperties.GetAutomationId(item),
+                        "HostRecipeCorrectedOutputRerunButton",
+                        StringComparison.Ordinal))
+                ?? throw new InvalidOperationException("Fixture corrected-output rerun button was not visible while the edit was dirty.");
+            if (pendingRerunButton.IsEnabled
+                || pendingRerunButton.Command == null
+                || pendingRerunButton.Command.CanExecute(pendingRerunButton.CommandParameter)
+                || !ContainsAny(shellHost.RecipeCommands.CorrectedOutputRerunText, "XML 반영 후 재검사", "Apply before rerun")
+                || !ContainsAny(shellHost.RecipeCommands.CorrectedOutputRerunToolTipText, "XML 반영", "apply or discard"))
+            {
+                throw new InvalidOperationException(
+                    "Fixture corrected-output rerun remained available while the Step edit was dirty. "
+                    + $"Enabled={pendingRerunButton.IsEnabled}, "
+                    + $"CanExecute={pendingRerunButton.Command?.CanExecute(pendingRerunButton.CommandParameter)}, "
+                    + $"Text='{shellHost.RecipeCommands.CorrectedOutputRerunText}', "
+                    + $"Tip='{shellHost.RecipeCommands.CorrectedOutputRerunToolTipText}'");
+            }
+
+            pendingRerunButton.BringIntoView();
+            shellHost.UpdateLayout();
+            Pump(80);
+            SaveVisibleAutomationElementPng(
+                shellHost,
+                "HostRecipeManagerPanel",
+                outputPath,
+                "fixture-step-edit-pending.png");
+
             applyButton.Command.Execute(applyButton.CommandParameter);
             Pump(260);
             VisionPipeline appliedPipeline = VisionPipelineStorage.Load(recipeName, pipelineName);
@@ -13520,6 +13601,14 @@ internal static class Program
                 "HostRecipeManagerPanel",
                 outputPath,
                 "fixture-step-edit-applied.png");
+            pendingRerunButton.BringIntoView();
+            shellHost.UpdateLayout();
+            Pump(80);
+            SaveVisibleAutomationElementPng(
+                shellHost,
+                "HostRecipeManagerPanel",
+                outputPath,
+                "fixture-step-edit-applied-corrected-output.png");
 
             if (!ContainsAny(
                     shellHost.RecipeCommands.CorrectedOutputRerunText,
@@ -13653,15 +13742,23 @@ internal static class Program
             int layerRowCountBefore = shellHost.HostLayerRowCount;
             string activeLayerBefore = shellHost.ActiveHostLayerTitle;
 
-            Window reviewWindow = GetActiveFloatingToolWindow("Workspace Fixture pose teach action");
-            Button fixtureTeachButton = FindVisualChildren<Button>(reviewWindow)
+            DependencyObject reviewRoot = GetActiveToolVisualRoot("Workspace Fixture pose teach action");
+            ToggleButton reviewDetailsToggle = FindNamedVisualChild<ToggleButton>(reviewRoot, "btnReviewDetailsToggle")
+                ?? throw new InvalidOperationException("Workspace Fixture pose teach review details toggle was not available.");
+            if (reviewDetailsToggle.IsChecked != true)
+            {
+                reviewDetailsToggle.IsChecked = true;
+                Pump(40);
+            }
+
+            Button fixtureTeachButton = FindVisualChildren<Button>(reviewRoot)
                 .FirstOrDefault(item => item.IsVisible
                     && string.Equals(
                         AutomationProperties.GetAutomationId(item),
                         "PipelineReviewUseMatchingPoseButton",
                         StringComparison.Ordinal))
                 ?? throw new InvalidOperationException("Workspace Fixture pose teach action was not visible.");
-            TextBlock fixtureTeachStatus = FindVisualChildren<TextBlock>(reviewWindow)
+            TextBlock fixtureTeachStatus = FindVisualChildren<TextBlock>(reviewRoot)
                 .FirstOrDefault(item => item.IsVisible
                     && string.Equals(
                         AutomationProperties.GetAutomationId(item),
@@ -13679,7 +13776,7 @@ internal static class Program
             }
 
             ClickVisibleButtonByAutomationId(
-                reviewWindow,
+                reviewRoot,
                 "PipelineReviewUseMatchingPoseButton",
                 "Workspace Fixture pose teach action");
             Pump(120);
@@ -14160,8 +14257,17 @@ internal static class Program
                     "Reading matcher diagnostics changed Preview/Run count or layer state.");
             }
 
+            DependencyObject reviewRoot = GetActiveToolVisualRoot("EdgeBasedMatching NoMatch diagnostics");
+            ToggleButton reviewDetailsToggle = FindNamedVisualChild<ToggleButton>(reviewRoot, "btnReviewDetailsToggle")
+                ?? throw new InvalidOperationException("EdgeBasedMatching NoMatch review details toggle was not available.");
+            if (reviewDetailsToggle.IsChecked != true)
+            {
+                reviewDetailsToggle.IsChecked = true;
+                Pump(40);
+            }
+
             AssertVisibleAutomationIds(
-                GetActiveFloatingToolWindow("EdgeBasedMatching NoMatch diagnostics"),
+                reviewRoot,
                 "EdgeBasedMatching NoMatch diagnostics",
                 "PipelineReviewMatcherDiagnosticTab",
                 "PipelineReviewMatcherDiagnosticSummary",
@@ -14378,6 +14484,12 @@ internal static class Program
             string triageRerunPair = OpenVisionLanguageService.T("PipelineReview.Guide.TriageRerunPair");
             string metricDisplayKey = "PipelineReview.Metric." + expectedMetricName;
             string metricDisplayName = OpenVisionLanguageService.T(metricDisplayKey);
+            if (string.IsNullOrWhiteSpace(metricDisplayName)
+                || string.Equals(metricDisplayName, metricDisplayKey, StringComparison.Ordinal))
+            {
+                metricDisplayName = VisionPipelineKnownMetrics.GetDisplayName(expectedMetricName);
+            }
+
             bool hasLocalizedMetricDisplayName = !string.IsNullOrWhiteSpace(metricDisplayName)
                 && !string.Equals(metricDisplayName, metricDisplayKey, StringComparison.Ordinal);
             string expectedGuideMetricName = hasLocalizedMetricDisplayName ? metricDisplayName : expectedMetricName;
@@ -15909,13 +16021,28 @@ internal static class Program
 
             viewModel.SelectedSample = fixtureGood;
             Pump(40);
-            if (viewModel.VisibleSampleCount != 2
+            List<VisionPipelineSampleCatalogItem> fixturePair = samples
+                .Where(item => string.Equals(
+                    item.PairGroup?.Trim(),
+                    fixtureGood.PairGroup?.Trim(),
+                    StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            int visibleFixturePairCount = sampleList.Items
+                .OfType<VisionPipelineSampleCatalogItem>()
+                .Count(item => string.Equals(
+                    item.PairGroup?.Trim(),
+                    fixtureGood.PairGroup?.Trim(),
+                    StringComparison.OrdinalIgnoreCase));
+            if (fixturePair.Count != 2
+                || !fixturePair.Any(IsSamplePairGood)
+                || !fixturePair.Any(IsSamplePairBad)
                 || !fixtureGood.HasPair
+                || visibleFixturePairCount != fixturePair.Count
                 || !string.Equals(fixtureGood.PairGroup, "Public_Fixture_Pad", StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidOperationException(
                     "Public Fixture search must expose one runnable Good/Bad pair. "
-                    + $"Visible={viewModel.VisibleSampleCount}, Pair={fixtureGood.PairGroup}");
+                    + $"Visible={viewModel.VisibleSampleCount}, VisiblePair={visibleFixturePairCount}, Pair={fixtureGood.PairGroup}");
             }
 
             string visibleText = string.Join(
@@ -15956,6 +16083,7 @@ internal static class Program
         List<IGrouping<string, VisionPipelineSampleCatalogItem>> pairGroups = samples
             .Where(item => item.HasPair && !string.IsNullOrWhiteSpace(item.PairGroup))
             .GroupBy(item => item.PairGroup.Trim(), StringComparer.OrdinalIgnoreCase)
+            .Where(group => group.Any(IsSamplePairGood) && group.Any(IsSamplePairBad))
             .OrderBy(group => group.Key, StringComparer.OrdinalIgnoreCase)
             .ToList();
         string[] requiredPairGroups =
@@ -16424,7 +16552,7 @@ internal static class Program
             .SelectMany(item => item.ExpectedMetrics)
             .Where(metric => metric != null && !string.IsNullOrWhiteSpace(metric.Name))
             .Select(metric => metric.Name.Trim()), StringComparer.OrdinalIgnoreCase);
-        if (!goodMetricNames.Any(badMetricNames.Contains))
+        if (!goodMetricNames.Any(goodMetricName => badMetricNames.Any(badMetricName => AreComparableMetricNames(goodMetricName, badMetricName))))
         {
             throw new InvalidOperationException(
                 "Sample pair group must expose at least one shared Good/Bad metric. "
@@ -16448,6 +16576,24 @@ internal static class Program
                 }
             }
         }
+    }
+
+    private static bool AreComparableMetricNames(string first, string second)
+    {
+        if (string.Equals(first, second, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return IsDistanceMetricFamily(first, "DistanceMm") && IsDistanceMetricFamily(second, "DistanceMm")
+            || IsDistanceMetricFamily(first, "DistancePx") && IsDistanceMetricFamily(second, "DistancePx");
+    }
+
+    private static bool IsDistanceMetricFamily(string metricName, string familyPrefix)
+    {
+        return !string.IsNullOrWhiteSpace(metricName)
+            && metricName.StartsWith(familyPrefix, StringComparison.OrdinalIgnoreCase)
+            && metricName.Length > familyPrefix.Length;
     }
 
     private static bool IsSamplePairGood(VisionPipelineSampleCatalogItem item)
@@ -18499,7 +18645,7 @@ internal static class Program
 
     private static CaptureResult CaptureShellHostLayerDockingPersistence(string outputPath)
     {
-        return WithDockingStateFileBackup(() =>
+        return SmokeDockingStateFiles.RunWithBackup(AppPathService.EnsureDirectory("CONFIG", "UI"), () =>
         {
             OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
             OpenVisionShellHostView shellHost = CreateShellHost("Smoke_WpfShellHostLayerDockingPersistence");
@@ -22030,6 +22176,8 @@ internal static class Program
             }
 
             WriteCvr07ThresholdSuggestionPublicReplay(outputPath);
+            thresholdView.OpenSignalInspectorForTest();
+            Pump(4);
             AssertVisibleAutomationIds(
                 GetActiveFloatingToolWindow("CVR-07 Threshold suggestion"),
                 "CVR-07 Threshold suggestion",
@@ -26650,19 +26798,13 @@ internal static class Program
             return;
         }
 
-        DateTime deadline = DateTime.UtcNow.AddMilliseconds(Math.Max(1000, timeoutMilliseconds));
-        while (!task.IsCompleted && DateTime.UtcNow < deadline)
-        {
-            Pump(4);
-            Thread.Sleep(10);
-        }
-
-        if (!task.IsCompleted)
-        {
-            throw new TimeoutException(description + " timed out.");
-        }
-
-        task.GetAwaiter().GetResult();
+        SmokeTaskWaiter.Wait(
+            task,
+            description,
+            () => Pump(4),
+            TimeSpan.FromMilliseconds(Math.Max(1000, timeoutMilliseconds)),
+            TimeSpan.FromMilliseconds(10),
+            " timed out.");
     }
 
     private static CaptureResult CaptureThresholdOutputThenBlobOpen(string outputPath)
@@ -26740,22 +26882,13 @@ internal static class Program
 
             Pump(8);
             int beforeThresholdRuns = shellHost.NativePreviewRunCount;
-            SetFloatingSliderValueByName("Threshold basic slider", "sliderThreshold", 84D);
+            SetDifferentFloatingSliderValueByName("Threshold basic slider", "sliderThreshold", 84D, 83D);
             Thread.Sleep(180);
-            Pump(30);
-            if (shellHost.HasNativePreviewResult || shellHost.NativePreviewRunCount != beforeThresholdRuns)
-            {
-                throw new InvalidOperationException(
-                    "Threshold slider change must wait for explicit Preview. "
-                    + $"RunsBefore={beforeThresholdRuns}, RunsAfter={shellHost.NativePreviewRunCount}, Status={shellHost.ActiveNativeStatusText}");
-            }
-
-            shellHost.RunActiveNativePreviewForTest();
             Pump(30);
             if (!shellHost.HasNativePreviewResult || shellHost.NativePreviewRunCount != beforeThresholdRuns + 1)
             {
                 throw new InvalidOperationException(
-                    "Explicit Threshold Preview did not produce Threshold_Preview exactly once. "
+                    "Threshold slider change must trigger one debounced Preview. "
                     + $"RunsBefore={beforeThresholdRuns}, RunsAfter={shellHost.NativePreviewRunCount}, Status={shellHost.ActiveNativeStatusText}");
             }
 
@@ -31523,7 +31656,7 @@ internal static class Program
             VisionToolParameterGuideContent inactiveAngle =
                 VisionToolParameterGuideCatalog.Resolve(inactiveMatching, "FIND_ANGLE");
             if (inactiveAngle == null
-                || !inactiveAngle.Applicability.Contains("inactive", StringComparison.OrdinalIgnoreCase))
+                || !ContainsInactiveGuidance(inactiveAngle.Applicability))
             {
                 throw new InvalidOperationException(
                     "P257 conditional guide did not explain the inactive angle step.");
@@ -31550,7 +31683,7 @@ internal static class Program
                     edgeProperty,
                     "UNIQUE_MATCH_MIN_SCORE_MARGIN");
             if (inactiveUnique == null
-                || !inactiveUnique.Applicability.Contains("inactive", StringComparison.OrdinalIgnoreCase))
+                || !ContainsInactiveGuidance(inactiveUnique.Applicability))
             {
                 throw new InvalidOperationException(
                     "P257 conditional guide did not explain the inactive unique margin.");
@@ -31683,6 +31816,13 @@ internal static class Program
             throw new InvalidOperationException(
                 name + " did not contain '" + expected + "'. Actual='" + actual + "'.");
         }
+    }
+
+    private static bool ContainsInactiveGuidance(string value)
+    {
+        return !string.IsNullOrWhiteSpace(value)
+            && (value.Contains("inactive", StringComparison.OrdinalIgnoreCase)
+                || value.Contains("꺼져", StringComparison.Ordinal));
     }
 
     private static void AssertParameterGuideBrowsableCoverage(object property, string family)
@@ -34905,492 +35045,6 @@ internal static class Program
         });
     }
 
-    private static Bitmap CreateLineMeasureSmokeBitmap()
-    {
-        Bitmap bitmap = new(512, 384);
-        using Graphics graphics = Graphics.FromImage(bitmap);
-        graphics.Clear(DrawingColor.FromArgb(232, 238, 241));
-
-        using System.Drawing.SolidBrush railBrush = new(DrawingColor.Black);
-        using System.Drawing.SolidBrush shadowBrush = new(DrawingColor.FromArgb(186, 199, 205));
-        using System.Drawing.SolidBrush laneBrush = new(DrawingColor.FromArgb(248, 251, 252));
-        using System.Drawing.Pen guidePen = new(DrawingColor.FromArgb(150, 169, 177), 1);
-        using System.Drawing.Pen roiGuidePen = new(DrawingColor.FromArgb(96, 130, 142), 1);
-
-        graphics.FillRectangle(laneBrush, 86, 54, 342, 292);
-        graphics.FillRectangle(shadowBrush, 90, 60, 126, 280);
-        graphics.FillRectangle(shadowBrush, 296, 60, 132, 280);
-        graphics.FillRectangle(railBrush, 96, 70, 74, 252);
-        graphics.FillRectangle(railBrush, 340, 70, 74, 252);
-
-        for (int y = 80; y <= 314; y += 18)
-        {
-            graphics.DrawLine(guidePen, 170, y, 340, y);
-        }
-
-        graphics.DrawRectangle(roiGuidePen, 92, 64, 120, 272);
-        graphics.DrawRectangle(roiGuidePen, 300, 64, 122, 272);
-        return bitmap;
-    }
-
-    private static Bitmap CreateLineIntersectionSmokeBitmap()
-    {
-        Bitmap bitmap = new(512, 384);
-        Random random = new(5317);
-        for (int y = 0; y < bitmap.Height; y++)
-        {
-            for (int x = 0; x < bitmap.Width; x++)
-            {
-                int baseValue = 102 + random.Next(-24, 25);
-                if (((x / 9) + (y / 7)) % 2 == 0)
-                {
-                    baseValue += 8;
-                }
-
-                int value = Math.Clamp(baseValue, 62, 146);
-                bitmap.SetPixel(x, y, DrawingColor.FromArgb(value, value, value));
-            }
-        }
-
-        using Graphics graphics = Graphics.FromImage(bitmap);
-        graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-
-        using System.Drawing.Pen darkShadowPen = new(DrawingColor.FromArgb(72, 76, 76), 14)
-        {
-            StartCap = System.Drawing.Drawing2D.LineCap.Round,
-            EndCap = System.Drawing.Drawing2D.LineCap.Round
-        };
-        using System.Drawing.Pen softShadowPen = new(DrawingColor.FromArgb(130, 136, 136), 24)
-        {
-            StartCap = System.Drawing.Drawing2D.LineCap.Round,
-            EndCap = System.Drawing.Drawing2D.LineCap.Round
-        };
-        using System.Drawing.SolidBrush objectBrush = new(DrawingColor.FromArgb(252, 252, 250));
-        using System.Drawing.Pen objectEdgePen = new(DrawingColor.FromArgb(236, 238, 236), 2);
-        using System.Drawing.Pen roiGuidePen = new(DrawingColor.FromArgb(82, 116, 128), 1);
-
-        System.Drawing.Point[] objectShape =
-        {
-            new(34, 34),
-            new(344, 34),
-            new(344, 188),
-            new(226, 306),
-            new(34, 306)
-        };
-
-        graphics.DrawLine(softShadowPen, 352, 44, 352, 190);
-        graphics.DrawLine(softShadowPen, 232, 314, 352, 194);
-        graphics.DrawLine(softShadowPen, 42, 314, 230, 314);
-        graphics.DrawLine(darkShadowPen, 352, 44, 352, 190);
-        graphics.DrawLine(darkShadowPen, 232, 314, 352, 194);
-        graphics.DrawLine(darkShadowPen, 42, 314, 230, 314);
-
-        graphics.FillPolygon(objectBrush, objectShape);
-        graphics.DrawLines(objectEdgePen, new[]
-        {
-            new System.Drawing.Point(344, 34),
-            new System.Drawing.Point(344, 188),
-            new System.Drawing.Point(226, 306),
-            new System.Drawing.Point(34, 306)
-        });
-
-        graphics.DrawRectangle(roiGuidePen, 42, 268, 190, 74);
-        graphics.DrawRectangle(roiGuidePen, 306, 44, 86, 142);
-        return bitmap;
-    }
-
-    private static Bitmap CreateMatchingSmokeBitmap()
-    {
-        Bitmap bitmap = new(512, 384);
-        using Graphics graphics = Graphics.FromImage(bitmap);
-        graphics.Clear(DrawingColor.FromArgb(226, 234, 239));
-
-        using System.Drawing.SolidBrush darkBrush = new(DrawingColor.FromArgb(28, 38, 52));
-        using System.Drawing.SolidBrush midBrush = new(DrawingColor.FromArgb(76, 126, 170));
-        using System.Drawing.SolidBrush lightBrush = new(DrawingColor.FromArgb(234, 241, 247));
-        using System.Drawing.Pen accentPen = new(DrawingColor.FromArgb(255, 255, 255), 3);
-        using System.Drawing.Pen outlinePen = new(DrawingColor.FromArgb(20, 30, 44), 2);
-
-        graphics.FillRectangle(darkBrush, 150, 100, 120, 96);
-        graphics.FillEllipse(midBrush, 172, 122, 36, 36);
-        graphics.DrawLine(accentPen, 158, 184, 262, 108);
-        graphics.DrawRectangle(outlinePen, 150, 100, 120, 96);
-        graphics.FillRectangle(lightBrush, 230, 152, 26, 28);
-
-        using System.Drawing.Font font = new("Segoe UI", 11F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-        using System.Drawing.SolidBrush textBrush = new(DrawingColor.FromArgb(36, 48, 64));
-        graphics.DrawString("Matching", font, textBrush, 34, 16);
-        return bitmap;
-    }
-
-    private static Bitmap CreateLargeSmokeBitmap(int width, int height, byte variation = 0)
-    {
-        Bitmap bitmap = new(width, height, System.Drawing.Imaging.PixelFormat.Format8bppIndexed);
-        ColorPalette palette = bitmap.Palette;
-        for (int i = 0; i < palette.Entries.Length; i++)
-        {
-            palette.Entries[i] = DrawingColor.FromArgb(i, i, i);
-        }
-
-        bitmap.Palette = palette;
-
-        DrawingRectangle bounds = new(0, 0, width, height);
-        BitmapData data = bitmap.LockBits(bounds, ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format8bppIndexed);
-        try
-        {
-            int stride = data.Stride;
-            byte[] row = new byte[stride];
-            int periodX = Math.Max(1, width / 32);
-            int periodY = Math.Max(1, height / 32);
-            int fixtureLeft = width / 5;
-            int fixtureRight = width * 4 / 5;
-            int fixtureTop = height / 3;
-            int fixtureBottom = height * 2 / 3;
-
-            for (int y = 0; y < height; y++)
-            {
-                int yRamp = y * 96 / Math.Max(1, height - 1);
-                bool gridY = y % periodY < 5;
-                for (int x = 0; x < width; x++)
-                {
-                    int xRamp = x * 128 / Math.Max(1, width - 1);
-                    int value = 56 + ((xRamp + yRamp) / 2);
-                    bool gridX = x % periodX < 5;
-                    bool inFixture = x >= fixtureLeft && x <= fixtureRight && y >= fixtureTop && y <= fixtureBottom;
-                    bool stripe = ((x - fixtureLeft) / Math.Max(1, width / 96)) % 2 == 0;
-                    if (inFixture)
-                    {
-                        value = stripe ? 210 : 126;
-                    }
-
-                    if (gridX || gridY)
-                    {
-                        value = Math.Min(245, value + 42);
-                    }
-
-                    row[x] = (byte)Math.Clamp(value + variation, 0, 255);
-                }
-
-                for (int x = width; x < stride; x++)
-                {
-                    row[x] = 0;
-                }
-
-                Marshal.Copy(row, 0, IntPtr.Add(data.Scan0, y * stride), stride);
-            }
-        }
-        finally
-        {
-            bitmap.UnlockBits(data);
-        }
-
-        return bitmap;
-    }
-
-    private static string ComputeStreamingBitmapSha256(Bitmap bitmap)
-    {
-        using SHA256 sha256 = SHA256.Create();
-        byte[] metadata = System.Text.Encoding.UTF8.GetBytes(
-            $"{bitmap.Width}x{bitmap.Height}:32bppArgb:");
-        sha256.TransformBlock(metadata, 0, metadata.Length, metadata, 0);
-
-        DrawingRectangle bounds = new(0, 0, bitmap.Width, bitmap.Height);
-        BitmapData data = bitmap.LockBits(bounds, ImageLockMode.ReadOnly, bitmap.PixelFormat);
-        try
-        {
-            int stride = Math.Abs(data.Stride);
-            byte[] sourceRow = new byte[stride];
-            byte[] normalizedRow = new byte[bitmap.Width * 4];
-            ColorPalette palette = bitmap.Palette;
-            for (int y = 0; y < bitmap.Height; y++)
-            {
-                Marshal.Copy(IntPtr.Add(data.Scan0, y * data.Stride), sourceRow, 0, stride);
-                if (bitmap.PixelFormat == System.Drawing.Imaging.PixelFormat.Format8bppIndexed)
-                {
-                    for (int x = 0; x < bitmap.Width; x++)
-                    {
-                        DrawingColor color = palette.Entries[sourceRow[x]];
-                        int offset = x * 4;
-                        normalizedRow[offset] = color.B;
-                        normalizedRow[offset + 1] = color.G;
-                        normalizedRow[offset + 2] = color.R;
-                        normalizedRow[offset + 3] = color.A;
-                    }
-                }
-                else if (bitmap.PixelFormat == System.Drawing.Imaging.PixelFormat.Format24bppRgb)
-                {
-                    for (int x = 0; x < bitmap.Width; x++)
-                    {
-                        int sourceOffset = x * 3;
-                        int targetOffset = x * 4;
-                        normalizedRow[targetOffset] = sourceRow[sourceOffset];
-                        normalizedRow[targetOffset + 1] = sourceRow[sourceOffset + 1];
-                        normalizedRow[targetOffset + 2] = sourceRow[sourceOffset + 2];
-                        normalizedRow[targetOffset + 3] = byte.MaxValue;
-                    }
-                }
-                else if (bitmap.PixelFormat == System.Drawing.Imaging.PixelFormat.Format32bppArgb)
-                {
-                    Buffer.BlockCopy(sourceRow, 0, normalizedRow, 0, normalizedRow.Length);
-                }
-                else
-                {
-                    throw new NotSupportedException(
-                        "Streaming smoke hash does not support " + bitmap.PixelFormat + ".");
-                }
-
-                sha256.TransformBlock(normalizedRow, 0, normalizedRow.Length, normalizedRow, 0);
-            }
-
-            sha256.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
-            return Convert.ToHexString(sha256.Hash!);
-        }
-        finally
-        {
-            bitmap.UnlockBits(data);
-        }
-    }
-
-    private static string CreateMatchingTemplateFile(Bitmap source)
-    {
-        string path = Path.Combine(Path.GetTempPath(), "OpenVisionLab_matching_smoke_template_" + Guid.NewGuid().ToString("N") + ".png");
-        using Bitmap template = source.Clone(new DrawingRectangle(150, 100, 120, 96), source.PixelFormat);
-        template.Save(path, System.Drawing.Imaging.ImageFormat.Png);
-        return path;
-    }
-
-    private static List<string> CreateAutoMPointRepresentativeFiles(Bitmap source, int count)
-    {
-        List<string> paths = new List<string>();
-        for (int index = 0; index < count; index++)
-        {
-            string path = Path.Combine(
-                Path.GetTempPath(),
-                "OpenVisionLab_auto_mpoint_representative_"
-                + index.ToString(CultureInfo.InvariantCulture)
-                + "_"
-                + Guid.NewGuid().ToString("N")
-                + ".png");
-            source.Save(path, System.Drawing.Imaging.ImageFormat.Png);
-            paths.Add(path);
-        }
-
-        return paths;
-    }
-
-    private static string CreateWorkspaceLoadSmokeImageFile()
-    {
-        string path = Path.Combine(Path.GetTempPath(), "OpenVisionLab_workspace_load_smoke_" + Guid.NewGuid().ToString("N") + ".png");
-        using Bitmap bitmap = new(640, 360);
-        using Graphics graphics = Graphics.FromImage(bitmap);
-        graphics.Clear(DrawingColor.FromArgb(236, 242, 244));
-
-        using System.Drawing.SolidBrush darkBrush = new(DrawingColor.FromArgb(33, 48, 58));
-        using System.Drawing.SolidBrush accentBrush = new(DrawingColor.FromArgb(21, 124, 134));
-        using System.Drawing.Pen gridPen = new(DrawingColor.FromArgb(166, 188, 196), 1);
-        using System.Drawing.Pen accentPen = new(DrawingColor.FromArgb(21, 124, 134), 4);
-        for (int x = 40; x < 600; x += 40)
-        {
-            graphics.DrawLine(gridPen, x, 40, x, 320);
-        }
-
-        for (int y = 40; y < 320; y += 40)
-        {
-            graphics.DrawLine(gridPen, 40, y, 600, y);
-        }
-
-        graphics.FillRectangle(darkBrush, 180, 128, 180, 86);
-        graphics.FillEllipse(accentBrush, 92, 126, 74, 74);
-        graphics.DrawEllipse(accentPen, 438, 116, 104, 104);
-
-        using System.Drawing.Font font = new("Segoe UI", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-        using System.Drawing.SolidBrush textBrush = new(DrawingColor.FromArgb(36, 48, 64));
-        graphics.DrawString("Loaded Main Image", font, textBrush, 44, 20);
-        bitmap.Save(path, System.Drawing.Imaging.ImageFormat.Png);
-        return path;
-    }
-
-    private static Bitmap CreateWorkspaceSeedSmokeBitmap()
-    {
-        Bitmap bitmap = new(512, 384);
-        using Graphics graphics = Graphics.FromImage(bitmap);
-        graphics.Clear(DrawingColor.FromArgb(226, 234, 239));
-
-        using System.Drawing.Pen gridPen = new(DrawingColor.FromArgb(132, 160, 170), 1);
-        for (int x = 32; x < bitmap.Width; x += 32)
-        {
-            graphics.DrawLine(gridPen, x, 32, x, bitmap.Height - 32);
-        }
-
-        for (int y = 32; y < bitmap.Height; y += 32)
-        {
-            graphics.DrawLine(gridPen, 32, y, bitmap.Width - 32, y);
-        }
-
-        using System.Drawing.SolidBrush shapeBrush = new(DrawingColor.FromArgb(49, 65, 72));
-        using System.Drawing.Pen accentPen = new(DrawingColor.FromArgb(0, 167, 179), 4);
-        graphics.FillEllipse(shapeBrush, 84, 138, 58, 58);
-        graphics.FillRectangle(shapeBrush, 198, 132, 140, 72);
-        graphics.DrawEllipse(accentPen, 382, 130, 70, 70);
-
-        using System.Drawing.Font font = new("Segoe UI", 11F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-        using System.Drawing.SolidBrush textBrush = new(DrawingColor.FromArgb(36, 48, 64));
-        graphics.DrawString("OpenVisionLab", font, textBrush, 34, 12);
-        return bitmap;
-    }
-
-    private static Bitmap CreateDockingPanelSmokeBitmap(int index)
-    {
-        Bitmap bitmap = new(512, 384);
-        using Graphics graphics = Graphics.FromImage(bitmap);
-        DrawingColor background = index switch
-        {
-            1 => DrawingColor.FromArgb(235, 242, 245),
-            2 => DrawingColor.FromArgb(231, 239, 232),
-            3 => DrawingColor.FromArgb(243, 236, 230),
-            _ => DrawingColor.FromArgb(235, 236, 244)
-        };
-        graphics.Clear(background);
-
-        using System.Drawing.Pen gridPen = new(DrawingColor.FromArgb(130, 152, 160), 1);
-        for (int x = 28; x < bitmap.Width; x += 36)
-        {
-            graphics.DrawLine(gridPen, x, 26, x, bitmap.Height - 28);
-        }
-
-        for (int y = 28; y < bitmap.Height; y += 36)
-        {
-            graphics.DrawLine(gridPen, 28, y, bitmap.Width - 28, y);
-        }
-
-        DrawingColor accent = index switch
-        {
-            1 => DrawingColor.FromArgb(16, 133, 142),
-            2 => DrawingColor.FromArgb(70, 130, 80),
-            3 => DrawingColor.FromArgb(174, 103, 52),
-            _ => DrawingColor.FromArgb(88, 96, 172)
-        };
-
-        using System.Drawing.SolidBrush accentBrush = new(accent);
-        using System.Drawing.SolidBrush darkBrush = new(DrawingColor.FromArgb(34, 45, 55));
-        using System.Drawing.Pen accentPen = new(accent, 5);
-        graphics.FillRectangle(darkBrush, 76, 116, 130, 92);
-        graphics.DrawEllipse(accentPen, 270, 92, 112, 112);
-        graphics.FillEllipse(accentBrush, 330, 236, 52, 52);
-        graphics.DrawLine(accentPen, 82, 282, 428, 116);
-
-        using System.Drawing.Font titleFont = new("Segoe UI", 26F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-        using System.Drawing.Font captionFont = new("Segoe UI", 11F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-        graphics.DrawString("Dock " + index.ToString(CultureInfo.InvariantCulture), titleFont, darkBrush, 34, 20);
-        graphics.DrawString("Panel split smoke", captionFont, darkBrush, 34, 338);
-        return bitmap;
-    }
-
-    private static Bitmap CreateFeatureMatchingSmokeBitmap()
-    {
-        Bitmap bitmap = new(512, 384);
-        using Graphics graphics = Graphics.FromImage(bitmap);
-        graphics.Clear(DrawingColor.FromArgb(232, 238, 242));
-
-        DrawingRectangle fixture = new(132, 82, 190, 142);
-        using System.Drawing.SolidBrush panelBrush = new(DrawingColor.FromArgb(248, 250, 252));
-        using System.Drawing.SolidBrush darkBrush = new(DrawingColor.FromArgb(24, 35, 49));
-        using System.Drawing.SolidBrush blueBrush = new(DrawingColor.FromArgb(48, 116, 170));
-        using System.Drawing.SolidBrush tealBrush = new(DrawingColor.FromArgb(20, 134, 142));
-        using System.Drawing.Pen darkPen = new(DrawingColor.FromArgb(24, 35, 49), 2);
-        using System.Drawing.Pen bluePen = new(DrawingColor.FromArgb(48, 116, 170), 2);
-        using System.Drawing.Font titleFont = new("Segoe UI", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-        using System.Drawing.Font smallFont = new("Consolas", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-
-        graphics.FillRectangle(panelBrush, fixture);
-        graphics.DrawRectangle(darkPen, fixture);
-        graphics.DrawString("F7", titleFont, darkBrush, fixture.X + 14, fixture.Y + 12);
-        graphics.DrawString("SIFT", smallFont, blueBrush, fixture.X + 118, fixture.Y + 18);
-        graphics.DrawLine(bluePen, fixture.X + 16, fixture.Y + 98, fixture.X + 170, fixture.Y + 30);
-        graphics.DrawEllipse(darkPen, fixture.X + 24, fixture.Y + 74, 34, 34);
-        graphics.FillEllipse(tealBrush, fixture.X + 68, fixture.Y + 70, 18, 18);
-        graphics.FillRectangle(darkBrush, fixture.X + 128, fixture.Y + 78, 32, 26);
-
-        using System.Drawing.Pen gridPen = new(DrawingColor.FromArgb(94, 108, 122), 1);
-        for (int x = fixture.X + 8; x < fixture.Right - 8; x += 18)
-        {
-            graphics.DrawLine(gridPen, x, fixture.Y + 116, x + 8, fixture.Y + 132);
-        }
-
-        Random random = new(17);
-        for (int i = 0; i < 38; i++)
-        {
-            int x = random.Next(fixture.X + 8, fixture.Right - 10);
-            int y = random.Next(fixture.Y + 8, fixture.Bottom - 10);
-            using System.Drawing.SolidBrush dotBrush = new(i % 3 == 0 ? DrawingColor.FromArgb(24, 35, 49) : DrawingColor.FromArgb(48, 116, 170));
-            graphics.FillEllipse(dotBrush, x, y, 3 + (i % 3), 3 + (i % 3));
-        }
-
-        using System.Drawing.SolidBrush textBrush = new(DrawingColor.FromArgb(36, 48, 64));
-        graphics.DrawString("Feature Matching", smallFont, textBrush, 34, 16);
-        return bitmap;
-    }
-
-    private static string CreateFeatureMatchingTemplateFile(Bitmap source)
-    {
-        string path = Path.Combine(Path.GetTempPath(), "OpenVisionLab_feature_matching_smoke_template_" + Guid.NewGuid().ToString("N") + ".png");
-        using Bitmap template = source.Clone(new DrawingRectangle(132, 82, 190, 142), source.PixelFormat);
-        template.Save(path, System.Drawing.Imaging.ImageFormat.Png);
-        return path;
-    }
-
-    private static void TryDeleteFile(string path)
-    {
-        try
-        {
-            if (!string.IsNullOrWhiteSpace(path) && File.Exists(path))
-            {
-                File.Delete(path);
-            }
-        }
-        catch
-        {
-        }
-    }
-
-    private static CaptureResult WithDockingStateFileBackup(Func<CaptureResult> capture)
-    {
-        string uiConfigDirectory = AppPathService.EnsureDirectory("CONFIG", "UI");
-        string[] paths =
-        {
-            Path.Combine(uiConfigDirectory, "LayerDocking.layers"),
-            Path.Combine(uiConfigDirectory, "LayerDocking.layout")
-        };
-        Dictionary<string, byte[]> backups = paths
-            .Where(File.Exists)
-            .ToDictionary(path => path, File.ReadAllBytes, StringComparer.OrdinalIgnoreCase);
-
-        try
-        {
-            return capture();
-        }
-        finally
-        {
-            foreach (string path in paths)
-            {
-                try
-                {
-                    if (backups.TryGetValue(path, out byte[]? bytes) && bytes != null)
-                    {
-                        File.WriteAllBytes(path, bytes);
-                    }
-                    else if (File.Exists(path))
-                    {
-                        File.Delete(path);
-                    }
-                }
-                catch
-                {
-                }
-            }
-        }
-    }
-
     private static CaptureResult CaptureLogPanel(string outputPath)
     {
         LogPanelView view = new();
@@ -35793,7 +35447,7 @@ internal static class Program
         }
         finally
         {
-            view.DataContext = null;
+            view.Dispose();
             viewModel.Dispose();
         }
     }
@@ -35821,7 +35475,7 @@ internal static class Program
         GC.Collect();
         Pump(20);
 
-        int textureTileCount = viewModel.ImageViewer.TextureAreas.Values.Sum(items => items?.Count ?? 0);
+        int textureTileCount = viewModel.TextureTileCount;
         if (textureTileCount < 1 || !viewModel.SaveCurrentImage(savedPath))
         {
             throw new InvalidOperationException(
@@ -36007,7 +35661,7 @@ internal static class Program
                     viewModel.FitImageToView();
                 }
 
-                var viewer = viewModel.ImageViewer;
+                var viewer = view.ImageViewerForTest;
                 dynamic gl = (object)viewer.GetOpenGL();
                 uint textureId = viewer.GenerateOpenGLTexture(width, height, 4);
                 GCHandle uploadHandle = GCHandle.Alloc(upload, GCHandleType.Pinned);
@@ -36252,7 +35906,7 @@ internal static class Program
         }
         finally
         {
-            view.DataContext = null;
+            view.Dispose();
             viewModel.Dispose();
         }
     }
@@ -36999,34 +36653,6 @@ internal static class Program
         return Math.Max(0, observedValues.Max() - baseline);
     }
 
-    private static Bitmap CreateRoiSmokeBitmap()
-    {
-        Bitmap bitmap = new(512, 384);
-        using Graphics graphics = Graphics.FromImage(bitmap);
-        graphics.Clear(DrawingColor.FromArgb(28, 31, 34));
-
-        using System.Drawing.Pen railPen = new(DrawingColor.FromArgb(190, 210, 214), 4);
-        using System.Drawing.Pen tracePen = new(DrawingColor.FromArgb(130, 177, 188), 2);
-        using System.Drawing.SolidBrush padBrush = new(DrawingColor.FromArgb(225, 230, 230));
-        using System.Drawing.SolidBrush darkBrush = new(DrawingColor.FromArgb(50, 62, 68));
-        using System.Drawing.SolidBrush brightBrush = new(DrawingColor.FromArgb(245, 248, 248));
-
-        for (int i = 0; i < 7; i++)
-        {
-            int x = 72 + i * 52;
-            graphics.FillRectangle(padBrush, x, 58, 24, 44);
-            graphics.FillRectangle(darkBrush, x + 5, 68, 14, 24);
-        }
-
-        graphics.DrawLine(railPen, 42, 180, 470, 260);
-        graphics.DrawLine(railPen, 32, 224, 456, 312);
-        graphics.DrawLine(tracePen, 72, 206, 418, 274);
-        graphics.DrawLine(tracePen, 92, 244, 426, 304);
-        graphics.FillEllipse(brightBrush, 318, 190, 24, 24);
-        graphics.FillEllipse(brightBrush, 372, 214, 18, 18);
-        return bitmap;
-    }
-
     private static void EnsureApplication()
     {
         if (Application.Current == null)
@@ -37034,6 +36660,7 @@ internal static class Program
             new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
         }
     }
+
 
     private static void Pump(int iterations)
     {
@@ -40673,36 +40300,18 @@ internal static class Program
 
     private static string GetClipboardTextWithRetry()
     {
-        return RunClipboardActionWithRetry(() => System.Windows.Clipboard.GetText());
+        return SmokeClipboardRetry.Run(() => System.Windows.Clipboard.GetText(), () => Pump(4));
     }
 
     private static void SetClipboardTextWithRetry(string text)
     {
-        RunClipboardActionWithRetry(() =>
-        {
-            System.Windows.Clipboard.SetText(text ?? string.Empty);
-            return true;
-        });
-    }
-
-    private static T RunClipboardActionWithRetry<T>(Func<T> action)
-    {
-        COMException? lastException = null;
-        for (int attempt = 0; attempt < 40; attempt++)
-        {
-            try
+        SmokeClipboardRetry.Run(
+            () =>
             {
-                return action();
-            }
-            catch (COMException ex) when ((uint)ex.ErrorCode == 0x800401D0)
-            {
-                lastException = ex;
-                Pump(4);
-                Thread.Sleep(Math.Min(250, 50 + attempt * 10));
-            }
-        }
-
-        throw lastException ?? new COMException("Clipboard operation failed.");
+                System.Windows.Clipboard.SetText(text ?? string.Empty);
+                return true;
+            },
+            () => Pump(4));
     }
 
     [DllImport("user32.dll")]

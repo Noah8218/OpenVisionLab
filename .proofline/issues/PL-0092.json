@@ -1,0 +1,110 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0092",
+    "aliases": [
+      "2D-034"
+    ],
+    "type": "task",
+    "mode": "simple",
+    "title": "Measure supported image-size memory, timing, and copy baseline",
+    "risk": "medium"
+  },
+  "origin": {
+    "kind": "scheduled-follow-up",
+    "summary": "The current handoff selects 2D-034 as the next independent boundary after the resolved Line/Length/Mean contract; evidence is needed before any diagnostic-retention or size-policy change.",
+    "refs": [
+      "C:/Users/USER/Downloads/OpenVisionLab_2D_tasks.json#2D-034",
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      ".proofline/issues/PL-0091.json"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "2D-034 is complete as a measurement-only baseline: Debug and Release each ran five warm-ups plus thirty measured runs for 1MP, 4512², and 8192² single- and two-layer Mean pipelines; phase timings, private-memory peak/after-run, managed bytes, identity, and estimated layer/cache bytes are recorded without changing production owners or policies."
+  },
+  "objective": {
+    "summary": "Produce a current, reproducible baseline for supported video sizes that separates input allocation, input snapshot/conversion, Runner calculation, result/context clone, and bitmap publish costs, including elapsed P50/P95, private-memory peak and after-run values, managed GC bytes, and estimated layer/cache bytes.",
+    "constraints": [
+      "Reuse the existing VisionRecipeRunner, public Mean tool, BitmapImageConverter, and reliability resource-probe owners; add no production performance policy or new metrology module.",
+      "Measure 1MP, 4512x4512, and 8192x8192 by default; treat 20000x20000 only as an opt-in preflight because allocation may be unsafe.",
+      "Run five warm-ups and thirty measured runs per size and pipeline shape, keep single-layer and two-layer cases distinct, and preserve deterministic success/result checks.",
+      "Write generated inputs, CSV, summaries, and reports only under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev.",
+      "Do not touch Original, release, deploy, hardware, external services, or production owner boundaries during the measurement slice."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The focused Debug and Release measurement runs execute five warm-ups and thirty measured runs for each default size and single/two-layer shape, with deterministic successful Mean results and unchanged output metric identity.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "CSV evidence records condition, size, shape, repetition, elapsed P50/P95 inputs, private-memory peak and after-run values, managed bytes, input/result/cache byte estimates, SDK/source/recipe identity, and hardware/process context; 20000x20000 is explicitly marked preflight-only or skipped with a reason.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "A durable report, stable contract note, current handoff entry, and resolved issue record state that this is a measurement-only baseline, identify the existing owner/call path, and leave WPF rendering, monitor/DPI, low-memory, cancellation, camera, and hardware qualification unverified where not exercised.",
+      "evidence_refs": [
+        "E3"
+      ]
+    }
+  ],
+  "relations": [],
+  "context": [],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d034-debug-20260916-run1\\video-size-memory-baseline.txt; video-size-memory-baseline-runs.csv; video-size-memory-baseline-summary.csv",
+      "observation": "Debug measurement passed all six size/shape scenarios with 5 warm-ups and 30 measured runs each. CSV records input conversion, Runner calculation, context clone, bitmap publish, total P50/P95, private peak/after-run, managed GC bytes, result identity, estimated cache bytes, repository commit, SDK SHA, Recipe SHA, and host context; 20000² was preflight-only.",
+      "observed_at": "2026-09-16T00:00:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d034-release-20260916-run1\\video-size-memory-baseline.txt; video-size-memory-baseline-runs.csv; video-size-memory-baseline-summary.csv",
+      "observation": "Release measurement passed the same six size/shape scenarios with 5 warm-ups and 30 measured runs each. The largest observed private peak was approximately 602 MiB for the 8192² two-layer case; the result metric and SHA identity remained stable across repetitions.",
+      "observed_at": "2026-09-16T00:00:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "review",
+      "location": "docs/reports/OPENVISIONLAB_2D_VIDEO_SIZE_MEMORY_BASELINE_20260916.md; docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md; docs/admin/OPENVISIONLAB_DOCUMENTATION_MAP.md; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "observation": "The report, stable contract, documentation map, and handoff identify the existing Runner/Mean/Result/Bitmap owner path, the measurement-only boundary, the 20000² preflight decision, exact D-drive evidence roots, and unverified WPF/UI/DPI/monitor/cancellation/low-memory/camera/hardware/long-duration limits. The next admitted boundary is 2D-036.",
+      "observed_at": "2026-09-16T00:00:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-16T00:00:00+09:00",
+      "summary": "Close 2D-034 as measurement-only evidence. Keep the existing Runner, Mean, ResultImage, and BitmapImageConverter owners; do not infer a product cap, cache eviction policy, diagnostic reduction, or parallelism rule until a separately scoped boundary uses this baseline.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-16T00:00:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "All 2D-034 criteria have Debug/Release measurement and durable documentation evidence; unexercised UI, low-memory, cancellation, hardware, and long-duration boundaries remain explicitly outside this slice."
+    }
+  ],
+  "created_at": "2026-09-16T00:00:00+09:00",
+  "updated_at": "2026-09-16T00:00:00+09:00"
+}

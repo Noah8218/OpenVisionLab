@@ -1,0 +1,194 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0081",
+    "aliases": [
+      "OPENVISIONLAB-2D023-PUBLIC-FILE-INPUT-BOUNDARY-20260915"
+    ],
+    "type": "task",
+    "mode": "simple",
+    "title": "Audit public file input size and boundary policy",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "scheduled 2D task execution and current-source/package audit",
+    "summary": "2D-023 asks for one consistent root and size boundary across JSON, XML, and artifact inputs. Current source and the exact DEV integration packages were inspected before deciding whether a safe implementation boundary exists.",
+    "refs": [
+      "C:\\Users\\USER\\Downloads\\OpenVisionLab_2D_tasks.json",
+      "docs\\reports\\OPENVISIONLAB_2D_PUBLIC_FILE_INPUT_BOUNDARY_AUDIT_20260915.md",
+      "docs\\contracts\\openvisionlab\\OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md",
+      "docs\\admin\\OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "AGENTS.md"
+    ]
+  },
+  "state": {
+    "status": "blocked",
+    "current_summary": "The existing root and reparse owners are intact and the upstream TCP/review-bundle limits are known, but general Pipeline XML, locator JSON, local integration messages, and generic artifacts have no product-approved common maximum or typed oversized error contract. Runtime behavior must not gain an arbitrary compatibility-breaking limit.",
+    "next_action": "After product approval of per-entry and aggregate ceilings, TCP inheritance/lowering, and typed error mapping, add the smallest owner-level pre-read checks and a focused long-path/Korean/oversized/traversal/reparse contract. Until then, proceed with independent 2D-024 work.",
+    "blocker": "A supported maximum for local Pipeline XML, locator JSON, integration envelopes, and artifacts is not defined; existing limits are heterogeneous (review bundle 5/2 MiB, TCP 4/16 GiB plus frame/path bounds).",
+    "unblock_condition": "Product decision records each local per-entry/aggregate byte ceiling, whether local exchange inherits or lowers TCP defaults, and the stable typed error code/message for oversized input."
+  },
+  "objective": {
+    "summary": "Audit the current public file input owners, prove existing root/reparse behavior and upstream size bounds, and preserve an explicit blocker instead of inventing a new input policy.",
+    "constraints": [
+      "Reuse AppPathService, RecipeWorkspaceService, TwoDIntegrationExchange, VisionPipelineXmlSchemaPolicy, review-bundle inspector, and shared TCP package owners; do not add a duplicate path/security framework.",
+      "Do not modify user files, C:\\Git\\2D\\Original, hardware, or external services; keep test evidence on D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev.",
+      "Do not reopen or reimplement resolved PL-0007 path behavior or rerun a duplicate process/UI campaign.",
+      "Do not commit, push, release, deploy, or perform external communication."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "Current root, relative-path, and reparse owners and their call paths are identified without a competing owner.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "Existing review-bundle and shared TCP size/path bounds are verified from the exact DEV package/source state.",
+      "evidence_refs": [
+        "E3"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "The absence of a common local JSON/XML/message/artifact maximum is recorded as a product blocker; no arbitrary runtime limit is introduced.",
+      "evidence_refs": [
+        "E1",
+        "E4",
+        "E7"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "Focused current-source build and existing root regression contracts pass, while normal integration evidence and remaining long-path/UI boundaries are stated honestly.",
+      "evidence_refs": [
+        "E5",
+        "E6"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0080"
+    }
+  ],
+  "context": [
+    {
+      "kind": "owner-map",
+      "location": "AppPathService and RecipeWorkspaceService own application/Recipe storage containment; TwoDIntegrationExchange owns local transaction path/reparse and message/artifact reads; VisionPipelineXmlSchemaPolicy/SerializeHelper own Pipeline XML schema gate; TwoDIntegrationLocatorRecipeContract owns locator JSON reads; review-bundle inspector and shared TCP package own their separate bounded inputs."
+    },
+    {
+      "kind": "call-path",
+      "location": "Public file -> existing owner -> full-path/reparse or schema/contract validation -> decode/deserialize/compute. The unbounded local paths read bytes/text before any size decision."
+    },
+    {
+      "kind": "public-contract",
+      "location": "Root/traversal/reparse failure remains fail-closed. Size behavior is intentionally not claimed stable for general local XML/JSON/message/artifact inputs until the product chooses ceilings and typed errors."
+    },
+    {
+      "kind": "reading-order",
+      "location": "OPENVISIONLAB_2D_PUBLIC_FILE_INPUT_BOUNDARY_AUDIT_20260915.md -> AppPathService.cs -> RecipeWorkspaceService.cs -> SerializeHelper.cs/VisionPipelineXmlSchemaPolicy.cs -> TwoDIntegrationExchange.cs/TwoDIntegrationLocatorRecipeContract.cs -> review-bundle inspector -> shared TCP models/protocol/docs -> focused contracts."
+    },
+    {
+      "kind": "boundary",
+      "location": "No actual multi-gigabyte user file, explicit Windows long-path integration combination, WPF UI/DPI, hardware, clean release distribution, or Original repository mutation was performed."
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "report",
+      "location": "docs/reports/OPENVISIONLAB_2D_PUBLIC_FILE_INPUT_BOUNDARY_AUDIT_20260915.md",
+      "summary": "Source/package matrix, owner call paths, acceptance comparison, and exact product unblock decision."
+    },
+    {
+      "kind": "evidence-directory",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d023-file-input-20260915",
+      "summary": "Source/upstream audit, package hash/probe, Debug/Release builds, and AppPath/PL-0007 regression outputs."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source-inspection",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d023-file-input-20260915/source-and-upstream-audit.txt; src/OpenVisionLab/Core/Integration/TwoDIntegrationExchange.cs; src/OpenVisionLab/Core/Integration/TwoDIntegrationLocatorRecipeContract.cs; src/OpenVisionLab/Common/Persistence/SerializeHelper.cs; src/OpenVisionLab/Common/Persistence/VisionPipelineXmlSchemaPolicy.cs",
+      "observation": "Current source confirms transaction-relative full-path and reparse checks, while local ReadMessage, locator JSON reads, and Pipeline XML file loads use File.ReadAllBytes/File.ReadAllText without a common maximum. The review-bundle owner is the separate bounded input path.",
+      "observed_at": "2026-09-15T20:57:52+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "review",
+      "location": "docs/reports/OPENVISIONLAB_APPPATH_BOUNDARY_REVIEW_20260910.md; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/pl0007_current_20260825_r4/recipe_storage_path_contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d023-file-input-20260915/app-path/stdout.log; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d023-file-input-20260915/recipe-storage/recipe_storage_path_contract.txt",
+      "observation": "The existing AppPath contract passed 8/8 and the existing PL-0007 Recipe storage path contract passed on current Debug and Release smoke binaries; these owners cover root/traversal/name boundary behavior without introducing a duplicate path owner.",
+      "observed_at": "2026-09-15T20:59:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "source-inspection",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d023-file-input-20260915/source-and-upstream-audit.txt; third_party/OpenVisionLabIntegrationContracts/README.md; C:/Git/Shared/OpenVisionLab-Integration-Contracts/src/OpenVisionLab.Integration.Transport.Tcp/TcpIntegrationModels.cs; C:/Git/Shared/OpenVisionLab-Integration-Contracts/src/OpenVisionLab.Integration.Transport.Tcp/TcpIntegrationProtocol.cs",
+      "observation": "Exact shared commit f4743f3307d20a963b2197f2019713320b9859b and alpha.3 hashes were checked. TCP defaults are 1,024 files, 4 GiB per file, 16 GiB per transaction, 1 MiB control frame, and 1 KiB UTF-8 relative path; review-bundle limits are 5 MiB pipeline and 2 MiB manifest.",
+      "observed_at": "2026-09-15T20:57:52+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "experiment",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d023-file-input-20260915/source-and-upstream-audit.txt",
+      "observation": "Reflection probe of the exact Contracts alpha.3 validator accepted generic artifact ByteLength values 4 GiB, 16 GiB, and Int64.MaxValue without a max-size issue; this is a validator-policy probe, not a claim that a multi-gigabyte file was created.",
+      "observed_at": "2026-09-15T20:57:52+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "test",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d023-file-input-20260915/build-debug.log; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d023-file-input-20260915/build-release.log; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d023-file-input-20260915/app-path/stdout.log; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d023-file-input-20260915/app-path-release/stdout.log; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d023-file-input-20260915/recipe-storage/recipe_storage_path_contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d023-file-input-20260915/recipe-storage-release/recipe_storage_path_contract.txt",
+      "observation": "VisionRecipeRunnerSmoke Debug and Release builds completed with zero errors (existing nullable warnings remain). AppPath boundary passed 8/8 in both configurations; PL-0007 Recipe storage path regression passed in both configurations.",
+      "observed_at": "2026-09-15T20:59:00+09:00"
+    },
+    {
+      "id": "E6",
+      "kind": "runtime-test",
+      "location": "docs/reports/OPENVISIONLAB_OVL02_TWO_D_INTEGRATION_IDENTITY_20260907.md",
+      "observation": "Existing OVL-02 evidence covers normal 2D Handoff→Acknowledgement→Run→Result and TCP receive-without-auto-ack/run. This cycle did not duplicate that completed normal integration campaign.",
+      "observed_at": "2026-09-15T21:00:00+09:00"
+    },
+    {
+      "id": "E7",
+      "kind": "decision",
+      "location": "docs/reports/OPENVISIONLAB_2D_PUBLIC_FILE_INPUT_BOUNDARY_AUDIT_20260915.md; docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "observation": "The boundary is recorded as blocked rather than changed: no arbitrary local size limit or security framework was introduced, and the handoff advances the sole automation to independent 2D-024 work while naming the exact product unblock decision.",
+      "observed_at": "2026-09-15T21:01:45+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-15T21:01:45+09:00",
+      "summary": "Keep 2D-023 blocked because the requested common local size policy and typed oversized error mapping are product compatibility decisions, not safe autonomous defaults. Preserve existing path/reparse owners and move the scheduler to independent 2D-024 work.",
+      "evidence_refs": [
+        "E1",
+        "E3",
+        "E4",
+        "E7"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-15T21:01:45+09:00",
+      "from": "doing",
+      "to": "blocked",
+      "summary": "2D-023 source/package audit and focused regressions completed; implementation is blocked by the missing product-approved input size contract.",
+      "evidence_refs": [
+        "E2",
+        "E5",
+        "E7"
+      ]
+    }
+  ],
+  "created_at": "2026-09-15T21:01:45+09:00",
+  "updated_at": "2026-09-15T21:01:45+09:00"
+}

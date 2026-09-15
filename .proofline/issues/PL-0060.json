@@ -1,0 +1,148 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0060",
+    "aliases": [
+      "OPENVISIONLAB-2D001-ACCEPTANCE-FINITE-20260915"
+    ],
+    "type": "bug",
+    "mode": "simple",
+    "title": "Fail closed on nonfinite acceptance metrics and limits",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "explicit user request and current owner-map review",
+    "summary": "The user authorized the next 2D feature slice. The pinned SDK acceptance evaluator compares NaN and infinity with ordinary bounds, so a successful tool with a nonfinite active metric could be marked accepted.",
+    "refs": [
+      "C:\\Users\\USER\\Downloads\\OpenVisionLab_2D_Audit_and_Plan.md",
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "AGENTS.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "The existing VisionPipelineExecutionService acceptance boundary now rejects nonfinite active metrics, metric limits, and elapsed limits while preserving finite equality, missing-metric, disabled-acceptance, and quality-NG semantics. The pinned SDK DLL set was not replaced.",
+    "next_action": null
+  },
+  "problem": {
+    "claims": [
+      {
+        "id": "P1",
+        "state": "confirmed",
+        "text": "With the pinned SDK evaluator, an active NaN or infinity metric can pass because both ordinary range comparisons evaluate false.",
+        "evidence_refs": [
+          "E2"
+        ]
+      }
+    ],
+    "impact": "Meaningless measurements could be exposed as an acceptance pass, weakening inspection evidence and downstream result decisions."
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "When acceptance is active, NaN/positive infinity/negative infinity metric values and active metric or elapsed limits never return Passed and provide a finite-value diagnostic.",
+      "evidence_refs": [
+        "E1"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "Finite lower/upper equality remains accepted; missing metrics remain rejected; disabled acceptance ignores inactive nonfinite values; and ExpectedSuccess=false quality NG remains distinct from tool execution success.",
+      "evidence_refs": [
+        "E1"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "The change stays at the application call boundary and does not replace the pinned SDK DLLs or alter the SDK manifest provenance.",
+      "evidence_refs": [
+        "E2"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "VisionRecipeRunnerSmoke and the full OpenVisionLab solution build cleanly in Debug and Release, and existing cancellation, failure-lifetime, and Pipeline Review execution contracts remain passing.",
+      "evidence_refs": [
+        "E3"
+      ]
+    },
+    {
+      "id": "C5",
+      "text": "Completion evidence names the owner, call path, mutable-state/result writer, lifetime owner, public contract, shortest reading order, checks, and the remaining UI/SDK/runtime boundary.",
+      "evidence_refs": [
+        "E4"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0059"
+    }
+  ],
+  "context": [
+    {
+      "kind": "owner-map",
+      "location": "VisionPipelineExecutionService.EvaluateAcceptance -> VisionPipelineStepResult.AcceptancePassed -> VisionRecipeRunner/VisionRecipeRunResult"
+    },
+    {
+      "kind": "source",
+      "location": "src/OpenVisionLab/Core/Pipeline/Execution/VisionPipelineExecutionService.cs; tools/VisionRecipeRunnerSmoke/PipelineAcceptanceFiniteContract.cs; dll/OpenVisionLab-Vision-SDK/sdk-manifest.json"
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "evidence-root",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d001-acceptance-finite-20260915",
+      "summary": "Debug/Release runner and solution build logs, finite acceptance reports, and cancellation/regression reports."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d001-acceptance-finite-20260915\\debug-contract\\pipeline-acceptance-finite-contract.txt; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d001-acceptance-finite-20260915\\release-contract\\pipeline-acceptance-finite-contract.txt",
+      "observation": "The focused finite-acceptance contract completed in Debug and Release with exit code 0 and passed=10, failed=0. It covered NaN, both infinities, nonfinite minimum/maximum/elapsed limits, finite equality, missing metric, disabled acceptance, and ExpectedSuccess=false quality NG.",
+      "observed_at": "2026-09-15T10:40:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "review",
+      "location": "dll\\OpenVisionLab-Vision-SDK\\sdk-manifest.json; C:\\Git\\OpenVisionLab-Vision-SDK\\src\\OpenVisionLab.Vision2D\\OpenCV\\Pipeline\\VisionPipelineAcceptanceEvaluator.cs at pinned commit f4f0c0dc8bee5b7a849ae6eb66a5307bed4b8a6b; src\\OpenVisionLab\\Core\\Pipeline\\Execution\\VisionPipelineExecutionService.cs:479-531",
+      "observation": "The pinned SDK evaluator source compares active metric values and limits without finite checks. Dev now guards that single application acceptance boundary before delegating to the pinned evaluator. The separate upstream SDK checkout has later finite-guard source but also user changes, so no DLL or manifest synchronization was performed.",
+      "observed_at": "2026-09-15T10:40:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "build",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d001-acceptance-finite-20260915\\build-debug.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d001-acceptance-finite-20260915\\build-release.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d001-acceptance-finite-20260915\\solution-debug\\build.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d001-acceptance-finite-20260915\\solution-release\\build.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d001-acceptance-finite-20260915\\run-debug-cancellation.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d001-acceptance-finite-20260915\\run-release-cancellation.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d001-acceptance-finite-20260915\\run-debug-lifetime.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d001-acceptance-finite-20260915\\run-release-lifetime.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d001-acceptance-finite-20260915\\run-debug-review.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d001-acceptance-finite-20260915\\run-release-review.log",
+      "observation": "Runner Debug/Release and full solution Debug/Release builds completed with exit code 0, warnings 0, and errors 0. The existing cancellation contract passed 5/0 in both configurations, failure-lifetime passed 7/0, and Pipeline Review execution exited 0 in both configurations.",
+      "observed_at": "2026-09-15T10:40:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "review",
+      "location": "src\\OpenVisionLab\\Core\\Pipeline\\Execution\\VisionPipelineExecutionService.cs; src\\OpenVisionLab\\Core\\Pipeline\\Execution\\VisionRecipeRunner.cs; tools\\VisionRecipeRunnerSmoke\\PipelineAcceptanceFiniteContract.cs",
+      "observation": "Current owner is VisionPipelineExecutionService; callers are OpenVisionPipelineReviewExecutionController/VisionRecipeRunner. Mutable acceptance state is written into VisionPipelineStepResult.AcceptancePassed and AcceptanceMessage, then projected by VisionRecipeRunner into VisionRecipeRunResult. Run/result image disposal remains with the existing service/runner lifetime. Shortest reading order is EvaluateAcceptance, VisionRecipeRunner.CreateResult/CreateStepSummaries, then the focused contract. No WPF View or ViewModel changed; actual desktop UI cancellation/acceptance interaction, alternate themes/DPI/input, field hardware, and SDK portability remain unverified.",
+      "observed_at": "2026-09-15T10:40:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-15T10:40:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "C1~C5 are satisfied by the app-boundary guard, synthetic finite-value contract, Debug/Release builds, and regression contracts. Close this bounded 2D-001 app protection slice; SDK source/DLL synchronization remains a separately authorized boundary.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ]
+    }
+  ],
+  "created_at": "2026-09-15T10:40:00+09:00",
+  "updated_at": "2026-09-15T10:40:00+09:00"
+}

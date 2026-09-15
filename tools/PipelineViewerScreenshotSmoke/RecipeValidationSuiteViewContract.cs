@@ -70,7 +70,7 @@ internal static class RecipeValidationSuiteViewContract
             "Recipe",
             "Views",
             "OpenVisionRecipeValidationSuiteView.xaml"));
-        string codeBehind = File.ReadAllText(Path.Combine(
+        string codeBehindPath = Path.Combine(
             repositoryRoot,
             "src",
             "OpenVisionLab",
@@ -79,7 +79,7 @@ internal static class RecipeValidationSuiteViewContract
             "Wpf",
             "Recipe",
             "Views",
-            "OpenVisionRecipeValidationSuiteView.xaml.cs"));
+            "OpenVisionRecipeValidationSuiteView.xaml.cs");
 
         List<string> passed = new List<string>();
         List<string> failed = new List<string>();
@@ -106,10 +106,9 @@ internal static class RecipeValidationSuiteViewContract
             passed,
             failed);
         Check(
-            "Extracted view keeps code-behind presentation-only",
-            codeBehind.Contains("public partial class OpenVisionRecipeValidationSuiteView : UserControl", StringComparison.Ordinal)
-                && codeBehind.Contains("InitializeComponent();", StringComparison.Ordinal)
-                && codeBehind.Split('\n').Count(line => !string.IsNullOrWhiteSpace(line)) <= 12,
+            "Extracted view uses compiled XAML without redundant manual code-behind",
+            view.Contains("<UserControl x:Class=\"OpenVisionLab.OpenVisionRecipeValidationSuiteView\"", StringComparison.Ordinal)
+                && !File.Exists(codeBehindPath),
             passed,
             failed);
 

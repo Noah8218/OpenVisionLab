@@ -20,7 +20,7 @@ namespace OpenVisionLab
             Mat sourceImage,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            return await RunAsync(recipeXmlPath, sourceImage, DefaultInputLayer, DefaultStepTimeoutMilliseconds, cancellationToken);
+            return await RunAsync(recipeXmlPath, sourceImage, DefaultInputLayer, DefaultStepTimeoutMilliseconds, cancellationToken).ConfigureAwait(false);
         }
 
         public async Task<VisionRecipeRunResult> RunAsync(
@@ -50,21 +50,29 @@ namespace OpenVisionLab
                 throw new ArgumentOutOfRangeException(nameof(stepTimeoutMilliseconds), "Step timeout must be greater than 0.");
             }
 
-            if (!SerializeHelper.TryLoadFromXmlFile(recipeXmlPath, out VisionPipeline pipeline) || pipeline == null)
+            byte[] originalXmlBytes = File.ReadAllBytes(recipeXmlPath);
+            if (!SerializeHelper.TryLoadFromXmlBytes(
+                    originalXmlBytes,
+                    out VisionPipeline pipeline,
+                    out Exception loadException)
+                || pipeline == null)
             {
+                if (loadException is VisionPipelineXmlSchemaException schemaException)
+                {
+                    throw schemaException;
+                }
+
                 throw new InvalidOperationException($"Recipe XML could not be loaded: {recipeXmlPath}");
             }
 
-            byte[] originalXmlBytes = File.ReadAllBytes(recipeXmlPath);
-            string originalXmlText = File.ReadAllText(recipeXmlPath);
             return await RunAsync(
                 pipeline,
                 sourceImage,
                 inputLayerName,
                 stepTimeoutMilliseconds,
                 cancellationToken,
-                originalXmlText,
-                originalXmlBytes);
+                null,
+                originalXmlBytes).ConfigureAwait(false);
         }
 
         public async Task<VisionRecipeRunResult> RunAsync(
@@ -72,7 +80,7 @@ namespace OpenVisionLab
             Mat sourceImage,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            return await RunAsync(pipeline, sourceImage, DefaultInputLayer, DefaultStepTimeoutMilliseconds, cancellationToken);
+            return await RunAsync(pipeline, sourceImage, DefaultInputLayer, DefaultStepTimeoutMilliseconds, cancellationToken).ConfigureAwait(false);
         }
 
         public async Task<VisionRecipeRunResult> RunAsync(
@@ -89,7 +97,7 @@ namespace OpenVisionLab
                 stepTimeoutMilliseconds,
                 cancellationToken,
                 null,
-                null);
+                null).ConfigureAwait(false);
         }
 
         private async Task<VisionRecipeRunResult> RunAsync(
@@ -121,6 +129,14 @@ namespace OpenVisionLab
                 pipeline,
                 originalXmlText,
                 originalXmlBytes);
+            VisionPipelineValidationResult validation = VisionPipelineValidator.Validate(
+                executionPlan.EffectivePipeline,
+                new[] { sourceLayer });
+            if (!validation.Success)
+            {
+                throw new VisionPipelineValidationException(validation);
+            }
+
             List<string> normalizationMessages = executionPlan.NormalizationChanges
                 .Select(change => change.Message)
                 .Where(message => !string.IsNullOrWhiteSpace(message))
@@ -139,7 +155,7 @@ namespace OpenVisionLab
                         stepTimeoutMilliseconds,
                         cancellationToken,
                         null,
-                        executionPlan.NormalizationChanges);
+                        executionPlan.NormalizationChanges).ConfigureAwait(false);
 
                     return CreateResult(executionPlan, context, runResult, normalizationMessages);
                 }
@@ -156,7 +172,9 @@ namespace OpenVisionLab
             VisionPipelineRunResult runResult,
             IEnumerable<string> normalizationMessages)
         {
-            List<VisionRecipeStepRunSummary> steps = CreateStepSummaries(runResult);
+            List<VisionRecipeStepRunSummary> steps = CreateStepSummaries(
+                executionPlan?.EffectivePipeline,
+                runResult);
             VisionRecipeStepRunSummary lastOutputStep = steps
                 .LastOrDefault(step => step.HasResultImage && !string.IsNullOrWhiteSpace(step.OutputLayer));
 
@@ -195,15 +213,23 @@ namespace OpenVisionLab
             };
         }
 
-        private static List<VisionRecipeStepRunSummary> CreateStepSummaries(VisionPipelineRunResult runResult)
+        private static List<VisionRecipeStepRunSummary> CreateStepSummaries(
+            VisionPipeline pipeline,
+            VisionPipelineRunResult runResult)
         {
             List<VisionPipelineStepResult> stepResults = runResult?.StepResults ?? new List<VisionPipelineStepResult>();
             List<VisionRecipeStepRunSummary> summaries = new List<VisionRecipeStepRunSummary>();
-            for (int i = 0; i < stepResults.Count; i++)
+            IReadOnlyList<VisionPipelineStepResultSummary> resultSummaries =
+                VisionPipelineResultSummaryService.CreateStepSummaries(pipeline, runResult);
+            for (int i = 0; i < resultSummaries.Count; i++)
             {
-                VisionPipelineStepResult stepResult = stepResults[i];
-                VisionPipelineStep step = stepResult?.Step;
-                string resolvedMessage = VisionPipelineResultSummaryService.ResolveMessage(stepResult);
+                VisionPipelineStepResultSummary resultSummary = resultSummaries[i];
+                VisionPipelineStepResult stepResult = i < stepResults.Count
+                    && ReferenceEquals(stepResults[i]?.Step, pipeline?.Steps?.ElementAtOrDefault(i))
+                    ? stepResults[i]
+                    : stepResults.FirstOrDefault(result => ReferenceEquals(result?.Step, pipeline?.Steps?.ElementAtOrDefault(i)));
+                VisionPipelineStep step = pipeline?.Steps?.ElementAtOrDefault(i) ?? stepResult?.Step;
+                string resolvedMessage = resultSummary.Message;
                 List<VisionRecipeOverlaySummary> overlays = CreateOverlaySummaries(stepResult?.ToolResult?.Overlays);
                 Dictionary<string, double> metrics = VisionPipelineMetricEnrichmentService.CreateEnrichedMetrics(
                     stepResult?.ToolResult?.Metrics,
@@ -217,19 +243,22 @@ namespace OpenVisionLab
                     Enabled = step?.Enabled == true,
                     InputLayer = step?.InputLayer ?? string.Empty,
                     OutputLayer = step?.OutputLayer ?? string.Empty,
-                    Status = VisionPipelineResultSummaryService.ResolveStatus(stepResult),
-                    ToolSuccess = stepResult?.ToolResult?.Success == true,
-                    Success = VisionPipelineResultSummaryService.IsPassed(stepResult),
-                    Skipped = stepResult?.Skipped == true,
+                    Status = resultSummary.Status,
+                    ToolSuccess = resultSummary.IsToolError == false && stepResult?.ToolResult?.Success == true,
+                    Success = resultSummary.Success,
+                    Skipped = resultSummary.Skipped,
+                    Executed = resultSummary.Executed,
+                    ExecutionState = resultSummary.ExecutionState,
+                    AcceptanceEvaluated = resultSummary.Executed && step?.UseAcceptance == true,
                     AcceptancePassed = stepResult?.AcceptancePassed == true,
-                    AcceptanceMessage = stepResult?.AcceptanceMessage ?? string.Empty,
-                    ElapsedMilliseconds = stepResult?.ToolResult?.Elapsed.TotalMilliseconds ?? 0d,
+                    AcceptanceMessage = stepResult?.AcceptanceMessage ?? resultSummary.AcceptanceMessage,
+                    ElapsedMilliseconds = resultSummary.ElapsedMilliseconds,
                     Message = resolvedMessage,
-                    ErrorCode = stepResult?.ToolResult?.ErrorCodeValue ?? 0,
-                    ErrorName = stepResult?.ToolResult?.ErrorName ?? VisionToolErrorCode.None.ToString(),
-                    ResultStatus = stepResult?.ToolResult?.ResultStatusName ?? string.Empty,
-                    DiagnosticHint = VisionPipelineStepDiagnosticService.ResolveDiagnosticHint(stepResult, resolvedMessage),
-                    SuggestedFix = VisionPipelineStepDiagnosticService.ResolveSuggestedFix(stepResult, resolvedMessage),
+                    ErrorCode = resultSummary.ErrorCode,
+                    ErrorName = resultSummary.ErrorName,
+                    ResultStatus = resultSummary.ResultStatus,
+                    DiagnosticHint = resultSummary.DiagnosticHint,
+                    SuggestedFix = resultSummary.SuggestedFix,
                     HasResultImage = stepResult?.ToolResult?.ResultImage != null
                         && !stepResult.ToolResult.ResultImage.Empty(),
                     ResultImageWidth = stepResult?.ToolResult?.ResultImage != null
@@ -244,7 +273,7 @@ namespace OpenVisionLab
                         && !stepResult.ToolResult.ResultImage.Empty()
                             ? stepResult.ToolResult.ResultImage.Channels()
                             : 0,
-                    OverlayCount = stepResult?.ToolResult?.Overlays?.Count ?? 0,
+                    OverlayCount = resultSummary.OverlayCount,
                     MetricCount = metrics.Count,
                     ParameterCount = step?.Parameters?.Count ?? 0,
                     Parameters = new Dictionary<string, string>(
@@ -350,12 +379,12 @@ namespace OpenVisionLab
         internal byte[] OriginalPipelineXmlBytes { get; set; }
         internal byte[] EffectivePipelineXmlBytes { get; set; }
         public int StepCount => Steps?.Count ?? 0;
-        public int PassedStepCount => Steps?.Count(step => step.Success && !step.Skipped) ?? 0;
-        public int FailedStepCount => Steps?.Count(step => !step.Success && !step.Skipped) ?? 0;
+        public int PassedStepCount => Steps?.Count(step => step.Executed && step.Success) ?? 0;
+        public int FailedStepCount => Steps?.Count(step => step.Executed && !step.Success) ?? 0;
         public int SkippedStepCount => Steps?.Count(step => step.Skipped) ?? 0;
-        public VisionRecipeStepRunSummary FirstFailedStep => Steps?.FirstOrDefault(step => !step.Success && !step.Skipped);
+        public VisionRecipeStepRunSummary FirstFailedStep => Steps?.FirstOrDefault(step => step.Executed && !step.Success);
         public bool HasFailedStep => FirstFailedStep != null;
-        public VisionRecipeStepRunSummary FinalStepSummary => Steps?.LastOrDefault(step => !step.Skipped);
+        public VisionRecipeStepRunSummary FinalStepSummary => Steps?.LastOrDefault(step => step.Executed);
         public int FirstFailedStepIndex => FirstFailedStep?.Index ?? 0;
         public string FirstFailedStepName => FirstFailedStep?.Name ?? string.Empty;
         public int FirstFailedErrorCode => FirstFailedStep?.ErrorCode ?? 0;
@@ -490,6 +519,9 @@ namespace OpenVisionLab
         public bool ToolSuccess { get; set; }
         public bool Success { get; set; }
         public bool Skipped { get; set; }
+        public bool Executed { get; set; } = true;
+        public string ExecutionState { get; set; } = string.Empty;
+        public bool AcceptanceEvaluated { get; set; }
         public bool AcceptancePassed { get; set; }
         public string AcceptanceMessage { get; set; } = string.Empty;
         public double ElapsedMilliseconds { get; set; }

@@ -5,33 +5,72 @@ OpenVisionLab의 사용자-visible 변경과 release evidence를 짧게 추적�
 
 ## Unreleased
 
+## 2.2.0-dev.3 - 2026-09-16
+
+### Added
+
+- Evidence-constrained locator teaching, operator review-decision gating, and a
+  correlated 2D handoff path were added without making LLM support a runtime
+  prerequisite.
+- External 2D image-buffer/projection consumer samples and deterministic
+  cross-process evidence paths were added for bounded integration review.
+
+### Changed
+
+- Pipeline Review, Recipe switching, N-image verification, docking, Tool
+  interaction, and workspace restoration were hardened for clearer and more
+  stable operator workflows.
+- Pipeline storage/recovery and original/effective execution provenance now
+  fail closed and preserve reusable run evidence.
+
+### Fixed
+
+- Image/SDK Tool ownership, bitmap row copying, OpenGL cleanup, viewer
+  coordinates, and review reopen/startup performance were corrected within the
+  recorded Dev verification scopes.
+- Unused or forbidden external DLLs were removed and retained dependency NOTICE
+  coverage is enforced by the candidate gate.
+
+These Dev changes are not a stable release, publication, deployment, or
+commercial-GA claim. Their exact scope and remaining gates are in the current
+handoff and dated reports.
+
+## 2.2.0-dev.2 - 2026-09-10
+
+### Changed
+
+- 정량 folder audit를 기준으로 `OpenVisionLab.Docking.Controls`의 계약,
+  모델, document, workspace, guide, layer-docking, converter, WPF View 파일을
+  책임별 하위 폴더로 정리했습니다.
+- namespace, public docking contract, XAML binding/resource URI, Recipe/XML,
+  explicit Preview/Run 동작은 유지했습니다. smoke harness와 `Common`은 경로
+  계약을 확인한 뒤 후속 검토 대상으로 남겼습니다.
+
+### Verification
+
+- C# 844개, XAML 60개, partial 110개, project cycle 0의 source audit와
+  root-class 후보 3개→2개 inventory를 실행했습니다.
+- `OpenVisionLab.sln`과 `VisionRecipeRunnerSmoke` Debug/Release 빌드가
+  warnings 0/errors 0으로 통과했고, readiness와 ImageCompare/namespace
+  focused contract가 양 구성에서 통과했습니다. desktop theme/DPI/장시간
+  runtime qualification은 별도입니다.
+
 ## 2.2.0-dev.1 - 2026-09-09
 
 ### Highlights
 
-- Aligns the application, offline manual, and TCP integration identity surfaces to one candidate version.
-- Promotes the verified ImageCanvas, Image Compare, Recipe execution and validation, Shell, PropertyGrid, Learn, Pipeline Review, and namespace ownership boundaries while preserving Recipe/XML and explicit Preview/Run contracts.
+- Dev 검증 기준을 `2.2.0-dev.1`로 정렬하고 애플리케이션·오프라인 매뉴얼·
+  TCP integration identity가 같은 후보 버전을 사용하도록 했습니다.
+- ImageCanvas, Image Compare, Recipe 실행·검증, Shell, PropertyGrid, Learn,
+  Pipeline Review, and namespace ownership boundaries를 기존 Recipe/XML 및
+  명시적 Preview/Run 계약 안에서 연결했습니다.
 
 ### Verification
 
-- Dev Debug/Release solution builds, readiness, structural audit, and focused contract runners passed.
-- This candidate is not a stable release, tag, deployment, installer, or commercial-GA claim.
-
-## 2.2.0-dev - 2026-09-01
-
-### Added
-
-- Added authenticated TCP exchange for immutable 2D integration
-  transactions, with explicit acknowledgement and gated result publication.
-- Added runtime build identity and shell controls for the cross-process
-  integration workflow.
-
-### Compatibility
-
-- This is a development candidate; the fixed local packages are not a public
-  release and two-PC qualification remains pending.
-
-- No user-visible changes after the `2.1.0-rc.1` candidate.
+- Clean Dev snapshot에서 `OpenVisionLab.sln` Debug/Release 빌드와 readiness,
+  focused structural contracts를 실행합니다.
+- 이 후보는 stable release, tag, deployment, installer 또는 commercial-GA를
+  의미하지 않습니다.
 
 ## 2.1.0-rc.1 - 2026-08-05
 

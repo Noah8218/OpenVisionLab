@@ -2,6 +2,11 @@
 
 Root path: `C:\Git\OpenVisionLab_Dev`
 
+For the current `C:\Git\2D\Dev` checkout, use
+`OPENVISIONLAB_ROOT_LAYOUT_20260910.md` for the verified junction targets and
+the hidden local-mount policy. This historical map remains the ownership
+reference for the source and generated-area split.
+
 ## Root-level artifacts
 
 - `AGENTS.md`
@@ -19,7 +24,7 @@ Current high-level ownership layout is:
 
 - `src/OpenVisionLab/`
   Main WPF application project root. It owns `OpenVisionLab.csproj`,
-  `Program.cs`, `App.config`, `log4net.config`, `lens.ico`, and the application
+  `Program.cs`, `log4net.config`, `lens.ico`, and the application
   source trees listed below.
 - `src/OpenVisionLab/App/Bootstrap/`
   App boot sequence, exception policy, and single-instance coordination.
@@ -78,8 +83,8 @@ Current high-level ownership layout is:
 
 - `docs/admin/archive/CODEX_RECOVERY_20260703.md`
   Recovery notes and historical cleanup context.
-- `docs/admin/NEXT_CODEX_PROMPT.md`
-  Next-turn summary for continuation.
+- `docs/README.md`
+  Current documentation entrypoint and continuation route.
 - `docs/admin/ROOT_ARTIFACT_MAP_20260724.md`
   This map.
 - `docs/admin/OPENVISIONLAB_SOURCE_STRUCTURE_REFACTOR_DESIGN_20260724.md`

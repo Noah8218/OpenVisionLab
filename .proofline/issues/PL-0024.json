@@ -1,0 +1,230 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0024",
+    "aliases": [],
+    "type": "task",
+    "mode": "composite",
+    "title": "Remove direct WPF Clipboard access from RecipeCommandSurface",
+    "risk": "medium"
+  },
+  "origin": {
+    "kind": "explicit user request to continue RecipeCommandSurface refactoring",
+    "summary": "The user asked to continue RecipeCommandSurface refactoring until the remaining proven responsibilities are complete. A source audit found four copy handlers and one paste handler directly calling System.Windows.Clipboard inside the command surface.",
+    "refs": [
+      "current user request",
+      "PL-0023",
+      "AGENTS.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "PL-0024 resolved: WPF Clipboard access was moved from RecipeCommandSurface to existing Shell composition callbacks, focused contracts and Debug builds passed, and the final owner/MVVM/command-binding/partial/folder/navigation audit is recorded. The remaining broad Surface regions require a new proven boundary before reopening."
+  },
+  "objective": {
+    "summary": "Move the external WPF Clipboard access out of RecipeCommandSurface while preserving copy/paste commands, status/error text, XAML names, and Shell lifetime.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev; keep C:\\Git\\2D\\Original read-only.",
+      "Do not reopen or repeat PL-0022/PL-0023 dispatch or dead-code cleanup.",
+      "Keep RecipeCommandSurface responsible for text composition, command CanExecute, and status projection; OpenVisionShellHostView owns the WPF Clipboard callback implementation.",
+      "Do not add an interface, manager, factory, provider, event bus, wrapper, or manual partial.",
+      "Preserve all XAML command/property names, copy/paste behavior, exception-to-status behavior, Recipe/XML behavior, and shutdown semantics.",
+      "Do not wait for optional user input or unavailable WPF runtime matrices; record UI limits as unverified.",
+      "Store generated evidence under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\recipe-command-surface-clipboard-boundary-20260912.",
+      "Do not commit, push, tag, release, deploy, or modify Original from this refactoring slice."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The current and intended Clipboard owner, caller, dependency direction, mutable-state writer, lifetime owner, XAML contract, and shortest reading route are documented from source.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E4"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "RecipeCommandSurface contains no direct System.Windows.Clipboard calls; Shell owns the actual WPF Clipboard callback while Surface retains command/status behavior.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Focused injected callback copy/paste contracts and the required Debug build pass; actual desktop clipboard, WPF theme/DPI/monitor/input, hardware, and long-running native limits are explicit.",
+      "evidence_refs": [
+        "E3",
+        "E4"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "Handoff and codebase navigation record the new boundary, preserved public/XAML contracts, first-contributor effect, changed files, and remaining RecipeCommandSurface debt.",
+      "evidence_refs": [
+        "E4"
+      ]
+    }
+  ],
+  "milestones": [
+    {
+      "id": "M1",
+      "summary": "Audit direct Clipboard calls and prove the smallest external-system boundary.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1",
+        "C2"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M2",
+      "summary": "Route Clipboard I/O through existing Shell composition callbacks without adding an abstraction layer.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1",
+        "C2"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M3",
+      "summary": "Run focused callback copy/paste contracts and Debug builds.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C3"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M4",
+      "summary": "Complete owner, MVVM, command/binding, partial/folder, navigation, and first-contributor audit.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1",
+        "C3",
+        "C4"
+      ],
+      "issue_refs": []
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0023"
+    }
+  ],
+  "context": [
+    {
+      "kind": "source",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/Recipe/CommandSurface/RecipeCommandSurface.cs"
+    },
+    {
+      "kind": "composition-owner",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/OpenVisionShellHostView.xaml.cs"
+    },
+    {
+      "kind": "contract-project",
+      "location": "tools/VisionRecipeRunnerSmoke"
+    },
+    {
+      "kind": "live-status",
+      "location": "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md"
+    },
+    {
+      "kind": "owner-registry",
+      "location": "docs/admin/CODEBASE_STRUCTURE.md"
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "evidence-root",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\recipe-command-surface-clipboard-boundary-20260912",
+      "summary": "Focused evidence for the RecipeCommandSurface WPF Clipboard boundary."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\recipe-command-surface-clipboard-boundary-20260912\\m1-audit",
+      "observation": "The source audit records five direct System.Windows.Clipboard calls in RecipeCommandSurface: four SetText handlers and one ContainsText/GetText paste handler. The owner map records the before/after call path, mutable-state writer, Shell composition/lifetime owner, protected XAML command/status/XML contract, and the exact reason this external system boundary is independent. The source inventory and scope decision are stored in owner-map.txt, clipboard-inventory.txt, composition-call-sites.txt, and scope-decision.txt.",
+      "observed_at": "2026-09-12T21:05:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "source",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\recipe-command-surface-clipboard-boundary-20260912\\m2-callback-boundary",
+      "observation": "RecipeCommandSurface receives copyTextToClipboard, clipboardContainsText, and readClipboardText callbacks; all five direct Surface Clipboard calls were replaced. OpenVisionShellHostView supplies System.Windows.Clipboard callbacks. source-proof.txt, surface-clipboard-search.txt, callback-call-path.txt, and git-diff.txt record the changed dependency direction and absence of a new abstraction layer.",
+      "observed_at": "2026-09-12T21:25:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\recipe-command-surface-clipboard-boundary-20260912\\m3-focused",
+      "observation": "Solution Debug and VisionRecipeRunnerSmoke x64 Debug builds passed with 0 warnings and 0 errors. The copied-runtime PL-0024 callback contract passed 3/3; RefreshOptions passed 1/1; Validation Set success passed 1/1; Validation Set error passed 1/1; Shell Recipe basic lifecycle passed 7/7. The summary and build logs are in m3-focused; actual desktop Clipboard and full WPF/device/long-run matrices remain unverified.",
+      "observed_at": "2026-09-12T21:40:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\recipe-command-surface-clipboard-boundary-20260912\\m4-final-audit",
+      "observation": "The final audit records Surface/Shell owners, callback dependency direction, mutable-state and lifetime owners, preserved XAML commands and status/XML contracts, the nested Commands navigation region, no new partial or folder, and the remaining broad Surface debt. Final solution and Smoke Debug builds passed with 0 warnings/errors; the copied-runtime callback contract passed 3/3; documentation index, RefactorAudit, readiness, diff, and issue-ledger checks passed. Actual desktop Clipboard and full WPF/device/long-run runtime boundaries remain unverified.",
+      "observed_at": "2026-09-12T22:00:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-12T21:05:00+09:00",
+      "summary": "Move only System.Windows.Clipboard side effects to narrow callbacks supplied by the existing OpenVisionShellHostView composition owner. Keep RecipeCommandSurface command, status, and XML state ownership; add no interface, manager, wrapper, or partial.",
+      "evidence_refs": [
+        "E1"
+      ]
+    },
+    {
+      "id": "D2",
+      "kind": "decision",
+      "at": "2026-09-12T21:25:00+09:00",
+      "summary": "Use the existing Shell composition boundary with three optional concrete callbacks instead of adding a Clipboard interface or wrapper. This keeps the production WPF side effect in OpenVisionShellHostView and preserves source compatibility for existing test callers.",
+      "evidence_refs": [
+        "E2"
+      ]
+    },
+    {
+      "id": "D3",
+      "kind": "decision",
+      "at": "2026-09-12T21:40:00+09:00",
+      "summary": "Keep the callback-only Clipboard boundary after the copied-runtime contract and existing Recipe regression contracts passed. No desktop Clipboard automation or additional abstraction is required for this source boundary.",
+      "evidence_refs": [
+        "E3"
+      ]
+    },
+    {
+      "id": "D4",
+      "kind": "decision",
+      "at": "2026-09-12T22:00:00+09:00",
+      "summary": "Close this Clipboard boundary: the external WPF side effect is owned by the existing Shell composition owner, the Surface retains protected command/status/XML contracts, the Commands region is navigation-only, and no further file-length split is justified by this evidence.",
+      "evidence_refs": [
+        "E4"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-12T22:00:00+09:00",
+      "from": "open",
+      "to": "resolved",
+      "summary": "PL-0024 resolved: WPF Clipboard access was moved from RecipeCommandSurface to existing Shell composition callbacks, focused contracts and Debug builds passed, and the final owner/MVVM/command-binding/partial/folder/navigation audit is recorded. The remaining broad Surface regions require a new proven boundary before reopening."
+    }
+  ],
+  "created_at": "2026-09-12T21:00:00+09:00",
+  "updated_at": "2026-09-12T22:00:00+09:00"
+}

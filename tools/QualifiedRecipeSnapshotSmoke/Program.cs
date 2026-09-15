@@ -259,6 +259,172 @@ internal static class Program
                 store.Verify(created.SnapshotId).Success,
                 "Snapshot did not verify after runtime restoration.");
 
+            OpenVisionRecipeValidationSet currentValidationSet =
+                CreateCurrentValidationSet(images, dependencyPath, pipelinePath);
+            OpenVisionRecipeQualifiedSnapshotController controller =
+                new OpenVisionRecipeQualifiedSnapshotController(qualifiedRoot);
+            OpenVisionRecipeQualifiedSnapshotCurrentIdentity currentIdentity =
+                controller.EvaluateCurrentIdentity(
+                    created.SnapshotId,
+                    "SnapshotSmokeRecipe",
+                    "Snapshot Pipeline",
+                    pipelinePath,
+                    currentValidationSet,
+                    request.RuntimeFiles);
+            Require(
+                currentIdentity.Success
+                && currentIdentity.RecipeMatches
+                && currentIdentity.InputMatches
+                && currentIdentity.RuntimeMatches,
+                "The unchanged current Recipe/input/runtime identity was not accepted.");
+            Require(
+                controller.Verify(
+                        created.SnapshotId,
+                        "SnapshotSmokeRecipe",
+                        "Snapshot Pipeline",
+                        pipelinePath,
+                        currentValidationSet,
+                        request.RuntimeFiles)
+                    .Success,
+                "The unchanged current verification identity was not accepted.");
+
+            byte[] originalCurrentPipeline = File.ReadAllBytes(pipelinePath);
+            File.AppendAllText(pipelinePath, "\n<!-- current-recipe-edit -->");
+            currentIdentity = controller.EvaluateCurrentIdentity(
+                created.SnapshotId,
+                "SnapshotSmokeRecipe",
+                "Snapshot Pipeline",
+                pipelinePath,
+                currentValidationSet,
+                request.RuntimeFiles);
+            Require(
+                !currentIdentity.Success && !currentIdentity.RecipeMatches,
+                "A changed current Recipe was still treated as the qualified identity.");
+            Require(
+                !controller.Verify(
+                        created.SnapshotId,
+                        "SnapshotSmokeRecipe",
+                        "Snapshot Pipeline",
+                        pipelinePath,
+                        currentValidationSet,
+                        request.RuntimeFiles)
+                    .Success,
+                "Verification did not fail closed after a current Recipe edit.");
+            Require(
+                controller.TryGetEvidenceDirectory(
+                    created.SnapshotId,
+                    out _,
+                    out _),
+                "Historical evidence could not be opened after a current Recipe edit.");
+            QualifiedRecipeSnapshotCreateResult recipeEditCreate =
+                store.Create(CreateRequest(
+                    pipelinePath,
+                    summaryPath,
+                    validationSet,
+                    runtimeProbePath,
+                    "current Recipe edit must re-evaluate"));
+            Require(
+                !recipeEditCreate.Success,
+                "A current Recipe edit unexpectedly created a qualified Snapshot.");
+            File.WriteAllBytes(pipelinePath, originalCurrentPipeline);
+
+            string changedInputPath = images[0].SourcePath;
+            byte[] originalCurrentInput = File.ReadAllBytes(changedInputPath);
+            File.AppendAllText(changedInputPath, "-current-input-edit");
+            currentIdentity = controller.EvaluateCurrentIdentity(
+                created.SnapshotId,
+                "SnapshotSmokeRecipe",
+                "Snapshot Pipeline",
+                pipelinePath,
+                currentValidationSet,
+                request.RuntimeFiles);
+            Require(
+                !currentIdentity.Success && !currentIdentity.InputMatches,
+                "A changed current input was still treated as the qualified identity.");
+            Require(
+                !controller.Verify(
+                        created.SnapshotId,
+                        "SnapshotSmokeRecipe",
+                        "Snapshot Pipeline",
+                        pipelinePath,
+                        currentValidationSet,
+                        request.RuntimeFiles)
+                    .Success,
+                "Verification did not fail closed after a current input edit.");
+            Require(
+                controller.TryGetEvidenceDirectory(
+                    created.SnapshotId,
+                    out _,
+                    out _),
+                "Historical evidence could not be opened after a current input edit.");
+            QualifiedRecipeSnapshotCreateResult inputEditCreate =
+                store.Create(CreateRequest(
+                    pipelinePath,
+                    summaryPath,
+                    validationSet,
+                    runtimeProbePath,
+                    "current input edit must re-evaluate"));
+            Require(
+                !inputEditCreate.Success,
+                "A current input edit unexpectedly created a qualified Snapshot.");
+            File.WriteAllBytes(changedInputPath, originalCurrentInput);
+
+            string replacementRuntimePath = Path.Combine(
+                outputRoot,
+                "runtime",
+                "runtime-probe-replacement.bin");
+            File.Copy(runtimeProbePath, replacementRuntimePath);
+            File.AppendAllText(replacementRuntimePath, "-sdk-replacement");
+            List<QualifiedRecipeRuntimeFileSource> replacementRuntimeFiles =
+                request.RuntimeFiles
+                    .Select(source => string.Equals(
+                            source.Label,
+                            "SmokeRuntimeProbe",
+                            StringComparison.OrdinalIgnoreCase)
+                        ? new QualifiedRecipeRuntimeFileSource
+                        {
+                            Label = source.Label,
+                            SourcePath = replacementRuntimePath
+                        }
+                        : new QualifiedRecipeRuntimeFileSource
+                        {
+                            Label = source.Label,
+                            SourcePath = source.SourcePath
+                        })
+                    .ToList();
+            currentIdentity = controller.EvaluateCurrentIdentity(
+                created.SnapshotId,
+                "SnapshotSmokeRecipe",
+                "Snapshot Pipeline",
+                pipelinePath,
+                currentValidationSet,
+                replacementRuntimeFiles);
+            Require(
+                !currentIdentity.Success && !currentIdentity.RuntimeMatches,
+                "An SDK/runtime replacement copy was still treated as the qualified identity.");
+            Require(
+                !controller.Verify(
+                        created.SnapshotId,
+                        "SnapshotSmokeRecipe",
+                        "Snapshot Pipeline",
+                        pipelinePath,
+                        currentValidationSet,
+                        replacementRuntimeFiles)
+                    .Success,
+                "Verification did not fail closed after an SDK/runtime replacement.");
+            File.Delete(replacementRuntimePath);
+
+            currentIdentity = controller.EvaluateCurrentIdentity(
+                created.SnapshotId,
+                "SnapshotSmokeRecipe",
+                "Snapshot Pipeline",
+                pipelinePath,
+                currentValidationSet,
+                request.RuntimeFiles);
+            Require(
+                currentIdentity.Success,
+                "Explicit restoration did not return the original current identity.");
+
             string collisionDirectory = Path.Combine(outputRoot, "collision");
             Directory.CreateDirectory(collisionDirectory);
             string collidingDependency = Path.Combine(
@@ -530,6 +696,47 @@ internal static class Program
         };
     }
 
+    private static OpenVisionRecipeValidationSet CreateCurrentValidationSet(
+        IEnumerable<QualifiedRecipeValidationImageSource> images,
+        string dependencyPath,
+        string pipelinePath)
+    {
+        List<OpenVisionRecipeValidationSetImage> currentImages =
+            (images ?? Enumerable.Empty<QualifiedRecipeValidationImageSource>())
+                .Select(image => new OpenVisionRecipeValidationSetImage
+                {
+                    Expected = image.ExpectedOutcome,
+                    Path = image.SourcePath,
+                    Sha256 = image.Sha256,
+                    VariantId = image.VariantId,
+                    ExpectedMetricName = image.ExpectedMetricName,
+                    ExpectedMetricMinimum = image.ExpectedMetricMinimum,
+                    ExpectedMetricMaximum = image.ExpectedMetricMaximum,
+                    Notes = image.Notes
+                })
+                .ToList();
+        return new OpenVisionRecipeValidationSet
+        {
+            Name = "Frozen OK-NG",
+            PipelineName = "Snapshot Pipeline",
+            PipelineDefinitionSha256 =
+                OpenVisionRecipeValidationSetStorage.ComputeTextSha256(
+                    File.ReadAllText(pipelinePath)),
+            ImageSetSha256 =
+                OpenVisionRecipeValidationSetStorage.ComputeImageSetSha256(currentImages),
+            Notes = "Two-row deterministic qualification smoke.",
+            Images = currentImages,
+            Dependencies = new List<OpenVisionRecipeValidationSetDependency>
+            {
+                new OpenVisionRecipeValidationSetDependency
+                {
+                    Path = dependencyPath,
+                    Sha256 = QualifiedRecipeSnapshotPreflight.ComputeFileSha256(dependencyPath)
+                }
+            }
+        };
+    }
+
     private static string ComputeImageSetSha256(
         IEnumerable<QualifiedRecipeValidationImageSource> images)
     {
@@ -582,6 +789,12 @@ internal static class Program
                 "ManifestTimestampTamperRejected=True",
                 "LifecycleTamperRejected=True",
                 "RuntimeMismatchSeparated=True",
+                "CurrentIdentitySameSnapshotAccepted=True",
+                "CurrentRecipeEditMarkedStale=True",
+                "CurrentInputEditMarkedStale=True",
+                "SdkReplacementMarkedStale=True",
+                "HistoricalEvidenceReadableWhileStale=True",
+                "ReevaluationRequiredBeforeNewSnapshot=True",
                 "InterruptedTemporaryExcluded=True",
                 "FailedCreationRolledBack=True",
                 "SourceRecipeDeletedAndVerified=True",

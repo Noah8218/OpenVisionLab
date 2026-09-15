@@ -38,7 +38,7 @@ namespace OpenVisionLab
             #if OPENVISIONLAB_EMBEDDED_SMOKE
             if (OpenVisionLabDirectSmokeRunner.TryRun(args))
             {
-                return 0;
+                return Environment.ExitCode;
             }
             #endif
 

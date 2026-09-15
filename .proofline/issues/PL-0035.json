@@ -1,0 +1,176 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0035",
+    "aliases": [],
+    "type": "task",
+    "mode": "composite",
+    "title": "Move Signal Inspector TSV export behind the existing Tool composition boundary",
+    "risk": "low"
+  },
+  "origin": {
+    "kind": "user-request",
+    "summary": "The user requested that Partial refactoring continue in scheduled cycles and that remaining Tool/Learn Partial responsibilities be corrected structurally.",
+    "refs": [
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "docs/reports/OPENVISIONLAB_PARTIAL_STRUCTURAL_ELIMINATION_PLAN_20260913.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "VisionToolSignalInspectorView의 TSV file-I/O 직접 호출을 명시적 exporter action seam으로 이동했다. 기존 SaveFileDialog presentation, evidence/marker/XAML 계약, 세 Tool View lifetime은 유지했고 기존 VisionToolSignalEvidenceExporter가 파일 출력 owner로 남았다. Debug/Release source contract/build, Tool WPF smoke, readiness, structural/documentation/diff checks가 통과했으며 native dialog click과 전체 UI/native 행렬은 미검증으로 남겼다."
+  },
+  "objective": {
+    "summary": "Remove the concrete TSV file-export call from the required VisionToolSignalInspectorView XAML Partial and route it through the existing Tool composition owners without changing SaveFileDialog presentation, evidence state, or Tool View lifetime.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev; do not modify C:\\Git\\2D\\Original.",
+      "Reuse VisionToolSignalEvidenceExporter and existing Threshold/Simple Preprocess/Line Tool composition; do not add a service, interface, manager, event bus, wrapper, or Partial.",
+      "Preserve VisionToolSignalInspectorView XAML names, automation IDs, marker event, ShowEvidence/ClearEvidence/test facades, and SaveFileDialog owner behavior.",
+      "Keep test outputs and evidence under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev.",
+      "Do not commit, push, tag, release, deploy, or mutate the Original repository."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The proof report records current and intended owners, caller path, mutable-state writer, lifetime owner, binding/public contract, shortest reading order, and matching test.",
+      "evidence_refs": [
+        "E1"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "VisionToolSignalInspectorView no longer references VisionToolSignalEvidenceExporter directly; all known production Tool XAML parents configure the existing exporter action, and UI/test export paths share the same seam.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Focused Debug/Release contracts and builds, relevant WPF smoke, readiness, structural audit, documentation index, issue validation, and diff checks pass; native SaveFileDialog interaction and full UI/native matrices are explicitly unverified.",
+      "evidence_refs": [
+        "E2",
+        "E3"
+      ]
+    }
+  ],
+  "milestones": [
+    {
+      "id": "M1",
+      "summary": "Inventory Signal Inspector callers, evidence state, exporter, dialog, binding, and lifetime owners.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M2",
+      "summary": "Replace direct Inspector-to-exporter calls with the explicit action seam and wire all known production Tool composition owners.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C2"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M3",
+      "summary": "Run focused source/build/WPF smoke proof and record durable evidence.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C3"
+      ],
+      "issue_refs": []
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0034"
+    }
+  ],
+  "context": [
+    {
+      "kind": "source",
+      "location": "src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Tooling\\SignalInspection\\VisionToolSignalInspectorView.xaml.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Tooling\\SignalInspection\\VisionToolSignalEvidenceExporter.cs"
+    },
+    {
+      "kind": "composition-owner",
+      "location": "src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\ToolViews\\ThresholdToolWpfView.xaml.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\ToolViews\\SimplePreprocessToolWpfView.xaml.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\ToolViews\\LineToolWpfView.xaml.cs"
+    },
+    {
+      "kind": "test-host",
+      "location": "tools\\VisionRecipeRunnerSmoke\\SignalInspectorExportBoundaryContract.cs; tools\\PipelineViewerScreenshotSmoke\\Program.cs"
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "screenshot",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\signal-inspector-export-boundary-20260914\\wpf-smoke\\wpf_shell_host_threshold_tool.png",
+      "summary": "Fresh Threshold Tool WPF smoke screenshot on the detected single monitor."
+    },
+    {
+      "kind": "screenshot",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\signal-inspector-export-boundary-20260914\\wpf-smoke\\wpf_shell_host_line_tool.png",
+      "summary": "Fresh Line Tool WPF smoke screenshot on the detected single monitor."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "source",
+      "location": "docs\\reports\\OPENVISIONLAB_SIGNAL_INSPECTOR_EXPORT_BOUNDARY_20260914.md; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\Tooling\\SignalInspection\\VisionToolSignalInspectorView.xaml.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\ToolViews\\ThresholdToolWpfView.xaml.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\ToolViews\\SimplePreprocessToolWpfView.xaml.cs; src\\OpenVisionLab\\UI\\VisionTest\\Wpf\\ToolViews\\LineToolWpfView.xaml.cs",
+      "observation": "The Inspector retains evidence, plot/marker presentation, XAML contract, and SaveFileDialog, while its direct exporter call is replaced by an explicit action. All three known production Tool parents wire the existing TSV exporter; evidence mutable state and Tool View lifetime remain in their existing owners.",
+      "observed_at": "2026-09-14T01:16:59+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\signal-inspector-export-boundary-20260914\\debug\\signal-inspector-export-boundary-contract.txt; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\signal-inspector-export-boundary-20260914\\release\\signal-inspector-export-boundary-contract.txt",
+      "observation": "SignalInspectorExportBoundaryContract passed 6/6 in Debug and Release; the contract proves seam wiring, direct-coupling removal, existing exporter ownership, and the shared UI/test export path.",
+      "observed_at": "2026-09-14T01:16:59+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "verification",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\signal-inspector-export-boundary-20260914",
+      "observation": "VisionRecipeRunnerSmoke and OpenVisionLab.sln Debug/Release builds passed with 0 warnings/errors; PipelineViewerScreenshotSmoke x64 Debug passed with 0 errors and three pre-existing warnings; single-monitor WPF Tool smoke produced fresh PNG evidence; readiness, RefactorAudit, DocumentationIndex, JSON parse, and diff checks passed. Native dialog interaction and full UI/native matrices remain unverified.",
+      "observed_at": "2026-09-14T01:16:59+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-14T01:16:59+09:00",
+      "summary": "Signal Inspector는 required XAML Partial이므로 제거하지 않는다. SaveFileDialog는 View-specific presentation으로 유지하되, file-I/O를 직접 호출할 이유는 없으므로 기존 exporter를 Action<VisionToolSignalEvidence, string>으로 연결하고 UI/test path를 같은 seam에 둔다.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "D2",
+      "kind": "decision",
+      "at": "2026-09-14T01:16:59+09:00",
+      "summary": "PL-0035의 세 completion criteria와 세 milestone이 현재 증거로 충족되어 resolved로 닫는다. Native SaveFileDialog click/file association, 전체 theme/DPI/input 행렬, hardware/native runtime은 이 slice의 검증 범위가 아니다.",
+      "evidence_refs": [
+        "E3"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-14T01:16:59+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "The direct Inspector-to-exporter coupling was removed, all known production Tool composition wiring was verified, and focused source/build/runtime evidence was recorded. Do not reopen this boundary without a new requirement, reproducible defect, failed criterion, or changed dependency boundary."
+    }
+  ],
+  "created_at": "2026-09-14T01:16:59+09:00",
+  "updated_at": "2026-09-14T01:16:59+09:00"
+}

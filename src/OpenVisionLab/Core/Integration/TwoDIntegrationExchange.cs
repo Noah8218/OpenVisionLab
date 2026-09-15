@@ -92,6 +92,11 @@ public sealed record TwoDIntegrationOverlayRecord(
 
 public sealed record TwoDIntegrationOverlayPoint(double X, double Y);
 
+internal readonly record struct TwoDIntegrationRunDisposition(
+    IntegrationResultStatus Status,
+    IntegrationInspectionOutcome Outcome,
+    IntegrationError Error);
+
 /// <summary>
 /// Explicit 2D consumer adapter for the v2 file exchange. Reading and
 /// acknowledgement validate only; an inspection starts only through the
@@ -453,6 +458,19 @@ public static class TwoDIntegrationExchange
                     .ConfigureAwait(false);
             cancellationToken.ThrowIfCancellationRequested();
 
+            TwoDIntegrationRunDisposition disposition = ClassifyRunResult(run);
+            if (disposition.Status != IntegrationResultStatus.Completed)
+            {
+                return PublishFailedResult(
+                    transactionDirectory,
+                    handoff,
+                    acknowledgement,
+                    consumerBuild,
+                    disposition.Status,
+                    disposition.Outcome,
+                    disposition.Error);
+            }
+
             var runId = CreateRunId(handoff);
             var metricProjection = CreateMetricProjection(run);
             var runRecord = CreateRunRecord(
@@ -529,16 +547,14 @@ public static class TwoDIntegrationExchange
                     acknowledgement.MessageId,
                     NotBefore(acknowledgement.CreatedAtUtc),
                     consumerBuild,
-                    IntegrationResultStatus.Completed,
-                    run.Success
-                        ? IntegrationInspectionOutcome.Pass
-                        : IntegrationInspectionOutcome.Ng,
+                    disposition.Status,
+                    disposition.Outcome,
                     runId,
                     runRecordReference,
                     IntegrationRunCorrelation.FromContext(handoff.Context),
                     metricProjection.Metrics,
                     evidence,
-                    null);
+                    disposition.Error);
                 ThrowIfInvalid(IntegrationContractValidator.ValidateV2Sequence(
                     handoff,
                     acknowledgement,
@@ -585,6 +601,79 @@ public static class TwoDIntegrationExchange
                     exception.Message,
                     false));
         }
+    }
+
+    internal static TwoDIntegrationRunDisposition ClassifyRunResult(
+        VisionRecipeRunResult run)
+    {
+        if (run == null)
+        {
+            return ExecutionFailure("The 2D inspection returned no run result.");
+        }
+
+        VisionRecipeStepRunSummary failedStep = run.FirstFailedStep;
+        if (failedStep == null)
+        {
+            bool hasExecutedStep = run.Steps?.Any(step => step != null && !step.Skipped) == true;
+            bool allStepsPassed = hasExecutedStep
+                && run.Steps.All(step => step != null
+                    && (step.Skipped || string.Equals(step.Status, "OK", StringComparison.OrdinalIgnoreCase)));
+            return run.Success && allStepsPassed
+                ? new TwoDIntegrationRunDisposition(
+                    IntegrationResultStatus.Completed,
+                    IntegrationInspectionOutcome.Pass,
+                    null)
+                : ExecutionFailure("The 2D inspection did not produce a completed step result.");
+        }
+
+        string status = failedStep.Status?.Trim() ?? string.Empty;
+        if (string.Equals(status, "NG", StringComparison.OrdinalIgnoreCase)
+            && failedStep.ToolSuccess
+            && !failedStep.AcceptancePassed)
+        {
+            return new TwoDIntegrationRunDisposition(
+                IntegrationResultStatus.Completed,
+                IntegrationInspectionOutcome.Ng,
+                null);
+        }
+
+        if (string.Equals(status, "CANCEL", StringComparison.OrdinalIgnoreCase))
+        {
+            return new TwoDIntegrationRunDisposition(
+                IntegrationResultStatus.Cancelled,
+                IntegrationInspectionOutcome.Indeterminate,
+                new IntegrationError(
+                    IntegrationErrorCode.Cancelled,
+                    BuildStepFailureMessage(failedStep),
+                    true));
+        }
+
+        return ExecutionFailure(BuildStepFailureMessage(failedStep));
+    }
+
+    private static TwoDIntegrationRunDisposition ExecutionFailure(string message) =>
+        new(
+            IntegrationResultStatus.Failed,
+            IntegrationInspectionOutcome.ExecutionError,
+            new IntegrationError(
+                IntegrationErrorCode.ExecutionFailed,
+                message,
+                false));
+
+    private static string BuildStepFailureMessage(VisionRecipeStepRunSummary step)
+    {
+        if (step == null)
+        {
+            return "The 2D inspection failed before a step result was available.";
+        }
+
+        string stepName = string.IsNullOrWhiteSpace(step.Name) ? "Step" : step.Name;
+        string status = string.IsNullOrWhiteSpace(step.Status) ? "UNKNOWN" : step.Status;
+        string error = step.ErrorCode == 0 && string.IsNullOrWhiteSpace(step.ErrorName)
+            ? string.Empty
+            : $" Error={step.ErrorCode}:{step.ErrorName}.";
+        string detail = string.IsNullOrWhiteSpace(step.Message) ? string.Empty : $" {step.Message}";
+        return $"{stepName} returned {status}.{error}{detail}".Trim();
     }
 
     private static IntegrationResultV2 PublishFailedResult(

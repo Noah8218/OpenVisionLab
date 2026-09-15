@@ -1,14 +1,17 @@
 using OpenVisionLab.Contracts;
+using System;
 
 namespace OpenVisionLab
 {
     internal sealed class LineToolPresenter
     {
         private readonly ILineToolViewModel viewModel;
+        private readonly Action persistProperties;
 
-        public LineToolPresenter(ILineToolViewModel viewModel)
+        public LineToolPresenter(ILineToolViewModel viewModel, Action persistProperties)
         {
             this.viewModel = viewModel ?? throw new System.ArgumentNullException(nameof(viewModel));
+            this.persistProperties = persistProperties ?? throw new ArgumentNullException(nameof(persistProperties));
         }
 
         public LineGaugeProperty LineAProperty => viewModel.LineAProperty;
@@ -33,6 +36,11 @@ namespace OpenVisionLab
         public LineGaugeProperty CreateLineBProperty()
         {
             return viewModel.CreateLineBProperty();
+        }
+
+        public void PersistProperties()
+        {
+            persistProperties();
         }
 
         public string CreateSummary(LineToolPurpose purpose, bool isLineBSelected, string purposeText, string lineText)

@@ -1,0 +1,192 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0074",
+    "aliases": [
+      "OPENVISIONLAB-2D016-NOT-RUN-TAIL-20260915"
+    ],
+    "type": "task",
+    "mode": "simple",
+    "title": "Distinguish fail-fast unexecuted Pipeline Step tail",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "scheduled 2D task execution and source review",
+    "summary": "2D-016 requires every planned Step to remain explainable after fail-fast NG or cancellation, without counting the unexecuted tail as additional inspection NG.",
+    "refs": [
+      "C:\\Users\\USER\\Downloads\\OpenVisionLab_2D_tasks.json",
+      "docs\\contracts\\openvisionlab\\OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md",
+      "docs\\admin\\OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "AGENTS.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "The existing VisionPipelineResultSummaryService, VisionRecipeRunner, Review execution controller, and presentation owners now project full planned Step rows with explicit Executed, Disabled, NotRunAfterFailure, and Cancelled states. Fail-fast execution remains unchanged; synthetic tail rows carry no images, objects, or metrics and are excluded from NG/first-issue counts."
+  },
+  "objective": {
+    "summary": "Make a five-Step fail-fast result explain which Steps executed, were disabled, were not run after an earlier failure, or were cancelled, while preserving existing tool/acceptance and result ownership contracts.",
+    "constraints": [
+      "Reuse the existing execution, summary, Review controller, flow, guide, and result presenter owners.",
+      "Do not change fail-fast execution policy or reinterpret tool/acceptance/ResultCount semantics.",
+      "Keep test artifacts on D: and do not modify C:\\Git\\2D\\Original or external systems."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "A five-Step public Runner result retains all planned rows; executed success/NG, disabled, and NotRunAfterFailure rows are distinct, and the tail is not counted as an additional failure.",
+      "evidence_refs": [
+        "E2"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "Cancellation records the current cancelled Step and a distinct cancelled tail without executing or publishing synthetic result evidence for later Steps.",
+      "evidence_refs": [
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Review flow, progress, guide, and result presenters display the unexecuted tail as NOT RUN/CANCEL rather than NG, while disabled rows remain SKIP and only executed failures drive NG/first-issue counts.",
+      "evidence_refs": [
+        "E2",
+        "E5"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "Synthetic tail rows contain no image/object/metric ownership, acceptance is not marked evaluated for them, and existing image/object/ResultCount semantics remain unchanged for executed rows.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "C5",
+      "text": "VisionRecipeRunnerSmoke builds and the focused tail contract pass in Debug and Release; cancellation, failure-lifetime, prevalidation, duplicate-Step, and Review projection regressions pass in both configurations.",
+      "evidence_refs": [
+        "E2",
+        "E3",
+        "E4"
+      ]
+    },
+    {
+      "id": "C6",
+      "text": "Completion evidence records the current owners, call path, mutable-state writer, public/report contract, reading order, focused checks, runtime UI evidence, and unverified UI matrix boundary.",
+      "evidence_refs": [
+        "E1",
+        "E5",
+        "E6"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0063"
+    }
+  ],
+  "context": [
+    {
+      "kind": "owner-map",
+      "location": "VisionPipelineResultSummaryService owns Step status projection; VisionRecipeRunner owns the public VisionRecipeRunResult/Summary contract; OpenVisionPipelineReviewExecutionController owns Review result caching; Flow/Guide/Result presenters own display projection."
+    },
+    {
+      "kind": "call-path",
+      "location": "VisionPipelineExecutionService.RunPreparedAsync -> VisionPipelineRunResult.StepResults -> VisionPipelineResultSummaryService.CreateStepSummaries(pipeline, runResult) -> VisionRecipeRunner or OpenVisionPipelineReviewExecutionController -> Review flow/progress/guide/result presenters -> report persistence."
+    },
+    {
+      "kind": "state-writer",
+      "location": "The execution service remains the mutable StepResult/image owner. Summary projection writes only result-summary state; synthetic rows own no Mat, object, instance, geometry, overlay, or metric data. Review controller remains the Step-index summary/cache writer."
+    },
+    {
+      "kind": "public-contract",
+      "location": "VisionRecipeStepRunSummary and VisionPipelineStepRunReport expose Executed and ExecutionState while preserving Status, Success, Skipped, ToolSuccess, Acceptance, image, object, metric, and ResultCount meanings."
+    },
+    {
+      "kind": "reading-order",
+      "location": "VisionPipelineExecutionService.cs -> VisionPipelineResultSummary.cs -> VisionRecipeRunner.cs -> OpenVisionPipelineReviewExecutionController.cs -> OpenVisionPipelineReviewResultStatusProjectionOwner.cs -> OpenVisionPipelineReviewFlowPresenter.cs -> OpenVisionPipelineReviewGuidePresenter.cs -> OpenVisionPipelineReviewResultPresenter.cs -> VisionPipelineRunReportStorage.cs -> PipelineNotRunTailStatusContract.cs."
+    },
+    {
+      "kind": "boundary",
+      "location": "Debug/Release focused and regression contracts plus one Korean single-monitor WPF Pipeline Review smoke were run. Full theme, Compact/Wide, keyboard/mouse state, and 100/125/150/175/200% DPI matrix remain unverified; Original/release/external mutation was not performed."
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "evidence-directory",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d016-not-run-tail-status-20260915",
+      "summary": "Debug focused contract and zero-warning smoke build log. Release repeat and regression evidence are in sibling 2d016-* directories."
+    },
+    {
+      "kind": "wpf-runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d016-wpf-pipeline-review-20260915/wpf_shell_host_pipeline_review.png",
+      "summary": "Fresh Release WPF Pipeline Review capture on the single reported 1920x1080 monitor."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "review",
+      "location": "src/OpenVisionLab/Core/Pipeline/Execution/VisionPipelineResultSummary.cs; src/OpenVisionLab/Core/Pipeline/Execution/VisionRecipeRunner.cs; src/OpenVisionLab/UI/Menu/Wpf/PipelineReview/Execution/OpenVisionPipelineReviewExecutionController.cs; src/OpenVisionLab/Core/Pipeline/Storage/VisionPipelineRunReportStorage.cs",
+      "observation": "Source review confirmed the existing execution service remains fail-fast and owns StepResult/image lifetimes. The new full-plan summary projection adds only explicit state fields and synthetic no-evidence tail rows; public/report acceptance, image, object, metric, and ResultCount owners remain on executed results.",
+      "observed_at": "2026-09-15T18:20:07.7681922+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d016-not-run-tail-status-20260915/pipeline-not-run-tail-status-contract.txt; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d016-not-run-tail-status-20260915-release/pipeline-not-run-tail-status-contract.txt",
+      "observation": "The focused contract passed 3/0 in Debug and Release. It covered five-row failure-tail projection, disabled-vs-tail distinction, cancellation current/tail projection, Review flow/progress/presenter exclusion of synthetic tail from NG, and no synthetic image/object ownership.",
+      "observed_at": "2026-09-15T18:20:07.7681922+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "build",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d016-not-run-tail-status-20260915/build-smoke-debug.log; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d016-not-run-tail-status-20260915-release/build-smoke-release.log",
+      "observation": "VisionRecipeRunnerSmoke Debug and Release builds completed with 0 warnings and 0 errors after the tail-status implementation.",
+      "observed_at": "2026-09-15T18:20:07.7681922+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "regression",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d016-regression-cancellation-debug; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d016-regression-failure-lifetime-debug; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d016-regression-prevalidation-debug; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d016-regression-duplicate-identity-debug; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d016-regression-review-status-debug; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d016-regression-review-guide-debug; corresponding -release directories",
+      "observation": "Debug and Release regression contracts passed: cancellation 5/0, failure lifetime 7/0, prevalidation pass, duplicate Step identity pass, Review result/status projection pass, and Review guide/result projection pass.",
+      "observed_at": "2026-09-15T18:20:07.7681922+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d016-wpf-pipeline-review-20260915/wpf_shell_host_pipeline_review.png",
+      "observation": "Release WPF Pipeline Review smoke passed on the single Windows monitor reported as DISPLAY2, bounds 1920x1080 and work area 1920x1032. The rendered flow, status badges, route cards, result summary, images, and controls were visible without clipping in the exercised Korean baseline state.",
+      "observed_at": "2026-09-15T18:20:07.7681922+09:00"
+    },
+    {
+      "id": "E6",
+      "kind": "review",
+      "location": "docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md; tools/VisionRecipeRunnerSmoke/PipelineNotRunTailStatusContract.cs; tools/VisionRecipeRunnerSmoke/Program.cs; src/Libraries/OpenVisionLab.Localization/Resources/LocalizationCatalog.tsv",
+      "observation": "The stable contract, smoke dispatch/contract, localization keys, and current handoff record the four-state policy, focused command, owner/call path, evidence boundary, and next 2D-017 slice.",
+      "observed_at": "2026-09-15T18:20:07.7681922+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-15T18:20:07.7681922+09:00",
+      "from": "open",
+      "to": "resolved",
+      "summary": "Close 2D-016 after Debug/Release focused tail-state and Review presentation contracts, regression checks, and one fresh WPF Pipeline Review smoke.",
+      "evidence_refs": [
+        "E2",
+        "E3",
+        "E4",
+        "E5",
+        "E6"
+      ]
+    }
+  ],
+  "created_at": "2026-09-15T18:20:07.7681922+09:00",
+  "updated_at": "2026-09-15T18:20:07.7681922+09:00"
+}

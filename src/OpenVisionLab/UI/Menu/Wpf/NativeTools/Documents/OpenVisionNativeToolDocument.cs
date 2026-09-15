@@ -26,11 +26,13 @@ namespace OpenVisionLab
         private readonly OpenVisionNativeToolLayerViewController layerViewController;
         private readonly OpenVisionNativeToolRouteInteractionController routeInteractionController;
         private readonly OpenVisionNativePreviewExecutionController previewExecutionController;
+        private readonly OpenVisionNativePreviewExecutionBoundary previewExecutionBoundary;
         private readonly OpenVisionNativePreviewImageCommandController previewImageCommandController;
         private readonly OpenVisionNativePipelineCommandController pipelineCommandController;
         private readonly OpenVisionNativeRoiCommandController roiCommandController;
         private readonly OpenVisionNativeToolStatusPresenter statusPresenter;
         private readonly OpenVisionNativeToolEventBinder eventBinder;
+        private Func<Mat, VisionToolResult> previewExecutionOverrideForTest;
         private VisionToolSingleInputPropertyToolShell nImageVerificationShell;
         private VisionToolLanguageChangeController nImageVerificationLanguageController;
         private OpenVisionRecipeContext recipeContext;
@@ -71,6 +73,9 @@ namespace OpenVisionLab
             layerViewController = new OpenVisionNativeToolLayerViewController(this.displayManager, layerRouteController, previewLayerPublisher);
             routeInteractionController = new OpenVisionNativeToolRouteInteractionController(layerRouteController, layerViewController, NotifyLayerStateChanged, SetStatus);
             previewExecutionController = new OpenVisionNativePreviewExecutionController(this.displayManager, previewLayerPublisher);
+            previewExecutionBoundary = new OpenVisionNativePreviewExecutionBoundary(
+                previewExecutionController,
+                action => this.element.Dispatcher.BeginInvoke(action));
             previewImageCommandController = new OpenVisionNativePreviewImageCommandController(
                 this.displayManager,
                 previewLayerPublisher,
@@ -144,6 +149,7 @@ namespace OpenVisionLab
             layerViewController = new OpenVisionNativeToolLayerViewController(this.displayManager, layerRouteController, previewLayerPublisher);
             routeInteractionController = new OpenVisionNativeToolRouteInteractionController(layerRouteController, layerViewController, NotifyLayerStateChanged, SetStatus);
             previewExecutionController = new OpenVisionNativePreviewExecutionController(this.displayManager, previewLayerPublisher);
+            previewExecutionBoundary = null;
             previewImageCommandController = new OpenVisionNativePreviewImageCommandController(
                 this.displayManager,
                 previewLayerPublisher,
@@ -303,7 +309,17 @@ namespace OpenVisionLab
 
         public void InvalidatePreviewResultForInputChange()
         {
+            bool wasRunning = previewExecutionBoundary?.IsRunning == true;
             ClearPreviewResult();
+            if (wasRunning)
+            {
+                SetStatus("Preview CANCELED / " + VisionToolVerificationText.InspectionJudgmentNotEvaluated + " / input changed");
+            }
+        }
+
+        internal void SetPreviewExecutionOverrideForTest(Func<Mat, VisionToolResult> previewExecutionOverride)
+        {
+            previewExecutionOverrideForTest = previewExecutionOverride;
         }
 
         public void RunPreview()
@@ -314,13 +330,21 @@ namespace OpenVisionLab
                 return;
             }
 
-            OpenVisionNativePreviewExecutionResult result = previewExecutionController.RunSingleInput(
+            if (previewExecutionBoundary.IsRunning)
+            {
+                SetStatus("Preview RUN / already running");
+                return;
+            }
+
+            ClearPreviewResult();
+            previewExecutionBoundary.TryStartSingleInput(
                 ResolveInputLayer(),
                 ResolveOutputLayer(),
                 ResolvePrimaryInputLayer(),
                 normalizeSingleChannelInput,
-                executePreview);
-            ApplyPreviewExecutionResult(result, () => routeInteractionController.RefreshSinglePreviews(view));
+                previewExecutionOverrideForTest ?? executePreview,
+                result => ApplyPreviewExecutionResult(result, () => routeInteractionController.RefreshSinglePreviews(view)),
+                () => SetStatus("Preview RUN / processing"));
         }
 
         public void CreateOutputLayerForTest()
@@ -553,6 +577,12 @@ namespace OpenVisionLab
             }
 
             disposed = true;
+            if (previewExecutionBoundary?.IsRunning == true)
+            {
+                SetStatus("Preview CANCELED / " + VisionToolVerificationText.InspectionJudgmentNotEvaluated + " / document disposed");
+            }
+            previewExecutionBoundary?.Dispose();
+            previewExecutionOverrideForTest = null;
             ClosePreviewViewer();
             element.RemoveHandler(
                 VisionToolPreviewSlotBehavior.OpenPreviewImageRequestedEvent,
@@ -682,11 +712,13 @@ namespace OpenVisionLab
 
         private void OnSourceLayerChanged(object sender, EventArgs e)
         {
+            InvalidatePreviewResultForInputChange();
             routeInteractionController.HandleSingleInputLayerChanged(view);
         }
 
         private void OnDestinationLayerChanged(object sender, EventArgs e)
         {
+            InvalidatePreviewResultForInputChange();
             routeInteractionController.HandleSingleOutputLayerChanged(view);
         }
 
@@ -826,6 +858,7 @@ namespace OpenVisionLab
 
         private void RunArithmeticPreview(bool useOffsetMode)
         {
+            ClearPreviewResult();
             VisionPipelineStep step = CreateArithmeticStep(useOffsetMode);
             OpenVisionNativePreviewExecutionResult result = previewExecutionController.RunArithmetic(
                 step,
@@ -838,7 +871,17 @@ namespace OpenVisionLab
 
         private void ClearPreviewResult()
         {
+            previewExecutionBoundary?.CancelAndDiscard();
             HasPreviewResult = false;
+            if (view is VisionToolSingleInputPropertyToolViewBase propertyToolView)
+            {
+                propertyToolView.ClearResultReview();
+            }
+            else if (view is VisionToolSingleInputCustomToolViewBase customToolView)
+            {
+                customToolView.ClearResultReview();
+            }
+
             if (view is LineToolWpfView lineView)
             {
                 lineView.ClearSignalEvidence();
@@ -849,7 +892,7 @@ namespace OpenVisionLab
         {
             if (result == null)
             {
-                SetStatus("Preview NG / tool returned no result");
+                SetStatus("Preview NG / " + VisionToolVerificationText.InspectionJudgmentNotEvaluated + " / tool returned no result");
                 return;
             }
 
