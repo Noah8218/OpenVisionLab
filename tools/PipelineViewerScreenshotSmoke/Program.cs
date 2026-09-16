@@ -361,6 +361,7 @@ internal static class Program
         ["wpf_layer_selection_matching_tool"] = CaptureLayerSelectionMatchingTool,
         ["wpf_layer_selection_threshold_tool"] = CaptureLayerSelectionThresholdTool,
         ["wpf_layer_selection_existing_output_write"] = CaptureLayerSelectionExistingOutputWrite,
+        ["wpf_layer_selection_same_input_output_guard"] = CaptureLayerSelectionSameInputOutputGuard,
         ["wpf_layer_selection_preprocess_existing_output_write"] = CaptureLayerSelectionPreprocessExistingOutputWrite,
         ["wpf_layer_selection_algorithm_existing_output_write"] = CaptureLayerSelectionAlgorithmExistingOutputWrite,
         ["wpf_arithmetic_tool_learn_button"] = CaptureArithmeticToolLearnButton,
@@ -28880,6 +28881,116 @@ internal static class Program
             ScreenshotBitmapAssertions.AssertBitmapBinaryLike(afterOutput, "Operator_Output threshold result");
             ScreenshotBitmapAssertions.SaveDiagnosticBitmap(outputPath, "existing-output-before.png", beforeOutput);
             ScreenshotBitmapAssertions.SaveDiagnosticBitmap(outputPath, "existing-output-after.png", afterOutput);
+        });
+    }
+
+    private static CaptureResult CaptureLayerSelectionSameInputOutputGuard(string outputPath)
+    {
+        OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+        OpenVisionShellHostView shellHost = CreateShellHost("Smoke_WpfLayerSelectionSameInputOutputGuard", seedMainLayer: false);
+        using Bitmap mainBitmap = CreateWorkspaceSeedSmokeBitmap();
+        shellHost.SetMainLayerImageForTest(mainBitmap);
+
+        return CaptureWindowWithContent(shellHost, outputPath, 1600, 900, () =>
+        {
+            shellHost.SelectToolForTest(VISION_MENU.Threshold);
+            Pump(20);
+
+            ComboBox inputLayerCombo = FindFloatingComboBox("cbInputLayer");
+            ComboBox outputLayerCombo = FindFloatingComboBox("cbOutputLayer");
+            AssertVisionToolComboTemplate(inputLayerCombo, "Same input/output input combo");
+            AssertVisionToolComboTemplate(outputLayerCombo, "Same input/output output combo");
+            AssertComboBoxPopupLayout(outputLayerCombo, "Same input/output output combo");
+
+            if (!string.Equals(GetComboBoxCurrentText(inputLayerCombo), "Main", StringComparison.OrdinalIgnoreCase)
+                || !ComboBoxContainsText(outputLayerCombo, "Main"))
+            {
+                throw new InvalidOperationException(
+                    "Same input/output guard fixture could not expose Main for both routes. "
+                    + $"Input={GetComboBoxCurrentText(inputLayerCombo)}, OutputItems={string.Join(",", outputLayerCombo.Items.Cast<object>())}");
+            }
+
+            SelectComboBoxItemText(outputLayerCombo, "Main", "Same input/output output combo");
+            Pump(12);
+            if (!string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, "Main", StringComparison.OrdinalIgnoreCase)
+                || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, "Main", StringComparison.OrdinalIgnoreCase)
+                || !string.Equals(GetComboBoxCurrentText(inputLayerCombo), "Main", StringComparison.OrdinalIgnoreCase)
+                || !string.Equals(GetComboBoxCurrentText(outputLayerCombo), "Main", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "Same input/output guard fixture did not retain the explicit Main/Main route. "
+                    + $"Input={shellHost.ActiveNativeRouteInputLayerNameForTest}, Output={shellHost.ActiveNativeRouteOutputLayerNameForTest}, "
+                    + $"InputCombo={GetComboBoxCurrentText(inputLayerCombo)}, OutputCombo={GetComboBoxCurrentText(outputLayerCombo)}");
+            }
+
+            using Bitmap beforeMain = shellHost.GetLayerImageCloneForTest("Main");
+            int beforeRuns = shellHost.NativePreviewRunCount;
+            shellHost.RunActiveNativePreviewForTest();
+            Pump(24);
+
+            using Bitmap afterMain = shellHost.GetLayerImageCloneForTest("Main");
+            string status = shellHost.ActiveNativeStatusText ?? string.Empty;
+            if (shellHost.HasNativePreviewResult
+                || shellHost.NativePreviewRunCount != beforeRuns
+                || shellHost.HasLayerForTest("Threshold_Preview")
+                || CountChangedPixels(beforeMain, afterMain, 0) != 0
+                || !status.Contains("input and output layers must be different", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "Same input/output Preview was not rejected before publishing. "
+                    + $"HasResult={shellHost.HasNativePreviewResult}, Runs={beforeRuns}->{shellHost.NativePreviewRunCount}, "
+                    + $"HasDefaultOutput={shellHost.HasLayerForTest("Threshold_Preview")}, ChangedPixels={CountChangedPixels(beforeMain, afterMain, 0)}, Status={status}");
+            }
+
+            ScreenshotBitmapAssertions.SaveDiagnosticBitmap(outputPath, "same-input-output-main-before.png", beforeMain);
+            ScreenshotBitmapAssertions.SaveDiagnosticBitmap(outputPath, "same-input-output-main-after.png", afterMain);
+
+            shellHost.SelectToolForTest(VISION_MENU.Arithmetic);
+            Pump(20);
+            ClickFloatingRadioButtonByName("rdoModeOperation", "Same input/output arithmetic operation mode radio");
+            Pump(12);
+            ComboBox arithmeticInputA = FindFloatingComboBox("cbInputA");
+            ComboBox arithmeticOutput = FindFloatingComboBox("cbOutputLayer");
+            AssertVisionToolComboTemplate(arithmeticInputA, "Same input/output arithmetic input A combo");
+            AssertVisionToolComboTemplate(arithmeticOutput, "Same input/output arithmetic output combo");
+            if (!ComboBoxContainsText(arithmeticInputA, "Main")
+                || !ComboBoxContainsText(arithmeticOutput, "Main"))
+            {
+                throw new InvalidOperationException(
+                    "Same input/output arithmetic fixture could not expose Main for input A/output. "
+                    + $"InputAItems={string.Join(",", arithmeticInputA.Items.Cast<object>())}, OutputItems={string.Join(",", arithmeticOutput.Items.Cast<object>())}");
+            }
+
+            SelectComboBoxItemText(arithmeticInputA, "Main", "Same input/output arithmetic input A combo");
+            SelectComboBoxItemText(arithmeticOutput, "Main", "Same input/output arithmetic output combo");
+            Pump(12);
+            if (!string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, "Main", StringComparison.OrdinalIgnoreCase)
+                || !string.Equals(shellHost.ActiveNativeRouteOutputLayerNameForTest, "Main", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "Same input/output arithmetic fixture did not retain Main/Main route. "
+                    + $"InputA={shellHost.ActiveNativeRouteInputLayerNameForTest}, Output={shellHost.ActiveNativeRouteOutputLayerNameForTest}");
+            }
+
+            using Bitmap arithmeticBeforeMain = shellHost.GetLayerImageCloneForTest("Main");
+            int arithmeticRunsBefore = shellHost.NativePreviewRunCount;
+            shellHost.RunActiveNativePreviewForTest();
+            Pump(24);
+            using Bitmap arithmeticAfterMain = shellHost.GetLayerImageCloneForTest("Main");
+            string arithmeticStatus = shellHost.ActiveNativeStatusText ?? string.Empty;
+            if (shellHost.HasNativePreviewResult
+                || shellHost.NativePreviewRunCount != arithmeticRunsBefore
+                || CountChangedPixels(arithmeticBeforeMain, arithmeticAfterMain, 0) != 0
+                || !arithmeticStatus.Contains("input and output layers must be different", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "Same input/output Arithmetic Preview was not rejected before publishing. "
+                    + $"HasResult={shellHost.HasNativePreviewResult}, Runs={arithmeticRunsBefore}->{shellHost.NativePreviewRunCount}, "
+                    + $"ChangedPixels={CountChangedPixels(arithmeticBeforeMain, arithmeticAfterMain, 0)}, Status={arithmeticStatus}");
+            }
+
+            ScreenshotBitmapAssertions.SaveDiagnosticBitmap(outputPath, "same-input-output-arithmetic-main-before.png", arithmeticBeforeMain);
+            ScreenshotBitmapAssertions.SaveDiagnosticBitmap(outputPath, "same-input-output-arithmetic-main-after.png", arithmeticAfterMain);
         });
     }
 

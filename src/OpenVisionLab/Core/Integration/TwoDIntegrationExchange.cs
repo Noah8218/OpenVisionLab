@@ -19,6 +19,16 @@ public sealed record TwoDIntegrationTransactionSummary(
     bool HasAcknowledgement,
     bool HasResult);
 
+public sealed record TwoDIntegrationDiscoveryDiagnostic(
+    Guid TransactionId,
+    string TransactionDirectory,
+    IntegrationErrorCode ErrorCode,
+    string Message);
+
+public sealed record TwoDIntegrationDiscoveryResult(
+    IReadOnlyList<TwoDIntegrationTransactionSummary> Transactions,
+    IReadOnlyList<TwoDIntegrationDiscoveryDiagnostic> Diagnostics);
+
 public sealed record TwoDIntegrationRunRecord(
     string SchemaVersion,
     string RunId,
@@ -113,8 +123,82 @@ public static class TwoDIntegrationExchange
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = true
     };
+    private static readonly object RunRecordPauseSync = new();
+    private static bool _runRecordPauseForTest;
+    private static string? _runRecordPauseMarkerPathForTest;
+    private static readonly object SourceValidationPauseSync = new();
+    private static bool _sourceValidationPauseForTest;
+    private static string? _sourceValidationPauseMarkerPathForTest;
+    private static int _failNextResultWriteForTest;
+
+    /// <summary>
+    /// Test-only process-boundary seam. The caller must delete the marker or
+    /// dispose the returned scope to release the pause.
+    /// </summary>
+    internal static IDisposable BeginRunRecordPauseForTest(string markerPath)
+    {
+        if (string.IsNullOrWhiteSpace(markerPath))
+        {
+            throw new ArgumentException(
+                "A run-record pause marker path is required.",
+                nameof(markerPath));
+        }
+
+        lock (RunRecordPauseSync)
+        {
+            bool previousEnabled = _runRecordPauseForTest;
+            string? previousMarkerPath = _runRecordPauseMarkerPathForTest;
+            _runRecordPauseForTest = true;
+            _runRecordPauseMarkerPathForTest = Path.GetFullPath(markerPath);
+            return new RunRecordPauseScope(previousEnabled, previousMarkerPath);
+        }
+    }
+
+    /// <summary>
+    /// Test-only one-shot result publication failure. The next Result message
+    /// write fails; the retry used by the existing failure path can still
+    /// publish its typed failure Result.
+    /// </summary>
+    internal static IDisposable BeginResultWriteFailureInjectionForTest()
+    {
+        int previous = Interlocked.Exchange(ref _failNextResultWriteForTest, 1);
+        return new ResultWriteFailureScope(previous);
+    }
+
+    /// <summary>
+    /// Test-only seam between Handoff artifact validation and source decoding.
+    /// The caller must delete the marker or dispose the returned scope to
+    /// release the pause.
+    /// </summary>
+    internal static IDisposable BeginSourceValidationPauseForTest(string markerPath)
+    {
+        if (string.IsNullOrWhiteSpace(markerPath))
+        {
+            throw new ArgumentException(
+                "A source-validation pause marker path is required.",
+                nameof(markerPath));
+        }
+
+        lock (SourceValidationPauseSync)
+        {
+            bool previousEnabled = _sourceValidationPauseForTest;
+            string? previousMarkerPath = _sourceValidationPauseMarkerPathForTest;
+            _sourceValidationPauseForTest = true;
+            _sourceValidationPauseMarkerPathForTest = Path.GetFullPath(markerPath);
+            return new SourceValidationPauseScope(previousEnabled, previousMarkerPath);
+        }
+    }
 
     public static IReadOnlyList<TwoDIntegrationTransactionSummary> DiscoverHandoffs(
+        string exchangeRoot) =>
+        DiscoverHandoffsDetailed(exchangeRoot).Transactions;
+
+    /// <summary>
+    /// Discovers valid Handoffs without allowing one unreadable transaction to
+    /// hide later valid transactions. Item-level read/parse failures are
+    /// returned as typed diagnostics and are never acknowledged or deleted.
+    /// </summary>
+    public static TwoDIntegrationDiscoveryResult DiscoverHandoffsDetailed(
         string exchangeRoot)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(exchangeRoot);
@@ -123,10 +207,11 @@ public static class TwoDIntegrationExchange
             IntegrationTransactionLayout.TransactionsDirectoryName);
         if (!Directory.Exists(transactionsRoot))
         {
-            return [];
+            return new([], []);
         }
 
         var transactions = new List<TwoDIntegrationTransactionSummary>();
+        var diagnostics = new List<TwoDIntegrationDiscoveryDiagnostic>();
         foreach (var directory in Directory.EnumerateDirectories(transactionsRoot))
         {
             if (!Guid.TryParse(Path.GetFileName(directory), out var transactionId))
@@ -134,28 +219,41 @@ public static class TwoDIntegrationExchange
                 continue;
             }
 
-            var handoffPath = Path.Combine(
-                directory,
-                IntegrationTransactionLayout.HandoffFileName);
-            if (!File.Exists(handoffPath))
+            try
+            {
+                var handoff = ReadHandoffEnvelope(exchangeRoot, transactionId);
+                transactions.Add(new(
+                    handoff,
+                    File.Exists(Path.Combine(
+                        directory,
+                        IntegrationTransactionLayout.AcknowledgementFileName)),
+                    File.Exists(Path.Combine(
+                        directory,
+                        IntegrationTransactionLayout.ResultFileName))));
+            }
+            catch (Exception exception) when (
+                exception is FileNotFoundException
+                    or DirectoryNotFoundException)
             {
                 continue;
             }
-
-            var handoff = ReadHandoffEnvelope(exchangeRoot, transactionId);
-            transactions.Add(new(
-                handoff,
-                File.Exists(Path.Combine(
+            catch (Exception exception) when (IsDiscoverableFailure(exception))
+            {
+                diagnostics.Add(new(
+                    transactionId,
                     directory,
-                    IntegrationTransactionLayout.AcknowledgementFileName)),
-                File.Exists(Path.Combine(
-                    directory,
-                    IntegrationTransactionLayout.ResultFileName))));
+                    ResolveDiscoveryErrorCode(exception),
+                    exception.GetBaseException().Message));
+            }
         }
 
-        return transactions
-            .OrderByDescending(transaction => transaction.Handoff.CreatedAtUtc)
-            .ToArray();
+        return new(
+            transactions
+                .OrderByDescending(transaction => transaction.Handoff.CreatedAtUtc)
+                .ToArray(),
+            diagnostics
+                .OrderBy(diagnostic => diagnostic.TransactionId)
+                .ToArray());
     }
 
     public static IntegrationHandoffV2 ReadHandoff(
@@ -288,10 +386,20 @@ public static class TwoDIntegrationExchange
         ThrowIfInvalid(IntegrationContractValidator.ValidateV2Sequence(
             handoff,
             acknowledgement));
-        WriteNewMessage(
-            transactionDirectory,
-            IntegrationTransactionLayout.AcknowledgementFileName,
-            IntegrationContractJson.SerializeCanonical(acknowledgement));
+        try
+        {
+            WriteNewMessage(
+                transactionDirectory,
+                IntegrationTransactionLayout.AcknowledgementFileName,
+                IntegrationContractJson.SerializeCanonical(acknowledgement));
+        }
+        catch (IOException exception) when (File.Exists(acknowledgementPath))
+        {
+            throw new IntegrationContractException(
+                IntegrationErrorCode.InvalidState,
+                "The Handoff already has an Acknowledgement.",
+                exception);
+        }
         return acknowledgement;
     }
 
@@ -419,12 +527,38 @@ public static class TwoDIntegrationExchange
             IntegrationArtifactRoles.InspectionRecipe);
         var sourcePath = ResolveArtifactPath(transactionDirectory, sourceArtifact);
         var recipePath = ResolveArtifactPath(transactionDirectory, recipeArtifact);
+        string runRecordPath = Path.Combine(
+            transactionDirectory,
+            IntegrationTransactionLayout.ArtifactsDirectoryName,
+            RunRecordFileName);
+        if (File.Exists(runRecordPath))
+        {
+            return PublishFailedResult(
+                transactionDirectory,
+                handoff,
+                acknowledgement,
+                consumerBuild,
+                IntegrationResultStatus.Failed,
+                IntegrationInspectionOutcome.ExecutionError,
+                new IntegrationError(
+                    IntegrationErrorCode.ExecutionFailed,
+                    DescribeOrphanedRunRecord(
+                        runRecordPath,
+                        sourceArtifact,
+                        recipeArtifact),
+                    false));
+        }
+
+        PauseAfterSourceValidationForTest();
+        byte[] sourceBytes = ReadVerifiedArtifactBytes(
+            transactionDirectory,
+            sourceArtifact);
         string locatorEvidenceDirectory = string.Empty;
 
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
-            using var source = Cv2.ImRead(sourcePath, ImreadModes.Unchanged);
+            using var source = Cv2.ImDecode(sourceBytes, ImreadModes.Unchanged);
             if (source.Empty())
             {
                 throw new InvalidOperationException(
@@ -528,9 +662,10 @@ public static class TwoDIntegrationExchange
                 ];
             }
 
-            var runRecordPath = WriteRunRecord(
+            runRecordPath = WriteRunRecord(
                 transactionDirectory,
                 runRecord);
+            PauseAfterRunRecordForTest();
             try
             {
                 var runRecordReference = CreateArtifactReference(
@@ -1042,6 +1177,53 @@ public static class TwoDIntegrationExchange
         return path;
     }
 
+    private static byte[] ReadVerifiedArtifactBytes(
+        string transactionDirectory,
+        IntegrationArtifactReference artifact)
+    {
+        EnsureNoReparsePoints(transactionDirectory, artifact.RelativePath);
+        string path = ResolveArtifactPath(transactionDirectory, artifact);
+        byte[] bytes;
+        try
+        {
+            bytes = File.ReadAllBytes(path);
+        }
+        catch (FileNotFoundException exception)
+        {
+            throw new IntegrationContractException(
+                IntegrationErrorCode.ArtifactMissing,
+                "artifact.relativePath: Referenced artifact does not exist.",
+                exception);
+        }
+        catch (DirectoryNotFoundException exception)
+        {
+            throw new IntegrationContractException(
+                IntegrationErrorCode.ArtifactMissing,
+                "artifact.relativePath: Referenced artifact does not exist.",
+                exception);
+        }
+
+        if (bytes.LongLength != artifact.ByteLength)
+        {
+            throw new IntegrationContractException(
+                IntegrationErrorCode.ArtifactLengthMismatch,
+                "artifact.byteLength: Referenced artifact byte length does not match.");
+        }
+
+        string actualSha256 = Convert.ToHexString(SHA256.HashData(bytes));
+        if (!string.Equals(
+                actualSha256,
+                artifact.Sha256,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            throw new IntegrationContractException(
+                IntegrationErrorCode.ArtifactHashMismatch,
+                "artifact.sha256: Referenced artifact SHA-256 does not match.");
+        }
+
+        return bytes;
+    }
+
     private static void EnsureNoReparsePoints(
         string transactionDirectory,
         string relativePath)
@@ -1072,6 +1254,174 @@ public static class TwoDIntegrationExchange
         }
     }
 
+    private static string DescribeOrphanedRunRecord(
+        string runRecordPath,
+        IntegrationArtifactReference sourceArtifact,
+        IntegrationArtifactReference recipeArtifact)
+    {
+        try
+        {
+            var runRecord = JsonSerializer.Deserialize<TwoDIntegrationRunRecord>(
+                File.ReadAllText(runRecordPath),
+                RunRecordJsonOptions);
+            if (runRecord is null)
+            {
+                return "A 2D Run Record exists without a Result but could not be validated. "
+                    + "Automatic rerun is blocked; manual recovery is required.";
+            }
+
+            bool identityMatches = !string.IsNullOrWhiteSpace(runRecord.RunId)
+                && string.Equals(
+                    runRecord.SourceRelativePath,
+                    sourceArtifact.RelativePath,
+                    StringComparison.Ordinal)
+                && string.Equals(
+                    runRecord.SourceSha256,
+                    sourceArtifact.Sha256,
+                    StringComparison.OrdinalIgnoreCase)
+                && runRecord.SourceByteLength == sourceArtifact.ByteLength
+                && string.Equals(
+                    runRecord.RecipeRelativePath,
+                    recipeArtifact.RelativePath,
+                    StringComparison.Ordinal)
+                && string.Equals(
+                    runRecord.RecipeSha256,
+                    recipeArtifact.Sha256,
+                    StringComparison.OrdinalIgnoreCase);
+            if (identityMatches)
+            {
+                return $"A validated 2D Run Record ({runRecord.RunId}) exists without a Result. "
+                    + "Automatic rerun is blocked; manual recovery is required.";
+            }
+
+            return "A 2D Run Record exists without a Result but does not match the Handoff artifacts. "
+                + "Automatic rerun is blocked; manual recovery is required.";
+        }
+        catch (JsonException)
+        {
+            return "A 2D Run Record exists without a Result but is malformed. "
+                + "Automatic rerun is blocked; manual recovery is required.";
+        }
+        catch (IOException)
+        {
+            return "A 2D Run Record exists without a Result but could not be read. "
+                + "Automatic rerun is blocked; manual recovery is required.";
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return "A 2D Run Record exists without a Result but cannot be accessed. "
+                + "Automatic rerun is blocked; manual recovery is required.";
+        }
+    }
+
+    private static void PauseAfterRunRecordForTest()
+    {
+        string? markerPath;
+        lock (RunRecordPauseSync)
+        {
+            markerPath = _runRecordPauseForTest
+                ? _runRecordPauseMarkerPathForTest
+                : null;
+        }
+
+        if (string.IsNullOrWhiteSpace(markerPath))
+        {
+            return;
+        }
+
+        string? markerDirectory = Path.GetDirectoryName(markerPath);
+        if (!string.IsNullOrWhiteSpace(markerDirectory))
+        {
+            Directory.CreateDirectory(markerDirectory);
+        }
+
+        File.WriteAllText(markerPath, "AfterRunRecordWritten");
+        while (true)
+        {
+            lock (RunRecordPauseSync)
+            {
+                if (!_runRecordPauseForTest
+                    || !string.Equals(
+                        _runRecordPauseMarkerPathForTest,
+                        markerPath,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    return;
+                }
+            }
+
+            if (!File.Exists(markerPath))
+            {
+                return;
+            }
+
+            Thread.Sleep(10);
+        }
+    }
+
+    private static void PauseAfterSourceValidationForTest()
+    {
+        string? markerPath;
+        lock (SourceValidationPauseSync)
+        {
+            markerPath = _sourceValidationPauseForTest
+                ? _sourceValidationPauseMarkerPathForTest
+                : null;
+        }
+
+        if (string.IsNullOrWhiteSpace(markerPath))
+        {
+            return;
+        }
+
+        string? markerDirectory = Path.GetDirectoryName(markerPath);
+        if (!string.IsNullOrWhiteSpace(markerDirectory))
+        {
+            Directory.CreateDirectory(markerDirectory);
+        }
+
+        File.WriteAllText(markerPath, "AfterSourceValidation");
+        while (true)
+        {
+            lock (SourceValidationPauseSync)
+            {
+                if (!_sourceValidationPauseForTest
+                    || !string.Equals(
+                        _sourceValidationPauseMarkerPathForTest,
+                        markerPath,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    return;
+                }
+            }
+
+            if (!File.Exists(markerPath))
+            {
+                return;
+            }
+
+            Thread.Sleep(10);
+        }
+    }
+
+    private static bool IsDiscoverableFailure(Exception exception) =>
+        exception is IntegrationContractException
+            or IOException
+            or UnauthorizedAccessException
+            or JsonException
+            or InvalidDataException
+            or FormatException
+            or ArgumentException;
+
+    private static IntegrationErrorCode ResolveDiscoveryErrorCode(Exception exception) =>
+        exception switch
+        {
+            IntegrationContractException contractException => contractException.ErrorCode,
+            FileNotFoundException or DirectoryNotFoundException => IntegrationErrorCode.ArtifactMissing,
+            JsonException => IntegrationErrorCode.MalformedMessage,
+            _ => IntegrationErrorCode.InvalidState
+        };
+
     private static byte[] ReadMessage(
         string transactionDirectory,
         string fileName) =>
@@ -1082,6 +1432,15 @@ public static class TwoDIntegrationExchange
         string fileName,
         byte[] bytes)
     {
+        if (string.Equals(
+                fileName,
+                IntegrationTransactionLayout.ResultFileName,
+                StringComparison.OrdinalIgnoreCase)
+            && Interlocked.Exchange(ref _failNextResultWriteForTest, 0) == 1)
+        {
+            throw new IOException("Injected 2D Result write failure.");
+        }
+
         var target = Path.Combine(transactionDirectory, fileName);
         var temporary = Path.Combine(
             transactionDirectory,
@@ -1129,6 +1488,84 @@ public static class TwoDIntegrationExchange
         {
             _stream.Dispose();
             TryDeleteFile(_path);
+        }
+    }
+
+    private sealed class RunRecordPauseScope : IDisposable
+    {
+        private readonly bool _previousEnabled;
+        private readonly string? _previousMarkerPath;
+        private bool _disposed;
+
+        public RunRecordPauseScope(bool previousEnabled, string? previousMarkerPath)
+        {
+            _previousEnabled = previousEnabled;
+            _previousMarkerPath = previousMarkerPath;
+        }
+
+        public void Dispose()
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            lock (RunRecordPauseSync)
+            {
+                _runRecordPauseForTest = _previousEnabled;
+                _runRecordPauseMarkerPathForTest = _previousMarkerPath;
+                _disposed = true;
+            }
+        }
+    }
+
+    private sealed class SourceValidationPauseScope : IDisposable
+    {
+        private readonly bool _previousEnabled;
+        private readonly string? _previousMarkerPath;
+        private bool _disposed;
+
+        public SourceValidationPauseScope(bool previousEnabled, string? previousMarkerPath)
+        {
+            _previousEnabled = previousEnabled;
+            _previousMarkerPath = previousMarkerPath;
+        }
+
+        public void Dispose()
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            lock (SourceValidationPauseSync)
+            {
+                _sourceValidationPauseForTest = _previousEnabled;
+                _sourceValidationPauseMarkerPathForTest = _previousMarkerPath;
+                _disposed = true;
+            }
+        }
+    }
+
+    private sealed class ResultWriteFailureScope : IDisposable
+    {
+        private readonly int _previous;
+        private bool _disposed;
+
+        public ResultWriteFailureScope(int previous)
+        {
+            _previous = previous;
+        }
+
+        public void Dispose()
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            Interlocked.Exchange(ref _failNextResultWriteForTest, _previous);
+            _disposed = true;
         }
     }
 

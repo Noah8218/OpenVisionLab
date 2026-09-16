@@ -1,0 +1,140 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0099",
+    "aliases": [
+      "2D-039"
+    ],
+    "type": "task",
+    "mode": "simple",
+    "title": "Verify normal window close and restart lifetime during active Preview",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "explicit user continuation request",
+    "summary": "The remaining 2D reconciliation requires a real WPF close request while Preview is active, followed by a fresh session check, rather than relying only on force-stop or document-level cancellation evidence.",
+    "refs": [
+      "C:/Users/USER/Downloads/OpenVisionLab_2D_tasks.json#2D-039",
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md",
+      "tools/OpenVisionLab.DirectSmokeRunner/OpenVisionLabDirectSmokeRunner.cs",
+      "src/OpenVisionLab/UI/Menu/Wpf/Windows/OpenVisionShellHostWindow.xaml.cs",
+      "src/OpenVisionLab/UI/Menu/Wpf/OpenVisionShellHostView.xaml.cs",
+      "src/OpenVisionLab/UI/Menu/Wpf/Shell/Session/OpenVisionShellHostSessionController.cs",
+      "src/OpenVisionLab/UI/Menu/Wpf/NativeTools/Documents/OpenVisionNativeToolDocument.cs"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "2D-039 is resolved as a bounded close/restart lifetime slice: the actual embedded WPF Window.Close path was exercised while a controlled native Preview worker was active, the worker drained without stale output, a fresh shell session had no transient document state, and the current Release EXE passed two same-data-root normal-close/restart runs. Production lifetime owners were retained; persisted qualified-Recipe mutation, hardware, hang, and broad UI qualification remain separate boundaries."
+  },
+  "objective": {
+    "summary": "Verify the existing WPF Window.Close lifetime path while a controlled native Preview is running, prove bounded worker drain and stale-result suppression, and prove that a newly opened shell starts without transient Preview/document state.",
+    "constraints": [
+      "Reuse OpenVisionShellHostWindow, OpenVisionShellHostView, OpenVisionShellHostSessionController, OpenVisionShellHostDocumentController, and OpenVisionNativeToolDocument; do not split or replace completed lifecycle owners.",
+      "Keep PL-0004 cached-view ownership and PL-0066/PL-0098 Preview cancellation/discard contracts unchanged; this is a close-path verification slice, not a new timeout policy.",
+      "Use D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev for runtime artifacts and select the test monitor from the reported Windows topology.",
+      "Do not modify, stage, commit, or push C:\\Git\\2D\\Original.",
+      "Do not claim hardware/camera/PLC, infinite-hang, low-memory, multi-monitor, full-DPI, or persistent qualified-recipe recovery from the controlled local smoke."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The actual embedded WPF scenario reaches a running native Preview, requests Window.Close while the worker is active, closes the window on the existing OnClosed path, drains the controlled worker within the bounded fixture, leaves no stale Preview output layer, and keeps the explicit-shutdown dispatcher alive until the test completes.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "A second shell session created after the close starts without a stale Main layer, native tool document, or Preview run; the current Release desktop contract returns exit code 0 for normal CloseMainWindow and keeps the intentional invalid TCP smoke nonzero.",
+      "evidence_refs": [
+        "E2",
+        "E4"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "The Handoff, reconciliation report, and issue record identify the owner/call path, source-only versus runtime evidence, self-evaluation, D-drive artifacts, and unverified persisted-recipe/hardware/long-duration boundaries so the same close work is not repeated.",
+      "evidence_refs": [
+        "E1",
+        "E5"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0094"
+    }
+  ],
+  "context": [
+    {
+      "kind": "window-owner",
+      "location": "OpenVisionShellHostWindow.OnClosed -> OpenVisionShellHostView.Dispose -> OpenVisionShellHostSessionController.DisposeSession -> OpenVisionShellHostDocumentController.Dispose -> OpenVisionNativeToolDocument.Dispose",
+      "summary": "Window.Close is the external request; OnClosed disposes the existing shell/session/document owners and clears the content host without moving cached tool-view ownership."
+    },
+    {
+      "kind": "preview-owner",
+      "location": "OpenVisionNativeToolDocument.RunPreview -> OpenVisionNativePreviewExecutionBoundary -> OpenVisionNativePreviewExecutionController",
+      "summary": "The existing Preview boundary runs the controlled delegate, cancels/discards the generation on disposal, and prevents late output publication."
+    },
+    {
+      "kind": "reading-order",
+      "location": "OpenVisionShellHostWindow.OnClosed -> OpenVisionShellHostView.Dispose -> OpenVisionShellHostSessionController.DisposeSession -> OpenVisionShellHostDocumentController.Dispose -> OpenVisionNativeToolDocument.Dispose -> OpenVisionNativePreviewExecutionBoundary.Dispose; then DirectSmokeRunner normal-close-restart-lifetime route -> focused Release desktop contract."
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "review",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/Windows/OpenVisionShellHostWindow.xaml.cs; src/OpenVisionLab/UI/Menu/Wpf/OpenVisionShellHostView.xaml.cs; src/OpenVisionLab/UI/Menu/Wpf/Shell/Session/OpenVisionShellHostSessionController.cs; src/OpenVisionLab/UI/Menu/Wpf/Shell/Documents/OpenVisionShellHostDocumentController.cs; src/OpenVisionLab/UI/Menu/Wpf/NativeTools/Documents/OpenVisionNativeToolDocument.cs; src/OpenVisionLab/UI/Menu/Wpf/NativeTools/Preview/OpenVisionNativePreviewExecutionBoundary.cs",
+      "observation": "The existing owner/call path is Window.Close -> OnClosed -> shell View Dispose -> session DisposeSession -> document controller Dispose -> native tool document Dispose -> Preview boundary Dispose. The ViewModel/lifetime boundary does not create a new window owner, and the cached tool-view path remains owned by the existing document controller.",
+      "observed_at": "2026-09-16T11:55:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "build",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d039-normal-close-restart-20260916-r1\\app-debug-embedded-build.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d039-normal-close-restart-20260916-r1\\app-release-build.log",
+      "observation": "The changed embedded Debug build and current Release x64 build completed with 0 warnings and 0 errors. Debug output was C:\\Git\\2D\\Dev\\bin\\x64\\Debug\\OpenVisionLab.dll; Release output was C:\\Git\\2D\\Dev\\bin\\x64\\Release\\OpenVisionLab.exe.",
+      "observed_at": "2026-09-16T12:00:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "runtime",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d039-normal-close-restart-20260916-r1\\normal-close-restart\\report.txt",
+      "observation": "The actual embedded WPF scenario passed. A controlled Preview delegate was active when Window.Close was requested; WindowClosed=True, DispatcherAliveAfterClose=True, WorkerDrainedAfterClose=True, LatePreviewResultPublished=false, StaleOutputLayerAfterClose=False, CloseElapsedMilliseconds=382.3, and RestartFreshSession=True. Both windows intersected the dynamically selected DISPLAY2 monitor. The managed assembly under test was C:\\Git\\2D\\Dev\\bin\\x64\\Debug\\OpenVisionLab.dll with SHA-256 245E30FCAACCD2367CAD719BDB4F6E2D8E7BFC703EC1DE36473689991837DD64.",
+      "observed_at": "2026-09-16T12:05:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "runtime",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d039-normal-close-restart-20260916-r1\\desktop-exit-code-contract\\desktop-exit-code-contract.json; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d039-normal-close-restart-20260916-r1\\desktop-exit-code-contract-restart\\pass1-desktop-exit-code-contract.json; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d039-normal-close-restart-20260916-r1\\desktop-exit-code-contract-restart\\pass2-desktop-exit-code-contract.json; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d039-normal-close-restart-20260916-r1\\desktop-exit-code-contract-restart\\restart-consistency.txt",
+      "observation": "The current Release OpenVisionLab.exe passed the existing desktop exit contract with normal CloseMainWindow exit code 0 and monitor placement; the intentional invalid TCP smoke remained nonzero (exit code 1). Reusing the same OPENVISIONLAB_DATA_ROOT, two consecutive runs both passed normal-close exit 0, CloseMainWindow termination, and placement on DISPLAY2. SYSTEM.xml and RECIPE/Default/VISION.xml remained present; the Error log contained only UTF-8 BOM plus newline (3 bytes).",
+      "observed_at": "2026-09-16T12:16:00+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "report",
+      "location": "docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md; docs/admin/OPENVISIONLAB_DOCUMENTATION_MAP.md",
+      "observation": "The durable report and live Handoff record PL-0099 as the single 2D-039 owner, update the ledger count to 99 total/94 resolved/1 doing/4 blocked, link the active-Preview close and same-data-root restart artifacts, preserve the source-only and runtime boundaries, and remove 2D-039 from the next-admission list. The Documentation Map row points to the updated reconciliation.",
+      "observed_at": "2026-09-16T12:22:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-16T12:22:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "2D-039 is resolved after the focused active-Preview Window.Close and restart checks passed. No production lifetime change was necessary; persisted qualified-Recipe mutation/recovery, hardware, long-duration, hang, and broad WPF theme/layout/DPI/input boundaries remain explicitly unverified."
+    }
+  ],
+  "created_at": "2026-09-16T12:13:09+09:00",
+  "updated_at": "2026-09-16T12:22:00+09:00"
+}

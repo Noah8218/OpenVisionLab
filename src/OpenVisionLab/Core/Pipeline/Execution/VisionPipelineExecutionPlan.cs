@@ -39,6 +39,8 @@ namespace OpenVisionLab
 
     internal sealed class VisionPipelineExecutionPlan
     {
+        private const string VisionSdkManifestFileName = "sdk-manifest.json";
+        private const string CleanRuntimeManifestFileName = "clean_runtime_manifest.json";
         private static readonly Encoding Utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
 
         private VisionPipelineExecutionPlan(
@@ -264,46 +266,357 @@ namespace OpenVisionLab
         {
             Assembly sdkAssembly = typeof(VisionPipeline).Assembly;
             string sdkIdentity = $"{sdkAssembly.GetName().Name};AssemblyVersion={sdkAssembly.GetName().Version}";
-            string manifestPath = FindRepositoryFile(
-                Path.Combine("dll", "OpenVisionLab-Vision-SDK", "sdk-manifest.json"));
+            string manifestPath = FindDeploymentFile(VisionSdkManifestFileName);
+            bool deploymentManifest = !string.IsNullOrWhiteSpace(manifestPath);
+            if (!deploymentManifest)
+            {
+                manifestPath = FindRepositoryFile(
+                    Path.Combine("dll", "OpenVisionLab-Vision-SDK", VisionSdkManifestFileName));
+            }
             if (string.IsNullOrWhiteSpace(manifestPath) || !File.Exists(manifestPath))
             {
                 return (sdkIdentity + ";Manifest=unavailable", "unavailable", string.Empty);
             }
 
-            byte[] manifestBytes = File.ReadAllBytes(manifestPath);
-            string manifestSha256 = ComputeSha256(manifestBytes);
-            string version = string.Empty;
-            string commit = string.Empty;
             try
             {
-                using JsonDocument document = JsonDocument.Parse(manifestBytes);
-                if (document.RootElement.TryGetProperty("sdk", out JsonElement sdk)
-                    && sdk.ValueKind == JsonValueKind.Object)
-                {
-                    version = GetJsonString(sdk, "version");
-                    commit = GetJsonString(sdk, "commit");
-                }
+                byte[] manifestBytes = File.ReadAllBytes(manifestPath);
+                string manifestSha256 = ComputeSha256(manifestBytes);
+                bool manifestMatches = TryValidateVisionSdkManifest(
+                    manifestPath,
+                    manifestBytes,
+                    sdkAssembly,
+                    deploymentManifest,
+                    manifestSha256,
+                    ResolveEmbeddedVisionSdkManifestSha256(),
+                    out string version,
+                    out string commit);
+                string status = manifestMatches ? "match" : "mismatch";
+                string manifestIdentity = $"{VisionSdkManifestFileName};SHA256={manifestSha256};Status={status}";
+                string sdkDetails = string.IsNullOrWhiteSpace(version)
+                    ? string.Empty
+                    : $";ManifestVersion={version};ManifestCommit={commit}";
+                return (
+                    sdkIdentity + sdkDetails + $";ManifestStatus={status}",
+                    manifestIdentity,
+                    manifestSha256);
             }
-            catch (JsonException)
+            catch (IOException)
             {
-                version = string.Empty;
-                commit = string.Empty;
+                return (
+                    sdkIdentity + ";ManifestStatus=mismatch",
+                    $"{VisionSdkManifestFileName};Status=mismatch",
+                    string.Empty);
             }
-
-            string manifestIdentity = $"sdk-manifest.json;SHA256={manifestSha256}";
-            string sdkDetails = string.IsNullOrWhiteSpace(version)
-                ? string.Empty
-                : $";ManifestVersion={version};ManifestCommit={commit}";
-            return (sdkIdentity + sdkDetails, manifestIdentity, manifestSha256);
+            catch (UnauthorizedAccessException)
+            {
+                return (
+                    sdkIdentity + ";ManifestStatus=mismatch",
+                    $"{VisionSdkManifestFileName};Status=mismatch",
+                    string.Empty);
+            }
         }
 
         private static string GetJsonString(JsonElement element, string propertyName)
         {
-            return element.TryGetProperty(propertyName, out JsonElement property)
+            return TryGetJsonProperty(element, propertyName, out JsonElement property)
                 && property.ValueKind == JsonValueKind.String
                 ? property.GetString() ?? string.Empty
                 : string.Empty;
+        }
+
+        private static bool TryValidateVisionSdkManifest(
+            string manifestPath,
+            byte[] manifestBytes,
+            Assembly sdkAssembly,
+            bool deploymentManifest,
+            string manifestSha256,
+            string embeddedManifestSha256,
+            out string version,
+            out string commit)
+        {
+            version = string.Empty;
+            commit = string.Empty;
+            try
+            {
+                using JsonDocument document = ParseJsonDocument(manifestBytes);
+                if (!TryGetJsonProperty(document.RootElement, "sdk", out JsonElement sdk)
+                    || sdk.ValueKind != JsonValueKind.Object)
+                {
+                    return false;
+                }
+
+                version = GetJsonString(sdk, "version");
+                commit = GetJsonString(sdk, "commit");
+                if (!string.IsNullOrWhiteSpace(embeddedManifestSha256)
+                    && !string.Equals(
+                        embeddedManifestSha256,
+                        manifestSha256,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+
+                if (string.IsNullOrWhiteSpace(version) || string.IsNullOrWhiteSpace(commit)
+                    || !TryGetJsonProperty(document.RootElement, "files", out JsonElement files)
+                    || files.ValueKind != JsonValueKind.Array)
+                {
+                    return false;
+                }
+
+                string manifestDirectory = Path.GetDirectoryName(manifestPath) ?? string.Empty;
+                string loadedAssemblyPath = sdkAssembly.Location;
+                if (string.IsNullOrWhiteSpace(manifestDirectory)
+                    || string.IsNullOrWhiteSpace(loadedAssemblyPath)
+                    || !File.Exists(loadedAssemblyPath))
+                {
+                    return false;
+                }
+
+                FileInfo loadedAssembly = new FileInfo(loadedAssemblyPath);
+                string loadedAssemblyHash = ComputeFileSha256(loadedAssemblyPath);
+                bool loadedAssemblyMatched = false;
+                foreach (JsonElement file in files.EnumerateArray())
+                {
+                    if (file.ValueKind != JsonValueKind.Object
+                        || !TryGetJsonProperty(file, "path", out JsonElement pathProperty)
+                        || pathProperty.ValueKind != JsonValueKind.String
+                        || !TryGetJsonProperty(file, "length", out JsonElement lengthProperty)
+                        || !lengthProperty.TryGetInt64(out long expectedLength)
+                        || !TryGetJsonProperty(file, "sha256", out JsonElement hashProperty)
+                        || hashProperty.ValueKind != JsonValueKind.String)
+                    {
+                        return false;
+                    }
+
+                    string relativePath = pathProperty.GetString() ?? string.Empty;
+                    string expectedHash = hashProperty.GetString() ?? string.Empty;
+                    if (string.IsNullOrWhiteSpace(relativePath)
+                        || Path.IsPathRooted(relativePath)
+                        || expectedLength < 0
+                        || expectedHash.Length != 64)
+                    {
+                        return false;
+                    }
+
+                    string filePath = Path.GetFullPath(Path.Combine(manifestDirectory, relativePath));
+                    if (!IsContainedPath(manifestDirectory, filePath) || !File.Exists(filePath))
+                    {
+                        return false;
+                    }
+
+                    FileInfo actualFile = new FileInfo(filePath);
+                    string actualHash = ComputeFileSha256(filePath);
+                    if (actualFile.Length != expectedLength
+                        || !string.Equals(actualHash, expectedHash, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return false;
+                    }
+
+                    if (string.Equals(
+                            Path.GetFileName(filePath),
+                            Path.GetFileName(loadedAssemblyPath),
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        loadedAssemblyMatched = loadedAssembly.Length == expectedLength
+                            && string.Equals(
+                                loadedAssemblyHash,
+                                expectedHash,
+                                StringComparison.OrdinalIgnoreCase);
+                    }
+                }
+
+                if (!loadedAssemblyMatched)
+                {
+                    return false;
+                }
+
+                if (deploymentManifest)
+                {
+                    string runtimeManifestPath = Path.Combine(
+                        AppContext.BaseDirectory,
+                        CleanRuntimeManifestFileName);
+                    if (File.Exists(runtimeManifestPath)
+                        && !TryValidateCleanRuntimeManifest(
+                            runtimeManifestPath,
+                            manifestSha256,
+                            version,
+                            commit))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+            catch (JsonException)
+            {
+                return false;
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+        }
+
+        private static bool TryValidateCleanRuntimeManifest(
+            string runtimeManifestPath,
+            string sdkManifestSha256,
+            string version,
+            string commit)
+        {
+            try
+            {
+                using JsonDocument document = ParseJsonDocument(File.ReadAllBytes(runtimeManifestPath));
+                bool hasManifestAnchor = false;
+                if (TryGetJsonProperty(
+                        document.RootElement,
+                        "VisionSdkManifestSha256",
+                        out JsonElement manifestHashProperty)
+                    && manifestHashProperty.ValueKind == JsonValueKind.String
+                    && !string.IsNullOrWhiteSpace(manifestHashProperty.GetString()))
+                {
+                    hasManifestAnchor = true;
+                    if (!string.Equals(
+                            manifestHashProperty.GetString(),
+                            sdkManifestSha256,
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        return false;
+                    }
+                }
+
+                if (TryGetJsonProperty(document.RootElement, "VisionSdk", out JsonElement runtimeSdk)
+                    && runtimeSdk.ValueKind == JsonValueKind.Object)
+                {
+                    string runtimeVersion = GetJsonString(runtimeSdk, "version");
+                    string runtimeCommit = GetJsonString(runtimeSdk, "commit");
+                    if ((!string.IsNullOrWhiteSpace(runtimeVersion)
+                            && !string.Equals(runtimeVersion, version, StringComparison.Ordinal))
+                        || (!string.IsNullOrWhiteSpace(runtimeCommit)
+                            && !string.Equals(runtimeCommit, commit, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        return false;
+                    }
+                }
+
+                if (TryGetJsonProperty(document.RootElement, "Files", out JsonElement files)
+                    && files.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (JsonElement file in files.EnumerateArray())
+                    {
+                        string path = GetJsonString(file, "Path");
+                        if (!string.Equals(
+                                Path.GetFileName(path),
+                                VisionSdkManifestFileName,
+                                StringComparison.OrdinalIgnoreCase))
+                        {
+                            continue;
+                        }
+
+                        hasManifestAnchor = true;
+                        if (!TryGetJsonProperty(file, "Length", out JsonElement lengthProperty)
+                            || !lengthProperty.TryGetInt64(out long length)
+                            || !TryGetJsonProperty(file, "SHA256", out JsonElement hashProperty)
+                            || hashProperty.ValueKind != JsonValueKind.String
+                            || length != new FileInfo(Path.Combine(AppContext.BaseDirectory, VisionSdkManifestFileName)).Length
+                            || !string.Equals(
+                                hashProperty.GetString(),
+                                sdkManifestSha256,
+                                StringComparison.OrdinalIgnoreCase))
+                        {
+                            return false;
+                        }
+                    }
+                }
+
+                return !hasManifestAnchor || !string.IsNullOrWhiteSpace(sdkManifestSha256);
+            }
+            catch (JsonException)
+            {
+                return false;
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+        }
+
+        private static bool TryGetJsonProperty(
+            JsonElement element,
+            string propertyName,
+            out JsonElement property)
+        {
+            if (element.ValueKind == JsonValueKind.Object
+                && element.TryGetProperty(propertyName, out property))
+            {
+                return true;
+            }
+
+            if (element.ValueKind == JsonValueKind.Object)
+            {
+                foreach (JsonProperty candidate in element.EnumerateObject())
+                {
+                    if (string.Equals(candidate.Name, propertyName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        property = candidate.Value;
+                        return true;
+                    }
+                }
+            }
+
+            property = default;
+            return false;
+        }
+
+        private static JsonDocument ParseJsonDocument(byte[] bytes)
+        {
+            return JsonDocument.Parse(Encoding.UTF8.GetString(bytes).TrimStart('\uFEFF'));
+        }
+
+        private static string ComputeFileSha256(string path)
+        {
+            using FileStream stream = File.OpenRead(path);
+            return Convert.ToHexString(SHA256.HashData(stream));
+        }
+
+        private static string ResolveEmbeddedVisionSdkManifestSha256()
+        {
+            return typeof(AppVersion).Assembly
+                .GetCustomAttributes<AssemblyMetadataAttribute>()
+                .FirstOrDefault(attribute => string.Equals(
+                    attribute.Key,
+                    "OpenVisionVisionSdkManifestSha256",
+                    StringComparison.Ordinal))?
+                .Value ?? string.Empty;
+        }
+
+        private static bool IsContainedPath(string root, string path)
+        {
+            string fullRoot = Path.GetFullPath(root).TrimEnd(
+                Path.DirectorySeparatorChar,
+                Path.AltDirectorySeparatorChar);
+            string fullPath = Path.GetFullPath(path).TrimEnd(
+                Path.DirectorySeparatorChar,
+                Path.AltDirectorySeparatorChar);
+            return string.Equals(fullRoot, fullPath, StringComparison.OrdinalIgnoreCase)
+                || fullPath.StartsWith(
+                    fullRoot + Path.DirectorySeparatorChar,
+                    StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string FindDeploymentFile(string fileName)
+        {
+            string candidate = Path.Combine(AppContext.BaseDirectory, fileName);
+            return File.Exists(candidate) ? candidate : string.Empty;
         }
 
         private static string FindRepositoryFile(string relativePath)

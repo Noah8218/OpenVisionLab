@@ -1,0 +1,204 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0102",
+    "aliases": [
+      "2D-044"
+    ],
+    "type": "task",
+    "mode": "simple",
+    "title": "Verify TCP delay reconnect and wire-order correlation",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "documented remaining 2D boundary",
+    "summary": "The 2D plan requires a loopback proxy/fake peer to inject partial transfer, delayed response, reconnect, reversed lifecycle-file order, and wrong-correlation cases without designing a new protocol.",
+    "refs": [
+      "C:/Users/USER/Downloads/OpenVisionLab_2D_tasks.json#2D-044",
+      "C:/Users/USER/Downloads/OpenVisionLab_2D_Audit_and_Plan.md#2D-044",
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md",
+      "src/OpenVisionLab/Core/Integration/TwoDIntegrationTcpExchange.cs",
+      "tools/TwoDIntegrationTcpSmoke/Program.cs",
+      "C:/Git/Shared/OpenVisionLab-Integration-Contracts/src/OpenVisionLab.Integration.Transport.Tcp"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "2D-044 is resolved as a bounded TCP transport-boundary slice. The existing TwoDIntegrationTcpExchange and shared TcpIntegrationClient/TcpIntegrationServer owners passed a 2D-owned loopback fixture for delayed partial chunks, first-connection drop and retry reconnect, Result-before-Acknowledgement wire order, explicit Result guard, and wrong request correlation in both Debug and Release. The receiver produced one byte-identical transaction, did not acknowledge or run on receipt, rejected the wrong response with correlationMismatch, and did not publish the mismatched transaction. No production protocol, shared transport, or Original repository changed. Two-PC firewall/routing/DNS/VPN, power loss, native-worker, throughput/memory, offline-PC, hardware, and broad WPF/UI qualification remain separate unverified boundaries."
+  },
+  "objective": {
+    "summary": "Prove that the current 2D TCP adapter and shared transport keep transaction/request correlation and explicit execution boundaries intact under partial delivery, delay, reconnect, reversed lifecycle-file order, and wrong-response identity.",
+    "constraints": [
+      "Reuse TwoDIntegrationTcpExchange and the shared TcpIntegrationClient/Server protocol; do not add a new production protocol or parallel exchange.",
+      "Keep receive/push/pull as materialization only; TCP receipt must not acknowledge, execute, or publish a Result by itself.",
+      "Use an isolated loopback proxy/fake peer with a test-only shared key and deterministic local transactions.",
+      "Reconnect may exercise the existing client's retry behavior with a new request UUID and identical immutable bytes; do not claim exactly-once network delivery from retry alone.",
+      "Use only the existing correlation fields and typed transport errors; do not add a generic message bus or global state.",
+      "Keep evidence under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev.",
+      "Do not modify, stage, commit, or push C:\\Git\\2D\\Original or the shared transport repository.",
+      "Do not claim two-PC firewall, routing, DNS, VPN, power-loss, hardware, throughput, or broad WPF qualification from loopback evidence."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "A push through a loopback proxy that forwards in small delayed chunks and drops the first connection succeeds through the existing retry path; the receiver contains one byte-identical transaction and no automatic ACK, Run, or Result.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E5",
+        "E6",
+        "E7",
+        "E8"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "A fake peer can deliver a completed transaction's lifecycle files in Result-before-Acknowledgement wire order, and the 2D receiver publishes/reads the immutable snapshot without executing it; an explicit later Run is rejected by the existing Result guard.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E5",
+        "E6",
+        "E7",
+        "E8"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "A response with a wrong request or transaction identity is rejected with the existing typed correlationMismatch error and leaves no published transaction or side effect.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E5",
+        "E6",
+        "E7",
+        "E8"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "The issue and durable project records identify the existing owner/call path, test fixture, retry/correlation policy, evidence, self-evaluation, and unverified network/operational boundaries so 2D-044 is not repeated.",
+      "evidence_refs": [
+        "E4",
+        "E9"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0094"
+    }
+  ],
+  "context": [
+    {
+      "kind": "production-owner",
+      "location": "src/OpenVisionLab/Core/Integration/TwoDIntegrationTcpExchange.cs -> shared TcpIntegrationClient/TcpIntegrationServer -> TcpTransactionStore",
+      "summary": "The 2D adapter owns local exchange and explicit ACK/Run/Result calls; the shared package owns framing, HMAC, retry, staging, immutable merge, and response correlation."
+    },
+    {
+      "kind": "smoke-owner",
+      "location": "tools/TwoDIntegrationTcpSmoke/Program.cs and new fault-injection contract",
+      "summary": "The focused fixture owns loopback proxy/fake-peer orchestration and byte/state assertions; it does not become a production transport owner."
+    },
+    {
+      "kind": "reading-order",
+      "location": "TwoDIntegrationTcpExchange -> shared TcpIntegrationClient/TcpIntegrationProtocol/TcpTransactionStore -> TwoDIntegrationTcpSmoke normal contract -> fault-injection fixture",
+      "summary": "This is the shortest code-reading route for the boundary."
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "review",
+      "location": "src/OpenVisionLab/Core/Integration/TwoDIntegrationTcpExchange.cs; tools/TwoDIntegrationTcpSmoke/Program.cs; C:/Git/Shared/OpenVisionLab-Integration-Contracts/docs/TCP_TRANSPORT.md",
+      "observation": "The existing adapter delegates all TCP operations to the shared package, which authenticates signed control frames, retries retryable transport failures with a new request UUID, stages incomplete files, merges immutable bytes, and validates response request/nonce/transaction correlation. The current 2D smoke has no deterministic delay/reconnect/reversed-order/wrong-correlation fixture.",
+      "observed_at": "2026-09-16T14:12:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "plan",
+      "location": "C:/Users/USER/Downloads/OpenVisionLab_2D_tasks.json#2D-044",
+      "observation": "The documented minimum scope is a local proxy/fake peer injecting order reversal, partial transfer, and reconnect while checking explicit Request/TX/Recipe correlation; new protocol development is out of scope.",
+      "observed_at": "2026-09-16T14:12:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "review",
+      "location": ".proofline/issues/PL-0096.json; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "observation": "PL-0096/2D-042 already resolved process-level ACK/Run at-most-once behavior and explicitly left TCP delay/reconnect/order reversal unverified, so this issue is a new transport-boundary child and does not reopen the completed owner.",
+      "observed_at": "2026-09-16T14:12:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "decision",
+      "location": ".proofline/issues/PL-0102.json; docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "observation": "The bounded slice will close only the loopback fault-injection contract. A passed fixture will not be treated as proof of two-PC network, firewall, routing, power-loss, native-worker, throughput, hardware, offline-PC, or broad WPF qualification.",
+      "observed_at": "2026-09-16T14:12:00+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "build",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d044-tcp-fault-20260916-r1\\build-debug-r4-clean-shim.log",
+      "observation": "The TwoDIntegrationTcpSmoke Debug build completed with 0 warnings and 0 errors and produced the runner used by the focused fault-injection contract. The clean-source-state shim was used only for runtime identity preflight; the Dev worktree itself remains dirty and no clean-checkout claim is made.",
+      "observed_at": "2026-09-16T14:22:00+09:00"
+    },
+    {
+      "id": "E6",
+      "kind": "runtime",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d044-tcp-fault-20260916-r1\\runtime-debug-r4-clean-shim.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d044-tcp-fault-20260916-r1\\two-d-tcp-fault-20260916-051531-a43c1f9b81f545c780e12795455b5a7f\\two-d-tcp-fault-injection-contract.json",
+      "observation": "The Debug runner exited 0. The report records 5/5 byte-identical push files, firstConnectionDropped=true, proxyConnectionCount=2, 4 KiB chunking, receiveDidNotAcknowledge=true, receiveDidNotRun=true; reversed pull wire order result.json then acknowledgement.json then handoff.json with Completed/Pass, runRejectedByExistingResultGuard=true, resultBytesUnchanged=true; and wrongCorrelation errorCode=correlationMismatch with transactionPublished=false.",
+      "observed_at": "2026-09-16T14:22:00+09:00"
+    },
+    {
+      "id": "E7",
+      "kind": "build",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d044-tcp-fault-20260916-r1\\build-release-r1-clean-shim.log",
+      "observation": "The TwoDIntegrationTcpSmoke Release build completed with 0 warnings and 0 errors and produced the runner used by the focused fault-injection contract. The clean-source-state shim was used only for runtime identity preflight; the Dev worktree itself remains dirty and no clean-checkout claim is made.",
+      "observed_at": "2026-09-16T14:22:00+09:00"
+    },
+    {
+      "id": "E8",
+      "kind": "runtime",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d044-tcp-fault-20260916-r1\\runtime-release-r1-clean-shim.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d044-tcp-fault-20260916-r1\\two-d-tcp-fault-20260916-051609-608d726f3c2e4ca2a0c607409099f998\\two-d-tcp-fault-injection-contract.json",
+      "observation": "The Release runner exited 0. The report records 5/5 byte-identical push files, firstConnectionDropped=true, proxyConnectionCount=2, 4 KiB chunking, receiveDidNotAcknowledge=true, receiveDidNotRun=true; reversed pull wire order result.json then acknowledgement.json then handoff.json with Completed/Pass, runRejectedByExistingResultGuard=true, resultBytesUnchanged=true; and wrongCorrelation errorCode=correlationMismatch with transactionPublished=false.",
+      "observed_at": "2026-09-16T14:22:00+09:00"
+    },
+    {
+      "id": "E9",
+      "kind": "report",
+      "location": ".proofline/issues/PL-0102.json; docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md; docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md; docs/admin/OPENVISIONLAB_DOCUMENTATION_MAP.md",
+      "observation": "The durable issue, reconciliation report, live handoff, stable feature contract, and documentation map record PL-0102 as the single 2D-044 owner, its existing owner/call path, the focused fixture and smoke route, Debug/Release evidence, explicit receive/materialization and correlation policy, self-evaluation, unverified network/operational boundaries, and the next admission set 2D-045/046/048/051. No duplicate production owner or Original-repository mutation was introduced.",
+      "observed_at": "2026-09-16T14:22:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-16T14:12:00+09:00",
+      "summary": "Use a 2D-owned loopback fixture around the existing shared TCP contract. First prove partial/delayed forwarding and one retry, then prove reversed lifecycle-file delivery and wrong response correlation; change production code only if the focused contract exposes a reproducible defect.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-16T14:22:00+09:00",
+      "from": "open",
+      "to": "resolved",
+      "summary": "2D-044 is resolved after the Debug and Release fault-injection contracts passed delayed partial push, first-connection drop with existing retry reconnect, Result-before-Acknowledgement wire delivery, explicit-result duplicate guard, and wrong-response correlation. The existing adapter/shared transport owners remain authoritative, receive remains materialization-only, and all broader two-PC, power-loss, native-worker, performance, offline, hardware, and WPF/UI boundaries remain explicitly unverified."
+    }
+  ],
+  "created_at": "2026-09-16T14:12:00+09:00",
+  "updated_at": "2026-09-16T14:22:00+09:00"
+}

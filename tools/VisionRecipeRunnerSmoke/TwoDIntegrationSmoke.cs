@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -106,6 +107,683 @@ internal static class TwoDIntegrationSmoke
             $"2D integration smoke passed. Good={good.Outcome}, Bad={bad.Outcome}, Evidence={runRoot}");
         return 0;
     }
+
+    public static async Task<int> RunConcurrentProcessAsync(
+        string evidenceRoot,
+        string imagePath,
+        string recipePath,
+        string runtimeBuildManifestPath)
+    {
+        string root = Path.GetFullPath(evidenceRoot);
+        Directory.CreateDirectory(root);
+        string runRoot = Path.Combine(
+            root,
+            $"two-d-concurrent-process-{DateTime.UtcNow:yyyyMMdd-HHmmss}-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(runRoot);
+
+        _ = IntegrationContractJson.DeserializeRuntimeBuildManifest(
+            File.ReadAllBytes(runtimeBuildManifestPath));
+        var consumer = TwoDIntegrationBuildIdentity.LoadQualifiedIdentity(
+            runtimeBuildManifestPath);
+
+        var acknowledgementHandoff = CreateFixture(
+            runRoot,
+            "concurrent-ack",
+            imagePath,
+            recipePath,
+            consumer,
+            tamperSourceAfterPublish: false);
+        ConcurrentWorkerObservation[] acknowledgementWorkers =
+            await RunWorkerPairAsync(
+                "ack",
+                runRoot,
+                acknowledgementHandoff.TransactionId,
+                runtimeBuildManifestPath);
+        Require(
+            acknowledgementWorkers.Count(worker => worker.Status == "Accepted") == 1
+            && acknowledgementWorkers.Count(worker => worker.ErrorCode == IntegrationErrorCode.InvalidState.ToString()) == 1,
+            "Concurrent ACK did not produce exactly one Accepted and one InvalidState result.");
+        var persistedAcknowledgement = TwoDIntegrationExchange.ReadAcknowledgement(
+            runRoot,
+            acknowledgementHandoff.TransactionId);
+        Require(
+            persistedAcknowledgement.Status == IntegrationAcknowledgementStatus.Accepted,
+            "Concurrent ACK did not leave one accepted Acknowledgement.");
+
+        var runHandoff = CreateFixture(
+            runRoot,
+            "concurrent-run-process",
+            imagePath,
+            recipePath,
+            consumer,
+            tamperSourceAfterPublish: false);
+        var acknowledgement = TwoDIntegrationExchange.AcknowledgeHandoff(
+            runRoot,
+            runHandoff.TransactionId,
+            runtimeBuildManifestPath);
+        Require(
+            acknowledgement.Status == IntegrationAcknowledgementStatus.Accepted,
+            "The process-level concurrent Run fixture did not receive an accepted Acknowledgement.");
+        ConcurrentWorkerObservation[] runWorkers = await RunWorkerPairAsync(
+            "run",
+            runRoot,
+            runHandoff.TransactionId,
+            runtimeBuildManifestPath);
+        ConcurrentWorkerObservation[] successfulRuns = runWorkers
+            .Where(worker => worker.Status == IntegrationResultStatus.Completed.ToString()
+                && worker.Outcome == IntegrationInspectionOutcome.Pass.ToString())
+            .ToArray();
+        Require(
+            successfulRuns.Length == 1
+            && runWorkers.Count(worker => worker.ErrorCode == IntegrationErrorCode.InvalidState.ToString()) == 1,
+            "Concurrent Run did not produce exactly one Completed/Pass and one InvalidState result.");
+        var persistedResult = TwoDIntegrationExchange.ReadResult(
+            runRoot,
+            runHandoff.TransactionId);
+        string resultPath = GetTransactionMessagePath(
+            runRoot,
+            runHandoff.TransactionId,
+            IntegrationTransactionLayout.ResultFileName);
+        Require(
+            File.Exists(resultPath)
+            && persistedResult.RunId == successfulRuns[0].RunId,
+            "Concurrent Run did not leave one correlated Result.");
+
+        string reportPath = Path.Combine(runRoot, "two-d-concurrent-process-smoke.json");
+        File.WriteAllText(
+            reportPath,
+            JsonSerializer.Serialize(
+                new
+                {
+                    schemaVersion = "1.0",
+                    acknowledgementTransactionId = acknowledgementHandoff.TransactionId,
+                    acknowledgementWorkers,
+                    persistedAcknowledgementStatus = persistedAcknowledgement.Status.ToString(),
+                    runTransactionId = runHandoff.TransactionId,
+                    runWorkers,
+                    persistedResultStatus = persistedResult.Status.ToString(),
+                    persistedResultOutcome = persistedResult.Outcome.ToString(),
+                    persistedResultCount = File.Exists(resultPath) ? 1 : 0
+                },
+                new JsonSerializerOptions { WriteIndented = true }));
+        Console.WriteLine(
+            $"2D process concurrency: ackAccepted=1, ackRejected=1, runCompleted=1, runRejected=1, evidence={reportPath}");
+        return 0;
+    }
+
+    public static int RunDiscoveryIsolationContract(
+        string evidenceRoot,
+        string imagePath,
+        string recipePath)
+    {
+        string root = Path.GetFullPath(evidenceRoot);
+        Directory.CreateDirectory(root);
+        string runRoot = Path.Combine(
+            root,
+            $"two-d-discovery-isolation-{DateTime.UtcNow:yyyyMMdd-HHmmss}-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(runRoot);
+
+        var consumer = new IntegrationApplicationIdentity(
+            IntegrationApplicationIds.TwoDStudio,
+            "2.1.0",
+            new string('2', 40),
+            IntegrationSourceState.Clean);
+        var first = CreateFixture(
+            runRoot,
+            "discovery-first",
+            imagePath,
+            recipePath,
+            consumer,
+            tamperSourceAfterPublish: false);
+        var second = CreateFixture(
+            runRoot,
+            "discovery-second",
+            imagePath,
+            recipePath,
+            consumer,
+            tamperSourceAfterPublish: false);
+        var corruptTransactionId = Guid.NewGuid();
+        string corruptDirectory = Path.Combine(
+            runRoot,
+            IntegrationTransactionLayout.TransactionsDirectoryName,
+            corruptTransactionId.ToString("D"));
+        Directory.CreateDirectory(corruptDirectory);
+        File.WriteAllText(
+            Path.Combine(corruptDirectory, IntegrationTransactionLayout.HandoffFileName),
+            "{\"schema\":");
+
+        TwoDIntegrationDiscoveryResult detailed =
+            TwoDIntegrationExchange.DiscoverHandoffsDetailed(runRoot);
+        IReadOnlyList<TwoDIntegrationTransactionSummary> legacy =
+            TwoDIntegrationExchange.DiscoverHandoffs(runRoot);
+        TwoDIntegrationDiscoveryDiagnostic diagnostic =
+            detailed.Diagnostics.Single(item => item.TransactionId == corruptTransactionId);
+
+        Require(
+            detailed.Transactions.Count == 2
+                && detailed.Transactions.All(transaction =>
+                    transaction.Handoff.TransactionId is var transactionId
+                    && (transactionId == first.TransactionId || transactionId == second.TransactionId))
+                && detailed.Diagnostics.Count == 1
+                && diagnostic.ErrorCode == IntegrationErrorCode.MalformedMessage
+                && !string.IsNullOrWhiteSpace(diagnostic.Message)
+                && legacy.Count == 2
+                && !File.Exists(Path.Combine(
+                    corruptDirectory,
+                    IntegrationTransactionLayout.AcknowledgementFileName))
+                && !File.Exists(Path.Combine(
+                    corruptDirectory,
+                    IntegrationTransactionLayout.ResultFileName)),
+            "A corrupt transaction blocked discovery, lost its typed diagnostic, or was acknowledged/run.");
+
+        string reportPath = Path.Combine(runRoot, "two-d-discovery-isolation-contract.json");
+        File.WriteAllText(
+            reportPath,
+            JsonSerializer.Serialize(
+                new
+                {
+                    schemaVersion = "1.0",
+                    validTransactionCount = detailed.Transactions.Count,
+                    legacyTransactionCount = legacy.Count,
+                    diagnosticCount = detailed.Diagnostics.Count,
+                    corruptTransactionId,
+                    diagnosticErrorCode = diagnostic.ErrorCode.ToString(),
+                    diagnosticMessage = diagnostic.Message,
+                    acknowledgementPublished = File.Exists(Path.Combine(
+                        corruptDirectory,
+                        IntegrationTransactionLayout.AcknowledgementFileName)),
+                    resultPublished = File.Exists(Path.Combine(
+                        corruptDirectory,
+                        IntegrationTransactionLayout.ResultFileName))
+                },
+                new JsonSerializerOptions { WriteIndented = true }));
+        Console.WriteLine(
+            $"2D discovery isolation: valid={detailed.Transactions.Count}, diagnostics={detailed.Diagnostics.Count}, error={diagnostic.ErrorCode}");
+        Console.WriteLine($"2D discovery isolation evidence={reportPath}");
+        return 0;
+    }
+
+    public static async Task<int> RunRunRecordRecoveryContractAsync(
+        string evidenceRoot,
+        string imagePath,
+        string recipePath,
+        string runtimeBuildManifestPath)
+    {
+        string root = Path.GetFullPath(evidenceRoot);
+        Directory.CreateDirectory(root);
+        string runRoot = Path.Combine(
+            root,
+            $"two-d-run-record-recovery-{DateTime.UtcNow:yyyyMMdd-HHmmss}-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(runRoot);
+
+        var runtimeManifest = IntegrationContractJson.DeserializeRuntimeBuildManifest(
+            File.ReadAllBytes(runtimeBuildManifestPath));
+        string qualifiedManifestPath = Path.Combine(
+            root,
+            "openvisionlab.runtime.clean.json");
+        File.WriteAllBytes(
+            qualifiedManifestPath,
+            IntegrationContractJson.SerializeCanonical(
+                runtimeManifest with
+                {
+                    Identity = runtimeManifest.Identity with
+                    {
+                        SourceState = IntegrationSourceState.Clean
+                    }
+                }));
+        var consumer = TwoDIntegrationBuildIdentity.LoadQualifiedIdentity(
+            qualifiedManifestPath);
+
+        var normal = await RunCaseAsync(
+            runRoot,
+            "normal-recovery-baseline",
+            imagePath,
+            recipePath,
+            consumer,
+            qualifiedManifestPath,
+            IntegrationInspectionOutcome.Pass);
+        Require(
+            normal.Status == IntegrationResultStatus.Completed
+                && normal.Outcome == IntegrationInspectionOutcome.Pass,
+            "The normal RunRecord/Result publication baseline did not complete.");
+
+        var writeFailureHandoff = CreateFixture(
+            runRoot,
+            "result-write-failure",
+            imagePath,
+            recipePath,
+            consumer,
+            tamperSourceAfterPublish: false);
+        _ = TwoDIntegrationExchange.AcknowledgeHandoff(
+            runRoot,
+            writeFailureHandoff.TransactionId,
+            qualifiedManifestPath);
+        IntegrationResultV2 writeFailureResult;
+        using (TwoDIntegrationExchange.BeginResultWriteFailureInjectionForTest())
+        {
+            writeFailureResult = await TwoDIntegrationExchange.RunAcceptedHandoffAsync(
+                runRoot,
+                writeFailureHandoff.TransactionId,
+                qualifiedManifestPath);
+        }
+
+        string writeFailureDirectory = GetTransactionDirectory(
+            runRoot,
+            writeFailureHandoff.TransactionId);
+        string writeFailureRecordPath = Path.Combine(
+            writeFailureDirectory,
+            IntegrationTransactionLayout.ArtifactsDirectoryName,
+            "2d-run-record.json");
+        string writeFailureResultPath = Path.Combine(
+            writeFailureDirectory,
+            IntegrationTransactionLayout.ResultFileName);
+        Require(
+            writeFailureResult.Status == IntegrationResultStatus.Failed
+                && writeFailureResult.Outcome == IntegrationInspectionOutcome.ExecutionError
+                && writeFailureResult.Error?.Code == IntegrationErrorCode.ExecutionFailed
+                && !File.Exists(writeFailureRecordPath)
+                && File.Exists(writeFailureResultPath),
+            "A Result write failure did not clean the Run Record and publish one typed failure Result.");
+        var persistedWriteFailure = TwoDIntegrationExchange.ReadResult(
+            runRoot,
+            writeFailureHandoff.TransactionId);
+        Require(
+            persistedWriteFailure.Status == IntegrationResultStatus.Failed
+                && persistedWriteFailure.Error?.Code == IntegrationErrorCode.ExecutionFailed,
+            "The Result write failure recovery Result was not readable or typed.");
+
+        var crashHandoff = CreateFixture(
+            runRoot,
+            "crash-after-run-record",
+            imagePath,
+            recipePath,
+            consumer,
+            tamperSourceAfterPublish: false);
+        _ = TwoDIntegrationExchange.AcknowledgeHandoff(
+            runRoot,
+            crashHandoff.TransactionId,
+            qualifiedManifestPath);
+        string crashDirectory = GetTransactionDirectory(runRoot, crashHandoff.TransactionId);
+        string markerPath = Path.Combine(runRoot, "crash-after-run-record.marker");
+        string workerReportPath = Path.Combine(runRoot, "crash-after-run-record-worker.json");
+        using Process worker = StartRunRecordPauseWorker(
+            runRoot,
+            crashHandoff.TransactionId,
+            qualifiedManifestPath,
+            markerPath,
+            workerReportPath);
+        bool markerObserved = await WaitForMarkerAsync(markerPath, worker);
+        string crashRecordPath = Path.Combine(
+            crashDirectory,
+            IntegrationTransactionLayout.ArtifactsDirectoryName,
+            "2d-run-record.json");
+        string crashResultPath = Path.Combine(
+            crashDirectory,
+            IntegrationTransactionLayout.ResultFileName);
+        Require(
+            markerObserved
+                && File.Exists(crashRecordPath)
+                && !File.Exists(crashResultPath),
+            "The process-boundary fixture did not stop after RunRecord publication and before Result publication.");
+
+        if (!worker.HasExited)
+        {
+            worker.Kill(entireProcessTree: true);
+        }
+
+        await worker.WaitForExitAsync();
+        int killedWorkerExitCode = worker.ExitCode;
+        Require(
+            !File.Exists(workerReportPath),
+            "The killed worker unexpectedly published a completion report.");
+
+        IntegrationResultV2 recoveryResult = await TwoDIntegrationExchange.RunAcceptedHandoffAsync(
+            runRoot,
+            crashHandoff.TransactionId,
+            qualifiedManifestPath);
+        Require(
+            recoveryResult.Status == IntegrationResultStatus.Failed
+                && recoveryResult.Outcome == IntegrationInspectionOutcome.ExecutionError
+                && recoveryResult.Error?.Code == IntegrationErrorCode.ExecutionFailed
+                && recoveryResult.Error.Message.Contains(
+                    "Automatic rerun is blocked",
+                    StringComparison.Ordinal),
+            "An orphan Run Record was re-executed or did not publish the recovery-required Result.");
+        var persistedRecovery = TwoDIntegrationExchange.ReadResult(
+            runRoot,
+            crashHandoff.TransactionId);
+        Require(
+            persistedRecovery.Status == IntegrationResultStatus.Failed
+                && persistedRecovery.Outcome == IntegrationInspectionOutcome.ExecutionError
+                && persistedRecovery.Error?.Code == IntegrationErrorCode.ExecutionFailed
+                && File.Exists(crashRecordPath)
+                && File.Exists(crashResultPath),
+            "The recovery-required Result or original Run Record was not retained after restart.");
+
+        string recoveryResultHash = ComputeSha256(crashResultPath);
+        bool secondRestartRejected = false;
+        try
+        {
+            _ = await TwoDIntegrationExchange.RunAcceptedHandoffAsync(
+                runRoot,
+                crashHandoff.TransactionId,
+                qualifiedManifestPath);
+        }
+        catch (IntegrationContractException exception)
+            when (exception.ErrorCode == IntegrationErrorCode.InvalidState)
+        {
+            secondRestartRejected = true;
+        }
+
+        Require(
+            secondRestartRejected
+                && string.Equals(
+                    recoveryResultHash,
+                    ComputeSha256(crashResultPath),
+                    StringComparison.OrdinalIgnoreCase),
+            "A second restart did not preserve the single recovery Result.");
+
+        string reportPath = Path.Combine(runRoot, "two-d-run-record-recovery-contract.json");
+        File.WriteAllText(
+            reportPath,
+            JsonSerializer.Serialize(
+                new
+                {
+                    schemaVersion = "1.0",
+                    normalStatus = normal.Status.ToString(),
+                    normalOutcome = normal.Outcome.ToString(),
+                    resultWriteFailureStatus = writeFailureResult.Status.ToString(),
+                    resultWriteFailureErrorCode = writeFailureResult.Error?.Code.ToString(),
+                    resultWriteFailureRunRecordRetained = File.Exists(writeFailureRecordPath),
+                    resultWriteFailureResultCount = File.Exists(writeFailureResultPath) ? 1 : 0,
+                    crashHandoffTransactionId = crashHandoff.TransactionId,
+                    markerObserved,
+                    killedWorkerExitCode,
+                    orphanRunRecordRetained = File.Exists(crashRecordPath),
+                    recoveryStatus = recoveryResult.Status.ToString(),
+                    recoveryOutcome = recoveryResult.Outcome.ToString(),
+                    recoveryErrorCode = recoveryResult.Error?.Code.ToString(),
+                    recoveryResultCount = File.Exists(crashResultPath) ? 1 : 0,
+                    secondRestartRejected
+                },
+                new JsonSerializerOptions { WriteIndented = true }));
+        Console.WriteLine(
+            $"2D RunRecord recovery: normal={normal.Outcome}, writeFailure={writeFailureResult.Error?.Code}, "
+            + $"crashMarker={markerObserved}, recovery={recoveryResult.Error?.Code}, "
+            + $"secondRestartRejected={secondRestartRejected}");
+        Console.WriteLine($"2D RunRecord recovery evidence={reportPath}");
+        return 0;
+    }
+
+    public static async Task<int> RunRunRecordRecoveryWorkerAsync(
+        string runRoot,
+        string transactionIdText,
+        string runtimeBuildManifestPath,
+        string markerPath,
+        string reportPath)
+    {
+        try
+        {
+            Guid transactionId = Guid.Parse(transactionIdText);
+            using var pause = TwoDIntegrationExchange.BeginRunRecordPauseForTest(markerPath);
+            var result = await TwoDIntegrationExchange.RunAcceptedHandoffAsync(
+                runRoot,
+                transactionId,
+                runtimeBuildManifestPath);
+            File.WriteAllText(
+                reportPath,
+                JsonSerializer.Serialize(
+                    new
+                    {
+                        status = result.Status.ToString(),
+                        outcome = result.Outcome.ToString(),
+                        errorCode = result.Error?.Code.ToString()
+                    },
+                    new JsonSerializerOptions { WriteIndented = true }));
+            return 0;
+        }
+        catch (Exception exception)
+        {
+            File.WriteAllText(
+                reportPath,
+                JsonSerializer.Serialize(
+                    new { error = exception.ToString() },
+                    new JsonSerializerOptions { WriteIndented = true }));
+            return 2;
+        }
+    }
+
+    public static async Task<int> RunConcurrentProcessWorkerAsync(
+        string operation,
+        string runRoot,
+        string transactionIdText,
+        string runtimeBuildManifestPath,
+        string reportPath)
+    {
+        try
+        {
+            Guid transactionId = Guid.Parse(transactionIdText);
+            if (string.Equals(operation, "ack", StringComparison.OrdinalIgnoreCase))
+            {
+                var acknowledgement = TwoDIntegrationExchange.AcknowledgeHandoff(
+                    runRoot,
+                    transactionId,
+                    runtimeBuildManifestPath);
+                File.WriteAllText(
+                    reportPath,
+                    JsonSerializer.Serialize(
+                        new
+                        {
+                            operation,
+                            status = acknowledgement.Status.ToString(),
+                            messageId = acknowledgement.MessageId.ToString("D")
+                        },
+                        new JsonSerializerOptions { WriteIndented = true }));
+                return 0;
+            }
+
+            if (!string.Equals(operation, "run", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ArgumentException(
+                    $"Unsupported concurrent worker operation: {operation}",
+                    nameof(operation));
+            }
+
+            var result = await TwoDIntegrationExchange.RunAcceptedHandoffAsync(
+                runRoot,
+                transactionId,
+                runtimeBuildManifestPath);
+            File.WriteAllText(
+                reportPath,
+                JsonSerializer.Serialize(
+                    new
+                    {
+                        operation,
+                        status = result.Status.ToString(),
+                        outcome = result.Outcome.ToString(),
+                        runId = result.RunId
+                    },
+                    new JsonSerializerOptions { WriteIndented = true }));
+            return 0;
+        }
+        catch (IntegrationContractException exception)
+        {
+            File.WriteAllText(
+                reportPath,
+                JsonSerializer.Serialize(
+                    new
+                    {
+                        operation,
+                        status = "Rejected",
+                        errorCode = exception.ErrorCode.ToString(),
+                        error = exception.Message
+                    },
+                    new JsonSerializerOptions { WriteIndented = true }));
+            return 0;
+        }
+        catch (Exception exception)
+        {
+            File.WriteAllText(
+                reportPath,
+                JsonSerializer.Serialize(
+                    new
+                    {
+                        operation,
+                        status = "Error",
+                        error = exception.ToString()
+                    },
+                    new JsonSerializerOptions { WriteIndented = true }));
+            return 2;
+        }
+    }
+
+    private static async Task<ConcurrentWorkerObservation[]> RunWorkerPairAsync(
+        string operation,
+        string runRoot,
+        Guid transactionId,
+        string runtimeBuildManifestPath)
+    {
+        string workerRoot = Path.Combine(runRoot, $"{operation}-workers");
+        Directory.CreateDirectory(workerRoot);
+        var workers = new List<Process>();
+        var reportPaths = new List<string>();
+        for (int index = 0; index < 2; index++)
+        {
+            string reportPath = Path.Combine(workerRoot, $"worker-{index + 1}.json");
+            reportPaths.Add(reportPath);
+            workers.Add(StartConcurrentWorker(
+                operation,
+                runRoot,
+                transactionId,
+                runtimeBuildManifestPath,
+                reportPath));
+        }
+
+        int[] exitCodes = await Task.WhenAll(
+            workers.Select(async worker =>
+            {
+                await worker.WaitForExitAsync();
+                int exitCode = worker.ExitCode;
+                worker.Dispose();
+                return exitCode;
+            }));
+        Require(
+            exitCodes.All(exitCode => exitCode == 0),
+            $"A concurrent {operation} worker failed: {string.Join(",", exitCodes)}.");
+        return reportPaths
+            .Select(ReadConcurrentWorkerObservation)
+            .ToArray();
+    }
+
+    private static Process StartConcurrentWorker(
+        string operation,
+        string runRoot,
+        Guid transactionId,
+        string runtimeBuildManifestPath,
+        string reportPath)
+    {
+        string processPath = Environment.ProcessPath
+            ?? throw new InvalidOperationException("The concurrent worker process path is unavailable.");
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = processPath,
+            UseShellExecute = false,
+            WorkingDirectory = AppContext.BaseDirectory
+        };
+        if (string.Equals(
+                Path.GetFileNameWithoutExtension(processPath),
+                "dotnet",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            startInfo.ArgumentList.Add(typeof(TwoDIntegrationSmoke).Assembly.Location);
+        }
+        startInfo.ArgumentList.Add("--integration-2d-concurrent-process-worker");
+        startInfo.ArgumentList.Add(operation);
+        startInfo.ArgumentList.Add(runRoot);
+        startInfo.ArgumentList.Add(transactionId.ToString("D"));
+        startInfo.ArgumentList.Add(runtimeBuildManifestPath);
+        startInfo.ArgumentList.Add(reportPath);
+        return Process.Start(startInfo)
+            ?? throw new InvalidOperationException("The concurrent worker process could not start.");
+    }
+
+    private static Process StartRunRecordPauseWorker(
+        string runRoot,
+        Guid transactionId,
+        string runtimeBuildManifestPath,
+        string markerPath,
+        string reportPath)
+    {
+        string processPath = Environment.ProcessPath
+            ?? throw new InvalidOperationException("The RunRecord recovery worker process path is unavailable.");
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = processPath,
+            UseShellExecute = false,
+            WorkingDirectory = AppContext.BaseDirectory
+        };
+        if (string.Equals(
+                Path.GetFileNameWithoutExtension(processPath),
+                "dotnet",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            startInfo.ArgumentList.Add(typeof(TwoDIntegrationSmoke).Assembly.Location);
+        }
+
+        startInfo.ArgumentList.Add("--integration-2d-run-record-recovery-worker");
+        startInfo.ArgumentList.Add(runRoot);
+        startInfo.ArgumentList.Add(transactionId.ToString("D"));
+        startInfo.ArgumentList.Add(runtimeBuildManifestPath);
+        startInfo.ArgumentList.Add(markerPath);
+        startInfo.ArgumentList.Add(reportPath);
+        return Process.Start(startInfo)
+            ?? throw new InvalidOperationException("The RunRecord recovery worker process could not start.");
+    }
+
+    private static async Task<bool> WaitForMarkerAsync(
+        string markerPath,
+        Process worker)
+    {
+        DateTime deadline = DateTime.UtcNow.AddSeconds(15);
+        while (!worker.HasExited && DateTime.UtcNow < deadline)
+        {
+            if (File.Exists(markerPath))
+            {
+                return true;
+            }
+
+            await Task.Delay(5);
+        }
+
+        return File.Exists(markerPath);
+    }
+
+    private static ConcurrentWorkerObservation ReadConcurrentWorkerObservation(
+        string reportPath)
+    {
+        using JsonDocument document = JsonDocument.Parse(
+            File.ReadAllText(reportPath));
+        JsonElement root = document.RootElement;
+        return new ConcurrentWorkerObservation(
+            GetJsonString(root, "operation") ?? "unknown",
+            GetJsonString(root, "status") ?? "unknown",
+            GetJsonString(root, "outcome"),
+            GetJsonString(root, "errorCode"),
+            GetJsonString(root, "runId"));
+    }
+
+    private static string? GetJsonString(JsonElement root, string name) =>
+        root.TryGetProperty(name, out JsonElement value)
+        && value.ValueKind == JsonValueKind.String
+            ? value.GetString()
+            : null;
+
+    private sealed record ConcurrentWorkerObservation(
+        string Operation,
+        string Status,
+        string? Outcome,
+        string? ErrorCode,
+        string? RunId);
 
     private static async Task RunWrongModalityFailClosedCaseAsync(
         string runRoot,
@@ -969,6 +1647,20 @@ internal static class TwoDIntegrationSmoke
             IntegrationTransactionLayout.TransactionsDirectoryName,
             transactionId.ToString("D"),
             fileName);
+
+    private static string GetTransactionDirectory(
+        string runRoot,
+        Guid transactionId) =>
+        Path.Combine(
+            runRoot,
+            IntegrationTransactionLayout.TransactionsDirectoryName,
+            transactionId.ToString("D"));
+
+    private static string ComputeSha256(string path)
+    {
+        using FileStream stream = File.OpenRead(path);
+        return Convert.ToHexString(SHA256.HashData(stream));
+    }
 
     private static void RunTamperCase(
         string runRoot,

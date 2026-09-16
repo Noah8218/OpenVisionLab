@@ -62,6 +62,12 @@ namespace OpenVisionLab
             out OpenVisionNativePreviewExecutionResult failure)
         {
             snapshot = null;
+            if (LayersCollide(inputLayer, outputLayer))
+            {
+                failure = FailedStatus("Preview", "input and output layers must be different to preserve the source image");
+                return false;
+            }
+
             try
             {
                 using Bitmap sourceBitmap = displayManager.GetLayerImageSnapshot(inputLayer);
@@ -179,6 +185,13 @@ namespace OpenVisionLab
             string activationLayer,
             bool useOffsetMode)
         {
+            if (LayersCollide(inputLayerA, outputLayer)
+                || (VisionPipelineArithmeticStep.RequiresInputLayerB(step)
+                    && LayersCollide(VisionPipelineArithmeticStep.GetInputLayerB(step), outputLayer)))
+            {
+                return FailedStatus("Preview", "input and output layers must be different to preserve the source image");
+            }
+
             using Bitmap sourceA = displayManager.GetLayerImageSnapshot(inputLayerA);
             if (sourceA == null)
             {
@@ -300,6 +313,13 @@ namespace OpenVisionLab
                 resultBitmap.Width,
                 resultBitmap.Height);
             return OpenVisionNativePreviewExecutionResult.Passed(status);
+        }
+
+        private static bool LayersCollide(string inputLayer, string outputLayer)
+        {
+            return !string.IsNullOrWhiteSpace(inputLayer)
+                && !string.IsNullOrWhiteSpace(outputLayer)
+                && string.Equals(inputLayer.Trim(), outputLayer.Trim(), StringComparison.OrdinalIgnoreCase);
         }
 
         private static OpenVisionNativePreviewExecutionResult FailedStatus(string statusLabel, string detail)

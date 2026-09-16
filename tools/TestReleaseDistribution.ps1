@@ -56,6 +56,7 @@ $requiredNames = @(
     "OpenCvSharp.dll",
     "OpenCvSharp.Blob.dll",
     "OpenCvSharpExtern.dll",
+    "sdk-manifest.json",
     "System.Windows.Controls.WpfPropertyGrid.dll",
     "LICENSE",
     "NOTICE",
@@ -145,6 +146,17 @@ $metadataReaderOutput = & dotnet run `
     --read-assembly-metadata $entryAssemblyPath 2>&1
 if ($LASTEXITCODE -ne 0) {
     throw "OpenVisionLab.dll metadata reader failed: $($metadataReaderOutput -join [Environment]::NewLine)"
+}
+
+$sdkManifestPath = Join-Path $distributionFullPath "sdk-manifest.json"
+$sdkManifest = Get-Content -LiteralPath $sdkManifestPath -Raw | ConvertFrom-Json
+$sdkManifestHash = (Get-FileHash -LiteralPath $sdkManifestPath -Algorithm SHA256).Hash
+$sdkProvenanceMismatch = [string]::IsNullOrWhiteSpace([string]$manifest.VisionSdkManifestSha256) -or
+    $manifest.VisionSdkManifestSha256 -ine $sdkManifestHash -or
+    $manifest.VisionSdk.version -cne $sdkManifest.sdk.version -or
+    $manifest.VisionSdk.commit -ine $sdkManifest.sdk.commit
+if ($sdkProvenanceMismatch) {
+    throw "Release SDK provenance sidecar does not match clean_runtime_manifest.json."
 }
 
 try {

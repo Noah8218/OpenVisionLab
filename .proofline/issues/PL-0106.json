@@ -1,0 +1,279 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0106",
+    "aliases": [
+      "2D-052"
+    ],
+    "type": "task",
+    "mode": "composite",
+    "title": "Close 2D-052 LLM/XML boundary under maintenance-mode policy",
+    "risk": "medium"
+  },
+  "origin": {
+    "kind": "documented remaining 2D boundary",
+    "summary": "The attached 2D plan asks for draft-to-validate-to-apply-to-run-to-undo safety checks and explicitly permits an N/A close when the LLM path is deprecated or maintenance-only. The current product contract freezes planned LLM expansion in maintenance mode.",
+    "refs": [
+      "C:/Users/USER/Downloads/OpenVisionLab_2D_tasks.json#2D-052",
+      "C:/Users/USER/Downloads/OpenVisionLab_2D_Audit_and_Plan.md#2D-052",
+      "docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md",
+      "docs/contracts/openvisionlab/OPENVISIONLAB_LLM_XML_AUTHORING_GUIDE.md",
+      "docs/admin/archive/OPENVISIONLAB_CURRENT_HANDOFF_HISTORY_THROUGH_P284.md#P196"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "PL-0106/2D-052 is resolved as a maintenance-mode verification and policy decision. Existing LLM/XML draft review, validation, fail-closed dependency/channel checks, explicit import, explicit Preview/Run separation, and review-bundle dry-run are covered by current-source contracts and D-drive evidence. New provider/agent/benchmark work was not admitted. Atomic rollback after a persistence failure and an LLM Import Undo command are not existing contracts; they are explicitly N/A/deferred and may be reopened only by an explicit product decision.",
+    "updated_at": "2026-09-16T16:58:11+09:00"
+  },
+  "objective": {
+    "summary": "Verify the existing LLM/XML authoring safety boundary and close 2D-052 without activating a new LLM feature. Record the exact unverified transaction/Undo boundary and its reopen condition.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev and keep generated evidence under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev.",
+      "Preserve the P196 maintenance-mode decision; do not add a provider, autonomous agent, prompt family, benchmark, or automatic execution path.",
+      "Reuse the existing RecipeCommandSurface, LLM validation, dependency review, draft review owner, and VisionPipelineStorage owners.",
+      "Do not claim atomic failed-apply rollback or an Undo command that is not implemented and not exercised.",
+      "Do not modify, stage, commit, or push C:\\Git\\2D\\Original.",
+      "Do not claim new-PC, offline-install, participant, hardware, or long-run qualification from local evidence."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The maintenance-mode policy, current owners, call path, and no-activation decision are explicitly recorded without reopening closed LLM owners.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E8"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "Current-source evidence covers draft review/validation, explicit import, explicit Preview/Run separation, and no automatic layer or routing mutation for the exercised flows.",
+      "evidence_refs": [
+        "E2",
+        "E3",
+        "E4",
+        "E5",
+        "E6"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "The exercised invalid, stale, dependency, result-channel, and review-bundle boundaries fail closed and return to a valid state only after explicit revalidation; the known WPF smoke limitation is not hidden.",
+      "evidence_refs": [
+        "E3",
+        "E4",
+        "E7"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "The activation-level failed-apply transaction and Undo criteria are explicitly recorded as N/A/deferred under the current maintenance-mode product policy, with a concrete reopen trigger and no unsupported completion claim.",
+      "evidence_refs": [
+        "E1",
+        "E8",
+        "E9"
+      ]
+    }
+  ],
+  "milestones": [
+    {
+      "id": "M1",
+      "summary": "Confirm the existing LLM/XML owners, P196 maintenance-mode policy, and no-activation scope.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M2",
+      "summary": "Verify the current valid draft review, validation, explicit import, and explicit-run separation with no automatic Preview/Run, layer, or routing side effects.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C2"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M3",
+      "summary": "Verify the exercised negative/stale/dependency/review-bundle boundaries and preserve the unrelated stale UI target failure as an unverified limit.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C3"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M4",
+      "summary": "Record the N/A/deferred transaction and Undo decision, reopen condition, D-drive evidence, and remaining external prerequisites in the durable project documents.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1",
+        "C4"
+      ],
+      "issue_refs": []
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0094"
+    }
+  ],
+  "context": [
+    {
+      "kind": "owner-map",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/Recipe/CommandSurface/RecipeCommandSurface.cs; src/OpenVisionLab/UI/Menu/Wpf/Recipe/Validation/OpenVisionRecipeLlmDraftValidationService.cs; src/OpenVisionLab/UI/Menu/Wpf/Recipe/Review/OpenVisionRecipeDependencyReviewService.cs; src/OpenVisionLab/UI/Menu/Wpf/Recipe/Review/OpenVisionRecipeLlmDraftReviewOwner.cs; src/OpenVisionLab/Core/Pipeline/Storage/VisionPipelineStorage.cs",
+      "summary": "These existing owners implement the draft validation, dependency review/copy, read-only review projection, and Pipeline persistence call path. No new owner is needed for a maintenance-mode verification-only close."
+    },
+    {
+      "kind": "reading-order",
+      "location": "RecipeCommandSurface.ImportLlmXmlDraft -> OpenVisionRecipeLlmDraftValidationService -> OpenVisionRecipeDependencyReviewService -> OpenVisionRecipeLlmDraftReviewOwner -> VisionPipelineStorage",
+      "summary": "Shortest code-reading route for a contributor to understand the current LLM/XML boundary and the persistence risk boundary."
+    },
+    {
+      "kind": "ui-limit",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d052-llm-xml-review-20260916/ui/ui_precheck_report.md",
+      "summary": "The recipe-manager summary precheck expects a stale HostRecipeManagerCommandStrip AutomationId and returns NG with a 0x0 capture; it does not establish an LLM behavior failure."
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "evidence-root",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d052-llm-xml-review-20260916",
+      "summary": "Debug build, readiness, review-owner contract, current-source Guided Setup and review-bundle WPF smoke logs/captures, and the stale manager-summary precheck report."
+    },
+    {
+      "kind": "report",
+      "location": "docs/reports/OPENVISIONLAB_2D_LLM_XML_BOUNDARY_20260916.md",
+      "summary": "Canonical 2D-052 scope, owner map, acceptance disposition, verification, N/A/deferred decision, self-evaluation, and reopen condition."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "review",
+      "location": "docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md; docs/contracts/openvisionlab/OPENVISIONLAB_LLM_XML_AUTHORING_GUIDE.md; docs/admin/archive/OPENVISIONLAB_CURRENT_HANDOFF_HISTORY_THROUGH_P284.md#P196",
+      "observation": "The current product contract freezes planned LLM expansion in P196 maintenance mode. Existing Assistant/Guided Setup/XML guide/catalog, validation, correction display, review/diff, and explicit import remain compatibility surfaces; provider/API/agent/prompt/benchmark expansion requires an explicit reopen decision.",
+      "observed_at": "2026-09-16T16:58:11+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "source",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/Recipe/CommandSurface/RecipeCommandSurface.cs:7847-7909; src/OpenVisionLab/UI/Menu/Wpf/Recipe/Validation/OpenVisionRecipeLlmDraftValidationService.cs:256-381",
+      "observation": "The existing call path validates a draft with non-mutating dependency review, builds a read-only import/diff projection, requires explicit Import, creates a unique Pipeline, and persists it before refreshing the UI. The method contains no Preview/Run invocation and no direct layer or route mutation; explicit execution remains a separate command path.",
+      "observed_at": "2026-09-16T16:58:11+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d052-llm-xml-review-20260916\\review-owner\\llm-draft-review-owner-contract.txt",
+      "observation": "The focused read-only draft review owner contract passed 3/3 cases: active Pipeline lookup/diff projection, persistence and active-selection preservation, and safe null-draft handling.",
+      "observed_at": "2026-09-16T16:50:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "runtime",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d052-llm-xml-review-20260916\\guided\\guided.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d052-llm-xml-review-20260916\\guided\\wpf_shell_host_recipe_guided_setup.png",
+      "observation": "The current-source WPF Guided Setup target passed at 1600x900 with zero layout/text/internal findings. Its assertions cover valid draft creation, validation gates, stale invalidation after intent changes, invalid/custom channel rejection, no Preview/Run/layer/routing side effects, and explicit import recovery for the exercised synthetic flows.",
+      "observed_at": "2026-09-16T16:50:00+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "runtime",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d052-llm-xml-review-20260916\\bundle-import\\bundle-import.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d052-llm-xml-review-20260916\\bundle-import\\wpf_shell_host_recipe_review_bundle_import.png",
+      "observation": "The current-source review-bundle import target passed at 1600x900 with zero layout/text/internal findings. The reviewed bundle path remained a dry-run and did not extract, copy, save, activate, or run during the target.",
+      "observed_at": "2026-09-16T16:50:00+09:00"
+    },
+    {
+      "id": "E6",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d052-llm-xml-review-20260916\\build-debug.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d052-llm-xml-review-20260916\\readiness.log",
+      "observation": "The VisionRecipeRunnerSmoke Debug build exited 0 with 0 errors and 19 existing nullable warnings in unrelated contracts. OpenVisionReadinessCheck exited 0 with all 13 readiness contracts passed.",
+      "observed_at": "2026-09-16T16:50:00+09:00"
+    },
+    {
+      "id": "E7",
+      "kind": "runtime",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d052-llm-xml-review-20260916\\ui\\ui_precheck_report.md; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d052-llm-xml-review-20260916\\ui\\run-ui-precheck.log",
+      "observation": "The separate wpf_shell_host_recipe_manager_summary precheck returned NG because it searched for the stale AutomationId HostRecipeManagerCommandStrip; the visible ID list contains no such item and the capture size is 0x0. The failure is preserved as a UI-smoke limitation and was not used as LLM behavior evidence.",
+      "observed_at": "2026-09-16T16:50:32+09:00"
+    },
+    {
+      "id": "E8",
+      "kind": "review",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/Recipe/CommandSurface/RecipeCommandSurface.cs:7862-7902; src/OpenVisionLab/UI/Menu/Wpf/Recipe/Review/OpenVisionRecipeDependencyReviewService.cs:158-245; src/OpenVisionLab/Core/Pipeline/Storage/VisionPipelineStorage.cs:155-200,614-637",
+      "observation": "Dependency/reference files are copied before VisionPipelineStorage.Save and SaveActivePipelineName. Save and active-pointer writes are separate operations, and this path has no transaction journal or Import Undo command. Because import uses a new unique Pipeline, the previous active Pipeline file remains available, but a later persistence failure could leave copied assets or a saved new Pipeline; that risk is outside the frozen maintenance-mode verification scope.",
+      "observed_at": "2026-09-16T16:58:11+09:00"
+    },
+    {
+      "id": "E9",
+      "kind": "decision",
+      "location": "docs/reports/OPENVISIONLAB_2D_LLM_XML_BOUNDARY_20260916.md",
+      "observation": "The attached plan permits N/A closure for a deprecated/maintenance-only LLM path. The durable decision keeps the current safety contract, does not add a transaction or Undo surface without explicit product direction, and defines a reopen trigger requiring a transaction owner, asset staging/cleanup, pointer recovery, and deterministic fault-injection evidence.",
+      "observed_at": "2026-09-16T16:58:11+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-16T16:58:11+09:00",
+      "summary": "Admit 2D-052 only as a maintenance-mode safety verification and decision record. Preserve the existing LLM/XML review, validation, explicit import, and explicit-run contracts; do not activate a provider, agent, benchmark, or new automatic path.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E4",
+        "E5"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-16T16:58:11+09:00",
+      "from": "open",
+      "to": "doing",
+      "summary": "Admitted the single existing-owner LLM/XML boundary after confirming maintenance-mode policy and no duplicate production owner.",
+      "evidence_refs": [
+        "E1",
+        "E2"
+      ]
+    },
+    {
+      "id": "D2",
+      "kind": "decision",
+      "at": "2026-09-16T16:58:11+09:00",
+      "summary": "Treat activation-level failed-apply transaction and Undo as N/A/deferred for the current product scope. The existing import creates a new Pipeline rather than replacing the active one; any future atomic recovery/Undo support requires an explicit reopen decision and a new focused issue.",
+      "evidence_refs": [
+        "E1",
+        "E8",
+        "E9"
+      ]
+    },
+    {
+      "id": "T2",
+      "kind": "transition",
+      "at": "2026-09-16T16:58:11+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "Maintenance-mode verification evidence and the explicit N/A/deferred transaction/Undo decision are recorded in the canonical report and project navigation documents.",
+      "evidence_refs": [
+        "E3",
+        "E4",
+        "E5",
+        "E6",
+        "E7",
+        "E9"
+      ]
+    }
+  ],
+  "created_at": "2026-09-16T16:58:11+09:00",
+  "updated_at": "2026-09-16T16:58:11+09:00"
+}

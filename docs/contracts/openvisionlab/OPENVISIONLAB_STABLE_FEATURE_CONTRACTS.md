@@ -176,6 +176,14 @@ When a feature below is marked stable, do not refactor, simplify, replace, or re
 - The workbench must remain fully operable without an LLM account, provider session, API key, transcript, or generated XML.
 - Historical incomplete LLM gates, including the missing natural Pin Phase 3 failure and frozen P169 Test replay, are deferred evidence rather than active blockers. Preserve them unchanged; do not manufacture a failure or execute reserved evidence early.
 - Reopening requires an explicit user decision after the equivalent non-LLM workflow and deterministic N-sample evidence exist.
+- The 2026-09-16 `2D-052` maintenance-mode review confirms the existing draft/
+  validation/review/diff/explicit-import boundary and its no-auto-Preview/Run,
+  layer, and routing rules. Import creates a new Pipeline rather than replacing
+  the active one. Atomic failed-persistence rollback and an LLM Import Undo
+  command are not part of this compatibility contract; adding them requires an
+  explicit reopen decision and a new focused transaction owner. See
+  `docs/reports/OPENVISIONLAB_2D_LLM_XML_BOUNDARY_20260916.md` and
+  `.proofline/issues/PL-0106.json` for the evidence and exact limits.
 
 ## Stable Contracts
 
@@ -1226,6 +1234,40 @@ Current boundary audit:
   and reject existing symbolic-link/reparse segments. The generic contract
   validator checks artifact identity, non-negative length, actual length, and
   SHA-256.
+- `TwoDIntegrationExchange.DiscoverHandoffsDetailed` reads each valid-GUID
+  transaction independently. A malformed, unreadable, or contract-invalid
+  handoff is omitted from the valid summary list and retained as a typed
+  `TwoDIntegrationDiscoveryDiagnostic`; discovery never acknowledges, runs, or
+  deletes that transaction. The existing `DiscoverHandoffs` API remains the
+  valid-summary projection for compatibility.
+- `TwoDIntegrationExchange.RunAcceptedHandoffAsync` keeps the existing
+  RunRecord/Result/`.2d-run.lock` owners. If an accepted transaction already
+  contains `artifacts/2d-run-record.json` but no Result, the record is checked
+  against the Handoff source and recipe identities and the adapter publishes one
+  terminal `Failed`/`executionError` Result with `executionFailed` and an
+  explicit manual-recovery message. It retains the RunRecord, never reruns the
+  recipe automatically, and the existing Result guard rejects later attempts.
+  This is an additive manual-recovery policy; the contract package has no
+  separate `RecoveryRequired` error code.
+- `TwoDIntegrationTcpExchange` keeps the shared framing, HMAC, retry, staging,
+  immutable-merge, and response-correlation owners. A 2D-owned loopback fixture
+  forwards delayed partial chunks, drops the first push connection, and lets the
+  existing retry reconnect; the receiver ends with one byte-identical transaction
+  and does not acknowledge, run, or publish a Result on receipt. The same fixture
+  delivers a completed transaction in `result.json` before `acknowledgement.json`
+  wire order and rejects a wrong response `requestId` with the existing typed
+  `correlationMismatch` error. Explicit ACK/Run remains the only execution path;
+  this adds no production protocol or parallel TCP owner.
+- `TwoDIntegrationExchange.RunAcceptedHandoffAsync` retains the existing
+  validation, ACK/Run/Result, and RunRecord owners but captures the inspection
+  source bytes once after the validation/run-record preflight. It rechecks the
+  captured byte length and SHA-256, then decodes that same immutable array with
+  `Cv2.ImDecode`; a same-length atomic replacement or truncated write is rejected
+  with `ArtifactHashMismatch` or `ArtifactLengthMismatch` before decode, Result,
+  or RunRecord publication. The source-only snapshot does not copy unrelated
+  artifacts or add a global memory policy. Locator evidence's later source-path
+  read, separate recipe/template writers, large-image memory budgeting, and
+  privileged-writer/filesystem-failure behavior remain separate boundaries.
 - The review-bundle owner rejects `pipeline.xml` above 5 MiB and
   `review-manifest.json` above 2 MiB before parse/decompression. The shared TCP
   transport defaults to 1,024 files, 4 GiB per file, 16 GiB per transaction,
@@ -1244,8 +1286,75 @@ Relevant existing smoke/evidence:
 
 - `--app-path-boundary-contract`
 - `--recipe-storage-path-contract`
+- `--integration-2d-discovery-isolation-contract`
+- `--integration-2d-run-record-recovery-contract`
+- `--integration-2d-input-hash-decode-contract <evidenceRoot> <runtime-config>`
+- `TwoDIntegrationTcpSmoke --fault-injection-contract <evidenceRoot> <source> <pipeline> <runtime-config>`
 - `docs/reports/OPENVISIONLAB_OVL02_TWO_D_INTEGRATION_IDENTITY_20260907.md`
 - `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\2d023-file-input-20260915\source-and-upstream-audit.txt`
+
+## Deployment SDK Provenance Boundary — 2D-046
+
+Stable behavior:
+
+- `VisionPipelineExecutionPlan.ResolveVisionSdkIdentity` first reads the
+  deployment-root `sdk-manifest.json`. A repository-relative manifest is only a
+  development fallback when no deployment sidecar exists; a checkout-free
+  runtime must never present that fallback as an exact deployed identity.
+- The sidecar is the authoritative SDK manifest. Its contained file entries are
+  checked by observed length and SHA-256, including the loaded
+  `OpenVisionLab.Vision2D.dll` entry. The application embeds the sidecar hash as
+  `OpenVisionVisionSdkManifestSha256`, and a present
+  `clean_runtime_manifest.json` must agree on the sidecar hash and optional SDK
+  version/commit/file entry.
+- Exact identity reports `ManifestStatus=match` and the sidecar SHA-256,
+  version, and source commit. Missing sidecar reports `Manifest=unavailable`;
+  malformed, wrong, truncated, or byte-mismatched sidecar/DLL/package data
+  reports `ManifestStatus=mismatch`. None of these states infer DLL internals.
+- `BuildCleanRuntime.ps1` must copy the sidecar and record its hash in the clean
+  runtime manifest. `TestReleaseDistribution.ps1` must require and verify that
+  sidecar before a Release distribution is accepted. UTF-8 BOM-bearing JSON is
+  valid when its parsed values and hashed bytes agree.
+
+The existing provenance fields, SDK DLL set, explicit Preview/Run contract, and
+shared transport/package owners remain unchanged. Another-PC/offline installer,
+signing, update/rollback, privileged-writer, hardware, and SDK-internal
+qualification require separate evidence and are not implied by this boundary.
+
+Focused smoke route:
+
+- `VisionRecipeRunnerSmoke --sdk-deployment-provenance-contract <evidenceRoot> <match|missing|mismatch>`
+
+## C# Consumer Typed Outcome Example — 2D-051
+
+Stable behavior:
+
+- The existing `TwoDIntegrationTcpSmoke` example remains the C# consumer
+  reading the v2 `IntegrationResultV2` contract. It must explicitly call
+  `AcknowledgeHandoff`, await `RunAcceptedHandoffAsync`, inspect the returned
+  result, and dispose the `TwoDIntegrationTcpExchange` through `await using`.
+- Consumer handling branches on the typed `(Status, Outcome)` pair, not on a
+  single success boolean: `Completed/Pass` is quality pass,
+  `Completed/Ng` is quality NG, `Failed/ExecutionError` is execution failure,
+  and `Cancelled/Indeterminate` is cancellation. Any other pair fails closed
+  with `InvalidState`.
+- The example checks accepted-ACK state, Transaction/Handoff/Acknowledgement
+  identities, the input/Recipe/host correlation, the consumer build identity,
+  and a `RunId` for completed results before dispatching the outcome. A
+  correlation mismatch is never routed as a quality result.
+- TCP receipt, discovery, and acknowledgement remain non-executing operations;
+  only the explicit awaited Run call may execute. The immutable v2 DTO is read
+  before the `await using` scope closes, so the example leaves no pending
+  execution task when the exchange is disposed.
+
+Focused smoke route:
+
+- `TwoDIntegrationTcpSmoke --consumer-example-contract <evidenceDirectory>`
+- `TwoDIntegrationTcpSmoke <evidenceRoot> <source> <pipeline> <runtimeBuildManifest>`
+
+The example contract and loopback evidence do not qualify two-PC networking,
+offline installation, .NET 4.8 hosts, hardware, long-running operation, or WPF
+interaction. See `docs/reports/OPENVISIONLAB_2D_CSHARP_CONSUMER_OUTCOME_20260916.md`.
 
 ## Recipe/Pipeline Persistence Recovery Gate
 

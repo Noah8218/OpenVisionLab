@@ -133,6 +133,12 @@ namespace OpenVisionLab
                     return true;
                 }
 
+                if (string.Equals(scenario, "normal-close-restart-lifetime", StringComparison.OrdinalIgnoreCase))
+                {
+                    RunNormalCloseRestartLifetime(outputDirectory);
+                    return true;
+                }
+
                 if (string.Equals(scenario, "preview-ui-click-path", StringComparison.OrdinalIgnoreCase))
                 {
                     RunPreviewUiClickPath(outputDirectory);
@@ -1530,6 +1536,7 @@ namespace OpenVisionLab
 
                 applyCount = 0;
                 completedResult = null;
+                ManualResetEventSlim discardedDelegateEntered = new ManualResetEventSlim(false);
                 bool secondStarted = boundary.TryStartSingleInput(
                     "Main",
                     "PreviewAsyncDiscarded",
@@ -1537,6 +1544,7 @@ namespace OpenVisionLab
                     normalizeSingleChannelInput: false,
                     executePreview: sourceImage =>
                     {
+                        discardedDelegateEntered.Set();
                         Thread.Sleep(420);
                         return new OpenVisionLab.Vision2D.Tool.VisionToolResult
                         {
@@ -1550,14 +1558,39 @@ namespace OpenVisionLab
                         completedResult = result;
                     },
                     started: () => { });
-                Pump(4);
+                Stopwatch delegateStartWait = Stopwatch.StartNew();
+                while (!discardedDelegateEntered.IsSet
+                    && delegateStartWait.Elapsed < TimeSpan.FromSeconds(2))
+                {
+                    Pump(1);
+                }
+
+                if (!discardedDelegateEntered.IsSet)
+                {
+                    throw new InvalidOperationException("Async Preview discard delegate did not enter its controlled slow section.");
+                }
+
+                Stopwatch drainStopwatch = Stopwatch.StartNew();
                 bool canceled = boundary.CancelAndDiscard();
-                Pump(72);
-                if (!secondStarted || !canceled || applyCount != 0 || boundary.IsRunning)
+                bool runningImmediatelyAfterCancel = boundary.IsRunning;
+                while (boundary.IsRunning && drainStopwatch.Elapsed < TimeSpan.FromSeconds(3))
+                {
+                    Pump(1);
+                }
+
+                drainStopwatch.Stop();
+                bool drained = !boundary.IsRunning;
+                if (!secondStarted
+                    || !canceled
+                    || !runningImmediatelyAfterCancel
+                    || !drained
+                    || applyCount != 0)
                 {
                     throw new InvalidOperationException(
                         "Async Preview cancellation did not drain and discard the late result. "
-                        + $"Started={secondStarted}, Canceled={canceled}, Applies={applyCount}, IsRunning={boundary.IsRunning}");
+                        + $"Started={secondStarted}, Canceled={canceled}, RunningImmediatelyAfterCancel={runningImmediatelyAfterCancel}, "
+                        + $"Drained={drained}, Applies={applyCount}, IsRunning={boundary.IsRunning}, "
+                        + $"DrainElapsedMilliseconds={drainStopwatch.Elapsed.TotalMilliseconds.ToString("F1", CultureInfo.InvariantCulture)}");
                 }
 
                 using (Bitmap discarded = shellHost.GetLayerImageCloneForTest("PreviewAsyncDiscarded"))
@@ -1568,6 +1601,7 @@ namespace OpenVisionLab
                     }
                 }
 
+                discardedDelegateEntered.Dispose();
                 boundary.Dispose();
                 heartbeat.Stop();
                 Pump(24);
@@ -1579,6 +1613,11 @@ namespace OpenVisionLab
                     + "ControlledSlowDelegateMilliseconds: 420" + Environment.NewLine
                     + "DispatcherTicksDuringAsyncRun: " + ticksDuringRun.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
                     + "DuplicateExecutionAccepted: " + duplicateAccepted.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "CancellationRequested: " + canceled.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "RunningImmediatelyAfterCancel: " + runningImmediatelyAfterCancel.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "DrainCompleted: " + drained.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "NativeDrainElapsedMilliseconds: " + drainStopwatch.Elapsed.TotalMilliseconds.ToString("F1", CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "TerminalBoundaryState: Idle" + Environment.NewLine
                     + "CanceledLateResultPublished: false" + Environment.NewLine
                     + "SingleActiveSlot: true" + Environment.NewLine
                     + "GenerationDiscardGuard: true" + Environment.NewLine
@@ -1596,6 +1635,192 @@ namespace OpenVisionLab
                 heartbeat?.Stop();
                 window?.Close();
                 app.Shutdown();
+            }
+        }
+
+        private static void RunNormalCloseRestartLifetime(string outputDirectory)
+        {
+            Directory.CreateDirectory(outputDirectory);
+            string repoRoot = FindRepositoryRoot();
+            string samplePath = Path.Combine(repoRoot, "docs", "samples", "public", "Matching_DiePad_Synthetic_OK.png");
+            EnsureFileExists(samplePath, "Normal close/restart lifetime sample image");
+
+            Application app = Application.Current ?? new Application();
+            app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            OpenVisionShellHostWindow window = null;
+            OpenVisionShellHostWindow restartWindow = null;
+            ManualResetEventSlim delegateEntered = new ManualResetEventSlim(false);
+            ManualResetEventSlim delegateReleased = new ManualResetEventSlim(false);
+            ManualResetEventSlim delegateCompleted = new ManualResetEventSlim(false);
+            Task releaseTask = null;
+            try
+            {
+                OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+                window = new OpenVisionShellHostWindow(ApplicationRuntimeContext.CreateDefault())
+                {
+                    Width = 1600,
+                    Height = 900,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                    Topmost = true
+                };
+                app.MainWindow = window;
+                window.Show();
+                string monitorEvidence = PlaceWindowOnLeftmostMonitor(window);
+                window.Activate();
+                Pump(36);
+
+                OpenVisionShellHostView shellHost = window.ShellHostForSmoke
+                    ?? throw new InvalidOperationException("Normal close/restart smoke shell host was not created.");
+                using (Bitmap source = new Bitmap(samplePath))
+                {
+                    shellHost.SetMainLayerImageForTest(source);
+                }
+
+                Pump(36);
+                shellHost.SelectToolForTest(VISION_MENU.Blob);
+                Pump(80);
+                OpenVisionNativeToolDocument document = shellHost.ActiveNativeDocumentForTest
+                    ?? throw new InvalidOperationException("Normal close/restart smoke Blob document was not created.");
+
+                document.SetPreviewExecutionOverrideForTest(sourceImage =>
+                {
+                    delegateEntered.Set();
+                    try
+                    {
+                        if (!delegateReleased.Wait(TimeSpan.FromSeconds(3)))
+                        {
+                            throw new TimeoutException("Controlled close-race Preview delegate was not released.");
+                        }
+
+                        return new OpenVisionLab.Vision2D.Tool.VisionToolResult
+                        {
+                            Success = true,
+                            ResultImage = sourceImage.Clone()
+                        };
+                    }
+                    finally
+                    {
+                        delegateCompleted.Set();
+                    }
+                });
+
+                shellHost.RunActiveNativePreviewForTest();
+                Stopwatch delegateEntryWait = Stopwatch.StartNew();
+                while (!delegateEntered.IsSet
+                    && delegateEntryWait.Elapsed < TimeSpan.FromSeconds(2))
+                {
+                    Pump(1);
+                }
+
+                if (!delegateEntered.IsSet || delegateCompleted.IsSet)
+                {
+                    throw new InvalidOperationException(
+                        "Normal close/restart smoke did not reach the running Preview boundary. "
+                        + $"Entered={delegateEntered.IsSet}, Completed={delegateCompleted.IsSet}");
+                }
+
+                releaseTask = Task.Run(() =>
+                {
+                    Thread.Sleep(200);
+                    delegateReleased.Set();
+                });
+
+                Stopwatch closeStopwatch = Stopwatch.StartNew();
+                window.Close();
+                closeStopwatch.Stop();
+                bool windowClosed = !window.IsVisible;
+                bool dispatcherStillAlive = !app.Dispatcher.HasShutdownStarted
+                    && !app.Dispatcher.HasShutdownFinished;
+
+                releaseTask.Wait(TimeSpan.FromSeconds(2));
+                Stopwatch workerWait = Stopwatch.StartNew();
+                while (!delegateCompleted.IsSet
+                    && workerWait.Elapsed < TimeSpan.FromSeconds(3))
+                {
+                    Pump(1);
+                }
+
+                bool workerDrained = delegateCompleted.IsSet;
+                bool staleOutputLayer = ApplicationRuntimeContext.CreateDefault().DisplayManager.FindIndex("Blob_Preview") >= 0;
+                if (!windowClosed
+                    || !dispatcherStillAlive
+                    || !workerDrained
+                    || staleOutputLayer)
+                {
+                    throw new InvalidOperationException(
+                        "Normal close/restart smoke did not discard the running Preview cleanly. "
+                        + $"WindowClosed={windowClosed}, DispatcherAlive={dispatcherStillAlive}, "
+                        + $"WorkerDrained={workerDrained}, StaleOutputLayer={staleOutputLayer}, "
+                        + $"CloseElapsedMilliseconds={closeStopwatch.Elapsed.TotalMilliseconds.ToString("F1", CultureInfo.InvariantCulture)}");
+                }
+
+                ApplicationRuntimeContext restartContext = new ApplicationRuntimeContext(
+                    new GlobalState(),
+                    new DisplayManagerService());
+                restartWindow = new OpenVisionShellHostWindow(restartContext)
+                {
+                    Width = 1600,
+                    Height = 900,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                    Topmost = true
+                };
+                app.MainWindow = restartWindow;
+                restartWindow.Show();
+                string restartMonitorEvidence = PlaceWindowOnLeftmostMonitor(restartWindow);
+                restartWindow.Activate();
+                Pump(36);
+                OpenVisionShellHostView restartHost = restartWindow.ShellHostForSmoke
+                    ?? throw new InvalidOperationException("Restart shell host was not created.");
+                bool freshSession = !restartHost.HasMainLayer
+                    && restartHost.LayerDocumentCount == 0
+                    && !restartHost.IsNativeDocumentActive
+                    && restartHost.NativePreviewRunCount == 0;
+                if (!freshSession)
+                {
+                    throw new InvalidOperationException(
+                        "Restart session retained transient image/tool state. "
+                        + $"HasMainLayer={restartHost.HasMainLayer}, Layers={restartHost.LayerDocumentCount}, "
+                        + $"NativeDocument={restartHost.IsNativeDocumentActive}, Runs={restartHost.NativePreviewRunCount}");
+                }
+
+                File.WriteAllText(
+                    Path.Combine(outputDirectory, "report.txt"),
+                    "Result: PASS" + Environment.NewLine
+                    + "Scenario: normal-close-restart-lifetime" + Environment.NewLine
+                    + "OwnerCallPath: Window.Close -> OpenVisionShellHostWindow.OnClosed -> OpenVisionShellHostView.Dispose -> OpenVisionShellHostSessionController.DisposeSession -> OpenVisionNativeToolDocument.Dispose" + Environment.NewLine
+                    + "CloseRequestedWhilePreviewRunning: true" + Environment.NewLine
+                    + "WindowClosed: " + windowClosed + Environment.NewLine
+                    + "DispatcherAliveAfterClose: " + dispatcherStillAlive + Environment.NewLine
+                    + "WorkerDrainedAfterClose: " + workerDrained + Environment.NewLine
+                    + "LatePreviewResultPublished: false" + Environment.NewLine
+                    + "StaleOutputLayerAfterClose: " + staleOutputLayer + Environment.NewLine
+                    + "CloseElapsedMilliseconds: " + closeStopwatch.Elapsed.TotalMilliseconds.ToString("F1", CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "RestartFreshSession: " + freshSession + Environment.NewLine
+                    + monitorEvidence + Environment.NewLine
+                    + "Restart" + restartMonitorEvidence + Environment.NewLine
+                    + "Executable: " + (Environment.ProcessPath ?? Assembly.GetExecutingAssembly().Location) + Environment.NewLine
+                    + "ExecutableSha256: " + ComputeC9FileSha256(Environment.ProcessPath ?? Assembly.GetExecutingAssembly().Location) + Environment.NewLine
+                    + "ManagedAssembly: " + typeof(OpenVisionLabDirectSmokeRunner).Assembly.Location + Environment.NewLine
+                    + "ManagedAssemblySha256: " + ComputeC9FileSha256(typeof(OpenVisionLabDirectSmokeRunner).Assembly.Location),
+                    Encoding.UTF8);
+            }
+            finally
+            {
+                delegateReleased.Set();
+                try
+                {
+                    releaseTask?.Wait(TimeSpan.FromSeconds(2));
+                }
+                catch
+                {
+                }
+
+                restartWindow?.Close();
+                window?.Close();
+                app.Shutdown();
+                delegateEntered.Dispose();
+                delegateReleased.Dispose();
+                delegateCompleted.Dispose();
             }
         }
 

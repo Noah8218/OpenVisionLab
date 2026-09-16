@@ -1,0 +1,113 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0095",
+    "aliases": [
+      "2D-047"
+    ],
+    "type": "task",
+    "mode": "simple",
+    "title": "Persist release-candidate stage results on failure",
+    "risk": "medium"
+  },
+  "origin": {
+    "kind": "explicit user continuation request",
+    "summary": "The remaining-work reconciliation identified a safe 2D-047 gap: the release-candidate gate writes a summary only after all stages pass, so a failed run loses stage-level evidence.",
+    "refs": [
+      "C:/Users/USER/Downloads/OpenVisionLab_2D_tasks.json",
+      "docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md",
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "2D-047 is resolved for the existing release-gate owner: VerifyReleaseCandidate.ps1 now records a single failure summary with stage-level PASS/FAIL/NotRun/Skipped states and failure context while retaining the original nonzero exit. Prior success-path evidence remains authoritative; a new clean-checkout RC run is still PL-0061's separate blocked boundary."
+  },
+  "objective": {
+    "summary": "Make VerifyReleaseCandidate.ps1 persist a single release_candidate_summary.json for both successful and failed runs, with explicit PASS/FAIL/NotRun/Skipped stage statuses while preserving the original nonzero failure exit.",
+    "constraints": [
+      "Reuse tools/VerifyReleaseCandidate.ps1 as the sole owner; do not add a parallel gate or wrapper.",
+      "Do not relax the clean tracked-tree, clean distribution, build, or launch gates.",
+      "Do not perform release publication, tag, deployment, commit, or push.",
+      "Keep any runtime/release evidence under the repository's existing release-artifact contract; no claim of a clean checkout is made by this local change."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The gate records stage statuses and a failure stage/message in release_candidate_summary.json when a preflight or execution stage fails; stages not reached remain NotRun and explicitly skipped stages remain Skipped.",
+      "evidence_refs": [
+        "E1"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "A failed gate still exits nonzero, while the existing successful summary fields and success exit behavior remain available on a fully passing run.",
+      "evidence_refs": [
+        "E1",
+        "E3"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "The owner, call path, duplicate-prevention decision, focused checks, and remaining clean-checkout/release boundary are recorded in durable project documents.",
+      "evidence_refs": [
+        "E2"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0094"
+    }
+  ],
+  "context": [
+    {
+      "kind": "owner",
+      "location": "tools/VerifyReleaseCandidate.ps1",
+      "summary": "Existing release-candidate orchestration owner and stage call path."
+    },
+    {
+      "kind": "report",
+      "location": "docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md",
+      "summary": "2D-047 residual boundary and duplicate-prevention map."
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d047-rc-gate-failure-20260916\\verification.txt",
+      "observation": "The actual VerifyReleaseCandidate.ps1 dirty-tree failure exited 1 and still wrote release_candidate_summary.json with Status=FAIL, FailureStage=Preflight, the clean-tree error, NotRun downstream stages, and explicit Skipped stages.",
+      "observed_at": "2026-09-16T10:38:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d047-rc-gate-failure-20260916\\verification.txt",
+      "observation": "PowerShell parser and focused source-contract checks passed with zero syntax errors and confirmed the finally block, stage ledger, FailureStage/FailureMessage, NotRun/Skipped states, and preserved throw path.",
+      "observed_at": "2026-09-16T10:38:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "report",
+      "location": "docs/reports/OPENVISIONLAB_RELEASE_CANDIDATE_MAIN_20260911.md",
+      "observation": "The existing success-path release gate completed with ReleaseCandidateVerification=PASS and recorded the original summary fields; this prior evidence is retained rather than rerunning a clean gate from the current dirty checkout.",
+      "observed_at": "2026-09-11T00:00:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-16T10:41:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "Closed the 2D-047 failure-evidence gap in the existing VerifyReleaseCandidate.ps1 owner; no parallel runner or release policy was added."
+    }
+  ],
+  "created_at": "2026-09-16T10:30:00+09:00",
+  "updated_at": "2026-09-16T10:41:00+09:00"
+}

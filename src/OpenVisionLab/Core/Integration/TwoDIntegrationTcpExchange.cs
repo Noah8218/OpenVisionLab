@@ -118,6 +118,12 @@ public sealed class TwoDIntegrationTcpExchange : IAsyncDisposable
         return TwoDIntegrationExchange.DiscoverHandoffs(LocalExchangeRoot);
     }
 
+    public TwoDIntegrationDiscoveryResult DiscoverHandoffsDetailed()
+    {
+        ThrowIfDisposed();
+        return TwoDIntegrationExchange.DiscoverHandoffsDetailed(LocalExchangeRoot);
+    }
+
     public IntegrationHandoffV2 ReadHandoff(Guid transactionId)
     {
         ThrowIfDisposed();

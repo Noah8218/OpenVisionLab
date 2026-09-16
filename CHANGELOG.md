@@ -5,6 +5,23 @@ OpenVisionLab의 사용자-visible 변경과 release evidence를 짧게 추적�
 
 ## Unreleased
 
+## 2.2.0-dev.4 - 2026-09-16
+
+### Added
+
+- Promoted the verified 2D C# consumer, retry/fault-injection, input identity,
+  and output-allocation evidence paths into the next Dev candidate.
+- Recorded the remaining external and product-policy blockers in the durable
+  handoff and issue ledger.
+
+### Changed
+
+- Aligned application, shell caption, integration contracts, offline manuals,
+  README, and generated manual manifests to `2.2.0-dev.4`.
+
+This Dev candidate is not a stable release, tag, deployment, or commercial-GA
+claim. Its exact promotion gates remain separate.
+
 ## 2.2.0-dev.3 - 2026-09-16
 
 ### Added

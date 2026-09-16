@@ -1,0 +1,264 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0105",
+    "aliases": [
+      "2D-051"
+    ],
+    "type": "task",
+    "mode": "composite",
+    "title": "Verify C# consumer typed outcome execution example",
+    "risk": "medium"
+  },
+  "origin": {
+    "kind": "documented remaining 2D boundary",
+    "summary": "The 2D plan identifies a P2 external-integration gap: the existing C# consumer example exercises a successful TCP result, but a first-time host developer needs an explicit typed outcome dispatch, awaited completion, correlation checks, and deterministic close boundary.",
+    "refs": [
+      "C:/Users/USER/Downloads/OpenVisionLab_2D_tasks.json#2D-051",
+      "C:/Users/USER/Downloads/OpenVisionLab_2D_Audit_and_Plan.md#2D-051",
+      "tools/TwoDIntegrationTcpSmoke/Program.cs",
+      "tools/VisionRecipeRunnerSmoke/TwoDIntegrationResultDispositionContract.cs",
+      "src/OpenVisionLab/Core/Integration/TwoDIntegrationTcpExchange.cs",
+      "C:/Git/Shared/OpenVisionLab-Integration-Contracts"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "PL-0105/2D-051 is resolved in the existing TwoDIntegrationTcpSmoke example. The example now dispatches the four supported v2 terminal pairs, asserts ACK/transaction/run/input/recipe correlation before handling, awaits the explicit run, and disposes the TCP exchange after no pending execution remains. Debug/Release contracts and loopback/regression evidence pass; offline/two-PC/.NET 4.8/hardware/WPF qualification remains outside this slice."
+  },
+  "objective": {
+    "summary": "Provide a buildable C# consumer example that uses the existing TwoDIntegrationTcpExchange and IntegrationResultV2 contracts to distinguish Pass, quality Ng, execution error, and cancellation, await completion, assert transaction/run correlation, and leave no pending operation when the exchange is disposed.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev and keep all generated evidence under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev.",
+      "Reuse the existing TwoDIntegrationTcpExchange, TwoDIntegrationExchange, shared v2 DTOs, and TCP smoke project; do not add a production protocol, generic message bus, or parallel adapter owner.",
+      "Keep library ABI and shared package sources unchanged; this slice may change only the existing C# example/contract and its documentation.",
+      "Receiving or discovering a transaction must remain materialization/validation only; only explicit acknowledgement followed by awaited RunAcceptedHandoffAsync may execute.",
+      "Do not change the existing v2 message schema, result disposition semantics, or .NET 4.8 support boundary.",
+      "Do not modify, stage, commit, or push C:\\Git\\2D\\Original or C:\\Git\\Shared\\OpenVisionLab-Integration-Contracts.",
+      "Do not claim actual hardware, two-PC network, offline install, or broad WPF UI qualification from local fake/loopback evidence."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The existing C# consumer example builds and visibly uses awaited explicit acknowledgement/run, a typed four-outcome dispatch, and correlation assertions without relying on a Success bool.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E4",
+        "E7",
+        "E8"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "A focused contract maps Completed/Pass, Completed/Ng, Failed/ExecutionError, and Cancelled/Indeterminate to distinct consumer actions and rejects an unclassified status/outcome combination.",
+      "evidence_refs": [
+        "E3",
+        "E6"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "The example verifies transaction, handoff, acknowledgement, run, and input/recipe correlation; a mismatch is rejected before consumer handling, and TCP receipt still produces no automatic acknowledgement or run.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E4",
+        "E5",
+        "E6"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "The example's await-then-dispose lifecycle leaves no pending execution task, and Debug/Release builds plus the existing result-disposition and TCP smoke regressions pass with the four-outcome guidance recorded in the project documents.",
+      "evidence_refs": [
+        "E4",
+        "E5",
+        "E6",
+        "E7",
+        "E8"
+      ]
+    }
+  ],
+  "milestones": [
+    {
+      "id": "M1",
+      "summary": "Confirm the existing example, result-disposition contract, TCP wrapper, and shared DTO owners and document the focused gap.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1",
+        "C3"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M2",
+      "summary": "Add the minimal typed outcome/correlation example surface to the existing C# smoke path without changing production protocol owners.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M3",
+      "summary": "Run the focused four-outcome, mismatch, receipt-isolation, await/dispose, Debug, and Release checks.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C2",
+        "C3",
+        "C4"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M4",
+      "summary": "Record owner/call path, usage example, evidence, self-evaluation, and unverified operational boundaries in the durable project documents.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1",
+        "C3",
+        "C4"
+      ],
+      "issue_refs": []
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0094"
+    }
+  ],
+  "context": [
+    {
+      "kind": "existing-example-owner",
+      "location": "tools/TwoDIntegrationTcpSmoke/Program.cs",
+      "summary": "The current C# TCP example awaits Ping, Push/Pull, AcknowledgeHandoff, RunAcceptedHandoffAsync, and result delivery, but its visible success handling is limited to Completed/Pass."
+    },
+    {
+      "kind": "typed-classification-owner",
+      "location": "tools/VisionRecipeRunnerSmoke/TwoDIntegrationResultDispositionContract.cs; src/OpenVisionLab/Core/Integration/TwoDIntegrationExchange.cs",
+      "summary": "The existing result-disposition contract proves SDK step classification, while the consumer example must handle the public IntegrationResultV2 status/outcome pair."
+    },
+    {
+      "kind": "tcp-owner",
+      "location": "src/OpenVisionLab/Core/Integration/TwoDIntegrationTcpExchange.cs",
+      "summary": "The TCP wrapper owns server lifetime, explicit transfer, ACK, Run, Result read, and IAsyncDisposable cleanup."
+    },
+    {
+      "kind": "reading-order",
+      "location": "tools/TwoDIntegrationTcpSmoke/Program.cs -> src/OpenVisionLab/Core/Integration/TwoDIntegrationTcpExchange.cs -> shared IntegrationContractsV2.cs -> TwoDIntegrationResultDispositionContract.cs",
+      "summary": "This is the shortest route for a contributing developer to understand the example and its typed result contract."
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "evidence-root",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d051-csharp-consumer-example-20260916",
+      "summary": "Debug/Release build and focused C# consumer example contract evidence."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "review",
+      "location": "tools/TwoDIntegrationTcpSmoke/Program.cs; tools/VisionRecipeRunnerSmoke/TwoDIntegrationResultDispositionContract.cs; src/OpenVisionLab/Core/Integration/TwoDIntegrationTcpExchange.cs; C:/Git/Shared/OpenVisionLab-Integration-Contracts/src/OpenVisionLab.Integration.Contracts/IntegrationContractsV2.cs",
+      "observation": "The current C# TCP example already uses await using for TwoDIntegrationTcpExchange, awaits explicit Ping/transfer/acknowledgement/RunAcceptedHandoffAsync calls, and checks returned MessageId/RunId/Outcome, but its consumer handling only accepts Completed/Pass. The existing result-disposition contract maps SDK step summaries to typed v2 outcomes but does not expose a public consumer switch. The shared v2 result owns Status, Outcome, RunId, Correlation, Metrics, Evidence, and Error; no new production owner is required.",
+      "observed_at": "2026-09-16T16:12:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "source",
+      "location": "tools/TwoDIntegrationTcpSmoke/Program.cs; tools/TwoDIntegrationTcpSmoke/TwoDIntegrationConsumerExample.cs; src/OpenVisionLab/Core/Integration/TwoDIntegrationTcpExchange.cs; C:/Git/Shared/OpenVisionLab-Integration-Contracts/src/OpenVisionLab.Integration.Contracts/IntegrationContractsV2.cs",
+      "observation": "The existing example's active call path is explicit AcknowledgeHandoff -> awaited RunAcceptedHandoffAsync -> result read -> await using disposal. The new example helper dispatches only Completed/Pass, Completed/Ng, Failed/ExecutionError, and Cancelled/Indeterminate, and AssertCorrelation checks accepted ACK, Transaction/Handoff/Acknowledgement IDs, input/recipe/consumer-build correlation, producer identity, and completed RunId. No production/shared package owner changed.",
+      "observed_at": "2026-09-16T16:24:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d051-csharp-consumer-example-20260916/debug/two-d-integration-consumer-example-contract.json; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d051-csharp-consumer-example-20260916/release/two-d-integration-consumer-example-contract.json",
+      "observation": "The focused C# consumer contract exited 0 in Debug and Release. Each report records six passed cases: four distinct typed actions (QualityPass, QualityNg, ExecutionError, Cancelled), an unclassified terminal pair rejected with InvalidState, and a transaction correlation mismatch rejected before dispatch; failed arrays are empty.",
+      "observed_at": "2026-09-16T16:24:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d051-csharp-consumer-example-20260916/tcp-debug-clean/two-d-tcp-*/two-d-tcp-smoke.json; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d051-csharp-consumer-example-20260916/tcp-release-clean/two-d-tcp-*/two-d-tcp-smoke.json",
+      "observation": "The actual loopback C# example exited 0 in Debug and Release with Accepted acknowledgement, Completed/Pass, consumerAction=QualityPass, a non-empty correlated RunId, and receiveDidNotAcknowledge=true, receiveDidNotRun=true, acknowledgeDidNotRun=true. The process completed only after awaiting the explicit Run and the await-using TCP exchange scope closed.",
+      "observed_at": "2026-09-16T16:24:00+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d051-csharp-consumer-example-20260916/tcp-release-dirty/two-d-tcp-*/two-d-tcp-dirty-runtime-smoke.json",
+      "observation": "A dirty runtime manifest completed the existing TCP receipt/discovery path but explicit acknowledgement failed closed with InvalidIdentity; both pushed and pulled transactions retained no Acknowledgement or Result. The example did not treat a non-qualified runtime as a quality result.",
+      "observed_at": "2026-09-16T16:24:00+09:00"
+    },
+    {
+      "id": "E6",
+      "kind": "test",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d051-csharp-consumer-example-20260916/result-disposition-debug.log; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d051-csharp-consumer-example-20260916/result-disposition-release.log; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d051-csharp-consumer-example-20260916/tcp-fault-debug-clean.log; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d051-csharp-consumer-example-20260916/tcp-fault-release.log",
+      "observation": "The existing result-disposition regression passed in Debug and Release with 9/9 cases each. The existing TCP fault/correlation contract passed in Debug and Release, covering delayed partial transfer/reconnect, reversed lifecycle-file order, explicit Result guard, and typed correlationMismatch.",
+      "observed_at": "2026-09-16T16:24:00+09:00"
+    },
+    {
+      "id": "E7",
+      "kind": "test",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d051-csharp-consumer-example-20260916/build-debug-clean-shim.log; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d051-csharp-consumer-example-20260916/build-release-clean-shim.log",
+      "observation": "The existing TwoDIntegrationTcpSmoke project built in both Debug and Release with 0 warnings and 0 errors. The clean SourceState identity was produced by the documented fake-git manifest shim for the copied-runtime smoke; this is not evidence that the actual Dev worktree is clean.",
+      "observed_at": "2026-09-16T16:24:00+09:00"
+    },
+    {
+      "id": "E8",
+      "kind": "review",
+      "location": "docs/reports/OPENVISIONLAB_2D_CSHARP_CONSUMER_OUTCOME_20260916.md; docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md; docs/admin/OPENVISIONLAB_DOCUMENTATION_MAP.md; docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md",
+      "observation": "The durable report, stable contract, live handoff, documentation map, and reconciliation record identify PL-0105 as the single 2D-051 example owner, preserve the typed mapping and explicit ACK/await/dispose route, link D-drive evidence, and state offline/two-PC/.NET 4.8/hardware/WPF boundaries. The first Debug fault attempt's Release-manifest/Debug-binary identity mismatch and corrected rerun are recorded as a verification configuration issue, not hidden as a product pass.",
+      "observed_at": "2026-09-16T16:24:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-16T16:09:52+09:00",
+      "summary": "Admit 2D-051 as one existing-example usability slice. Extend the current TCP smoke example with an explicit typed result dispatch and correlation guard, and prove it with a local contract; do not add a production wrapper, change the shared schema, or reopen the already resolved result-disposition/TCP transport owners.",
+      "evidence_refs": []
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-16T16:12:00+09:00",
+      "from": "open",
+      "to": "doing",
+      "summary": "Admitted the single existing-example C# consumer boundary after confirming no duplicate production owner is needed."
+    },
+    {
+      "id": "D2",
+      "kind": "decision",
+      "at": "2026-09-16T16:12:00+09:00",
+      "summary": "Keep TwoDIntegrationTcpExchange and IntegrationResultV2 as the only production owners. Add a small example-only dispatch/correlation helper and a focused contract rather than changing the shared schema or creating another adapter service.",
+      "evidence_refs": [
+        "E1"
+      ]
+    },
+    {
+      "id": "T2",
+      "kind": "transition",
+      "at": "2026-09-16T16:24:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "2D-051 acceptance and durable evidence are complete in the existing C# TCP consumer example and shared v2 contract path."
+    }
+  ],
+  "created_at": "2026-09-16T16:09:52+09:00",
+  "updated_at": "2026-09-16T16:24:00+09:00"
+}

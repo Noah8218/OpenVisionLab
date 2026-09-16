@@ -6,10 +6,30 @@ using OpenVisionLab.Core.Integration;
 using OpenVisionLab.Integration.Contracts;
 using OpenVisionLab.Integration.Transport.Tcp;
 
+if (args.Length == 5 && args[0] == "--fault-injection-contract")
+{
+    return await TwoDIntegrationTcpFaultInjectionContract.RunAsync(
+        args[1],
+        args[2],
+        args[3],
+        args[4]);
+}
+
+if (args.Length == 2
+    && string.Equals(
+        args[0],
+        "--consumer-example-contract",
+        StringComparison.OrdinalIgnoreCase))
+{
+    return TwoDIntegrationConsumerExampleContract.Run(args[1]);
+}
+
 if (args.Length != 4)
 {
     Console.Error.WriteLine(
         "Usage: TwoDIntegrationTcpSmoke <evidenceRoot> <sourceImagePath> <recipePath> <runtimeBuildManifestPath>");
+    Console.Error.WriteLine(
+        "   or: TwoDIntegrationTcpSmoke --consumer-example-contract <evidenceDirectory>");
     return 2;
 }
 
@@ -210,6 +230,12 @@ try
     var result = await twoD.RunAcceptedHandoffAsync(
         handoff.TransactionId,
         runtimeBuildManifestPath);
+    TwoDIntegrationConsumerExample.AssertCorrelation(
+        handoff,
+        acknowledgement,
+        result);
+    TwoDIntegrationConsumerAction consumerAction =
+        TwoDIntegrationConsumerExample.Dispatch(result);
     Require(
         result.Status == IntegrationResultStatus.Completed
             && result.Outcome == IntegrationInspectionOutcome.Pass
@@ -222,6 +248,10 @@ try
     var returned = TwoDIntegrationExchange.ReadResult(
         producerRoot,
         handoff.TransactionId);
+    TwoDIntegrationConsumerExample.AssertCorrelation(
+        handoff,
+        acknowledgement,
+        returned);
     Require(
         returned.MessageId == result.MessageId
             && returned.RunId == result.RunId
@@ -241,6 +271,7 @@ try
                 acknowledgement = acknowledgement.Status.ToString(),
                 status = result.Status.ToString(),
                 outcome = result.Outcome.ToString(),
+                consumerAction = consumerAction.ToString(),
                 result.RunId,
                 deliveredFilesTransferred = delivered.FilesTransferred,
                 deliveredBytesTransferred = delivered.BytesTransferred,
@@ -315,7 +346,7 @@ static IntegrationHandoffV2 CreateHandoff(
         DateTimeOffset.UtcNow,
         new IntegrationApplicationIdentity(
             IntegrationApplicationIds.MachineStudio,
-            "2.2.0-dev.3",
+            "2.2.0-dev.4",
             "1111111111111111111111111111111111111111",
             IntegrationSourceState.Clean),
         context);

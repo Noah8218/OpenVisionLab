@@ -1,0 +1,153 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0100",
+    "aliases": [
+      "2D-040"
+    ],
+    "type": "task",
+    "mode": "simple",
+    "title": "Isolate corrupt transactions during handoff discovery",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "explicit user continuation request",
+    "summary": "The remaining 2D reconciliation identifies a focused integration gap where one malformed transaction can abort discovery of later valid transactions.",
+    "refs": [
+      "C:/Users/USER/Downloads/OpenVisionLab_2D_tasks.json#2D-040",
+      "C:/Users/USER/Downloads/OpenVisionLab_2D_Audit_and_Plan.md#2D-040",
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md",
+      "src/OpenVisionLab/Core/Integration/TwoDIntegrationExchange.cs",
+      "src/OpenVisionLab/Core/Integration/TwoDIntegrationTcpExchange.cs",
+      "tools/VisionRecipeRunnerSmoke/TwoDIntegrationSmoke.cs"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "2D-040 remains resolved as a bounded discovery-isolation slice: valid transactions remain discoverable when one handoff envelope is malformed, a typed MalformedMessage diagnostic is preserved, and the damaged transaction is neither acknowledged, executed, nor deleted. The final Debug and Release smoke binaries passed after the missing-handoff/permission-path refinement; permission-denied, concurrent-writer, crash/reconnect, throughput, offline-PC, hardware, and broad UI qualification remain separate boundaries."
+  },
+  "objective": {
+    "summary": "Keep valid transaction discovery available when one transaction envelope cannot be read or parsed, and preserve a typed diagnostic without acknowledging, deleting, or executing the damaged transaction.",
+    "constraints": [
+      "Reuse TwoDIntegrationExchange and TwoDIntegrationTcpExchange; do not add a parallel exchange or generic registry.",
+      "Keep DiscoverHandoffs compatibility for existing callers while exposing the item diagnostics through an additive detailed result.",
+      "Catch only item-level discovery failures; do not hide catastrophic process failures or root enumeration failures.",
+      "Use isolated fixture data and place all runtime evidence under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev.",
+      "Do not modify, stage, commit, or push C:\\Git\\2D\\Original.",
+      "Do not claim crash recovery, reconnect, offline-PC, hardware, or throughput qualification from this fixture."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "With two valid transaction envelopes and one malformed envelope, detailed discovery returns both valid transactions and exactly one typed diagnostic for the malformed transaction.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E5",
+        "E6"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "The existing DiscoverHandoffs API still returns the two valid transactions, and the damaged transaction produces no Acknowledgement, Result, or automatic deletion.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E5",
+        "E6"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "The issue record, reconciliation report, current handoff, and Documentation Map identify the existing owner/call path, focused fixture, D-drive evidence, self-evaluation, and remaining integration boundaries so 2D-040 is not repeated.",
+      "evidence_refs": [
+        "E1",
+        "E4"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0094"
+    }
+  ],
+  "context": [
+    {
+      "kind": "owner-call-path",
+      "location": "TwoDIntegrationTcpExchange.DiscoverHandoffs -> TwoDIntegrationExchange.DiscoverHandoffsDetailed -> ReadHandoffEnvelope",
+      "summary": "The existing exchange owner enumerates transaction directories and reads handoff envelopes; the detailed result isolates item failures while preserving the legacy valid-summary projection."
+    },
+    {
+      "kind": "mutable-state",
+      "location": "transactions/<transaction-id>/handoff.json, acknowledgement.json, result.json",
+      "summary": "The discovery slice reads only; it does not mutate, acknowledge, execute, or delete a transaction."
+    },
+    {
+      "kind": "reading-order",
+      "location": "TwoDIntegrationExchange.DiscoverHandoffsDetailed -> ReadHandoffEnvelope -> IntegrationContractJson.DeserializeHandoffV2; then TwoDIntegrationTcpExchange wrapper -> TwoDIntegrationSmoke discovery-isolation route",
+      "summary": "This is the shortest source/test path for the changed behavior."
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "review",
+      "location": "src/OpenVisionLab/Core/Integration/TwoDIntegrationExchange.cs; src/OpenVisionLab/Core/Integration/TwoDIntegrationTcpExchange.cs; tools/VisionRecipeRunnerSmoke/TwoDIntegrationSmoke.cs",
+      "observation": "The existing discovery owner now projects valid summaries through an additive DiscoverHandoffsDetailed result. Each valid-GUID transaction is read independently; item-level contract, JSON, file, and access failures become a TwoDIntegrationDiscoveryDiagnostic, while the legacy DiscoverHandoffs method continues returning only valid summaries. No ACK, Result, or delete path is called during discovery.",
+      "observed_at": "2026-09-16T13:22:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "build",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d040-discovery-isolation-20260916-r1\\build-debug-r2.log",
+      "observation": "VisionRecipeRunnerSmoke Debug x64 build completed with 0 errors. The build reported 19 existing nullable warnings in unrelated smoke contracts and produced the runner used by the focused fixture.",
+      "observed_at": "2026-09-16T13:21:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "runtime",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d040-discovery-isolation-20260916-r1\\two-d-discovery-isolation-20260916-042221-6733faab2b534665986b12c0daa2e061\\two-d-discovery-isolation-contract.json",
+      "observation": "The isolated fixture passed with validTransactionCount=2, legacyTransactionCount=2, diagnosticCount=1, diagnosticErrorCode=MalformedMessage, and no acknowledgement or result published for the corrupt transaction. The runner exited 0.",
+      "observed_at": "2026-09-16T13:22:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "report",
+      "location": "docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md; docs/admin/OPENVISIONLAB_DOCUMENTATION_MAP.md",
+      "observation": "The reconciliation report records PL-0100 as the single 2D-040 owner with its source call path, fixture, D-drive evidence, self-evaluation, and unverified boundaries; the live Handoff and Documentation Map retain the duplicate-prevention rule and link the current coordination record.",
+      "observed_at": "2026-09-16T13:24:00+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "runtime",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d040-discovery-isolation-20260916-r1\\two-d-discovery-isolation-20260916-042704-617f789663ef4a4d895e25cb0a584067\\two-d-discovery-isolation-contract.json; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d040-discovery-isolation-20260916-r1\\build-release.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d040-discovery-isolation-20260916-r1\\runtime-release.log",
+      "observation": "The Release x64 smoke binary repeated the discovery-isolation contract with validTransactionCount=2, legacyTransactionCount=2, diagnosticCount=1, diagnosticErrorCode=MalformedMessage, and no acknowledgement or result published for the corrupt transaction. The Release build completed with 0 errors and the runner exited 0.",
+      "observed_at": "2026-09-16T13:27:00+09:00"
+    },
+    {
+      "id": "E6",
+      "kind": "runtime",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d040-discovery-isolation-20260916-r1\\build-debug-r3.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d040-discovery-isolation-20260916-r1\\runtime-r3.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d040-discovery-isolation-20260916-r1\\build-release-r2.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d040-discovery-isolation-20260916-r1\\runtime-release-r2.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d040-discovery-isolation-20260916-r1\\two-d-discovery-isolation-20260916-043041-e90ffb038aeb439bacc197e7a196d226\\two-d-discovery-isolation-contract.json; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d040-discovery-isolation-20260916-r1\\two-d-discovery-isolation-20260916-043043-a81b1790af474ac2a792de423c32bc4d\\two-d-discovery-isolation-contract.json",
+      "observation": "After the final source refinement, both Debug and Release builds completed with 0 errors, and both discovery-isolation runs exited 0 with validTransactionCount=2, legacyTransactionCount=2, diagnosticCount=1, diagnosticErrorCode=MalformedMessage, and no acknowledgement or result for the corrupt transaction.",
+      "observed_at": "2026-09-16T13:31:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-16T13:24:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "2D-040 is resolved after the valid-plus-malformed discovery fixture passed. The legacy API remains compatible, typed diagnostics preserve the damaged item, and no mutation occurred; broader access, concurrency, recovery, transport, hardware, and UI boundaries remain unverified."
+    }
+  ],
+  "created_at": "2026-09-16T04:15:00+09:00",
+  "updated_at": "2026-09-16T13:32:00+09:00"
+}

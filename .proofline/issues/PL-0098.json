@@ -1,0 +1,138 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0098",
+    "aliases": [
+      "2D-038"
+    ],
+    "type": "task",
+    "mode": "simple",
+    "title": "Measure cancellation and deadline drain timing and terminal state",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "explicit user continuation request",
+    "summary": "The remaining 2D reconciliation identifies an existing cancellation/deadline drain contract whose elapsed timing and terminal state are not recorded by a focused operational check.",
+    "refs": [
+      "C:/Users/USER/Downloads/OpenVisionLab_2D_tasks.json#2D-038",
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md",
+      "src/OpenVisionLab/UI/Menu/Wpf/NativeTools/Preview/OpenVisionNativePreviewExecutionBoundary.cs",
+      "src/OpenVisionLab/Core/Pipeline/Execution/VisionPipelineExecutionService.cs"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "2D-038 is resolved as a bounded measurement slice: the existing Preview and Pipeline owners recorded cancellation/deadline drain timing and terminal state, stale results remained discarded, and the first flaky Preview attempt was preserved alongside two passing reruns. Infinite hang, force-stop, hardware, low-memory, and long-duration qualification remain outside this issue."
+  },
+  "objective": {
+    "summary": "Record bounded cancellation/deadline drain elapsed time and final state for the existing native Preview and Pipeline execution owners, preserving stale-result disposal and status distinctions without inventing a new timeout policy.",
+    "constraints": [
+      "Reuse OpenVisionNativePreviewExecutionBoundary and VisionPipelineExecutionService; do not add a new executor, service, or global timeout policy.",
+      "Keep the existing Preview generation/discard guard, Pipeline TimedOut/Canceled result contract, and public status wording unchanged.",
+      "Use D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev for runtime artifacts.",
+      "Do not modify, stage, commit, or push C:\\Git\\2D\\Original.",
+      "Do not claim infinite hang, camera/SDK, low-memory, or force-stop recovery qualification from controlled local fixtures."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The actual native Preview boundary records cancellation requested while a controlled slow delegate is active, observes the draining state before completion, reaches idle within a bounded wait, and publishes no stale result or canceled output layer.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "The existing Pipeline execution contract records finite deadline and cancellation drain elapsed times, preserves TimedOut versus Canceled, and reports WorkerDrained only after the late task result is released.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E4"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "The Handoff, reconciliation report, and issue record identify the owner/call path, measured artifacts, self-evaluation, and unverified long-duration/hang/hardware boundaries so the same drain work is not repeated.",
+      "evidence_refs": [
+        "E1",
+        "E5"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0094"
+    }
+  ],
+  "context": [
+    {
+      "kind": "preview-owner",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/NativeTools/Documents/OpenVisionNativeToolDocument.cs -> OpenVisionNativePreviewExecutionBoundary -> OpenVisionNativePreviewExecutionController",
+      "summary": "Single-input Preview snapshots on the UI thread, computes on a worker, and discards stale generations after CancelAndDiscard or Dispose."
+    },
+    {
+      "kind": "pipeline-owner",
+      "location": "src/OpenVisionLab/Core/Pipeline/Execution/VisionPipelineExecutionService.cs:WaitForStepCompletionStatusAsync",
+      "summary": "Pipeline execution distinguishes Completed, TimedOut, and Canceled, awaits the late worker task, disposes its result image, and marks WorkerDrained."
+    },
+    {
+      "kind": "reading-order",
+      "location": "OpenVisionNativeToolDocument.RunPreview -> OpenVisionNativePreviewExecutionBoundary.CancelAndDiscard/CompleteOnUi -> OpenVisionNativePreviewExecutionController.ComputeSingleInput; then VisionPipelineExecutionService.WaitForStepCompletionStatusAsync -> focused runner contract."
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "review",
+      "location": "src/OpenVisionLab/UI/Menu/Wpf/NativeTools/Documents/OpenVisionNativeToolDocument.cs; src/OpenVisionLab/UI/Menu/Wpf/NativeTools/Preview/OpenVisionNativePreviewExecutionBoundary.cs; src/OpenVisionLab/UI/Menu/Wpf/NativeTools/Preview/OpenVisionNativePreviewExecutionController.cs; src/OpenVisionLab/Core/Pipeline/Execution/VisionPipelineExecutionService.cs",
+      "observation": "The existing owner/call path snapshots native Preview input, computes on the worker, increments the discard generation on CancelAndDiscard, disposes late computation/snapshot data in CompleteOnUi, and reaches idle in EndRun. Pipeline WaitForStepCompletionStatusAsync distinguishes TimedOut/Canceled, awaits the late task, disposes its result image, and returns WorkerDrained=true.",
+      "observed_at": "2026-09-16T11:42:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "build",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d038-drain-20260916-r1\\app-debug-embedded-smoke-build.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d038-drain-20260916-r1\\runner-debug-build.log",
+      "observation": "The changed embedded OpenVisionLab Debug build completed with 0 warnings and 0 errors, and VisionRecipeRunnerSmoke Debug completed with 0 errors; the runner retained 19 pre-existing nullable warnings outside this slice.",
+      "observed_at": "2026-09-16T11:43:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "runtime",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d038-drain-20260916-r1\\preview-ui-r2\\report.txt; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d038-drain-20260916-r1\\preview-ui-r3\\report.txt",
+      "observation": "Two reruns of the actual Debug embedded WPF smoke passed. After a controlled 420ms delegate entered its slow section, CancelAndDiscard reported RunningImmediatelyAfterCancel=true, DrainCompleted=true, TerminalBoundaryState=Idle, CanceledLateResultPublished=false, and no discarded output layer. Measured native drain elapsed time was 428.8ms and 431.0ms; the selected window intersected DISPLAY2. No OpenVisionLab process remained afterward.",
+      "observed_at": "2026-09-16T11:45:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d038-drain-20260916-r1\\pipeline-contract\\pipeline-review-execution-contract.txt",
+      "observation": "The existing Pipeline Review execution contract passed. Deadline remained TimedOut with WorkerDrained=true and late-result release elapsed 639.9ms; cancellation remained Canceled with WorkerDrained=true and late-result release elapsed 14.0ms. Both statuses were checked as incomplete before the late task result was supplied, and disposal/generation/duplicate-run checks also passed.",
+      "observed_at": "2026-09-16T11:41:00+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "report",
+      "location": "docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md; docs/admin/OPENVISIONLAB_DOCUMENTATION_MAP.md",
+      "observation": "The durable report and live Handoff record PL-0098 as the single 2D-038 owner, link the measured D-drive artifacts, preserve the first failed Preview attempt, document the owner/call path and self-evaluation, update the ledger count to 98 total/93 resolved/1 doing/4 blocked, and remove 2D-038 from the next-admission list.",
+      "observed_at": "2026-09-16T11:47:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-16T11:47:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "2D-038 is resolved after bounded native Preview and Pipeline drain timing/state evidence passed; long-duration, hang, force-stop, hardware, and low-memory boundaries remain explicitly unverified."
+    }
+  ],
+  "created_at": "2026-09-16T11:41:01+09:00",
+  "updated_at": "2026-09-16T11:47:00+09:00"
+}

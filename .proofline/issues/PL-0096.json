@@ -1,0 +1,126 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0096",
+    "aliases": [
+      "2D-042"
+    ],
+    "type": "task",
+    "mode": "simple",
+    "title": "Verify multi-process 2D ACK and Run at-most-once behavior",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "explicit user continuation request",
+    "summary": "The remaining-work reconciliation found that the existing OVL-02 evidence covered same-process concurrent Run but the attached 2D-042 acceptance requires two clients or processes for concurrent ACK/Run.",
+    "refs": [
+      "C:/Users/USER/Downloads/OpenVisionLab_2D_tasks.json",
+      "docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md",
+      "docs/reports/OPENVISIONLAB_OVL02_TWO_D_INTEGRATION_IDENTITY_20260907.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "2D-042 remains resolved for the bounded process-level ACK and Run contract; the durable reconciliation and handoff now record the existing owner, call path, duplicate-prevention decision, D-drive evidence, and unverified operational boundaries."
+  },
+  "objective": {
+    "summary": "Prove that two separate processes handling one 2D Transaction produce at most one Accepted Acknowledgement and at most one Completed/Pass Result, while duplicate requests receive typed InvalidState and the persisted result remains correlated.",
+    "constraints": [
+      "Reuse TwoDIntegrationExchange and VisionRecipeRunnerSmoke; do not add a production global lock or new transport protocol.",
+      "Keep the existing .2d-run.lock and atomic message owner; only translate an observed acknowledgement publication race to InvalidState.",
+      "Use isolated D-drive evidence and existing public sample inputs.",
+      "Do not claim crash/restart recovery, TCP latency/reconnect, throughput, or hardware qualification from this slice.",
+      "Do not modify, commit, or push C:\\Git\\2D\\Original."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "Two separate worker processes concurrently acknowledging one Handoff leave exactly one Accepted Acknowledgement and one typed InvalidState rejection.",
+      "evidence_refs": [
+        "E1"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "Two separate worker processes concurrently running one accepted Handoff produce exactly one Completed/Pass execution, one typed InvalidState rejection, and one persisted correlated Result.",
+      "evidence_refs": [
+        "E2"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "The existing owner, call path, focused process fixture, duplicate-prevention decision, D-drive evidence, and unverified crash/reconnect/throughput boundaries are recorded in durable project documents.",
+      "evidence_refs": [
+        "E3",
+        "E4"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0094"
+    }
+  ],
+  "context": [
+    {
+      "kind": "production-owner",
+      "location": "src/OpenVisionLab/Core/Integration/TwoDIntegrationExchange.cs",
+      "summary": "Existing acknowledgement publication, atomic message, and .2d-run.lock owners."
+    },
+    {
+      "kind": "smoke-owner",
+      "location": "tools/VisionRecipeRunnerSmoke/TwoDIntegrationSmoke.cs",
+      "summary": "Existing 2D integration fixture and same-process concurrent Run smoke owner."
+    },
+    {
+      "kind": "prior-evidence",
+      "location": "docs/reports/OPENVISIONLAB_OVL02_TWO_D_INTEGRATION_IDENTITY_20260907.md",
+      "summary": "Prior same-process lease evidence and explicit process/crash boundary."
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d042-multiprocess-20260916-r3\\two-d-concurrent-process-20260916-014824-cd29d559a75f45879126f48e8bfe5266\\two-d-concurrent-process-smoke.json",
+      "observation": "Two separate worker processes concurrently acknowledged one transaction; the persisted observation contains exactly one Accepted worker, one Rejected worker with ErrorCode InvalidState, and persistedAcknowledgementStatus Accepted.",
+      "observed_at": "2026-09-16T10:49:25+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d042-multiprocess-20260916-r3\\two-d-concurrent-process-20260916-014824-cd29d559a75f45879126f48e8bfe5266\\two-d-concurrent-process-smoke.json",
+      "observation": "Two separate worker processes concurrently ran one accepted transaction; the persisted observation contains exactly one Completed worker with Outcome Pass, one Rejected worker with ErrorCode InvalidState, persistedResultStatus Completed, persistedResultOutcome Pass, and persistedResultCount 1.",
+      "observed_at": "2026-09-16T10:49:25+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "test",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d042-multiprocess-20260916-r3\\verification.txt",
+      "observation": "The focused artifact records the existing TwoDIntegrationExchange and VisionRecipeRunnerSmoke call path, confirms that no production global lock or new transport was added, records the narrow ACK race translation, and explicitly lists cancel, crash/restart, TCP reconnect/order, throughput, hardware, and clean-checkout boundaries as unverified.",
+      "observed_at": "2026-09-16T10:49:25+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "report",
+      "location": "docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md",
+      "observation": "The durable report section 9 and the current handoff section for PL-0096 record the existing TwoDIntegrationExchange/VisionRecipeRunnerSmoke owner and call path, one-result duplicate prevention, the D-drive artifact, and the explicit unverified cancel/crash/reconnect/throughput/hardware boundaries.",
+      "observed_at": "2026-09-16T11:06:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-16T11:01:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "Closed the bounded 2D-042 process-level ACK/Run at-most-once verification in the existing integration and smoke owners; no production global lock or parallel protocol was introduced."
+    }
+  ],
+  "created_at": "2026-09-16T11:00:00+09:00",
+  "updated_at": "2026-09-16T11:06:00+09:00"
+}

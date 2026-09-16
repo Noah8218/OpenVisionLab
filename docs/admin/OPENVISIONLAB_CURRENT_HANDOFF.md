@@ -1,6 +1,6 @@
 # OpenVisionLab Current Project Handoff
 
-Updated: 2026-09-15 KST
+Updated: 2026-09-16 KST
 
 이 문서는 현재 상태와 다음 행동만 담는 live handoff입니다. 완료 chronology는
 [`OPENVISIONLAB_CURRENT_HANDOFF_HISTORY_20260914.md`](archive/OPENVISIONLAB_CURRENT_HANDOFF_HISTORY_20260914.md),
@@ -36,7 +36,8 @@ LLM XML 작성 지원은 선택적 유지 기능이며, 카메라·조명·PLC·
   `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\predevelopment-priorities-20260914\01-baseline`
 - 기존 변경은 사용자 작업으로 취급하며 reset/checkout/bulk overwrite하지 않습니다.
 - `C:\Git\2D\Original`, commit, push, tag, release, deploy는 승인 범위 밖입니다.
-- 현재 이 프로젝트는 `openvisionlab-2d` heartbeat가 5분 간격으로 한 slice씩 실행합니다.
+- 자동화는 현재 일시정지 상태(`automation-2`, `PAUSED`)이며, 이 handoff의 후속
+  slice는 사용자의 명시적 요청이 있을 때만 진행합니다.
 
 ## Latest completed work — PL-0057
 
@@ -1005,17 +1006,513 @@ checkout 승인 전에는 같은 RC 시도를 반복하지 않습니다.
 
 - camera/light/PLC/I/O 통합 플랫폼
 - cross-platform/Avalonia/Linux와 단일-DLL 배포
-- LLM candidate activation 또는 새 benchmark
+- LLM candidate activation, 새 benchmark, transaction형 Import/Undo 활성화
 - Original 반영, commit/push/tag/release/deploy
 
 ## Next action
 
-PL-0065·PL-0066·PL-0067·PL-0068·PL-0069·PL-0070·PL-0071·PL-0072·PL-0073·PL-0074·PL-0075·PL-0076·PL-0077·PL-0078·PL-0079·PL-0080·PL-0082·PL-0083·PL-0084·PL-0085·PL-0086·PL-0087·PL-0088·PL-0089·PL-0090·PL-0091·PL-0092는 완료되었습니다. PL-0093은 제품 memory budget/cap 결정 전까지
+PL-0065·PL-0066·PL-0067·PL-0068·PL-0069·PL-0070·PL-0071·PL-0072·PL-0073·PL-0074·PL-0075·PL-0076·PL-0077·PL-0078·PL-0079·PL-0080·PL-0082·PL-0083·PL-0084·PL-0085·PL-0086·PL-0087·PL-0088·PL-0089·PL-0090·PL-0091·PL-0092·PL-0095·PL-0096·PL-0097·PL-0098·PL-0099·PL-0100·PL-0101·PL-0102·PL-0103·PL-0104·PL-0105·PL-0106는 완료되었습니다. PL-0093은 제품 memory budget/cap 결정 전까지
 blocked로 유지합니다. PL-0061은 clean verification checkout 선행 조건이 충족될 때까지
 blocked로 유지하고, PL-0081(2D-023)은 제품 입력 크기 정책 결정 전까지 blocked로 유지합니다. PL-0057·PL-0058·PL-0059·PL-0060·PL-0062·PL-0063·PL-0064·PL-0065·PL-0066·PL-0067·PL-0068·PL-0069·PL-0070·PL-0071의
  완료 owner는 새 요구, 재현 defect, 실패 criterion 또는 dependency 변경 없이 다시 분할하지 않습니다.
-완료 owner PL-0069·PL-0070·PL-0071·PL-0072·PL-0073·PL-0074·PL-0075·PL-0076·PL-0077·PL-0078·PL-0079·PL-0080·PL-0087·PL-0088도 동일한 경계를 유지합니다. 2D-023은
+완료 owner PL-0069·PL-0070·PL-0071·PL-0072·PL-0073·PL-0074·PL-0075·PL-0076·PL-0077·PL-0078·PL-0079·PL-0080·PL-0087·PL-0088·PL-0097·PL-0100·PL-0101·PL-0104도 동일한 경계를 유지합니다. 2D-023은
 제품 결정 전까지 재구현하지 않으며, 완료된 2D-024 owner도 새 요구·재현
 defect·실패 criterion·dependency 변경 없이는 다시 분할하지 않습니다. 다음
-작업은 PL-0093의 memory budget/cap 결정을 받은 뒤 해당 정책 boundary를
-명시하고 검증하는 것입니다.
+작업은 완료된 `PL-0095/2D-047`, `PL-0096/2D-042`, `PL-0097/2D-037`,
+`PL-0098/2D-038`, `PL-0099/2D-039`, `PL-0100/2D-040`,
+`PL-0101/2D-041`, `PL-0102/2D-044`, `PL-0103/2D-045`,
+`PL-0104/2D-046`, `PL-0105/2D-051`, `PL-0106/2D-052`와 같은 방식으로 다음
+unregistered boundary를 기존 owner/evidence와 먼저 대조하고, 실제 focused gap이
+있을 때만 단일 child issue로 admission하는 것입니다. `2D-052`는 maintenance-mode
+안전 경계 검증과 N/A/deferred 결정을 완료했으므로 새 LLM 활성화/transaction/Undo
+구현을 반복하지 않습니다. PL-0093 memory budget/cap, PL-0081 입력 크기
+정책, PL-0061 clean-checkout RC gate는 각 결정·환경 prerequisite 전까지
+blocked로 유지합니다.
+
+## 2026-09-16 residual development reconciliation — PL-0094
+
+사용자 요청에 따라 첨부된 2D 52개 계획, 현재 `.proofline/issues`, 완료 owner
+registry와 이 Handoff를 대조했습니다. 이미 `resolved`인 owner는 재구현하지
+않고, 계획에는 있으나 현재 원장에 없는 `2D-035`, `2D-043`,
+`2D-048`~`2D-050`은 독립 owner와 focused evidence를 지정한 뒤에만
+실행합니다. `2D-052`는 `PL-0106`으로 maintenance-mode 검증과
+N/A/deferred 결정을 완료했습니다.
+
+- 상세 정합화 기록:
+  `docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md`
+- 원장: `.proofline/issues/PL-0094.json` (`doing`)
+- 현재 원장 상태: 106건 중 `resolved=101`, `doing=1`, `blocked=4`
+- 현재 blocked: `PL-0061/2D-003`, `PL-0081/2D-023`, `PL-0093/2D-036`와
+  역사적 release decision인 `PL-0011`
+- 중복 방지: 새 요구·재현 defect·실패 criterion·dependency boundary가 없는
+  완료 owner는 다시 열지 않으며, 새 code change 전 owner/call path/기존
+  focused check를 먼저 확인합니다.
+
+이번 cycle의 독립 실행 경계 `2D-047` failure-path evidence 보강은 `PL-0095`와
+기존 owner `tools/VerifyReleaseCandidate.ps1`에서 완료되었고, `2D-042` 다중
+프로세스 ACK/Run at-most-once 검증은 `PL-0096`과 기존
+`TwoDIntegrationExchange`·`VisionRecipeRunnerSmoke` owner에서 완료되었습니다. 이어서
+`2D-037`은 `PL-0097`로 기존 Preview 실행 owner에 동일 input/output fail-closed guard를
+추가하고, Main/Main WPF와 headless source-preservation evidence를 완료했습니다. 이어서
+`2D-038`은 `PL-0098`로 기존 Preview/Pipeline drain 계약의 bounded timing/state
+evidence를 기록했으며, 첫 실패 산출물과 재실행 성공을 모두 보존했습니다.
+이번 cycle의 `2D-039`는 `PL-0099`로 실제 실행 중 Preview에서 WPF
+`Window.Close` 요청, worker drain, late-result 차단, 새 shell session 초기 상태와
+현재 Release 동일 data-root 재시작을 검증했습니다. production lifetime owner는
+변경하지 않았고, close/restart evidence와 사후 자체평가를 아래에 고정했습니다.
+이번 cycle의 `2D-040`은 `PL-0100`으로 정상 transaction 목록 사이의 malformed
+handoff를 격리하고 typed `MalformedMessage` diagnostic을 보존하는 기존
+`TwoDIntegrationExchange` discovery 경계를 검증했습니다. legacy valid-summary
+projection은 유지했고 손상 transaction에는 ACK/Result/delete를 수행하지 않았습니다.
+이번 cycle의 `2D-041`은 `PL-0101`으로 RunRecord 게시 직후 프로세스 중단 시
+자동 재실행을 차단하고, 원본 RunRecord를 보존한 채 terminal recovery-required
+Result를 게시하는 기존 `TwoDIntegrationExchange` 경계를 Debug·Release에서
+검증했습니다. Result write failure 정리와 두 번째 restart 중복 거부도 확인했습니다.
+이번 cycle의 `2D-044`는 `PL-0102`로 기존 `TwoDIntegrationTcpExchange` 주변에
+loopback chunking proxy와 scripted peer를 두고, partial/delay 전송·첫 연결 단절 후
+retry reconnect·Result-before-Acknowledgement wire 순서·wrong request identity를
+Debug와 Release에서 검증했습니다. 수신은 byte-identical transaction만 materialize하고
+ACK/Run을 자동 실행하지 않았으며, 기존 Result guard와 `correlationMismatch`가
+동작했습니다. shared TCP package와 production owner는 변경하지 않았습니다.
+이번 cycle의 `2D-045`는 `PL-0103`으로 기존 `TwoDIntegrationExchange`의 source
+validation/decode 세대 경계를 검증했습니다. pre-fix에는 hash 검증 뒤 same-length
+A→B 교체가 B 픽셀을 실행하면서 A SHA-256 RunRecord를 남겼고, truncated 교체가
+실패 Result를 게시했습니다. 현재는 source byte를 한 번 snapshot하고 동일 배열의
+length/SHA-256을 재검증한 뒤 `Cv2.ImDecode`하므로, Debug와 Release에서 immutable
+source는 identity/Mean 32로 완료되고 atomic/partial 교체는 각각
+`ArtifactHashMismatch`/`ArtifactLengthMismatch`로 Result·RunRecord 전에 거부됩니다.
+이번 cycle의 `2D-046`은 `PL-0104`로 기존
+`VisionPipelineExecutionPlan.ResolveVisionSdkIdentity`와
+`BuildCleanRuntime`/`TestReleaseDistribution` owner를 유지하면서 배포 root
+`sdk-manifest.json` sidecar와 loaded SDK 파일 length/SHA-256을 연결했습니다.
+embedded manifest hash와 `clean_runtime_manifest` anchor, UTF-8 BOM-safe parser를
+포함하며, Debug/Release checkout-free copy에서 match/missing과 metadata/length/
+loaded-DLL/package mismatch를 모두 확인했습니다. ReleaseDistributionCheck는
+payload 76개와 archive SHA-256 `7915E913F99BFC1F93EDD308E1E2F67FC67F73EA0BF8B9A7C417F401FE672D7E`로
+통과했습니다. 다른 물리 PC/offline 설치, installer/signing/update/rollback,
+hardware, SDK 내부, 그리고 기존 Release PL-0008 sample-validation 인접 경계는
+이 완료로 주장하지 않습니다.
+다음 boundary는 `2D-048`이며, 신규 PC/offline 환경이 없으므로 계속
+blocked입니다. `2D-049`는 독립 참가자, `2D-050`은 명명된 hardware/long-run
+또는 측정 병목 결정이 필요합니다. 제품 입력 크기,
+memory cap, clean verification checkout, offline PC, hardware, 장시간 운전,
+독립 사용자 관찰이 필요한 항목은 해당 prerequisite가 생길 때까지 blocked로
+유지합니다. `2D-052`의 상세 증거는
+`docs/reports/OPENVISIONLAB_2D_LLM_XML_BOUNDARY_20260916.md`와
+`.proofline/issues/PL-0106.json`에 있습니다. 이 기록은 모든 항목 완료를 의미하지 않으며, 처리된 항목의
+중복 실행을 막기 위한 현재 작업 경계입니다.
+
+## 2026-09-16 2D-047 RC gate failure summary — PL-0095
+
+현재 독립 실행 slice는 릴리스 후보 게이트의 실패 경로 증거 보강입니다.
+성공 시 이미 존재하는 `release_candidate_summary.json`을 재구현하지 않고,
+`tools/VerifyReleaseCandidate.ps1`의 동일 호출 경로에 다음만 추가합니다.
+
+- `Preflight`부터 `Evidence materialization`까지 단계별 `PASS`, `FAIL`,
+  `NotRun`, `Skipped` 상태
+- 실패 단계와 예외 메시지
+- 실패 시에도 동일 summary 파일을 기록하고 원래 non-zero 종료를 유지
+
+원장: `.proofline/issues/PL-0095.json` (`resolved`)
+
+중복 방지 경계: 별도 RC runner/wrapper, 새 release owner, clean-checkout
+통과 주장을 만들지 않습니다. 이 slice 종료 후 `2D-039/040/041/044/045/046/048/051`
+중 하나를 기존 owner/evidence와 대조해 다음 단일 slice로 admission합니다.
+
+## 2026-09-16 2D-042 multi-process at-most-once — PL-0096
+
+현재 독립 실행 slice는 동일 transaction에 대한 다중 프로세스 ACK/Run 경계입니다.
+새 전역 lock·transport·parallel runner를 만들지 않고, 기존 owner의 atomic
+message와 `.2d-run.lock`을 그대로 사용했습니다. ACK 게시의 target collision만
+기존 `InvalidState` 계약으로 변환했습니다.
+
+- Owner/call path: `VisionRecipeRunnerSmoke.RunConcurrentProcessAsync` → 두 worker
+  process → `TwoDIntegrationExchange.AcknowledgeHandoff` /
+  `RunAcceptedHandoffAsync` → handoff/result message files.
+- ACK: `Accepted=1`, `InvalidState=1`, persisted acknowledgement=`Accepted`.
+- Run: `Completed/Pass=1`, `InvalidState=1`, persisted result=`Completed/Pass`,
+  `persistedResultCount=1`.
+- 원장: `.proofline/issues/PL-0096.json` (`resolved`)
+- D-drive evidence:
+  `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\2d042-multiprocess-20260916-r3\verification.txt`
+  및 동일 run의 `two-d-concurrent-process-smoke.json`
+- 미검증 경계: cancel race, crash/restart recovery, TCP 지연·재연결·순서 역전,
+  처리량·메모리 상한, hardware/field qualification, clean-checkout release
+  distribution.
+
+중복 방지 경계: 기존 OVL-02 동일 프로세스 lease evidence를 재구현하지 않았고,
+`2D-042`의 프로세스 수준 공백만 `PL-0096`으로 닫았습니다. 다음 admission 후보는
+`2D-039/040/041/044/045/046/048/051` 중 하나입니다.
+
+## 2026-09-16 2D-037 same input/output source protection — PL-0097
+
+사전 자체평가에서 기존 source/clone 계약은 headless Run을 보호했지만, 직접 Tool
+Preview의 output publisher가 input layer와 같은 이름을 받아 작업공간 source를
+덮어쓸 수 있는 실제 gap을 재현했습니다. 자동 reroute나 전역 정책을 만들지 않고,
+기존 Preview 실행 owner에서만 fail-closed 처리했습니다.
+
+- Owner/call path: `OpenVisionNativeToolDocument.RunPreview` →
+  `OpenVisionNativePreviewExecutionBoundary.TryStartSingleInput` →
+  `OpenVisionNativePreviewExecutionController.TryCaptureSingleInput` →
+  `OpenVisionNativePreviewLayerPublisher`; Arithmetic는 `RunArithmeticPreview` →
+  `RunArithmetic`에서 input A/B와 output 충돌을 같은 경계에서 차단합니다.
+- 변경: 동일 non-blank layer 이름이면 publish 전에
+  `Preview NG / 검사 판정 미평가 / input and output layers must be different to preserve the source image`를
+  반환합니다. Pipeline의 기존 same-layer warning/Run 계약과 별도 layer route는
+  유지합니다.
+- 원장: `.proofline/issues/PL-0097.json` (`resolved`)
+- Headless: `pipeline-layer-reference-invariant-contract.txt` PASS; source bytes 불변,
+  결과 independent storage, validation warning 1개, Arithmetic B 실행이 기록되었습니다.
+- WPF: `wpf_layer_selection_same_input_output_guard=OK`; Threshold와 Arithmetic에서
+  Main/Main route, no result, no run-count increment, no `Threshold_Preview`, Main changed
+  pixels=0, visible NG status를 확인했습니다. 캡처:
+  `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\2d037-wpf-20260916-r3\wpf_layer_selection_same_input_output_guard.png`
+- D-drive evidence:
+  `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\2d037-layer-collision-20260916-r1\pipeline-layer-reference-invariant-contract.txt`,
+  `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\2d037-wpf-20260916-r3\ui_precheck_report.md`
+- 자체평가 후 남은 범위: 다른 theme/layout, DPI 125/150/175/200%, monitor topology별
+  physical interaction, cancel 중 충돌, camera/field hardware, 장시간/low-memory는
+  검증하지 않았습니다. 다음 후보는 `2D-039/040/041/044/045/046/048/051` 중 기존
+  owner/evidence와 비교 후 하나만 admission합니다.
+
+## 2026-09-16 2D-038 native drain timing/state — PL-0098
+
+사전 자체평가에서 Preview와 Pipeline은 이미 generation discard, late-result Dispose,
+`TimedOut`/`Canceled`, `WorkerDrained` 계약을 소유하고 있었지만, 운영 기록에는
+drain 경과 시간이 없었습니다. 새 timeout 정책이나 새 owner를 만들지 않고 기존
+검증 경계에 측정만 추가했습니다.
+
+- Owner/call path: `OpenVisionNativeToolDocument.RunPreview` →
+  `OpenVisionNativePreviewExecutionBoundary.CancelAndDiscard/CompleteOnUi` →
+  `OpenVisionNativePreviewExecutionController.ComputeSingleInput`; Pipeline은
+  `VisionPipelineExecutionService.WaitForStepCompletionStatusAsync`입니다.
+- Preview 실제 Debug smoke: controlled 420ms delegate에서
+  `RunningImmediatelyAfterCancel=True`, `DrainCompleted=True`,
+  `TerminalBoundaryState=Idle`, late/canceled output 미게시를 확인했습니다. 통과
+  run의 drain은 `428.8ms`, `431.0ms`였고 `DISPLAY2` window intersection을 기록했습니다.
+- Pipeline contract: deadline은 `TimedOut/WorkerDrained=True/639.9ms`, cancellation은
+  `Canceled/WorkerDrained=True/14.0ms`로 구분되었으며 late result release 후에만
+  완료되었습니다.
+- 원장: `.proofline/issues/PL-0098.json` (`resolved`)
+- D-drive evidence:
+  `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\2d038-drain-20260916-r1\preview-ui-r2\report.txt`,
+  `...\preview-ui-r3\report.txt`, `...\pipeline-contract\pipeline-review-execution-contract.txt`
+- 실패 보존: 같은 Debug binary 첫 Preview 실행의 `...\preview-ui\report.txt`는
+  `Applies=0`으로 실패했고, 제품 결함으로 단정하지 않고 재실행 성공과 함께 남겼습니다.
+- 자체평가 후 남은 범위: 무한 hang/강제 종료 recovery, camera/SDK, low-memory,
+  장시간 반복, 다른 theme/layout/DPI와 field hardware는 검증하지 않았습니다.
+  다음 후보는 `2D-039/040/041/044/045/046/048/051` 중 하나입니다.
+
+## 2026-09-16 2D-039 normal close/restart lifetime — PL-0099
+
+사전 자체평가에서 `OpenVisionShellHostWindow.OnClosed`부터 shell/session/document/native
+document Dispose까지의 기존 호출 순서는 명시되어 있었지만, 실행 중 Preview에서 실제
+`Window.Close`를 요청한 기록은 없었습니다. 기존 owner를 재분리하거나 lifetime 정책을
+바꾸지 않고, `OpenVisionLab.DirectSmokeRunner`에 focused scenario만 추가했습니다.
+
+- Owner/call path: `Window.Close` → `OpenVisionShellHostWindow.OnClosed` →
+  `OpenVisionShellHostView.Dispose` → `OpenVisionShellHostSessionController.DisposeSession`
+  → `OpenVisionShellHostDocumentController.Dispose` →
+  `OpenVisionNativeToolDocument.Dispose` → existing Preview boundary Dispose.
+- Embedded WPF evidence: controlled Preview delegate가 실행 중인 상태에서
+  `Window.Close`를 요청해 `WindowClosed=True`, `DispatcherAliveAfterClose=True`,
+  `WorkerDrainedAfterClose=True`, `LatePreviewResultPublished=false`,
+  `StaleOutputLayerAfterClose=False`, close `382.3ms`를 확인했습니다. 두 번째 shell은
+  `RestartFreshSession=True`로 transient Main layer/native document/Preview run이
+  없었습니다. 두 창 모두 동적으로 선택된 `DISPLAY2`와 교차했습니다.
+- Process restart evidence: 현재 Release `OpenVisionLab.exe`를 같은
+  `OPENVISIONLAB_DATA_ROOT`로 두 번 연속 실행해 정상 `CloseMainWindow`/exit `0`/
+  monitor placement를 두 번 확인했습니다. 의도적인 invalid TCP smoke는 두 실행 모두
+  exit `1`로 남겼습니다. `SYSTEM.xml`과 `RECIPE/Default/VISION.xml`은 재실행 뒤에도
+  존재했고 Error log는 UTF-8 BOM+개행(3 bytes)이었습니다.
+- 원장: `.proofline/issues/PL-0099.json` (`resolved`)
+- 변경: `tools/OpenVisionLab.DirectSmokeRunner/OpenVisionLabDirectSmokeRunner.cs`
+  (테스트 harness route/method만 추가; production lifetime owner 불변)
+- D-drive evidence:
+  `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\2d039-normal-close-restart-20260916-r1\normal-close-restart\report.txt`,
+  `...\desktop-exit-code-contract\desktop-exit-code-contract.json`,
+  `...\desktop-exit-code-contract-restart\pass1-desktop-exit-code-contract.json`,
+  `...\desktop-exit-code-contract-restart\pass2-desktop-exit-code-contract.json`,
+  `...\desktop-exit-code-contract-restart\restart-consistency.txt`,
+  `...\app-debug-embedded-build.log`, `...\app-release-build.log`
+- 사후 자체평가: bounded active-Preview close, drain, stale-result 차단, fresh session,
+  현재 Release 정상 종료·재시작은 통과했습니다. 저장 실패·취소 경합, qualified Recipe의
+  변경 저장 후 재복원, 실제 camera/SDK, 무한 hang/강제종료 recovery, 다른
+  theme/layout/DPI, 다중 모니터, hardware/장시간 운전은 별도 경계로 남겼습니다.
+
+## 2026-09-16 2D-040 discovery isolation — PL-0100
+
+사전 자체평가에서 `TwoDIntegrationExchange.DiscoverHandoffs`가 한 transaction의
+`handoff.json` read/parse 예외를 항목 단위로 격리하지 않아 뒤의 정상 목록까지
+막을 수 있음을 확인했습니다. 기존 exchange owner를 재분리하지 않고 additive한
+`DiscoverHandoffsDetailed`/`TwoDIntegrationDiscoveryResult`와 TCP wrapper만
+추가했으며, legacy `DiscoverHandoffs`의 valid-summary projection은 유지했습니다.
+
+- Owner/call path: `TwoDIntegrationTcpExchange.DiscoverHandoffs` →
+  `TwoDIntegrationExchange.DiscoverHandoffsDetailed` → `ReadHandoffEnvelope`;
+  항목별 실패는 typed `TwoDIntegrationDiscoveryDiagnostic`으로 수집됩니다.
+- Fixture evidence: 정상 transaction `2`개와 malformed transaction `1`개에서
+  detailed valid=`2`, legacy valid=`2`, diagnostic=`1`(`MalformedMessage`)을
+  Debug와 Release runner에서 각각 확인했고 손상 transaction에는 ACK/Result가
+  없으며 자동 삭제도 없었습니다.
+- 원장: `.proofline/issues/PL-0100.json` (`resolved`)
+- 변경: `src/OpenVisionLab/Core/Integration/TwoDIntegrationExchange.cs`,
+  `src/OpenVisionLab/Core/Integration/TwoDIntegrationTcpExchange.cs`,
+  `tools/VisionRecipeRunnerSmoke/Program.cs`,
+  `tools/VisionRecipeRunnerSmoke/TwoDIntegrationSmoke.cs`
+- D-drive evidence:
+  `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\2d040-discovery-isolation-20260916-r1\build-debug-r3.log`,
+  `...\runtime-r3.log`, `...\build-release-r2.log`, `...\runtime-release-r2.log`,
+  `...\two-d-discovery-isolation-20260916-043041-e90ffb038aeb439bacc197e7a196d226\two-d-discovery-isolation-contract.json`,
+  `...\two-d-discovery-isolation-20260916-043043-a81b1790af474ac2a792de423c32bc4d\two-d-discovery-isolation-contract.json`
+- 사후 자체평가: malformed/read failure isolation과 typed 진단·non-mutation은
+  통과했습니다. 실제 권한 거부·동시 writer, crash/reconnect, throughput, offline
+  PC, hardware, 장시간 운전과 전체 UI 행렬은 별도 경계로 남겼습니다.
+
+## 2026-09-16 2D-041 RunRecord/Result process recovery — PL-0101
+
+사전 자체평가에서 기존 `TwoDIntegrationExchange`가 `WriteRunRecord`와
+`WriteNewMessage(Result)`를 별도 단계로 수행해, 그 사이 프로세스가 종료되면
+다음 실행이 recipe를 다시 실행할 수 있음을 확인했습니다. 기존 execution,
+lease, RunRecord, Result owner는 유지하고 orphan preflight와 명시적 manual
+recovery 정책만 추가했습니다.
+
+- Owner/call path: `TwoDIntegrationExchange.RunAcceptedHandoffAsync` →
+  `RunAcceptedHandoffCoreAsync` → orphan RunRecord identity validation →
+  existing `PublishFailedResult`/`WriteNewMessage`; child fixture는
+  `RunRunRecordRecoveryWorkerAsync`에서 동일 경계를 호출합니다.
+- 정책: `artifacts/2d-run-record.json`이 Result 없이 존재하면 source/recipe
+  상대경로·SHA-256·byte length를 확인하고, 기존 record를 삭제하거나 recipe를
+  자동 재실행하지 않습니다. `Failed`/`executionError` + `executionFailed`의
+  terminal Result와 `Automatic rerun is blocked; manual recovery is required.`
+  메시지를 한 번 게시한 뒤 기존 Result guard로 후속 실행을 거부합니다.
+- Fixture evidence: 정상 `Completed/Pass`, one-shot Result write failure의
+  RunRecord 정리·Result 1개, child를 RunRecord marker 직후 kill한 뒤 orphan
+  보존, 첫 restart recovery Result 1개, 두 번째 restart rejection·Result hash
+  불변을 Debug와 Release에서 각각 확인했습니다. killed worker exit는 `-1`이며
+  child completion report는 생성되지 않았습니다.
+- 원장: `.proofline/issues/PL-0101.json` (`resolved`)
+- 변경: `src/OpenVisionLab/Core/Integration/TwoDIntegrationExchange.cs`,
+  `tools/VisionRecipeRunnerSmoke/Program.cs`,
+  `tools/VisionRecipeRunnerSmoke/TwoDIntegrationSmoke.cs`
+- D-drive evidence:
+  `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\2d041-run-record-recovery-20260916-r1\build-debug-r5-clean-shim.log`,
+  `...\runtime-debug-r6-clean-shim.log`,
+  `...\build-release-r1-clean-shim.log`,
+  `...\runtime-release-r1-clean-shim.log`,
+  `...\two-d-run-record-recovery-20260916-044816-d389dbff0b1c45bbb69ce9afae4a1e98\two-d-run-record-recovery-contract.json`,
+  `...\two-d-run-record-recovery-20260916-044900-16f5edc4461443969d73b9772806fb7b\two-d-run-record-recovery-contract.json`
+- 사후 자체평가: 계획된 bounded recovery 기준은 통과했습니다. 전원 장애/파일
+  시스템 손상, 비협조 native worker, TCP 지연·재연결·순서 역전, 처리량·메모리
+  상한, offline PC, hardware/long-run, WPF UI·DPI/monitor 행렬은 이 slice에서
+  검증하지 않았으며 별도 경계로 남겼습니다.
+
+## 2026-09-16 2D-044 TCP loopback fault/correlation — PL-0102
+
+사전 자체평가에서 기존 `TwoDIntegrationTcpExchange`와 shared transport는 정상
+loopback·immutable merge·request correlation을 소유했지만, 2D 기록에는 지연·부분
+전송·첫 연결 단절 후 retry·lifecycle wire 순서 역전·wrong response identity를
+조합한 증거가 없었습니다. 새 production protocol, shared package, TCP owner를
+만들거나 바꾸지 않고 2D smoke harness에 한정된 fixture를 추가했습니다.
+
+- Owner/call path: `TwoDIntegrationTcpExchange.PushTransactionAsync` → shared
+  `TcpIntegrationClient` → `ChunkingTcpProxy` → shared `TcpIntegrationServer` →
+  `TcpTransactionStore` staging/immutable merge. Pull은
+  `TwoDIntegrationTcpExchange.PullTransactionAsync` → scripted peer wire frame →
+  기존 `ReceiveFilesAsync`입니다.
+- Debug/Release에서 첫 push 연결을 4 KiB delayed chunks 일부 전송 후 끊고 기존
+  retry reconnect를 확인했습니다. 최종 수신 transaction은
+  `byteIdentical=true`, `Reconnect=2`, `proxyChunkCount=66/67`이며 receiver는
+  ACK/Run/Result를 자동 생성하지 않았습니다.
+- Debug/Release에서 fake peer가 `result.json` → `acknowledgement.json` →
+  `handoff.json` 순서로 전송해도 immutable snapshot이 materialize되고, 명시적
+  후속 Run은 기존 Result guard의 `InvalidState`로 거부되며 Result bytes가
+  불변임을 확인했습니다. wrong request identity는 기존
+  `correlationMismatch`로 거부되고 destination transaction은 게시되지 않았습니다.
+- 원장: `.proofline/issues/PL-0102.json` (`resolved`)
+- 변경: `tools/TwoDIntegrationTcpSmoke/Program.cs`,
+  `tools/TwoDIntegrationTcpSmoke/TwoDIntegrationTcpFaultInjectionContract.cs`
+  (검증 fixture만 변경; production/shared owner 불변)
+- D-drive evidence:
+  `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\2d044-tcp-fault-20260916-r1\build-debug-r4-clean-shim.log`,
+  `...\runtime-debug-r4-clean-shim.log`, `...\build-release-r1-clean-shim.log`,
+  `...\runtime-release-r1-clean-shim.log`,
+  `...\two-d-tcp-fault-20260916-051531-a43c1f9b81f545c780e12795455b5a7f\two-d-tcp-fault-injection-contract.json`,
+  `...\two-d-tcp-fault-20260916-051609-608d726f3c2e4ca2a0c607409099f998\two-d-tcp-fault-injection-contract.json`
+- 사후 자체평가: 계획된 loopback partial/delay/reconnect, Result-before-ACK wire
+  delivery, existing-result guard, wrong-response correlation 기준은 Debug와
+  Release에서 통과했습니다. 두 PC의 firewall/routing/DNS/VPN, 실제 전원 장애,
+  native worker, 처리량·메모리 상한, offline 새 PC, camera/hardware, WPF
+  theme/layout/DPI/monitor/input qualification은 이 slice에서 검증하지 않았고
+  별도 prerequisite/issue 경계로 남깁니다.
+
+## 2026-09-16 2D-045 input hash/decode generation — PL-0103
+
+사전 자체평가에서 `ReadHandoff`/공유 validator가 source path를 해시한 뒤
+`RunAcceptedHandoffCoreAsync`가 `Cv2.ImRead(sourcePath)`로 같은 경로를 다시 여는
+세대 공백을 확인했습니다. 기존 `TwoDIntegrationExchange` owner와 explicit
+ACK/Run/Result 계약을 유지한 채, 32×32 BMP A(평균 32), 같은 길이 B(평균 224),
+truncated fixture를 validation pause 뒤 교체하는 deterministic contract를 먼저
+실행했습니다.
+
+- Owner/call path: `ReadHandoff` → existing artifact validator → run-record
+  preflight → `ReadVerifiedArtifactBytes` → `Cv2.ImDecode(sourceBytes)` →
+  `VisionRecipeRunner` → `CreateRunRecord`. Recipe byte snapshot (`PL-0062`)와
+  Mat lifetime (`PL-0086`) owner는 변경하지 않았습니다.
+- 기준선: pre-fix Debug에서 immutable A는 `Completed/Pass`, `MeanValueAvg=32`;
+  same-length A→B 교체는 `Completed/Pass`, `MeanValueAvg=224`와 A SHA-256
+  RunRecord를 게시했고; truncated 교체는 `Failed/ExecutionError` Result를
+  게시했습니다(`baselineMismatchObserved=true`).
+- 수정/정책: source만 `File.ReadAllBytes`로 읽고 같은 배열에서 byte length와
+  SHA-256을 재검증합니다. 불일치는 `ArtifactHashMismatch` 또는
+  `ArtifactLengthMismatch`로 decode·Result·RunRecord 전에 거부합니다. 새 protocol,
+  shared package, global memory policy, parallel owner는 추가하지 않았습니다.
+- Debug/Release 결과: Debug build는 오류/경고 `0/0`, Release build는 오류 `0`,
+  기존 nullable warning `19`개; 두 runtime contract 모두 exit `0`입니다. immutable
+  identity/mean, atomic hash rejection, partial length rejection, replacement 시
+  Result/RunRecord 미게시를 확인했습니다.
+- 기존 `--integration-2d` regression smoke도 Debug/Release에서 exit `0`을
+  유지했습니다. Good/Bad `Pass/Ng`, 명시적 Rejected 실행 차단, tamper rejection,
+  metric/coordinate round-trip, concurrent Run lease 보호가 통과했습니다.
+- D-drive evidence:
+  `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\2d045-input-hash-decode-20260916-r1\runtime-debug-baseline-r4.log`,
+  `...\two-d-input-hash-decode-20260916-054717-20a7e3fdc7f04ca5b28ece9e1a53b197\two-d-input-hash-decode-contract.json`,
+  `...\build-debug-clean-shim-final-r1.log`, `...\runtime-debug-final-r1.log`,
+  `...\two-d-input-hash-decode-20260916-054906-8b9f72833a1742908c4366a986085a13\two-d-input-hash-decode-contract.json`,
+  `...\build-release-clean-shim-final-r1.log`, `...\runtime-release-final-r1.log`,
+  `...\two-d-input-hash-decode-20260916-054951-e9847a7248b54b34b5f8f27d339a9d30\two-d-input-hash-decode-contract.json`.
+- 사후 자체평가: 계획된 immutable/atomic same-length/partial replacement와
+  Debug/Release focused 기준은 통과했습니다. locator evidence exporter의 decode
+  후 late source-path 재읽기, recipe/template 별도 writer 경합, 대형 이미지 메모리
+  예산, privileged writer, 전원/파일시스템 손상, camera/hardware, WPF UI/DPI/
+  monitor qualification은 이 slice에서 검증하지 않았으며 별도 경계로 유지합니다.
+- 원장: `.proofline/issues/PL-0103.json` (`resolved`)
+
+## 2026-09-16 2D-046 deployed SDK provenance — PL-0104
+
+사전 자체평가에서 기존 `ResolveVisionSdkIdentity`가 repository-relative
+`sdk-manifest.json`만 읽고 loaded SDK DLL의 length/SHA-256을 확인하지 않는
+배포 공백을 확인했습니다. checkout-free D: copy에서 sidecar가 없을 때
+`Manifest=unavailable`로 남는 기준선을 보존한 뒤, 기존 provenance/packaging
+owner 안에서만 보강했습니다.
+
+- Owner/call path: `VisionRecipeRunner` →
+  `VisionPipelineExecutionPlan.Create/CreateProvenance` →
+  `ResolveVisionSdkIdentity`. deployment root sidecar를 우선하고 source-tree
+  fallback은 sidecar가 없는 개발 실행에만 사용합니다. authoritative manifest의
+  모든 SDK file entry, loaded `OpenVisionLab.Vision2D.dll`, embedded manifest hash,
+  `clean_runtime_manifest` SDK anchor를 확인합니다.
+- 변경: `src/OpenVisionLab/Core/Pipeline/Execution/VisionPipelineExecutionPlan.cs`,
+  `src/OpenVisionLab/OpenVisionLab.csproj`, `tools/BuildCleanRuntime.ps1`,
+  `tools/TestReleaseDistribution.ps1`, `tools/VisionRecipeRunnerSmoke/Program.cs`,
+  `tools/VisionRecipeRunnerSmoke/SdkDeploymentProvenanceContract.cs`.
+  새 service/registry/protocol이나 SDK DLL 내용은 추가하지 않았습니다.
+- BOM self-check: 첫 canonical Release copy에서 PowerShell BOM-bearing
+  `clean_runtime_manifest.json`이 거부된 실패를 보존했고, BOM-safe parse 수정 후
+  동일 full manifest가 `match`로 통과했습니다.
+- Debug/Release copied-folder cases: valid `match`, sidecar `missing`, metadata
+  mutation, sidecar length mutation, loaded-DLL byte mutation, package-anchor
+  mutation을 모두 최신 runner에서 exit `0`으로 확인했습니다. match는 SDK
+  `3.0.0`/commit `f4f0c0dc8bee5b7a849ae6eb66a5307bed4b8a6b`와 loaded
+  `OpenVisionLab.Vision2D.dll` SHA-256 `91A6D4DB01AA2E97F54BB5FF7A61FB0D0404432D0D86821E889350CCA5007B62`를
+  기록하고, mismatch cases는 exact identity를 게시하지 않았습니다.
+- Build/release: Dev clean runtime build `0 warning / 0 error`; Release clean
+  runtime/archive 생성 후 `TestReleaseDistribution.ps1 -SkipLaunch`가
+  `ReleaseDistributionCheck=PASS`, payload `76`, archive SHA-256
+  `7915E913F99BFC1F93EDD308E1E2F67FC67F73EA0BF8B9A7C417F401FE672D7E`로
+  완료되었습니다. 기존 PL-0008 Debug provenance regression은 통과했습니다.
+- 인접 미검증: Release PL-0008 broad runner는 sidecar 유무와 무관하게 기존
+  sample-validation 단계에서 중단되어 이 slice의 acceptance로 사용하지
+  않았습니다. 실제 다른 물리 PC/offline 설치, installer/signing/update/rollback,
+  privileged writer, multi-process replacement, camera/GPU/hardware, 장시간 운전,
+  SDK 내부, 전체 WPF UI/DPI/theme matrix는 별도 경계입니다.
+- D-drive evidence:
+  `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\2d046-sdk-deployment-20260916-r7-build-dev.log`,
+  `...\2d046-sdk-deployment-20260916-r7-build-release-r2.log`,
+  `...\2d046-sdk-deployment-20260916-r7-test-release-distribution-skip-launch.log`,
+  `...\2d046-sdk-deployment-20260916-r8\debug-match\evidence\sdk-deployment-provenance-contract.json`,
+  `...\2d046-sdk-deployment-20260916-r8\debug-missing\evidence\sdk-deployment-provenance-contract.json`,
+  `...\2d046-sdk-deployment-20260916-r8\release-match\evidence\sdk-deployment-provenance-contract.json`,
+  `...\2d046-sdk-deployment-20260916-r8\release-missing\evidence\sdk-deployment-provenance-contract.json`,
+  `...\2d046-sdk-deployment-20260916-r8\release-metadata-mismatch\evidence\sdk-deployment-provenance-contract.json`,
+  `...\2d046-sdk-deployment-20260916-r8\release-length-mismatch\evidence\sdk-deployment-provenance-contract.json`,
+  `...\2d046-sdk-deployment-20260916-r8\release-loaded-dll-mismatch\evidence\sdk-deployment-provenance-contract.json`,
+  `...\2d046-sdk-deployment-20260916-r8\release-package-mismatch\evidence\sdk-deployment-provenance-contract.json`.
+- 원장: [`.proofline/issues/PL-0104.json`](../../.proofline/issues/PL-0104.json) (`resolved`)
+
+## 2026-09-16 2D-051 C# consumer typed outcome example — PL-0105
+
+사전 자체평가에서 기존 `TwoDIntegrationTcpSmoke`가 명시적 ACK/Run과
+correlation을 이미 await하고 있었지만, 소비자 처리가 `Completed/Pass`에만
+머물러 `Success` boolean을 오해할 여지가 있음을 확인했습니다. 기존 생산
+교환기·shared DTO·result-disposition owner는 유지하고 예제 경계만 보완했습니다.
+
+- Owner/call path: `TwoDIntegrationTcpSmoke.Program` →
+  `TwoDIntegrationTcpExchange.AcknowledgeHandoff` → `await
+  RunAcceptedHandoffAsync` → `TwoDIntegrationConsumerExample.AssertCorrelation` →
+  typed `Dispatch` → `await using` dispose. 수신/발견은 계속 non-executing입니다.
+- 변경: `tools/TwoDIntegrationTcpSmoke/Program.cs`,
+  `TwoDIntegrationConsumerExample.cs`,
+  `TwoDIntegrationConsumerExampleContract.cs`. 새 production protocol,
+  shared package ABI, .NET 4.8 경로, 별도 adapter service는 추가하지 않았습니다.
+- Typed mapping: `Completed/Pass → QualityPass`, `Completed/Ng → QualityNg`,
+  `Failed/ExecutionError → ExecutionError`,
+  `Cancelled/Indeterminate → Cancelled`; 미분류 조합과 transaction 불일치는
+  `InvalidState`/fail-closed로 남깁니다.
+- Debug/Release focused contract는 각 `passed=6`, `failed=0`이고, loopback
+  example은 두 구성 모두 `Accepted`, `Completed/Pass`, `consumerAction=QualityPass`,
+  `RunId` correlation, `receiveDidNotAcknowledge=true`,
+  `receiveDidNotRun=true`, `acknowledgeDidNotRun=true`를 기록했습니다.
+- dirty runtime 입력은 `InvalidIdentity`로 ACK/Result를 게시하지 않았고,
+  기존 result-disposition(각 `passed=9`)와 TCP fault/correlation 회귀도
+  Debug/Release에서 통과했습니다. Debug fault의 첫 실패는 Release manifest를
+  Debug 바이너리에 적용한 구성 오류였으며 Debug 전용 clean-shim 재실행으로
+  통과시켰습니다.
+- D-drive evidence:
+  `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\2d051-csharp-consumer-example-20260916`
+  아래 `debug`, `release`, `tcp-debug-clean`, `tcp-release-clean`,
+  `tcp-release-dirty`, `tcp-fault-debug-clean`, `tcp-fault-release`와 build/log
+  파일, 상세 보고서 `docs/reports/OPENVISIONLAB_2D_CSHARP_CONSUMER_OUTCOME_20260916.md`.
+- 미검증 경계: 실제 두 대 PC 네트워크/offline 신규 PC 설치,
+  installer/signing/update·rollback, .NET 4.8 호스트, camera/hardware,
+  장시간 운전, WPF UI interaction은 이 예제 증거로 주장하지 않습니다.
+- 원장: [`.proofline/issues/PL-0105.json`](../../.proofline/issues/PL-0105.json) (`resolved`)
+
+## 2026-09-16 2D-052 LLM/XML maintenance-mode boundary — PL-0106
+
+사전 자체평가에서 현재 LLM/XML 경로는 새 기능 활성화가 아닌 P196
+maintenance-mode compatibility surface임을 재확인했습니다. 기존
+`RecipeCommandSurface` → LLM draft validation → dependency review → read-only
+draft review → `VisionPipelineStorage` 경계를 유지하고, provider/agent/
+benchmark/자동 실행은 추가하지 않았습니다.
+
+- 현재 source에서 draft/load/validate/review/diff는 읽기 전용이고 Import와
+  Preview/Run은 명시적 별도 명령입니다. Import는 기존 active Pipeline을
+  덮지 않고 고유한 새 Pipeline을 저장한 뒤 pointer를 갱신합니다.
+- 현재-source `wpf_shell_host_recipe_guided_setup`와
+  `wpf_shell_host_recipe_review_bundle_import`는 각각 `OK`(1600x900,
+  layout/text/internal `0`)입니다. Guided Setup은 stale/invalid/custom
+  `Inspection.*`/dependency gate와 no-auto-Run·layer·route 및 explicit import
+  회복 assertions를 포함하고, review bundle은 dry-run side-effect 금지를
+  확인합니다. LLM draft review owner contract는 `3/3`, readiness 13개도
+  통과했습니다.
+- `wpf_shell_host_recipe_manager_summary`는 현재 없는
+  `HostRecipeManagerCommandStrip` AutomationId를 기대해 `NG`, `0x0` capture를
+  남겼습니다. 이는 stale UI smoke 제한으로 보존하며 LLM 동작 실패로
+  해석하지 않습니다.
+- 의존 파일/참조 이미지가 `Save`·active pointer write보다 먼저 복사되고 두
+  저장이 하나의 transaction이 아니며 Import Undo 명령도 없습니다. 따라서
+  저장 실패 중간복구/Undo는 완료로 주장하지 않고 maintenance-mode
+  `N/A/deferred`로 고정했습니다. 이 경계를 바꾸려면 asset staging/cleanup,
+  XML·pointer 원자성, fault injection, snapshot/Undo를 정의하는 새 명시적
+  제품 결정이 필요합니다.
+- 검증 산출물:
+  `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\2d052-llm-xml-review-20260916`
+- 상세 보고서:
+  [`OPENVISIONLAB_2D_LLM_XML_BOUNDARY_20260916.md`](../reports/OPENVISIONLAB_2D_LLM_XML_BOUNDARY_20260916.md)
+- 원장: [`.proofline/issues/PL-0106.json`](../../.proofline/issues/PL-0106.json) (`resolved`)
+
+신규 PC가 없으므로 `2D-048` offline/new-PC 설치·실행은 계속 blocked입니다.
+`2D-049` 독립 참가자 검증과 `2D-050` hardware/long-run 또는 명명된 병목
+실험도 전제조건 확보 전까지 시작하지 않습니다. Original, commit, push, tag,
+release, deploy는 이번에도 변경하지 않았습니다.

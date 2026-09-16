@@ -46,6 +46,71 @@ if (args.Length == 6
         args[5]);
 }
 
+if (args.Length == 5
+    && string.Equals(args[0], "--integration-2d-concurrent-process", StringComparison.OrdinalIgnoreCase))
+{
+    return await TwoDIntegrationSmoke.RunConcurrentProcessAsync(
+        args[1],
+        args[2],
+        args[3],
+        args[4]);
+}
+
+if (args.Length == 4
+    && string.Equals(args[0], "--integration-2d-discovery-isolation-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return TwoDIntegrationSmoke.RunDiscoveryIsolationContract(
+        args[1],
+        args[2],
+        args[3]);
+}
+
+if (args.Length == 5
+    && string.Equals(args[0], "--integration-2d-run-record-recovery-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return await TwoDIntegrationSmoke.RunRunRecordRecoveryContractAsync(
+        args[1],
+        args[2],
+        args[3],
+        args[4]);
+}
+
+if (args.Length == 3
+    && string.Equals(args[0], "--integration-2d-input-hash-decode-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return await TwoDIntegrationInputHashDecodeContract.RunAsync(
+        args[1],
+        args[2]);
+}
+
+if (args.Length == 3
+    && string.Equals(args[0], "--sdk-deployment-provenance-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return SdkDeploymentProvenanceContract.Run(args[1], args[2]);
+}
+
+if (args.Length == 6
+    && string.Equals(args[0], "--integration-2d-run-record-recovery-worker", StringComparison.OrdinalIgnoreCase))
+{
+    return await TwoDIntegrationSmoke.RunRunRecordRecoveryWorkerAsync(
+        args[1],
+        args[2],
+        args[3],
+        args[4],
+        args[5]);
+}
+
+if (args.Length == 6
+    && string.Equals(args[0], "--integration-2d-concurrent-process-worker", StringComparison.OrdinalIgnoreCase))
+{
+    return await TwoDIntegrationSmoke.RunConcurrentProcessWorkerAsync(
+        args[1],
+        args[2],
+        args[3],
+        args[4],
+        args[5]);
+}
+
 if (args.Length == 2
     && string.Equals(args[0], "--integration-2d-result-disposition-contract", StringComparison.OrdinalIgnoreCase))
 {
@@ -938,6 +1003,7 @@ if (args.Length < 2)
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --batch-evidence <imageListPath> <datasetRoot> <pipelineXmlPath> <csvPath> <evidenceRoot>");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --pinarraygap-intent-contract");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --integration-2d <evidenceRoot> <goodImagePath> <badImagePath> <pipelineXmlPath> <runtimeBuildManifestPath>");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --integration-2d-concurrent-process <evidenceRoot> <imagePath> <pipelineXmlPath> <runtimeBuildManifestPath>");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --integration-2d-published <exchangeRoot> <producerManifestPath> <evidenceRoot> <runtimeBuildManifestPath> [--require-locator-evidence]");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --runtime-stability-contract [evidenceDirectory]");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --image-space-snapshot-contract [evidenceDirectory]");
@@ -1757,6 +1823,7 @@ static async Task<int> RunPipelineReviewExecutionContractAsync(string? requested
     try
     {
         TaskCompletionSource<VisionToolResult> timeoutSource = new TaskCompletionSource<VisionToolResult>(TaskCreationOptions.RunContinuationsAsynchronously);
+        Stopwatch timeoutDrainStopwatch = Stopwatch.StartNew();
         Task<VisionPipelineStepCompletion> timeoutTask = VisionPipelineExecutionService.WaitForStepCompletionStatusAsync(
             timeoutSource.Task,
             1,
@@ -1770,6 +1837,7 @@ static async Task<int> RunPipelineReviewExecutionContractAsync(string? requested
         Mat timeoutImage = new Mat(2, 2, MatType.CV_8UC1, Scalar.White);
         timeoutSource.SetResult(new VisionToolResult { Success = true, ResultImage = timeoutImage });
         VisionPipelineStepCompletion timeout = await timeoutTask;
+        timeoutDrainStopwatch.Stop();
         Require(timeout.Status == VisionPipelineStepCompletionStatus.TimedOut, "Timeout status was not distinguished from cancellation.");
         Require(timeout.WorkerDrained && timeoutImage.IsDisposed, "Timeout did not report a drained worker and dispose the late image.");
 
@@ -1780,6 +1848,7 @@ static async Task<int> RunPipelineReviewExecutionContractAsync(string? requested
                 canceledSource.Task,
                 60000,
                 cancelSource.Token);
+            Stopwatch cancellationDrainStopwatch = Stopwatch.StartNew();
             cancelSource.Cancel();
             await Task.Delay(10);
             if (canceledTask.IsCompleted)
@@ -1789,9 +1858,21 @@ static async Task<int> RunPipelineReviewExecutionContractAsync(string? requested
 
             canceledSource.SetResult(new VisionToolResult { Success = true });
             VisionPipelineStepCompletion canceled = await canceledTask;
+            cancellationDrainStopwatch.Stop();
             Require(canceled.Status == VisionPipelineStepCompletionStatus.Canceled, "Cancellation status was not distinguished from timeout.");
             Require(canceled.WorkerDrained, "Cancellation did not report a drained worker.");
+
+            observations.Add(
+                "cancellation-drain: status=" + canceled.Status
+                + ", workerDrained=" + canceled.WorkerDrained
+                + ", lateResultReleaseElapsedMilliseconds="
+                + cancellationDrainStopwatch.Elapsed.TotalMilliseconds.ToString("F1", CultureInfo.InvariantCulture));
         }
+        observations.Add(
+            "deadline-drain: status=" + timeout.Status
+            + ", workerDrained=" + timeout.WorkerDrained
+            + ", lateResultReleaseElapsedMilliseconds="
+            + timeoutDrainStopwatch.Elapsed.TotalMilliseconds.ToString("F1", CultureInfo.InvariantCulture));
         observations.Add("completion-status: timeout and cancellation remain distinct until worker drain");
 
         using (DisplayManagerService displayManager = new DisplayManagerService())

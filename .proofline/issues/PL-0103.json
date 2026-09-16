@@ -1,0 +1,257 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0103",
+    "aliases": [
+      "2D-045"
+    ],
+    "type": "task",
+    "mode": "composite",
+    "title": "Verify input hash matches decoded source bytes",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "documented remaining 2D boundary",
+    "summary": "The 2D plan requires proving that an image hash checked in a local exchange is the same byte generation actually decoded and used for RunRecord provenance when a local user or concurrent writer replaces the file.",
+    "refs": [
+      "C:/Users/USER/Downloads/OpenVisionLab_2D_tasks.json#2D-045",
+      "C:/Users/USER/Downloads/OpenVisionLab_2D_Audit_and_Plan.md#2D-045",
+      ".proofline/issues/PL-0062.json",
+      ".proofline/issues/PL-0086.json",
+      "src/OpenVisionLab/Core/Integration/TwoDIntegrationExchange.cs",
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "2D-045 is resolved at the existing TwoDIntegrationExchange owner. The pre-fix race was reproduced: same-length A-to-B replacement decoded B while persisting A provenance, and a truncated replacement published an execution failure Result. The source path now supplies one length/hash-verified byte snapshot to Cv2.ImDecode; immutable input remains identity-stable, replacements are rejected before decode/Result/RunRecord, and focused Debug/Release contracts pass. Recipe snapshot and Mat lifetime owners remain closed, no shared protocol or Original repository changed, and locator late source-path reread, separate recipe/template writers, large-image memory budgeting, privileged writers, power/filesystem failure, hardware, and WPF qualification remain unverified boundaries."
+  },
+  "objective": {
+    "summary": "Prove that the source bytes decoded by the 2D integration Run path match the Handoff/RunRecord input hash, or that a replacement/partial write is detected and execution is rejected.",
+    "constraints": [
+      "Reuse TwoDIntegrationExchange.RunAcceptedHandoffAsync as the source owner; do not add a parallel exchange or generic file-lock framework.",
+      "Keep PL-0062 recipe byte snapshot and PL-0086 BitmapImageConverter/Mat ownership closed; do not reopen them without a new defect.",
+      "Prefer a verified byte snapshot only for the source being decoded; do not copy every artifact or invent a global memory budget.",
+      "Use atomic replacement, same-length mutation, and partial/truncated fixture files under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev.",
+      "Keep explicit ACK/Run/Result and existing Result/lease contracts unchanged except for the source identity guard required by this issue.",
+      "Do not modify, stage, commit, or push C:\\Git\\2D\\Original or C:\\Git\\Shared\\OpenVisionLab-Integration-Contracts.",
+      "Do not claim protection against power loss, filesystem corruption, hardware, or a malicious privileged writer beyond the tested local replacement boundary."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "A deterministic fixture can replace the source after the initial Handoff artifact validation and records whether the current path decodes the original generation, the replacement generation, or rejects before execution; the observed baseline is preserved as evidence.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "For an immutable source, the decoded source and persisted RunRecord input identity are the same byte generation. For an atomic replacement, same-length mutation, or partial/truncated write detected before decode, execution is rejected without a Completed Result or a mismatched RunRecord.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E4",
+        "E6",
+        "E8"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "The smallest production change, if required, keeps the existing TwoDIntegrationExchange owner, recipe path, explicit ACK/Run/Result contract, and Mat lifetime owner; focused Debug and Release builds and runtime contracts pass.",
+      "evidence_refs": [
+        "E1",
+        "E3",
+        "E5",
+        "E6",
+        "E7",
+        "E8",
+        "E10"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "The issue, reconciliation report, stable feature contract, live handoff, and documentation map record the owner/call path, threat model, fixture, evidence, self-evaluation, and unverified boundaries so 2D-045 is not duplicated.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E9"
+      ]
+    }
+  ],
+  "milestones": [
+    {
+      "id": "M1",
+      "summary": "Confirm the existing source validation/decode owner and preserve the PL-0062 recipe and PL-0086 Mat boundaries.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1",
+        "C3"
+      ],
+      "issue_refs": [
+        "PL-0062",
+        "PL-0086"
+      ]
+    },
+    {
+      "id": "M2",
+      "summary": "Run a deterministic immutable and A-to-B atomic replacement fixture at the validation/decode boundary and preserve the baseline outcome.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1",
+        "C2"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M3",
+      "summary": "If the baseline permits a mismatch, implement the smallest verified-source-byte decode or fail-closed guard without copying unrelated artifacts.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C2",
+        "C3"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M4",
+      "summary": "Run focused Debug/Release contracts and record source ownership, evidence, self-evaluation, and remaining boundaries in durable project documents.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C3",
+        "C4"
+      ],
+      "issue_refs": []
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0094"
+    }
+  ],
+  "context": [
+    {
+      "kind": "production-owner",
+      "location": "TwoDIntegrationExchange.ReadHandoff -> IntegrationContractValidator.ValidateArtifactFile -> RunAcceptedHandoffCoreAsync -> Cv2.ImRead(sourcePath) -> VisionRecipeRunner -> CreateRunRecord",
+      "summary": "ReadHandoff validates file length and SHA-256 through a stream, while RunAcceptedHandoffCoreAsync later opens the source path for decode; the source identity writer is TwoDIntegrationExchange.CreateRunRecord."
+    },
+    {
+      "kind": "closed-dependencies",
+      "location": "PL-0062 VisionRecipeRunner file byte snapshot; PL-0086 BitmapImageConverter Mat ownership",
+      "summary": "Recipe provenance and Mat lifetime are already closed and remain outside this source-file race boundary."
+    },
+    {
+      "kind": "reading-order",
+      "location": "TwoDIntegrationExchange.ReadHandoff -> RunAcceptedHandoffCoreAsync -> IntegrationContractValidator.ValidateArtifactFile -> Cv2.ImRead(sourcePath) -> CreateRunRecord -> focused replacement fixture",
+      "summary": "This is the shortest code-reading route for the hash/decode boundary."
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "review",
+      "location": "src/OpenVisionLab/Core/Integration/TwoDIntegrationExchange.cs; C:/Git/Shared/OpenVisionLab-Integration-Contracts/src/OpenVisionLab.Integration.Contracts/IntegrationContractValidator.cs",
+      "observation": "The current Run path calls ReadHandoff first; ReadHandoff validates artifact length and SHA-256 by opening the path, then RunAcceptedHandoffCoreAsync resolves the same source path and calls Cv2.ImRead(sourcePath) in a later operation. The validator does not return the bytes it hashed, so source validation and decode are separate file generations under replacement.",
+      "observed_at": "2026-09-16T14:28:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "plan",
+      "location": "C:/Users/USER/Downloads/OpenVisionLab_2D_tasks.json#2D-045; C:/Users/USER/Downloads/OpenVisionLab_2D_Audit_and_Plan.md#2D-045",
+      "observation": "The documented minimum scope is a local-user/concurrent-writer threat model with a hash-after-validation A-to-B replacement experiment, using verified bytes or a private immutable snapshot only if needed; the acceptance is decoded bytes matching RunRecord input hash or execution being rejected.",
+      "observed_at": "2026-09-16T14:28:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "review",
+      "location": ".proofline/issues/PL-0062.json; .proofline/issues/PL-0086.json; docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md",
+      "observation": "PL-0062 already captures recipe XML bytes once for execution and provenance, and PL-0086 already proves independent Mat output/caller ownership. Neither issue proves the exchange source image path remains the same generation between artifact hash validation and Cv2.ImRead.",
+      "observed_at": "2026-09-16T14:28:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "runtime",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d045-input-hash-decode-20260916-r1\\runtime-debug-baseline-r4.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d045-input-hash-decode-20260916-r1\\two-d-input-hash-decode-20260916-054717-20a7e3fdc7f04ca5b28ece9e1a53b197\\two-d-input-hash-decode-contract.json",
+      "observation": "The pre-fix Debug baseline exited 1 and preserved the race: immutable A completed with MeanValueAvg=32, same-length atomic A-to-B replacement completed with MeanValueAvg=224 while the RunRecord retained A's SHA-256, and a truncated replacement produced a Failed/ExecutionError Result. The report records baselineMismatchObserved=true.",
+      "observed_at": "2026-09-16T14:47:17+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "build",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d045-input-hash-decode-20260916-r1\\build-debug-clean-shim-final-r1.log",
+      "observation": "The final Debug VisionRecipeRunnerSmoke build completed with 0 warnings and 0 errors and produced the runner used by the source hash/decode contract. The clean-source-state shim was used only for runtime identity preflight; the Dev worktree remains dirty and no clean-checkout claim is made.",
+      "observed_at": "2026-09-16T14:49:06+09:00"
+    },
+    {
+      "id": "E6",
+      "kind": "runtime",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d045-input-hash-decode-20260916-r1\\runtime-debug-final-r1.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d045-input-hash-decode-20260916-r1\\two-d-input-hash-decode-20260916-054906-8b9f72833a1742908c4366a986085a13\\two-d-input-hash-decode-contract.json",
+      "observation": "The final Debug runner exited 0. Immutable A completed with source hash equality and MeanValueAvg=32; same-length atomic replacement was rejected with ArtifactHashMismatch before Result or RunRecord publication; truncated replacement was rejected with ArtifactLengthMismatch before Result or RunRecord publication; allPassed=true and baselineMismatchObserved=false.",
+      "observed_at": "2026-09-16T14:49:06+09:00"
+    },
+    {
+      "id": "E7",
+      "kind": "build",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d045-input-hash-decode-20260916-r1\\build-release-clean-shim-final-r1.log",
+      "observation": "The final Release VisionRecipeRunnerSmoke build completed with 0 errors and 19 existing nullable warnings and produced the runner used by the source hash/decode contract. The clean-source-state shim was used only for runtime identity preflight; the Dev worktree remains dirty and no clean-checkout claim is made.",
+      "observed_at": "2026-09-16T14:49:51+09:00"
+    },
+    {
+      "id": "E8",
+      "kind": "runtime",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d045-input-hash-decode-20260916-r1\\runtime-release-final-r1.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d045-input-hash-decode-20260916-r1\\two-d-input-hash-decode-20260916-054951-e9847a7248b54b34b5f8f27d339a9d30\\two-d-input-hash-decode-contract.json",
+      "observation": "The final Release runner exited 0 with the same three passing observations as Debug: immutable source identity and MeanValueAvg=32, ArtifactHashMismatch for same-length replacement without Result/RunRecord, and ArtifactLengthMismatch for truncated replacement without Result/RunRecord.",
+      "observed_at": "2026-09-16T14:49:51+09:00"
+    },
+    {
+      "id": "E9",
+      "kind": "report",
+      "location": "docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md; docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md; docs/admin/OPENVISIONLAB_DOCUMENTATION_MAP.md",
+      "observation": "The durable reconciliation, live handoff, stable feature contract, and documentation map record PL-0103/2D-045 as the single source hash/decode owner, its ReadHandoff -> verified-byte snapshot -> Cv2.ImDecode -> VisionRecipeRunner -> CreateRunRecord call path, the preserved baseline and Debug/Release evidence, the no-Result/no-RunRecord rejection policy, the self-evaluation, the explicit unverified boundaries, and the next candidate set 2D-046/048/051. No duplicate owner or Original-repository mutation was introduced.",
+      "observed_at": "2026-09-16T14:58:00+09:00"
+    },
+    {
+      "id": "E10",
+      "kind": "runtime",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d045-input-hash-decode-20260916-r1\\normal-integration\\runtime-debug.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d045-input-hash-decode-20260916-r1\\normal-integration\\runtime-release.log",
+      "observation": "The existing --integration-2d regression smoke exited 0 in both Debug and Release after the source decode change. Good/Bad Pass/Ng outcomes, explicit rejected execution blocking, tamper rejection before acknowledgement, metric/coordinate round-trip, and concurrent Run lease protection remained intact.",
+      "observed_at": "2026-09-16T15:06:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-16T14:28:00+09:00",
+      "summary": "Admit one source-only race fixture around the existing TwoDIntegrationExchange owner. First reproduce the validation/decode generation gap with a deterministic atomic replacement; only then choose a minimal verified-byte decode change if the baseline permits a mismatch.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-16T14:58:00+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "The reproduced source-generation race is closed with a source-only verified-byte snapshot and fail-closed length/hash checks; focused Debug/Release evidence and durable documentation are complete."
+    }
+  ],
+  "created_at": "2026-09-16T14:28:00+09:00",
+  "updated_at": "2026-09-16T15:06:00+09:00"
+}

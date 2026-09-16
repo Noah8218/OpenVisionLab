@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFramework>net8.0-windows7.0</TargetFramework>
     <OutputType>WinExe</OutputType>
-    <Version>2.2.0-dev.3</Version>
+    <Version>2.2.0-dev.4</Version>
     <AssemblyVersion>2.2.0.0</AssemblyVersion>
     <FileVersion>2.2.0.0</FileVersion>
     <Deterministic>true</Deterministic>
@@ -144,6 +144,11 @@
       <Link>OpenCvSharpExtern.dll</Link>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="$(OpenVisionLabVisionSdkDllRoot)sdk-manifest.json">
+      <Link>sdk-manifest.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
     <Content Include="$(OpenVisionLabRepoRoot)docs\manual\generated\OpenVisionLab_User_Manual.ko.html">
       <Link>Guide\OpenVisionLab_User_Manual.ko.html</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -218,11 +223,24 @@
            Text="OpenVisionLab integration build identity requires a 40-character Git source commit." />
 
     <ItemGroup>
-      <AssemblyMetadata Remove="OpenVisionIntegrationApplicationId;OpenVisionApplicationVersion;OpenVisionSourceCommit;OpenVisionSourceState" />
+      <_OpenVisionSdkManifest Include="$(OpenVisionLabVisionSdkDllRoot)sdk-manifest.json" />
+    </ItemGroup>
+    <GetFileHash Files="@(_OpenVisionSdkManifest)" Algorithm="SHA256" HashEncoding="hex">
+      <Output TaskParameter="Items" ItemName="_OpenVisionSdkManifestWithHash" />
+    </GetFileHash>
+    <PropertyGroup>
+      <_OpenVisionSdkManifestHash>@(_OpenVisionSdkManifestWithHash-&gt;'%(FileHash)','')</_OpenVisionSdkManifestHash>
+    </PropertyGroup>
+    <Error Condition="$([System.String]::Copy('$(_OpenVisionSdkManifestHash)').Length) != 64"
+           Text="OpenVisionLab integration build identity requires the SDK manifest SHA-256." />
+
+    <ItemGroup>
+      <AssemblyMetadata Remove="OpenVisionIntegrationApplicationId;OpenVisionApplicationVersion;OpenVisionSourceCommit;OpenVisionSourceState;OpenVisionVisionSdkManifestSha256" />
       <AssemblyMetadata Include="OpenVisionIntegrationApplicationId" Value="$(OpenVisionIntegrationApplicationId)" />
       <AssemblyMetadata Include="OpenVisionApplicationVersion" Value="$(Version)" />
       <AssemblyMetadata Include="OpenVisionSourceCommit" Value="$(_OpenVisionSourceCommit)" />
       <AssemblyMetadata Include="OpenVisionSourceState" Value="$(_OpenVisionSourceState)" />
+      <AssemblyMetadata Include="OpenVisionVisionSdkManifestSha256" Value="$(_OpenVisionSdkManifestHash)" />
     </ItemGroup>
   </Target>
 

@@ -152,6 +152,7 @@ internal static class PipelineLayerReferenceInvariantContract
             AssertNoAutomaticReferenceRepair(baseline, outputDirectory, observations, failures);
             AssertCloneCancelPreservesOriginal(baseline, outputDirectory, observations, failures);
             await AssertArithmeticLayerBExecutionAsync(observations, failures).ConfigureAwait(false);
+            await AssertInPlaceLayerPreservesSourceAsync(observations, failures).ConfigureAwait(false);
         }
         catch (Exception exception)
         {
@@ -370,6 +371,65 @@ internal static class PipelineLayerReferenceInvariantContract
         {
             observations.Add("ArithmeticBExecution: PASS (valid B layer admitted and executed)");
         }
+    }
+
+    private static async Task AssertInPlaceLayerPreservesSourceAsync(
+        ICollection<string> observations,
+        ICollection<string> failures)
+    {
+        VisionPipeline pipeline = new VisionPipeline { Name = "2D-037 In-place source preservation" };
+        VisionPipelineStep step = VisionPipelineStepBuilder.FromArithmetic(
+            "Arithmetic InPlace",
+            "ADD",
+            "Main",
+            "Main",
+            "Main",
+            useConstantInput: false,
+            useColorConstant: false,
+            gray: 0,
+            b: 0,
+            g: 0,
+            r: 0,
+            offsetX: 0,
+            offsetY: 0);
+        step.Enabled = true;
+        pipeline.Steps.Add(step);
+
+        VisionPipelineValidationResult validation = VisionPipelineValidator.Validate(
+            pipeline,
+            new[] { VisionRecipeRunner.DefaultInputLayer });
+        if (!validation.Success)
+        {
+            failures.Add("In-place source preservation fixture was rejected: " + string.Join(" | ", validation.Errors));
+            return;
+        }
+
+        using Mat source = new Mat(new OpenCvSharp.Size(16, 16), MatType.CV_8UC1, Scalar.All(10));
+        using Mat original = source.Clone();
+        VisionRecipeRunner runner = new VisionRecipeRunner();
+        using VisionRecipeRunResult run = await runner.RunAsync(pipeline, source).ConfigureAwait(false);
+        if (!run.Success || run.ResultImage == null || run.ResultImage.Empty())
+        {
+            failures.Add("In-place source preservation run did not produce a result: " + run.Message);
+            return;
+        }
+
+        if (Cv2.Norm(source, original, NormTypes.INF) != 0)
+        {
+            failures.Add("In-place pipeline execution mutated the source Mat.");
+            return;
+        }
+
+        run.ResultImage.SetTo(Scalar.All(250));
+        if (Cv2.Norm(source, original, NormTypes.INF) != 0)
+        {
+            failures.Add("In-place pipeline result shares storage with the source Mat.");
+            return;
+        }
+
+        observations.Add(
+            "InPlaceSourcePreservation: PASS (same-layer Run preserved source bytes and returned independent result; validation warnings="
+            + validation.Warnings.Count + ")");
     }
 
     private static void AssertNoAutomaticReferenceRepair(

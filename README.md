@@ -7,13 +7,20 @@ the images and measurements behind each OK/NG decision.
 
 ## Version
 
-Current version: `v2.2.0-dev.3`
+Current version: `v2.2.0-dev.4`
 
 This project is maintained using explicit version numbers. The current value
 is a development candidate; it keeps the existing Recipe/XML and explicit
 Preview/Run contracts while the ownership refactors are verified.
 
 ### Recent version history
+
+#### `v2.2.0-dev.4` (2026-09-16)
+
+- Promotes the verified 2D integration consumer, retry/fault-injection, input
+  identity, and output-allocation evidence paths to the next Dev candidate.
+- Records the remaining product-policy and external-environment blockers without
+  making LLM support, hardware, or offline installation a prerequisite.
 
 #### `v2.2.0-dev.3` (2026-09-16)
 

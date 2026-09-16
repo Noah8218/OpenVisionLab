@@ -1,0 +1,256 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0104",
+    "aliases": [
+      "2D-046"
+    ],
+    "type": "task",
+    "mode": "composite",
+    "title": "Verify deployed SDK provenance against loaded DLLs",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "documented remaining 2D boundary",
+    "summary": "The 2D plan requires proving that a runtime copied outside the checkout reports the SDK actually loaded, rather than silently falling back to a repository-only manifest or presenting a mismatched DLL set as normal identity.",
+    "refs": [
+      "C:/Users/USER/Downloads/OpenVisionLab_2D_tasks.json#2D-046",
+      "C:/Users/USER/Downloads/OpenVisionLab_2D_Audit_and_Plan.md#2D-046",
+      "src/OpenVisionLab/Core/Pipeline/Execution/VisionPipelineExecutionPlan.cs",
+      "src/OpenVisionLab/OpenVisionLab.csproj",
+      "tools/BuildCleanRuntime.ps1",
+      "tools/TestReleaseDistribution.ps1",
+      "dll/OpenVisionLab-Vision-SDK/sdk-manifest.json",
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "2D-046 is resolved in the existing VisionPipelineExecutionPlan -> VisionRecipeRunner provenance path. A deployment-root sdk-manifest.json sidecar is now copied and checked against the loaded SDK assembly and every declared SDK file by length and SHA-256, with an embedded manifest-hash anchor and clean-runtime manifest cross-check. BOM-safe parsing was corrected after the canonical Release manifest exposed the issue. Debug and Release builds, clean-runtime packaging, ReleaseDistributionCheck, checkout-free match/missing/mismatch fixtures, and the existing Debug pipeline-provenance regression pass. A broad Release PL-0008 runner attempt still stops at its pre-existing sample-validation path and is recorded as an unverified neighboring boundary, not as 2D-046 evidence. Another-PC/offline/installer/signing/update-rollback/privileged-writer/hardware qualification remains out of scope.",
+    "updated_at": "2026-09-16T15:20:00+09:00"
+  },
+  "objective": {
+    "summary": "Prove that Debug and Release runtimes copied outside the source checkout identify the SDK files actually loaded, or explicitly report unavailable/mismatch when the sidecar or bytes cannot establish that identity.",
+    "constraints": [
+      "Reuse VisionPipelineExecutionPlan.ResolveVisionSdkIdentity and the existing BuildCleanRuntime/TestReleaseDistribution packaging owners; do not add a parallel provenance service or generic plugin registry.",
+      "Use the authoritative dll/OpenVisionLab-Vision-SDK/sdk-manifest.json file entries and only observed file bytes; do not infer SDK internals from assembly names or versions.",
+      "Keep normal application identity and VisionPipelineExecutionProvenance fields compatible; a missing or mismatched deployment sidecar must never be presented as an exact SDK identity.",
+      "Use checkout-free deployment folders and all generated test evidence under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev.",
+      "Keep existing SDK DLL set, runtime files, and release archive behavior unchanged except for the sidecar/verification contract required by this issue.",
+      "Do not modify, stage, commit, or push C:\\Git\\2D\\Original or any shared package repository.",
+      "Do not claim another-PC, offline, installer, signing, update/rollback, privileged-writer, or hardware qualification from local copied-folder evidence."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The existing provenance and packaging owners, call path, authoritative manifest schema, and checkout-free baseline are recorded; the baseline shows whether a copied runtime has a usable SDK identity and preserves any prior silent-fallback or unavailable behavior.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "A deployment-side manifest/sidecar, when present and valid, is matched against the actual loaded SDK file path(s) by length and SHA-256; an exact match reports the SDK/source identity, while missing, malformed, wrong, or length/hash-mismatched files report explicit unavailable/mismatch and never normal exact identity.",
+      "evidence_refs": [
+        "E4",
+        "E6",
+        "E7",
+        "E8",
+        "E9"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Deterministic Debug and Release copied-folder contracts cover a valid match, manifest missing, different SDK metadata/path, and length/hash mismatch; focused builds and an existing pipeline provenance regression pass without changing the explicit run/result contract.",
+      "evidence_refs": [
+        "E4",
+        "E5",
+        "E6",
+        "E7",
+        "E8"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "The issue, reconciliation report, stable feature contract, live handoff, and documentation map record the single owner/call path, sidecar policy, fixture cases, evidence, self-evaluation, and remaining deployment/offline/hardware boundaries so 2D-046 is not duplicated.",
+      "evidence_refs": [
+        "E5",
+        "E9",
+        "E10"
+      ]
+    }
+  ],
+  "milestones": [
+    {
+      "id": "M1",
+      "summary": "Confirm the existing ResolveVisionSdkIdentity, BuildCleanRuntime, release verification, and sdk-manifest owners and preserve the PL-003/PL-005 dependency boundary.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M2",
+      "summary": "Run and preserve a checkout-free deployment baseline plus explicit valid/missing/mismatch fixture cases before production edits.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1",
+        "C2"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M3",
+      "summary": "Apply the smallest sidecar copy and loaded SDK file length/hash verification change, keeping the existing provenance owner and public fields compatible.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C2",
+        "C3"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M4",
+      "summary": "Run focused Debug/Release deployment contracts and record durable evidence, self-evaluation, and unverified boundaries in all required project documents.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C3",
+        "C4"
+      ],
+      "issue_refs": []
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0094"
+    }
+  ],
+  "context": [
+    {
+      "kind": "production-owner",
+      "location": "VisionRecipeRunner -> VisionPipelineExecutionPlan.Create -> CreateProvenance -> ResolveVisionSdkIdentity -> VisionPipelineExecutionProvenance",
+      "summary": "The existing execution-plan owner creates immutable pipeline provenance and currently discovers only a repository-relative sdk-manifest.json before reading its SDK version/commit and manifest hash."
+    },
+    {
+      "kind": "packaging-owner",
+      "location": "tools/BuildCleanRuntime.ps1 -> clean_runtime_manifest.json -> tools/TestReleaseDistribution.ps1",
+      "summary": "BuildCleanRuntime records runtime file length/SHA and SDK metadata but currently does not copy the authoritative SDK manifest into the deployment root; TestReleaseDistribution validates the package manifest independently."
+    },
+    {
+      "kind": "closed-dependencies",
+      "location": ".proofline/issues/PL-0003.json; .proofline/issues/PL-0005.json",
+      "summary": "The SDK DLL/reference and external-binary inventory owners are already closed; this issue verifies deployment provenance without changing DLL contents or re-opening those owners."
+    },
+    {
+      "kind": "reading-order",
+      "location": "VisionPipelineExecutionPlan.ResolveVisionSdkIdentity -> OpenVisionLab.csproj SDK references/content -> BuildCleanRuntime required files/manifest -> sdk-manifest.json -> TestReleaseDistribution -> copied-folder smoke",
+      "summary": "This is the shortest code-reading and verification route for the deployment identity boundary."
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "review",
+      "location": "src/OpenVisionLab/Core/Pipeline/Execution/VisionPipelineExecutionPlan.cs; tools/BuildCleanRuntime.ps1; tools/TestReleaseDistribution.ps1",
+      "observation": "ResolveVisionSdkIdentity loads only a repository-relative dll/OpenVisionLab-Vision-SDK/sdk-manifest.json found by walking upward from AppContext.BaseDirectory, returns Manifest=unavailable when no copy is found, hashes the manifest JSON, and does not compare loaded SDK file bytes with the manifest files. BuildCleanRuntime records a separate clean_runtime_manifest.json but does not copy sdk-manifest.json into the payload.",
+      "observed_at": "2026-09-16T15:20:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "review",
+      "location": "dll/OpenVisionLab-Vision-SDK/sdk-manifest.json; src/OpenVisionLab/OpenVisionLab.csproj",
+      "observation": "The authoritative SDK manifest declares SDK version 3.0.0, source commit f4f0c0dc8bee5b7a849ae6eb66a5307bed4b8a6b, and length/SHA-256 entries for OpenVisionLab.Core.dll, OpenVisionLab.Vision2D.dll, OpenVisionLab.Vision2D.Blob.dll, OpenCvSharp.dll, and OpenCvSharp.Blob.dll. The application references these vendored files by repository-relative HintPath and copies the managed runtime DLLs into output.",
+      "observed_at": "2026-09-16T15:20:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "runtime",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d046-sdk-deployment-20260916-r1\\baseline-deployment-no-manifest\\evidence; baseline-deployment-no-manifest.log",
+      "observation": "A VisionRecipeRunnerSmoke copy executed from a checkout-free D: deployment folder with exit code 0 and the existing pipeline provenance contract passed, but the copied folder contained no sdk-manifest.json sidecar; the current production path therefore had no direct evidence of the exact SDK/source files and relied on the explicit unavailable branch. This baseline is preserved before the 2D-046 change.",
+      "observed_at": "2026-09-16T15:18:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "review",
+      "location": "src/OpenVisionLab/Core/Pipeline/Execution/VisionPipelineExecutionPlan.cs; src/OpenVisionLab/OpenVisionLab.csproj; tools/BuildCleanRuntime.ps1; tools/TestReleaseDistribution.ps1",
+      "observation": "The existing ResolveVisionSdkIdentity owner now prefers an adjacent deployment sidecar, falls back to the repository manifest only when no deployment copy exists, and returns explicit unavailable/mismatch states. TryValidateVisionSdkManifest enforces contained declared paths, length/SHA-256 for every SDK file, the loaded Vision2D assembly entry, and the embedded manifest hash anchor. The project copies sdk-manifest.json to build/publish output, BuildCleanRuntime requires and records its hash, TestReleaseDistribution verifies the package anchor, and JSON parsing accepts UTF-8 BOM payloads without changing the hashed bytes or public provenance fields.",
+      "observed_at": "2026-09-16T15:55:30+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "test",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d046-sdk-deployment-20260916-r7-build-dev.log; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d046-sdk-deployment-20260916-r7-build-release-r2.log; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d046-sdk-deployment-20260916-r7-test-release-distribution-skip-launch.log",
+      "observation": "The Dev clean runtime build completed with 0 warnings and 0 errors and emitted sdk-manifest.json plus clean_runtime_manifest.json. The Release clean runtime and win-x64 framework-dependent archive were rebuilt after the BOM fix. TestReleaseDistribution.ps1 -SkipLaunch completed with ReleaseDistributionCheck=PASS, a 76-file payload, SDK provenance 3.0.0 at commit f4f0c0dc8bee5b7a849ae6eb66a5307bed4b8a6b, and archive SHA-256 7915E913F99BFC1F93EDD308E1E2F67FC67F73EA0BF8B9A7C417F401FE672D7E. VisionRecipeRunnerSmoke Debug/Release builds had 0 errors and the existing 19 nullable warnings.",
+      "observed_at": "2026-09-16T15:55:30+09:00"
+    },
+    {
+      "id": "E6",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d046-sdk-deployment-20260916-r8/debug-match/evidence/sdk-deployment-provenance-contract.json; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d046-sdk-deployment-20260916-r8/debug-missing/evidence/sdk-deployment-provenance-contract.json; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d046-sdk-deployment-20260916-r8/debug-match/evidence-pipeline-provenance/pipeline_provenance_contract.txt",
+      "observation": "A Debug VisionRecipeRunnerSmoke copy executed outside the checkout with the Dev clean-runtime manifest containing a UTF-8 BOM. The valid sidecar/package case passed with ManifestStatus=match and the expected SDK version/commit; the sidecar-free case passed with Manifest=unavailable and no exact manifest identity. The existing Debug PL-0008 pipeline-provenance regression also passed.",
+      "observed_at": "2026-09-16T15:55:30+09:00"
+    },
+    {
+      "id": "E7",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d046-sdk-deployment-20260916-r8/release-match/evidence/sdk-deployment-provenance-contract.json; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d046-sdk-deployment-20260916-r8/release-missing/evidence/sdk-deployment-provenance-contract.json",
+      "observation": "A Release VisionRecipeRunnerSmoke copy executed outside the checkout against the canonical 76-file Release clean-runtime manifest. The full BOM-bearing manifest passed with ManifestStatus=match, loaded OpenVisionLab.Vision2D.dll length 355328 and SHA-256 91A6D4DB01AA2E97F54BB5FF7A61FB0D0404432D0D86821E889350CCA5007B62, and the sidecar-free copy passed the explicit unavailable branch.",
+      "observed_at": "2026-09-16T15:55:30+09:00"
+    },
+    {
+      "id": "E8",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d046-sdk-deployment-20260916-r8/release-metadata-mismatch/evidence/sdk-deployment-provenance-contract.json; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d046-sdk-deployment-20260916-r8/release-length-mismatch/evidence/sdk-deployment-provenance-contract.json; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d046-sdk-deployment-20260916-r8/release-loaded-dll-mismatch/evidence/sdk-deployment-provenance-contract.json; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d046-sdk-deployment-20260916-r8/release-package-mismatch/evidence/sdk-deployment-provenance-contract.json",
+      "observation": "Release checkout-free mutation fixtures all passed their expected mismatch case: SDK metadata/commit mutation, sidecar length mutation, a byte mutation in OpenVisionLab.Core.dll, and a clean_runtime_manifest VisionSdkManifestSha256 mutation each produced ManifestStatus=mismatch and never the exact match status.",
+      "observed_at": "2026-09-16T15:55:30+09:00"
+    },
+    {
+      "id": "E9",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d046-sdk-deployment-20260916-r5/release-canonical/match.log; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d046-sdk-deployment-20260916-r6/release-canonical/full-bom-fixed.log",
+      "observation": "Self-evaluation preserved a canonical Release copied-folder failure before the parser correction: the production validator rejected the PowerShell-generated BOM-bearing clean_runtime_manifest.json even though the sidecar and all declared SDK bytes matched. After the minimal BOM-safe JSON parse change, the same full manifest and loaded DLL set passed from the checkout-free copied folder.",
+      "observed_at": "2026-09-16T15:55:30+09:00"
+    },
+    {
+      "id": "E10",
+      "kind": "report",
+      "location": ".proofline/issues/PL-0104.json; docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md; docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md; docs/admin/OPENVISIONLAB_DOCUMENTATION_MAP.md",
+      "observation": "The durable issue, reconciliation report, live handoff, stable feature contract, and documentation map record 2D-046 as one existing-owner slice, link the sidecar/loaded-byte call path and D-drive cases, preserve the BOM self-correction and neighboring Release PL-0008 sample-validation limitation, and remove 2D-046 from the next-admission list without reopening completed owners.",
+      "observed_at": "2026-09-16T15:55:30+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-16T15:20:00+09:00",
+      "summary": "Admit one deployment-only provenance slice around the existing execution-plan and clean-runtime owners. First preserve the checkout-free unavailable baseline; then prefer copying the authoritative sdk-manifest.json sidecar and verifying loaded vendored SDK file bytes over adding a new manifest format or inferring DLL internals.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-16T15:55:30+09:00",
+      "from": "doing",
+      "to": "resolved",
+      "summary": "2D-046 acceptance and durable evidence are complete in the existing provenance and packaging owners."
+    }
+  ],
+  "created_at": "2026-09-16T15:20:00+09:00",
+  "updated_at": "2026-09-16T15:55:30+09:00"
+}

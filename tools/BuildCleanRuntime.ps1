@@ -191,6 +191,7 @@ $requiredFiles = @(
     "OpenCvSharp.dll",
     "OpenCvSharp.Blob.dll",
     "OpenCvSharpExtern.dll",
+    "sdk-manifest.json",
     "System.Windows.Controls.WpfPropertyGrid.dll"
 )
 if ($Mode -eq "Release") {
@@ -211,6 +212,15 @@ if ($missingFiles.Count -gt 0) {
 $sdkVersion = (& dotnet --version).Trim()
 $visionSdkManifestPath = Join-Path $repoRoot "dll\OpenVisionLab-Vision-SDK\sdk-manifest.json"
 $visionSdkManifest = Get-Content -LiteralPath $visionSdkManifestPath -Raw | ConvertFrom-Json
+$runtimeVisionSdkManifestPath = Join-Path $outputFullPath "sdk-manifest.json"
+if (-not (Test-Path -LiteralPath $runtimeVisionSdkManifestPath -PathType Leaf)) {
+    throw "Clean runtime is missing the SDK provenance sidecar: $runtimeVisionSdkManifestPath"
+}
+$sourceVisionSdkManifestHash = (Get-FileHash -LiteralPath $visionSdkManifestPath -Algorithm SHA256).Hash
+$runtimeVisionSdkManifestHash = (Get-FileHash -LiteralPath $runtimeVisionSdkManifestPath -Algorithm SHA256).Hash
+if ($sourceVisionSdkManifestHash -ne $runtimeVisionSdkManifestHash) {
+    throw "Clean runtime SDK provenance sidecar does not match the repository manifest."
+}
 
 $runtimeFiles = @(
     Get-ChildItem -LiteralPath $outputFullPath -File -Recurse |
@@ -240,6 +250,7 @@ $manifest = [pscustomobject][ordered]@{
     IncludeSymbols = $IncludeSymbols.IsPresent
     DotnetSdk = $sdkVersion
     VisionSdk = $visionSdkManifest.sdk
+    VisionSdkManifestSha256 = $runtimeVisionSdkManifestHash
     SourceCommit = $sourceCommit
     SourceBranch = $sourceBranch
     SourceRemote = $sourceRemote

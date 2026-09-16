@@ -1,0 +1,165 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0101",
+    "aliases": [
+      "2D-041"
+    ],
+    "type": "task",
+    "mode": "simple",
+    "title": "Recover safely after RunRecord publication before Result",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "explicit user continuation request",
+    "summary": "The remaining 2D reconciliation identifies a high-risk external-integration gap between durable RunRecord publication and Result publication.",
+    "refs": [
+      "C:/Users/USER/Downloads/OpenVisionLab_2D_tasks.json#2D-041",
+      "C:/Users/USER/Downloads/OpenVisionLab_2D_Audit_and_Plan.md#2D-041",
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md",
+      "src/OpenVisionLab/Core/Integration/TwoDIntegrationExchange.cs",
+      "tools/VisionRecipeRunnerSmoke/TwoDIntegrationSmoke.cs"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "2D-041 is resolved as a bounded process-recovery slice. Normal publication remains Completed/Pass; a one-shot Result-write failure removes the tentative RunRecord and leaves one typed terminal ExecutionFailed Result; a worker killed after durable RunRecord publication leaves the record, the first restart publishes one manual-recovery Failed/ExecutionError/ExecutionFailed Result without rerunning, and a second restart is rejected with unchanged Result bytes. The existing TwoDIntegrationExchange, RunRecord/Result writers, and .2d-run.lock lease remain the owners. Power-loss, native-worker, reconnect, throughput, offline-PC, hardware, and broad WPF/UI qualification remain separate unverified boundaries."
+  },
+  "objective": {
+    "summary": "Prevent duplicate 2D inspection after a process stops after RunRecord publication but before Result publication, while preserving the original record and a typed terminal recovery-required Result.",
+    "constraints": [
+      "Reuse TwoDIntegrationExchange and VisionRecipeRunnerSmoke; do not add a parallel exchange, database, or global lock.",
+      "Keep RunRecord and Result immutable-file ownership and the existing .2d-run.lock lease.",
+      "An existing RunRecord without a Result must be validated for Handoff artifact identity and must never cause an automatic rerun.",
+      "Use the existing ExecutionFailed controlled failure outcome with an explicit manual-recovery message because the shared contract has no separate RecoveryRequired error code.",
+      "Use only an internal test seam for deterministic process-boundary and Result-write fault injection; it must not affect normal runs.",
+      "Use isolated evidence under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev.",
+      "Do not modify, stage, commit, or push C:\\Git\\2D\\Original.",
+      "Do not claim power-loss, native-worker, reconnect, throughput, hardware, offline-PC, or broad WPF qualification from this contract."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "Normal 2D publication remains Completed/Pass, and a one-shot Result write failure cleans the RunRecord and leaves exactly one typed terminal failure Result.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "A child process killed after durable RunRecord publication and before Result publication leaves the orphan record; the first restart publishes one recovery-required ExecutionFailed Result without re-execution, and a second restart is rejected without changing the Result bytes.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "The issue record, reconciliation report, current handoff, and stable contract identify the owner/call path, manual recovery policy, focused process fixture, D-drive evidence, self-evaluation, and unverified operational boundaries so 2D-041 is not repeated.",
+      "evidence_refs": [
+        "E1",
+        "E5"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0094"
+    }
+  ],
+  "context": [
+    {
+      "kind": "owner-call-path",
+      "location": "TwoDIntegrationExchange.RunAcceptedHandoffAsync -> RunAcceptedHandoffCoreAsync -> WriteRunRecord -> WriteNewMessage(Result)",
+      "summary": "The existing exchange remains the execution and mutable-state owner. The new preflight is immediately after artifact resolution and before image decode/native execution; the existing RunRecord writer and Result publisher remain the only writers."
+    },
+    {
+      "kind": "manual-recovery-policy",
+      "location": "TwoDIntegrationExchange.DescribeOrphanedRunRecord and orphan preflight",
+      "summary": "A valid or invalid orphan record is retained. The adapter publishes one terminal Failed/ExecutionError Result with ExecutionFailed and an explicit automatic-rerun-blocked/manual-recovery message; it never guesses a completed Result or runs the recipe again."
+    },
+    {
+      "kind": "reading-order",
+      "location": "TwoDIntegrationExchange.RunAcceptedHandoffCoreAsync -> DescribeOrphanedRunRecord -> PublishFailedResult -> WriteNewMessage; then TwoDIntegrationSmoke.RunRunRecordRecoveryContractAsync -> RunRunRecordRecoveryWorkerAsync",
+      "summary": "This is the shortest source/test path for the changed recovery boundary."
+    }
+  ],
+  "artifacts": [
+    {
+      "kind": "verification-log",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d041-run-record-recovery-20260916-r1\\build-debug-r5-clean-shim.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d041-run-record-recovery-20260916-r1\\runtime-debug-r6-clean-shim.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d041-run-record-recovery-20260916-r1\\build-release-r1-clean-shim.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d041-run-record-recovery-20260916-r1\\runtime-release-r1-clean-shim.log",
+      "summary": "Debug and Release build/runtime logs for the focused RunRecord recovery contract."
+    },
+    {
+      "kind": "verification-report",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d041-run-record-recovery-20260916-r1\\two-d-run-record-recovery-20260916-044816-d389dbff0b1c45bbb69ce9afae4a1e98\\two-d-run-record-recovery-contract.json; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d041-run-record-recovery-20260916-r1\\two-d-run-record-recovery-20260916-044900-16f5edc4461443969d73b9772806fb7b\\two-d-run-record-recovery-contract.json",
+      "summary": "Debug and Release JSON reports containing normal, Result-write-failure, process-kill, recovery, and second-restart observations."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "review",
+      "location": "src/OpenVisionLab/Core/Integration/TwoDIntegrationExchange.cs; tools/VisionRecipeRunnerSmoke/TwoDIntegrationSmoke.cs; C:/Users/USER/Downloads/OpenVisionLab_2D_Audit_and_Plan.md#2D-041",
+      "observation": "The pre-change call path had separate atomic RunRecord and Result writes, so a process stop after WriteRunRecord could leave no Result and a later request could execute again. The bounded change keeps the existing owner and lease, validates an existing record against Handoff source/recipe identity, blocks automatic rerun with a terminal ExecutionFailed recovery message, and adds internal-only pause/one-shot write-failure seams for deterministic fixture coverage.",
+      "observed_at": "2026-09-16T13:49:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "build",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d041-run-record-recovery-20260916-r1\\build-debug-r5-clean-shim.log; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d041-run-record-recovery-20260916-r1\\build-release-r1-clean-shim.log",
+      "observation": "VisionRecipeRunnerSmoke x64 Debug and Release builds completed with 0 errors using the isolated clean-source-state shim required by the runtime identity contract. Each build reported the existing 19 nullable warnings in unrelated smoke contracts and produced the runner used by the process fixture.",
+      "observed_at": "2026-09-16T13:47:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "runtime",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d041-run-record-recovery-20260916-r1\\two-d-run-record-recovery-20260916-044816-d389dbff0b1c45bbb69ce9afae4a1e98\\two-d-run-record-recovery-contract.json; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d041-run-record-recovery-20260916-r1\\runtime-debug-r6-clean-shim.log",
+      "observation": "The Debug contract exited 0. It recorded normal=Completed/Pass, Result-write-failure=Failed/ExecutionFailed with no retained RunRecord and one Result, markerObserved=true with killedWorkerExitCode=-1 and orphanRunRecordRetained=true, recovery=Failed/ExecutionError/ExecutionFailed with one Result, and secondRestartRejected=true.",
+      "observed_at": "2026-09-16T13:48:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "runtime",
+      "location": "D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d041-run-record-recovery-20260916-r1\\two-d-run-record-recovery-20260916-044900-16f5edc4461443969d73b9772806fb7b\\two-d-run-record-recovery-contract.json; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d041-run-record-recovery-20260916-r1\\runtime-release-r1-clean-shim.log",
+      "observation": "The Release contract exited 0 with the same normal, write-failure, process-kill, recovery, orphan-retention, single-result, and second-restart rejection observations as Debug.",
+      "observed_at": "2026-09-16T13:49:00+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "report",
+      "location": "docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md; docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md; docs/admin/OPENVISIONLAB_DOCUMENTATION_MAP.md",
+      "observation": "The durable project records identify PL-0101 as the sole 2D-041 owner, retain the existing exchange/lease ownership, describe the manual recovery boundary, link both Debug/Release reports, and explicitly leave power-loss, native-worker, reconnect, throughput, offline-PC, hardware, and broad WPF/UI qualification unverified.",
+      "observed_at": "2026-09-16T13:50:00+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D1",
+      "kind": "decision",
+      "at": "2026-09-16T13:50:00+09:00",
+      "summary": "Use the smallest safe manual-recovery policy permitted by the plan: validate and retain an orphan RunRecord, publish one terminal ExecutionFailed recovery-required Result, and reject all later execution attempts through the existing Result guard. Do not synthesize a Result from incomplete evidence or rerun the recipe automatically.",
+      "evidence_refs": [
+        "E1"
+      ]
+    },
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-16T14:06:00+09:00",
+      "from": "open",
+      "to": "resolved",
+      "summary": "2D-041 is resolved after the Debug and Release focused contract passed normal publication, Result-write-failure cleanup, process termination after RunRecord publication, first-restart manual recovery without rerun, orphan retention, and second-restart duplicate rejection with unchanged Result bytes. The issue, reconciliation, handoff, stable contract, and documentation map preserve the owner/call path, policy, D-drive evidence, self-evaluation, and explicit unverified operational boundaries. No Original repository mutation occurred."
+    }
+  ],
+  "created_at": "2026-09-16T13:50:00+09:00",
+  "updated_at": "2026-09-16T14:06:00+09:00"
+}

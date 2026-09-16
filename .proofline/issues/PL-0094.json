@@ -1,0 +1,289 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0094",
+    "aliases": [
+      "OPENVISIONLAB-2D-REMAINING-DEVELOPMENT-RECONCILIATION-20260916"
+    ],
+    "type": "task",
+    "mode": "composite",
+    "title": "Reconcile and execute remaining documented 2D development boundaries",
+    "risk": "high"
+  },
+  "origin": {
+    "kind": "explicit user continuation request",
+    "summary": "The user authorized continuing all documented remaining 2D work and required durable records that prevent duplicate implementation.",
+    "refs": [
+      "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "docs/admin/CODEBASE_STRUCTURE.md",
+      "docs/reports/OPENVISIONLAB_COMPLETED_TRACKER.md",
+      "C:/Users/USER/Downloads/OpenVisionLab_2D_Audit_and_Plan.md",
+      "C:/Users/USER/Downloads/OpenVisionLab_2D_tasks.json"
+    ]
+  },
+  "state": {
+    "status": "doing",
+    "current_summary": "The reconciliation remains active after closing the last locally executable compatibility boundary. PL-0095/2D-047, PL-0096/2D-042, PL-0097/2D-037, PL-0098/2D-038, PL-0099/2D-039, PL-0100/2D-040, PL-0101/2D-041, PL-0102/2D-044, PL-0103/2D-045, PL-0104/2D-046, PL-0105/2D-051, and PL-0106/2D-052 are resolved in their existing owners; 2D-052 is explicitly closed as maintenance-mode verification with transaction/Undo N/A/deferred. The current CLI ledger count is 106 total with 101 resolved, 1 doing, and 4 blocked. Offline/new-PC, participant, hardware/long-run, clean-checkout, and product-policy prerequisites remain unchanged and are not replaced by local evidence.",
+    "next_action": "Keep 2D-048 (offline/new PC), 2D-049 (participants), and 2D-050 (hardware/performance) blocked until their prerequisites exist; do not reopen resolved owners or create duplicate admission. Reopen 2D-052 only after an explicit product decision for transactional Import/Undo.",
+    "updated_at": "2026-09-16T00:00:00+09:00"
+  },
+  "objective": {
+    "summary": "Create one authoritative remaining-work map, complete safe independent 2D slices without reopening closed owners, and preserve explicit blockers and evidence so scheduled or future work cannot duplicate implementation.",
+    "constraints": [
+      "Work only in C:\\Git\\2D\\Dev.",
+      "Do not modify, stage, commit, or push C:\\Git\\2D\\Original.",
+      "Do not add arbitrary input-size or memory-cap policies without product decisions.",
+      "Do not repeat a resolved owner without a new defect, requirement, failed criterion, or dependency boundary.",
+      "Keep runtime/test evidence under D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev.",
+      "Keep external communication, release publication, deployment, and push as separate authorization boundaries."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The documented 2D plan, current issue ledger, completed-owner registry, and current handoff are reconciled in one report with duplicate owners and stale historical items identified.",
+      "evidence_refs": [
+        "E1",
+        "E14"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "Every independently executable remaining slice has one owner, call path, focused acceptance check, and durable issue or report record; already resolved owners are not reimplemented.",
+      "evidence_refs": [
+        "E3",
+        "E4",
+        "E7",
+        "E8",
+        "E9",
+        "E10",
+        "E11",
+        "E12",
+        "E13",
+        "E14",
+        "E15"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "Product decisions, clean verification checkout, hardware, offline environment, and participant prerequisites remain explicit blockers rather than being replaced by inferred defaults or unverified claims.",
+      "evidence_refs": [
+        "E12",
+        "E14",
+        "E15"
+      ]
+    },
+    {
+      "id": "C4",
+      "text": "The current handoff and issue ledger identify the next unfinished boundary and link the evidence produced by each completed slice.",
+      "evidence_refs": [
+        "E1",
+        "E2",
+        "E3",
+        "E4",
+        "E5",
+        "E6",
+        "E7",
+        "E8",
+        "E9",
+        "E10",
+        "E11",
+        "E12",
+        "E13",
+        "E14",
+        "E15"
+      ]
+    }
+  ],
+  "milestones": [
+    {
+      "id": "M1",
+      "summary": "Reconcile the 52-item audit plan with the current ledger and completed-owner registry.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C1"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M2",
+      "summary": "Execute safe local verification or code-only slices that do not require new product policy, hardware, or participants.",
+      "status": "done",
+      "required": true,
+      "criteria_refs": [
+        "C2"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M3",
+      "summary": "Complete clean-checkout release and offline distribution evidence when the required verification environment is available.",
+      "status": "blocked",
+      "required": true,
+      "criteria_refs": [
+        "C3"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M4",
+      "summary": "Complete hardware, field, long-run, and independent-user qualification only when the external prerequisites exist.",
+      "status": "blocked",
+      "required": true,
+      "criteria_refs": [
+        "C3"
+      ],
+      "issue_refs": []
+    },
+    {
+      "id": "M5",
+      "summary": "Resolve product-policy boundaries for local input sizes, memory budgets, and any separately admitted conditional feature.",
+      "status": "blocked",
+      "required": true,
+      "criteria_refs": [
+        "C3"
+      ],
+      "issue_refs": []
+    }
+  ],
+  "relations": [],
+  "context": [
+    {
+      "kind": "boundary",
+      "location": "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "summary": "Current status and next action authority."
+    },
+    {
+      "kind": "owner-registry",
+      "location": "docs/admin/CODEBASE_STRUCTURE.md",
+      "summary": "Completed owner and reading-order authority."
+    },
+    {
+      "kind": "historical-plan",
+      "location": "C:/Users/USER/Downloads/OpenVisionLab_2D_Audit_and_Plan.md",
+      "summary": "Read-only 52-item plan; not implementation evidence by itself."
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "report",
+      "location": "docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md",
+      "observation": "The report maps all 52 attached plan IDs to current resolved, blocked, or unregistered status, records the current owner/decision boundary, and defines the duplicate-prevention checks for future slices.",
+      "observed_at": "2026-09-16T00:00:00+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "report",
+      "location": "docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md",
+      "observation": "The 2D-047 row now records the existing-owner failure-path gap, PL-0095 admission, and the no-parallel-runner duplicate-prevention boundary; PL-0095 evidence and the D-drive verification artifact are linked as the completed first child slice.",
+      "observed_at": "2026-09-16T10:43:00+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "report",
+      "location": "docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md",
+      "observation": "The reconciliation now records 2D-042/PL-0096 as resolved with its existing owner/call path, separate-process ACK and Run results, D-drive artifact, duplicate-prevention decision, and explicit cancel/crash/reconnect/throughput/hardware boundaries; the next admission list omits 2D-042.",
+      "observed_at": "2026-09-16T11:03:00+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "report",
+      "location": "docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md",
+      "observation": "The reconciliation now records 2D-037/PL-0097 as resolved with the existing Preview owner/call path, fail-closed same-layer guard, headless source-preservation evidence, focused WPF evidence, explicit unverified UI/runtime boundaries, and a next-admission list that omits 2D-037.",
+      "observed_at": "2026-09-16T11:23:09+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "report",
+      "location": "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "observation": "The live handoff updates the issue counts to 95 total with resolved=90, keeps policy/clean-checkout/hardware/participant blockers explicit, records PL-0097 completion and self-evaluation, and names the next unregistered candidate set without re-admitting 2D-037.",
+      "observed_at": "2026-09-16T11:23:09+09:00"
+    },
+    {
+      "id": "E6",
+      "kind": "report",
+      "location": "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md; docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md",
+      "observation": "A fresh issue-ledger list --all after PL-0097 reports 97 issues: resolved=92, doing=1, blocked=4. The live Handoff and reconciliation report now record this exact count; the prior 95/90 wording was corrected rather than deleting any issue record.",
+      "observed_at": "2026-09-16T11:28:00+09:00"
+    },
+    {
+      "id": "E7",
+      "kind": "report",
+      "location": "docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
+      "observation": "The next admitted child PL-0098/2D-038 closed the bounded cancellation/deadline drain timing/state gap using the existing Preview and Pipeline owners. Its first failed Preview attempt is preserved, two reruns and the Pipeline contract passed, and the next admission list now begins at 2D-039 while long-duration/hang, hardware, policy, and participant prerequisites remain separate.",
+      "observed_at": "2026-09-16T11:48:00+09:00"
+    },
+    {
+      "id": "E8",
+      "kind": "report",
+      "location": ".proofline/issues/PL-0099.json; docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md; docs/admin/OPENVISIONLAB_DOCUMENTATION_MAP.md",
+      "observation": "The admitted 2D-039/PL-0099 child closed the focused active-Preview Window.Close and fresh-session restart lifetime gap using the existing Window -> shell View -> session -> document -> native Preview owners. Embedded WPF evidence showed WindowClosed, dispatcher alive, worker drained, no late result or stale output, and a fresh session; the current Release EXE passed two same-data-root process contract runs. No production lifetime owner changed, and persisted qualified-Recipe mutation, hardware, hang, and broad WPF qualification remain separate unverified boundaries. The live handoff, reconciliation report, and Documentation Map now record the 99/94/1/4 counts and remove 2D-039 from the next-admission set.",
+      "observed_at": "2026-09-16T12:30:00+09:00"
+    },
+    {
+      "id": "E9",
+      "kind": "report",
+      "location": ".proofline/issues/PL-0100.json; docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md; docs/admin/OPENVISIONLAB_DOCUMENTATION_MAP.md",
+      "observation": "The admitted 2D-040/PL-0100 child closed the focused corrupt-transaction discovery gap using the existing TwoDIntegrationExchange owner. A detailed result preserves valid summaries and typed MalformedMessage diagnostics per transaction, while the legacy valid-summary API remains compatible and the damaged transaction is not acknowledged, executed, or deleted. The live handoff, reconciliation report, and Documentation Map now record the 100/95/1/4 counts and remove 2D-040 from the next-admission set.",
+      "observed_at": "2026-09-16T13:30:00+09:00"
+    },
+    {
+      "id": "E10",
+      "kind": "report",
+      "location": ".proofline/issues/PL-0101.json; docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md; docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md; docs/admin/OPENVISIONLAB_DOCUMENTATION_MAP.md; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d041-run-record-recovery-20260916-r1",
+      "observation": "The admitted 2D-041/PL-0101 child closed the focused RunRecord/Result process-recovery gap using the existing TwoDIntegrationExchange and .2d-run.lock owners. Debug and Release contracts passed normal publication, one-shot Result-write failure cleanup, child termination after durable RunRecord publication, first-restart manual-recovery Result publication without rerun, orphan retention, and second-restart rejection with unchanged Result bytes. The durable records now show 101 total issues with 96 resolved, and the next admission set removes 2D-041 while retaining separate power-loss, native-worker, reconnect, throughput, offline-PC, hardware, and broad WPF/UI boundaries.",
+      "observed_at": "2026-09-16T14:05:00+09:00"
+    },
+    {
+      "id": "E11",
+      "kind": "report",
+      "location": ".proofline/issues/PL-0102.json; docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md; docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md; docs/admin/OPENVISIONLAB_DOCUMENTATION_MAP.md; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d044-tcp-fault-20260916-r1",
+      "observation": "The admitted 2D-044/PL-0102 child closed the focused TCP delay/partial-transfer/reconnect, reversed lifecycle-file wire order, and wrong-response-correlation boundary using one 2D-owned loopback fixture around the existing TwoDIntegrationTcpExchange/shared transport owners. Debug and Release builds and runtime contracts passed; the durable records now report 102 total issues with 97 resolved, 1 doing, 4 blocked, and remove 2D-044 from the next-admission set while retaining two-PC/network, power-loss, native-worker, performance, offline-PC, hardware, and broad WPF/UI boundaries as separate unverified prerequisites.",
+      "observed_at": "2026-09-16T14:23:00+09:00"
+    },
+    {
+      "id": "E12",
+      "kind": "report",
+      "location": ".proofline/issues/PL-0103.json; docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md; docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md; docs/admin/OPENVISIONLAB_DOCUMENTATION_MAP.md; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d045-input-hash-decode-20260916-r1",
+      "observation": "The admitted 2D-045/PL-0103 child closed the focused source validation/decode generation gap using the existing TwoDIntegrationExchange owner. The baseline A-to-B same-length replacement mismatch and truncated-write failure are preserved, while the final source-only verified-byte snapshot rejects both before Result/RunRecord in Debug and Release. The durable records now report 103 total issues with 98 resolved, 1 doing, 4 blocked, remove 2D-045 from the next-admission set, and retain 2D-046/048/051 plus clean-checkout, policy, offline-PC, hardware, long-run, and participant prerequisites as separate boundaries.",
+      "observed_at": "2026-09-16T15:00:00+09:00"
+    },
+    {
+      "id": "E13",
+      "kind": "report",
+      "location": ".proofline/issues/PL-0104.json; docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md; docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md; docs/admin/OPENVISIONLAB_DOCUMENTATION_MAP.md; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d046-sdk-deployment-20260916-r7-test-release-distribution-skip-launch.log; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d046-sdk-deployment-20260916-r8",
+      "observation": "PL-0104/2D-046 completed one existing-owner deployment provenance slice. The authoritative sidecar is copied into Dev/Release runtime payloads, loaded SDK file length/SHA-256 and package anchor mismatches fail closed, UTF-8 BOM payloads are accepted, and Debug/Release checkout-free match/missing/mutation fixtures pass. The parent map and live handoff now report 104 total issues, 99 resolved, 1 doing, 4 blocked, remove 2D-046 from unregistered work, and leave 2D-048/051 as the next candidates while offline/new-PC, clean-checkout, policy, hardware, long-run, and participant prerequisites remain explicit.",
+      "observed_at": "2026-09-16T15:57:00+09:00"
+    },
+    {
+      "id": "E14",
+      "kind": "report",
+      "location": ".proofline/issues/PL-0105.json; docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md; docs/admin/OPENVISIONLAB_DOCUMENTATION_MAP.md; docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md; docs/reports/OPENVISIONLAB_2D_CSHARP_CONSUMER_OUTCOME_20260916.md; D:/OpenVisionLab-TestData/OpenVisionLab_Dev/2d051-csharp-consumer-example-20260916",
+      "observation": "PL-0105/2D-051 is resolved in one existing C# TCP example owner. The v2 terminal pair dispatch, correlation checks, explicit ACK/await Run/await using route, Debug/Release six-case contract, clean/dirty loopback, and existing result/TCP regressions are recorded. Parent map and handoff now report 105 total issues, 100 resolved, 1 doing, 4 blocked; 2D-051 is removed from unregistered work and 2D-048/052 remain next boundaries with offline, participant, performance, policy, clean-checkout, hardware, and WPF prerequisites explicit.",
+      "observed_at": "2026-09-16T16:32:09+09:00"
+    },
+    {
+      "id": "E15",
+      "kind": "report",
+      "location": ".proofline/issues/PL-0106.json; docs/reports/OPENVISIONLAB_2D_LLM_XML_BOUNDARY_20260916.md; docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md; docs/admin/OPENVISIONLAB_DOCUMENTATION_MAP.md; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d052-llm-xml-review-20260916",
+      "observation": "PL-0106/2D-052 verified the current-source maintenance-mode LLM/XML boundary: read-only review/validation, fail-closed exercised negative cases, explicit import and Preview/Run separation, review-bundle dry-run, Debug build/readiness, and current-source Guided Setup/review-bundle WPF targets are recorded. The manager-summary stale AutomationId failure is preserved. Atomic failed-apply rollback and Import Undo are not existing contracts and are explicitly N/A/deferred with a reopen trigger. The reconciliation, handoff, documentation map, and ledger now identify PL-0106 as the single owner; the remaining local/external prerequisites are unchanged.",
+      "observed_at": "2026-09-16T16:58:11+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "D15",
+      "kind": "decision",
+      "at": "2026-09-16T16:58:11+09:00",
+      "summary": "Close 2D-052 as a maintenance-mode safety verification in PL-0106. Preserve the existing LLM/XML review, validation, explicit import, and explicit-run owners; do not activate provider/agent/benchmark work. Treat failed-persistence transaction and Import Undo as N/A/deferred until an explicit product reopen decision.",
+      "evidence_refs": [
+        "E15"
+      ]
+    }
+  ],
+  "created_at": "2026-09-16T00:00:00+09:00",
+  "updated_at": "2026-09-16T16:59:30+09:00"
+}

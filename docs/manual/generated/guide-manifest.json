@@ -1,17 +1,17 @@
 {
   "schemaVersion": 2,
   "manualVersion": "2026-08-01",
-  "applicationVersion": "2.2.0-dev.3",
+  "applicationVersion": "2.2.0-dev.4",
   "manuals": [
     {
       "language": "ko",
       "file": "OpenVisionLab_User_Manual.ko.html",
-      "sha256": "0D535BB38194E45A23EA89442138835BEC271ACB8FFEFCD5AED7AF8CBE580E86"
+      "sha256": "42DC2060259705F172162E0C12EAAF0EFC38D00F34A0776CD234ECD134D12B39"
     },
     {
       "language": "en",
       "file": "OpenVisionLab_User_Manual.en.html",
-      "sha256": "921FC9839461A3C189BF20A155843ADCCC05A9A0B59F0162F72F14F486D326A4"
+      "sha256": "097A6164C3072C2769B3DD877FD49263017FF28A39A48D4A719285D210C3C015"
     }
   ]
 }
