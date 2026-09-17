@@ -7,13 +7,20 @@ the images and measurements behind each OK/NG decision.
 
 ## Version
 
-Current version: `v2.2.0-dev.4`
+Current version: `v2.2.0-dev.5`
 
 This project is maintained using explicit version numbers. The current value
 is a development candidate; it keeps the existing Recipe/XML and explicit
 Preview/Run contracts while the ownership refactors are verified.
 
 ### Recent version history
+
+#### `v2.2.0-dev.5` (2026-09-17)
+
+- Adds fail-closed 2D runtime qualification that matches the checkout commit and
+  entry assembly bytes before a cross-repository smoke run.
+- Extends the separate-EXE integration evidence with profile, source/recipe
+  identity, source dimensions, and screenshot reporting.
 
 #### `v2.2.0-dev.4` (2026-09-16)
 

@@ -7,6 +7,8 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using OpenVisionLab.Core.Integration;
 
@@ -17,8 +19,14 @@ internal sealed class OpenVisionTcpIntegrationExeSmokeReport
     public string Schema { get; init; } = "1.0";
     public DateTimeOffset CapturedAtUtc { get; init; } = DateTimeOffset.UtcNow;
     public string Role { get; init; } = "consumer";
+    public string? IntegrationProfilePath { get; init; }
     public string? TransactionId { get; init; }
     public string Status { get; init; } = string.Empty;
+    public string? ScreenshotPath { get; init; }
+    public string? SourceSha256 { get; init; }
+    public int SourceImageWidth { get; init; }
+    public int SourceImageHeight { get; init; }
+    public string? RecipeSha256 { get; init; }
     public required IReadOnlyDictionary<string, bool> Checks { get; init; }
     public required IReadOnlyList<string> Failures { get; init; }
     public bool IsValid => Failures.Count == 0 && Checks.Values.All(value => value);
@@ -57,6 +65,8 @@ internal static class OpenVisionTcpIntegrationExeSmoke
         var transactionId = (Guid?)null;
         var status = string.Empty;
         var reportPath = RequireArgument(args, "--smoke-integration-exe-report");
+        var integrationProfilePath = GetArgumentValue(args, "--smoke-integration-profile");
+        var screenshotPath = GetArgumentValue(args, "--smoke-integration-exe-screenshot");
         var holdMilliseconds = ParseIntArgument(
             GetArgumentValue(args, "--smoke-integration-exe-hold-ms"),
             0,
@@ -73,6 +83,10 @@ internal static class OpenVisionTcpIntegrationExeSmoke
         }
 
         OpenVisionTcpIntegrationController? controller = null;
+        string? sourceSha256 = null;
+        string? recipeSha256 = null;
+        var sourceImageWidth = 0;
+        var sourceImageHeight = 0;
         try
         {
             var root = RequireArgument(args, "--smoke-integration-exchange-root");
@@ -87,6 +101,31 @@ internal static class OpenVisionTcpIntegrationExeSmoke
                 1,
                 65535);
             Directory.CreateDirectory(root);
+
+            if (!string.IsNullOrWhiteSpace(integrationProfilePath))
+            {
+                Check("integrationProfilePresent", File.Exists(Path.GetFullPath(integrationProfilePath)));
+                if (File.Exists(Path.GetFullPath(integrationProfilePath)))
+                {
+                    try
+                    {
+                        using var profile = JsonDocument.Parse(File.ReadAllText(integrationProfilePath));
+                        var profileRoot = profile.RootElement;
+                        Check("integrationProfileSchema", profileRoot.GetProperty("schemaVersion").GetInt32() == 1);
+                        Check("integrationProfileExchangeRoot",
+                            string.Equals(
+                                profileRoot.GetProperty("twoDExchangeRoot").GetString(),
+                                Path.GetFullPath(root),
+                                StringComparison.OrdinalIgnoreCase));
+                        Check("integrationProfileTwoDListenPort",
+                            profileRoot.GetProperty("twoD").GetProperty("listenPort").GetInt32() == listenPort);
+                    }
+                    catch (Exception exception) when (exception is IOException or JsonException or KeyNotFoundException)
+                    {
+                        Check("integrationProfileSchema", false);
+                    }
+                }
+            }
 
             controller = new OpenVisionTcpIntegrationController(
                 shellWindow.Dispatcher);
@@ -131,6 +170,20 @@ internal static class OpenVisionTcpIntegrationExeSmoke
             transactionId = selected.TransactionId;
             Check("handoffTargetsTwoD", selected.IsTwoDTarget);
             Check("handoffStartsWithoutAckOrResult", !selected.HasAcknowledgement && !selected.HasResult);
+            var transactionRoot = Path.Combine(
+                root,
+                "transactions",
+                selected.TransactionId.ToString("D"));
+            var handoffPath = Path.Combine(transactionRoot, "handoff.json");
+            if (File.Exists(handoffPath))
+            {
+                using var handoffDocument = JsonDocument.Parse(File.ReadAllText(handoffPath));
+                var context = handoffDocument.RootElement.GetProperty("context");
+                sourceSha256 = context.GetProperty("inputSha256").GetString();
+                recipeSha256 = context.GetProperty("recipeSha256").GetString();
+                Check("handoffSourceHashPresent", !string.IsNullOrWhiteSpace(sourceSha256));
+                Check("handoffRecipeHashPresent", !string.IsNullOrWhiteSpace(recipeSha256));
+            }
 
             await controller.AcknowledgeAsync();
             controller.RefreshTransactions();
@@ -147,6 +200,26 @@ internal static class OpenVisionTcpIntegrationExeSmoke
             Check("resultCompleted", controller.ResultStatusText == "Completed");
             Check("resultHasRunId", !string.IsNullOrWhiteSpace(controller.ResultRunIdText)
                 && controller.ResultRunIdText != "-");
+
+            var runRecordPath = Path.Combine(
+                transactionRoot,
+                "artifacts",
+                "2d-run-record.json");
+            if (File.Exists(runRecordPath))
+            {
+                using var runRecord = JsonDocument.Parse(File.ReadAllText(runRecordPath));
+                var runRecordRoot = runRecord.RootElement;
+                sourceImageWidth = runRecordRoot.GetProperty("sourceImageWidth").GetInt32();
+                sourceImageHeight = runRecordRoot.GetProperty("sourceImageHeight").GetInt32();
+                Check("sourceDimensionsPresent", sourceImageWidth > 0 && sourceImageHeight > 0);
+            }
+
+            if (!string.IsNullOrWhiteSpace(screenshotPath)
+                && controller.WindowForSmoke is { } integrationWindow)
+            {
+                CaptureWindow(integrationWindow, screenshotPath);
+                Check("integrationScreenshotCaptured", File.Exists(Path.GetFullPath(screenshotPath)));
+            }
 
             await controller.PushAsync();
             Check(
@@ -165,8 +238,14 @@ internal static class OpenVisionTcpIntegrationExeSmoke
         {
             var report = new OpenVisionTcpIntegrationExeSmokeReport
             {
+                IntegrationProfilePath = integrationProfilePath,
                 TransactionId = transactionId?.ToString("D"),
                 Status = status,
+                ScreenshotPath = screenshotPath,
+                SourceSha256 = sourceSha256,
+                SourceImageWidth = sourceImageWidth,
+                SourceImageHeight = sourceImageHeight,
+                RecipeSha256 = recipeSha256,
                 Checks = checks,
                 Failures = failures
             };
@@ -245,5 +324,20 @@ internal static class OpenVisionTcpIntegrationExeSmoke
         }
 
         return null;
+    }
+
+    private static void CaptureWindow(Window window, string path)
+    {
+        window.UpdateLayout();
+        var width = Math.Max(1, (int)Math.Ceiling(window.ActualWidth));
+        var height = Math.Max(1, (int)Math.Ceiling(window.ActualHeight));
+        var bitmap = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+        bitmap.Render(window);
+        var encoder = new PngBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create(bitmap));
+        var fullPath = Path.GetFullPath(path);
+        Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
+        using var stream = File.Create(fullPath);
+        encoder.Save(stream);
     }
 }

@@ -1,6 +1,6 @@
 # OpenVisionLab Current Project Handoff
 
-Updated: 2026-09-16 KST
+Updated: 2026-09-17 KST
 
 이 문서는 현재 상태와 다음 행동만 담는 live handoff입니다. 완료 chronology는
 [`OPENVISIONLAB_CURRENT_HANDOFF_HISTORY_20260914.md`](archive/OPENVISIONLAB_CURRENT_HANDOFF_HISTORY_20260914.md),
@@ -38,6 +38,26 @@ LLM XML 작성 지원은 선택적 유지 기능이며, 카메라·조명·PLC·
 - `C:\Git\2D\Original`, commit, push, tag, release, deploy는 승인 범위 밖입니다.
 - 자동화는 현재 일시정지 상태(`automation-2`, `PAUSED`)이며, 이 handoff의 후속
   slice는 사용자의 명시적 요청이 있을 때만 진행합니다.
+
+## Machine Studio ↔ 2D 실제 별도-EXE 연동 — 2026-09-17
+
+하드웨어가 없는 범위에서 Machine Studio의 `automatic-2d` Sequence와 2D TCP
+consumer를 각각 WPF EXE로 실행했다. 합성 PNG(572×420, Mono8)가 localhost TCP로
+전달되고, 동일 transaction의 ACK/Completed/Pass/Run ID가 2D 창에 표시된 뒤
+Machine으로 Result가 push되어 자동 Sequence가 재개된다.
+
+- 실행 증거: `D:\OpenVisionLab-TestData\Machine2D\actual-e2e-20260917-121647-503f0c420cf74e199ccf9e65903ee5cf`
+- 2D snapshot commit: `bf040ecd9457365aa6ac36e9449a17325eb45867`
+- consumer version: `2.2.0-dev.4`
+- transaction: `cd064fb6-845e-4f54-a270-d4f0e7c6d580`
+- report: `2d-exe-report.json` (`isValid=true`, `failures=[]`)
+- capture: `2d-integration.png`; 최종 두 창 합성 증거는 Machine Dev의
+  `machine-2d-both-windows.png`/`.mp4`다.
+
+이번 기록은 deterministic virtual camera, 합성 이미지, localhost TCP만 증명한다.
+물리 카메라·SDK·PLC·현장 네트워크·정확도·안전·오프라인 배포 qualification은 포함하지
+않는다. 2D 쪽 변경 owner는 `OpenVisionTcpIntegrationController`와
+`OpenVisionTcpIntegrationExeSmoke`이며, 2D 문서의 기존 recipe/Result 계약을 유지한다.
 
 ## Latest completed work — PL-0057
 
@@ -1011,7 +1031,7 @@ checkout 승인 전에는 같은 RC 시도를 반복하지 않습니다.
 
 ## Next action
 
-PL-0065·PL-0066·PL-0067·PL-0068·PL-0069·PL-0070·PL-0071·PL-0072·PL-0073·PL-0074·PL-0075·PL-0076·PL-0077·PL-0078·PL-0079·PL-0080·PL-0082·PL-0083·PL-0084·PL-0085·PL-0086·PL-0087·PL-0088·PL-0089·PL-0090·PL-0091·PL-0092·PL-0095·PL-0096·PL-0097·PL-0098·PL-0099·PL-0100·PL-0101·PL-0102·PL-0103·PL-0104·PL-0105·PL-0106는 완료되었습니다. PL-0093은 제품 memory budget/cap 결정 전까지
+PL-0065·PL-0066·PL-0067·PL-0068·PL-0069·PL-0070·PL-0071·PL-0072·PL-0073·PL-0074·PL-0075·PL-0076·PL-0077·PL-0078·PL-0079·PL-0080·PL-0082·PL-0083·PL-0084·PL-0085·PL-0086·PL-0087·PL-0088·PL-0089·PL-0090·PL-0091·PL-0092·PL-0095·PL-0096·PL-0097·PL-0098·PL-0099·PL-0100·PL-0101·PL-0102·PL-0103·PL-0104·PL-0105·PL-0106·PL-0107는 완료되었습니다. PL-0093은 제품 memory budget/cap 결정 전까지
 blocked로 유지합니다. PL-0061은 clean verification checkout 선행 조건이 충족될 때까지
 blocked로 유지하고, PL-0081(2D-023)은 제품 입력 크기 정책 결정 전까지 blocked로 유지합니다. PL-0057·PL-0058·PL-0059·PL-0060·PL-0062·PL-0063·PL-0064·PL-0065·PL-0066·PL-0067·PL-0068·PL-0069·PL-0070·PL-0071의
  완료 owner는 새 요구, 재현 defect, 실패 criterion 또는 dependency 변경 없이 다시 분할하지 않습니다.
@@ -1021,7 +1041,7 @@ defect·실패 criterion·dependency 변경 없이는 다시 분할하지 않습
 작업은 완료된 `PL-0095/2D-047`, `PL-0096/2D-042`, `PL-0097/2D-037`,
 `PL-0098/2D-038`, `PL-0099/2D-039`, `PL-0100/2D-040`,
 `PL-0101/2D-041`, `PL-0102/2D-044`, `PL-0103/2D-045`,
-`PL-0104/2D-046`, `PL-0105/2D-051`, `PL-0106/2D-052`와 같은 방식으로 다음
+`PL-0104/2D-046`, `PL-0105/2D-051`, `PL-0106/2D-052`, `PL-0107`과 같은 방식으로 다음
 unregistered boundary를 기존 owner/evidence와 먼저 대조하고, 실제 focused gap이
 있을 때만 단일 child issue로 admission하는 것입니다. `2D-052`는 maintenance-mode
 안전 경계 검증과 N/A/deferred 결정을 완료했으므로 새 LLM 활성화/transaction/Undo
@@ -1041,7 +1061,7 @@ N/A/deferred 결정을 완료했습니다.
 - 상세 정합화 기록:
   `docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md`
 - 원장: `.proofline/issues/PL-0094.json` (`doing`)
-- 현재 원장 상태: 106건 중 `resolved=101`, `doing=1`, `blocked=4`
+- 현재 원장 상태: 107건 중 `resolved=102`, `doing=1`, `blocked=4`
 - 현재 blocked: `PL-0061/2D-003`, `PL-0081/2D-023`, `PL-0093/2D-036`와
   역사적 release decision인 `PL-0011`
 - 중복 방지: 새 요구·재현 defect·실패 criterion·dependency boundary가 없는
@@ -1101,6 +1121,29 @@ memory cap, clean verification checkout, offline PC, hardware, 장시간 운전,
 `docs/reports/OPENVISIONLAB_2D_LLM_XML_BOUNDARY_20260916.md`와
 `.proofline/issues/PL-0106.json`에 있습니다. 이 기록은 모든 항목 완료를 의미하지 않으며, 처리된 항목의
 중복 실행을 막기 위한 현재 작업 경계입니다.
+
+## 2026-09-17 2D runtime qualification preflight — PL-0107
+
+현재 Machine↔2D 기능 경계(`Handoff → 명시적 ACK → 명시적 Run → Result/Run Record →
+Pull/Apply`)는 변경하지 않고, 기존 `RunTwoDIntegrationCrossRepoSmoke.ps1`의 소비자
+자격화 단계만 보강했습니다. 이제 dirty checkout은 producer/consumer 실행 전에
+fail-closed하며, clean run은 매니페스트 `sourceCommit`과 checkout `HEAD`, entry
+assembly의 길이와 SHA-256을 모두 일치시켜야 합니다. 통과한 identity는
+`consumer-runtime-preflight.json`으로 남습니다.
+
+- 원장: `.proofline/issues/PL-0107.json` (`resolved`)
+- 상세 보고서: `docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md`
+- dirty 검증: consumer build warnings `19`, errors `0`, `sourceState=dirty`, exit `1`,
+  producer/consumer process 미실행
+- clean current HEAD 검증: `11e4ebfa27f6bb96c04957ac719a43ae94077057`,
+  `2.2.0-dev.4`, `OpenVisionLab.dll` `4,403,712` bytes,
+  SHA-256 `CDF9BDAEB56FEAEAC683EB50A7A004670E024FD602812B39A910F8DD68349AD3`,
+  cross-repository process smoke `Accepted → Completed/Pass`
+- D-drive evidence: `D:\OpenVisionLab-TestData\OpenVisionLab-CrossRepo\2d\pl-0107-clean-current-20260917\`
+- canonical verification summary: `D:\OpenVisionLab-TestData\OpenVisionLab-CrossRepo\2d\pl-0107-clean-current-20260917\pl-0107-verification-summary.json`
+
+이 slice는 preflight owner만 다루므로 WPF UI, 다른 물리 PC/offline, hardware/SDK,
+long-run, 독립 사용자, release/deployment qualification을 새로 증명하지 않습니다.
 
 ## 2026-09-16 2D-047 RC gate failure summary — PL-0095
 

@@ -23,7 +23,7 @@
   },
   "state": {
     "status": "doing",
-    "current_summary": "The reconciliation remains active after closing the last locally executable compatibility boundary. PL-0095/2D-047, PL-0096/2D-042, PL-0097/2D-037, PL-0098/2D-038, PL-0099/2D-039, PL-0100/2D-040, PL-0101/2D-041, PL-0102/2D-044, PL-0103/2D-045, PL-0104/2D-046, PL-0105/2D-051, and PL-0106/2D-052 are resolved in their existing owners; 2D-052 is explicitly closed as maintenance-mode verification with transaction/Undo N/A/deferred. The current CLI ledger count is 106 total with 101 resolved, 1 doing, and 4 blocked. Offline/new-PC, participant, hardware/long-run, clean-checkout, and product-policy prerequisites remain unchanged and are not replaced by local evidence.",
+    "current_summary": "The reconciliation remains active after closing PL-0107, the last locally executable runtime-qualification gap. PL-0095/2D-047, PL-0096/2D-042, PL-0097/2D-037, PL-0098/2D-038, PL-0099/2D-039, PL-0100/2D-040, PL-0101/2D-041, PL-0102/2D-044, PL-0103/2D-045, PL-0104/2D-046, PL-0105/2D-051, PL-0106/2D-052, and PL-0107 are resolved in their existing owners. PL-0107 closes the stale 2D runtime manifest qualification gap with sourceCommit-to-HEAD and entry assembly length/SHA-256 preflight evidence. The current CLI ledger count is 107 total with 102 resolved, 1 doing, and 4 blocked. Offline/new-PC, participant, hardware/long-run, clean-checkout, and product-policy prerequisites remain unchanged and are not replaced by local evidence.",
     "next_action": "Keep 2D-048 (offline/new PC), 2D-049 (participants), and 2D-050 (hardware/performance) blocked until their prerequisites exist; do not reopen resolved owners or create duplicate admission. Reopen 2D-052 only after an explicit product decision for transactional Import/Undo.",
     "updated_at": "2026-09-16T00:00:00+09:00"
   },
@@ -61,7 +61,8 @@
         "E12",
         "E13",
         "E14",
-        "E15"
+        "E15",
+        "E16"
       ]
     },
     {
@@ -91,7 +92,8 @@
         "E12",
         "E13",
         "E14",
-        "E15"
+        "E15",
+        "E16"
       ]
     }
   ],
@@ -271,6 +273,13 @@
       "location": ".proofline/issues/PL-0106.json; docs/reports/OPENVISIONLAB_2D_LLM_XML_BOUNDARY_20260916.md; docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md; docs/admin/OPENVISIONLAB_DOCUMENTATION_MAP.md; D:\\OpenVisionLab-TestData\\OpenVisionLab_Dev\\2d052-llm-xml-review-20260916",
       "observation": "PL-0106/2D-052 verified the current-source maintenance-mode LLM/XML boundary: read-only review/validation, fail-closed exercised negative cases, explicit import and Preview/Run separation, review-bundle dry-run, Debug build/readiness, and current-source Guided Setup/review-bundle WPF targets are recorded. The manager-summary stale AutomationId failure is preserved. Atomic failed-apply rollback and Import Undo are not existing contracts and are explicitly N/A/deferred with a reopen trigger. The reconciliation, handoff, documentation map, and ledger now identify PL-0106 as the single owner; the remaining local/external prerequisites are unchanged.",
       "observed_at": "2026-09-16T16:58:11+09:00"
+    },
+    {
+      "id": "E16",
+      "kind": "report",
+      "location": ".proofline/issues/PL-0107.json; docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md; docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md; D:/OpenVisionLab-TestData/OpenVisionLab-CrossRepo/2d/pl-0107-clean-current-20260917/pl-0107-verification-summary.json",
+      "observation": "The current reconciliation and live handoff record PL-0107 as resolved in the existing RunTwoDIntegrationCrossRepoSmoke.ps1 owner. The dirty fail-closed run and clean-current preflight/process smoke are linked, and the ledger count is updated to 107 total with 102 resolved, 1 doing, and 4 blocked. The next boundary remains 2D-048 offline/new-PC qualification; participant, hardware/long-run, and product-policy prerequisites remain explicit.",
+      "observed_at": "2026-09-17T00:02:00Z"
     }
   ],
   "events": [
@@ -285,5 +294,5 @@
     }
   ],
   "created_at": "2026-09-16T00:00:00+09:00",
-  "updated_at": "2026-09-16T16:59:30+09:00"
+  "updated_at": "2026-09-17T00:02:00Z"
 }

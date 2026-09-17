@@ -140,6 +140,46 @@ hardware/long-run 또는 측정 병목)이며, 전제조건이 없으면 구현�
 
 `PL-0061`, `PL-0081`, `PL-0093`, `CVR-00`, physical qualification, offline PC, hardware/long-run은 각 prerequisite가 준비되기 전까지 blocked로 유지한다. `2D-052`의 저장 실패 transaction/Undo는 명시적 제품 재개 결정 전까지 N/A/deferred다.
 
+## 7.1. 2D integration runtime preflight — PL-0107 (2026-09-17)
+
+현재 Machine↔2D 연동의 기능 계약은 `PL-0596`에서 확인한
+Handoff → 명시적 ACK → 명시적 Run → Result/Run Record → Machine Pull/Apply
+경계를 유지한다. 이번 재검토에서는 기능 owner를 다시 만들지 않고, 기존
+`tools/RunTwoDIntegrationCrossRepoSmoke.ps1`의 qualification 입력만 보강했다.
+
+빌드가 `sourceState=clean`을 보고하더라도 오래된 `openvisionlab.runtime.json`을
+그대로 사용하면 현재 체크아웃과 다른 소비자 바이너리가 연동될 수 있었다. 이제
+스크립트는 다음을 모두 확인한 뒤에만 producer/consumer 프로세스를 시작한다.
+
+- 매니페스트 `identity.sourceCommit` = `git rev-parse HEAD`
+- `entryAssembly.relativePath`가 단일 파일명이고 실제 파일이 존재함
+- 매니페스트 `byteLength`/`sha256` = 실제 entry assembly 파일
+- 통과 결과를 `consumer-runtime-preflight.json`으로 보존함
+
+검증 결과:
+
+- 현재 Dev의 dirty checkout은 consumer 빌드 경고 19/오류 0 후
+  `sourceState=dirty`에서 exit 1로 중단되어, producer/consumer를 실행하지 않았다.
+- 현재 HEAD `11e4ebfa27f6bb96c04957ac719a43ae94077057`의 임시 clean snapshot은
+  version `2.2.0-dev.4`, entry assembly `OpenVisionLab.dll`, byteLength
+  `4,403,712`, SHA-256
+  `CDF9BDAEB56FEAEAC683EB50A7A004670E024FD602812B39A910F8DD68349AD3`로
+  preflight를 통과했다.
+- 같은 clean snapshot의 별도 process smoke가 transaction
+  `92d5683e-53e5-4dd9-94a6-448737fbf742`에 대해 `Accepted` → `Completed/Pass`
+  를 기록했고, source/recipe hash와 Run Record/overlay(`4`)를 보존했다.
+
+제품 소스 변경은 이 스크립트 한 파일이며 2D WPF의 명시적 Preview/Run, TCP,
+Machine Original, 2D Original, release/deployment 경계는 변경하지 않았다. 실제
+WPF 재검증은 이전 `PL-0596`의 exact clean snapshot evidence를 재사용하며,
+이번 스크립트 변경은 UI가 아닌 preflight owner에 한정한다.
+
+- 원장: [`.proofline/issues/PL-0107.json`](../../.proofline/issues/PL-0107.json)
+- D: 증거: `D:\OpenVisionLab-TestData\OpenVisionLab-CrossRepo\2d\pl-0107-clean-current-20260917\`
+- canonical verification summary: `D:\OpenVisionLab-TestData\OpenVisionLab-CrossRepo\2d\pl-0107-clean-current-20260917\pl-0107-verification-summary.json`
+- 현재 남은 외부 전제조건: offline/new-PC, 두 대 물리 PC 네트워크, hardware/SDK,
+  독립 참가자 및 release/deployment qualification
+
 ## 8. 2D-047 slice completion
 
 `PL-0095`는 기존 `tools/VerifyReleaseCandidate.ps1`의 failure-path 증거 손실을

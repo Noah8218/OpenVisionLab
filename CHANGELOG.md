@@ -5,6 +5,20 @@ OpenVisionLab의 사용자-visible 변경과 release evidence를 짧게 추적�
 
 ## Unreleased
 
+## 2.2.0-dev.5 - 2026-09-17
+
+### Added
+
+- Added fail-closed 2D runtime qualification for checkout commit and entry
+  assembly length/SHA-256 before cross-repository process launch.
+- Extended the separate-EXE integration smoke report with profile, source/recipe
+  identity, source dimensions, and screenshot evidence.
+
+### Changed
+
+- Recorded PL-0107 evidence and the remaining external qualification boundaries
+  in the live handoff and issue ledger.
+
 ## 2.2.0-dev.4 - 2026-09-16
 
 ### Added

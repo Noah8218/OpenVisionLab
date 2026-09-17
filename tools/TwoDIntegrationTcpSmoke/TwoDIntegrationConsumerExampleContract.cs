@@ -184,12 +184,12 @@ internal static class TwoDIntegrationConsumerExampleContract
         DateTimeOffset now = DateTimeOffset.UtcNow;
         IntegrationApplicationIdentity producer = new(
             IntegrationApplicationIds.MachineStudio,
-            "2.2.0-dev.4",
+            "2.2.0-dev.5",
             new string('1', 40),
             IntegrationSourceState.Clean);
         IntegrationApplicationIdentity consumer = new(
             IntegrationApplicationIds.TwoDStudio,
-            "2.2.0-dev.4",
+            "2.2.0-dev.5",
             new string('2', 40),
             IntegrationSourceState.Clean);
         IntegrationArtifactReference source = new(

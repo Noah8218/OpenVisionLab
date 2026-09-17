@@ -443,7 +443,7 @@ internal static class TwoDIntegrationTcpFaultInjectionContract
             DateTimeOffset.UtcNow,
             new IntegrationApplicationIdentity(
                 IntegrationApplicationIds.MachineStudio,
-                "2.2.0-dev.4",
+                "2.2.0-dev.5",
                 ProducerCommit,
                 IntegrationSourceState.Clean),
             context);

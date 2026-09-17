@@ -299,6 +299,7 @@ namespace OpenVisionLab
             && !SelectedTransaction.HasResult;
         internal bool CanCloseWindow => disposed || !IsListening;
         internal bool IsWindowVisibleForTest => window?.IsVisible == true;
+        internal OpenVisionTcpIntegrationWindow WindowForSmoke => window;
 
         internal void SetSessionSharedKey(string encoded)
         {

@@ -1,0 +1,128 @@
+{
+  "schema_version": 2,
+  "identity": {
+    "id": "PL-0107",
+    "aliases": [
+      "2D-INTEGRATION-RUNTIME-PREFLIGHT-20260917"
+    ],
+    "type": "task",
+    "mode": "simple",
+    "title": "Close stale 2D runtime manifest qualification gap",
+    "risk": "medium"
+  },
+  "origin": {
+    "kind": "user-request",
+    "summary": "The user requested a current 2D integration status check and implementation of missing integration items.",
+    "refs": [
+      "user message 2026-09-17",
+      "docs/reports/OPENVISIONLAB_2D_REMAINING_DEVELOPMENT_RECONCILIATION_20260916.md",
+      "tools/RunTwoDIntegrationCrossRepoSmoke.ps1"
+    ]
+  },
+  "state": {
+    "status": "resolved",
+    "current_summary": "PL-0107 is resolved in the existing 2D cross-repository smoke owner. Runtime qualification now fails closed for dirty checkouts and stale sidecars, requires manifest sourceCommit to equal the current checkout HEAD, verifies the entry assembly path and byteLength/SHA-256, and writes a preflight artifact before producer/consumer launch. Dirty and clean-current focused runs plus parser/static checks provide the acceptance evidence; WPF, hardware, offline/new-PC, release, and deployment boundaries remain outside this slice."
+  },
+  "objective": {
+    "summary": "Prevent stale or mismatched 2D runtime manifests from qualifying a Machine-to-2D integration smoke run.",
+    "constraints": [
+      "Reuse the existing RunTwoDIntegrationCrossRepoSmoke.ps1 owner.",
+      "Preserve explicit ACK and Run semantics.",
+      "Write only D-drive test evidence and leave both Original repositories unchanged.",
+      "Do not add a new transport, process supervisor, or consumer automation mode."
+    ]
+  },
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "The cross-repository smoke script parses successfully after the preflight change.",
+      "evidence_refs": [
+        "E1"
+      ]
+    },
+    {
+      "id": "C2",
+      "text": "A dirty 2D checkout remains fail-closed before producer or consumer processes are launched.",
+      "evidence_refs": [
+        "E3"
+      ]
+    },
+    {
+      "id": "C3",
+      "text": "A qualified run now requires manifest sourceCommit == checkout HEAD and entry-assembly length/SHA-256 equality, and records a preflight JSON artifact.",
+      "evidence_refs": [
+        "E2",
+        "E4",
+        "E5"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "type": "follow_up_to",
+      "target": "PL-0094"
+    }
+  ],
+  "context": [
+    {
+      "kind": "source",
+      "location": "tools/RunTwoDIntegrationCrossRepoSmoke.ps1",
+      "summary": "Existing owner builds the 2D consumer, reads its runtime manifest, and launches the cross-repository smoke processes."
+    },
+    {
+      "kind": "boundary",
+      "location": "bin/Release/openvisionlab.runtime.json",
+      "summary": "The current checkout has a generated dirty runtime manifest; a clean qualification must not be inferred from a stale sidecar."
+    }
+  ],
+  "artifacts": [],
+  "evidence": [
+    {
+      "id": "E1",
+      "kind": "test",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab-CrossRepo/2d/pl-0107-preflight-20260917/script-parser.json",
+      "observation": "The modified RunTwoDIntegrationCrossRepoSmoke.ps1 parsed with parserErrors=0 and status PASS. The artifact records the exact script SHA-256 used for the check.",
+      "observed_at": "2026-09-17T07:29:14+09:00"
+    },
+    {
+      "id": "E2",
+      "kind": "review",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab-CrossRepo/2d/pl-0107-clean-current-20260917/preflight-static-contract.json",
+      "observation": "Current-source static contract assertions passed: sourceCommit-to-HEAD comparison, safe entryAssembly path validation, entry assembly length/SHA-256 comparison, preflight artifact write, and preflight ordering before producer build are all present in the existing script owner.",
+      "observed_at": "2026-09-17T07:29:14+09:00"
+    },
+    {
+      "id": "E3",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab-CrossRepo/2d/pl-0107-preflight-dirty-20260917/console.log; D:/OpenVisionLab-TestData/OpenVisionLab-CrossRepo/2d/pl-0107-clean-current-20260917/pl-0107-verification-summary.json",
+      "observation": "The current C:\\Git\\2D\\Dev checkout built the consumer with 19 warnings and 0 errors, then exited with the existing dirty-runtime qualification error (exit 1). The log contains no producer build or producer/consumer process launch marker, so the dirty checkout remained fail-closed.",
+      "observed_at": "2026-09-17T07:28:42+09:00"
+    },
+    {
+      "id": "E4",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab-CrossRepo/2d/pl-0107-clean-current-20260917/run/2d-cross-repo-20260917-072311-abe9864ac0ae4ae59d2f21e838a79f79/consumer-runtime-preflight.json",
+      "observation": "The clean current-HEAD snapshot passed the new preflight with checkoutHeadCommit=manifestSourceCommit=11e4ebfa27f6bb96c04957ac719a43ae94077057, version 2.2.0-dev.4, entry OpenVisionLab.dll, byteLength 4403712, and SHA-256 CDF9BDAEB56FEAEAC683EB50A7A004670E024FD602812B39A910F8DD68349AD3.",
+      "observed_at": "2026-09-17T07:23:11+09:00"
+    },
+    {
+      "id": "E5",
+      "kind": "runtime",
+      "location": "D:/OpenVisionLab-TestData/OpenVisionLab-CrossRepo/2d/pl-0107-clean-current-20260917/pl-0107-verification-summary.json; D:/OpenVisionLab-TestData/OpenVisionLab-CrossRepo/2d/pl-0107-clean-current-20260917/run/2d-cross-repo-20260917-072311-abe9864ac0ae4ae59d2f21e838a79f79/consumer/2d-cross-repo-consumer-result.json",
+      "observation": "The same clean snapshot completed the cross-repository process smoke with exitCode=0, transaction 92d5683e-53e5-4dd9-94a6-448737fbf742, acknowledgement Accepted, result Completed, outcome Pass, RunId 2d-9723319ec0525d43c1e0d4c83e291d45503dcc81862b99d28f7b8806ba6aa706, source image 572x420, metricCount 39, and overlayCount 4.",
+      "observed_at": "2026-09-17T07:23:49+09:00"
+    }
+  ],
+  "events": [
+    {
+      "id": "T1",
+      "kind": "transition",
+      "at": "2026-09-17T00:01:00Z",
+      "from": "open",
+      "to": "resolved",
+      "summary": "PL-0107 acceptance and durable evidence are complete in the existing RunTwoDIntegrationCrossRepoSmoke.ps1 qualification path; no new transport or automatic consumer owner was introduced."
+    }
+  ],
+  "created_at": "2026-09-17T00:00:00Z",
+  "updated_at": "2026-09-17T00:01:00Z"
+}

@@ -32,6 +32,7 @@ $consumerEvidenceRoot = Join-Path $runRoot 'consumer'
 $producerProject = Join-Path $MachineRepo 'tools\MachineIntegrationProducerSmoke\MachineIntegrationProducerSmoke.csproj'
 $consumerProject = Join-Path $DevRepo 'tools\VisionRecipeRunnerSmoke\VisionRecipeRunnerSmoke.csproj'
 $runtimeBuildManifestPath = Join-Path $DevRepo 'bin\Release\openvisionlab.runtime.json'
+$consumerPreflightPath = Join-Path $runRoot 'consumer-runtime-preflight.json'
 
 New-Item -ItemType Directory -Force -Path $runRoot | Out-Null
 $env:TEMP = $runRoot
@@ -59,6 +60,50 @@ $consumerSourceState = [string]$runtimeBuildManifest.identity.sourceState
 if ($runtimeBuildManifest.schemaVersion -ne '1.0' -or $consumerSourceState -ne 'clean') {
     throw "2D runtime build is not qualified for integration. Schema=$($runtimeBuildManifest.schemaVersion), SourceState=$consumerSourceState"
 }
+
+$consumerHeadCommit = (& git -C $DevRepo rev-parse --verify HEAD 2>$null).Trim()
+if ($LASTEXITCODE -ne 0 -or $consumerHeadCommit.Length -ne 40 -or $consumerHeadCommit -notmatch '^[0-9a-fA-F]{40}$') {
+    throw "Could not resolve the 40-character 2D checkout HEAD for runtime qualification: $DevRepo"
+}
+if (-not [string]::Equals($consumerCommit, $consumerHeadCommit, [System.StringComparison]::OrdinalIgnoreCase)) {
+    throw "2D runtime manifest source commit '$consumerCommit' does not match checkout HEAD '$consumerHeadCommit'. Rebuild the consumer from the current checkout before integration."
+}
+
+$entryAssembly = $runtimeBuildManifest.entryAssembly
+if ($null -eq $entryAssembly) {
+    throw "2D runtime manifest entryAssembly is missing: $runtimeBuildManifestPath"
+}
+$entryRelativePath = [string]$entryAssembly.relativePath
+if ([string]::IsNullOrWhiteSpace($entryRelativePath) -or $entryRelativePath -ne [System.IO.Path]::GetFileName($entryRelativePath) -or $entryRelativePath -in @('.', '..')) {
+    throw "2D runtime manifest entryAssembly.relativePath is missing or unsafe: $runtimeBuildManifestPath"
+}
+
+$entryAssemblyPath = Join-Path (Split-Path -Parent $runtimeBuildManifestPath) $entryRelativePath
+if (-not (Test-Path -LiteralPath $entryAssemblyPath -PathType Leaf)) {
+    throw "2D runtime manifest entry assembly is missing: $entryAssemblyPath"
+}
+
+$entryAssemblyFile = Get-Item -LiteralPath $entryAssemblyPath
+$entryAssemblyHash = (Get-FileHash -LiteralPath $entryAssemblyPath -Algorithm SHA256).Hash
+$entryAssemblyMatchesManifest = [int64]$entryAssemblyFile.Length -eq [int64]$entryAssembly.byteLength -and [string]::Equals($entryAssemblyHash, [string]$entryAssembly.sha256, [System.StringComparison]::OrdinalIgnoreCase)
+if (-not $entryAssemblyMatchesManifest) {
+    throw "2D runtime manifest entry assembly length/SHA-256 does not match the built file: $entryAssemblyPath"
+}
+
+[ordered]@{
+    schemaVersion = '1.0'
+    verified = $true
+    checkout = [System.IO.Path]::GetFullPath($DevRepo)
+    checkoutHeadCommit = $consumerHeadCommit
+    runtimeManifest = [System.IO.Path]::GetFullPath($runtimeBuildManifestPath)
+    manifestSourceCommit = $consumerCommit
+    applicationVersion = $consumerVersion
+    sourceState = $consumerSourceState
+    entryAssembly = $entryRelativePath
+    entryAssemblyByteLength = [int64]$entryAssemblyFile.Length
+    entryAssemblySha256 = $entryAssemblyHash
+} | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $consumerPreflightPath -Encoding UTF8
+Write-Host "2D runtime preflight passed. Commit=$consumerHeadCommit; Entry=$entryRelativePath; SHA256=$entryAssemblyHash"
 
 Push-Location $MachineRepo
 try {
