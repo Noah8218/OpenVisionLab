@@ -39,51 +39,49 @@ namespace OpenVisionLab
             this.selectedTitleProvider = selectedTitleProvider;
         }
 
+        public bool UsesToolRouteText => displayState == DirectRunDisplayState.Pending || displayState == DirectRunDisplayState.Succeeded;
+
         public void SetWorkspaceEmpty()
         {
             displayState = DirectRunDisplayState.WorkspaceEmpty;
             SetBadgeText(T("Shell.WorkspaceStatus.EmptyBadge", "Start"));
-            Brush pendingBrush = FindBrush("ShellHost.WarnBrush", Brushes.DarkGoldenrod);
-            SetBadgeBrush(pendingBrush);
+            SetBadgeBrush("OpenVision.Workbench.StaleBrush", Brushes.DarkGoldenrod);
             SetTitleText(T("Shell.WorkspaceStatus.EmptyTitle", "Load an image"));
             SetRouteText(T("Shell.WorkspaceStatus.EmptyRoute", "Load image or open sample"));
             SetStatusText(T("Shell.WorkspaceStatus.EmptyStatus", "Select a tool after image is ready"));
-            SetStatusBrush(FindBrush("ShellHost.FieldFocusBrush", Brushes.LightBlue));
+            SetStatusBrush("OpenVision.Workbench.AccentBrush", Brushes.LightBlue);
         }
 
         public void SetImageReady()
         {
             displayState = DirectRunDisplayState.ImageReady;
             SetBadgeText(T("Shell.MainAction.ReadyBadge", "\uC900\uBE44"));
-            Brush pendingBrush = FindBrush("ShellHost.WarnBrush", Brushes.DarkGoldenrod);
-            SetBadgeBrush(pendingBrush);
+            SetBadgeBrush("OpenVision.Workbench.StaleBrush", Brushes.DarkGoldenrod);
             SetTitleText(T("Shell.MainAction.ImageReadyTitle", "\uC774\uBBF8\uC9C0 \uC900\uBE44\uB428"));
             SetRouteText(T("Shell.MainAction.ImageReadyRoute", "\uB3C4\uAD6C \uC120\uD0DD -> \uBBF8\uB9AC\uBCF4\uAE30 \uD655\uC778"));
             SetStatusText(T("Shell.MainAction.ImageReadyStatus", "\uD30C\uC774\uD504\uB77C\uC778 \uCD94\uAC00 \uAC00\uB2A5"));
-            SetStatusBrush(FindBrush("ShellHost.FieldFocusBrush", Brushes.LightBlue));
+            SetStatusBrush("OpenVision.Workbench.AccentBrush", Brushes.LightBlue);
         }
 
         public void SetSampleReady()
         {
             displayState = DirectRunDisplayState.SampleReady;
             SetBadgeText(T("Shell.MainAction.ReadyBadge", "Ready"));
-            Brush okBrush = FindBrush("ShellHost.OkBrush", Brushes.SeaGreen);
-            SetBadgeBrush(okBrush);
+            SetBadgeBrush("OpenVision.Workbench.OkBrush", Brushes.SeaGreen);
             SetTitleText(T("Shell.WorkspaceStatus.SampleTitle", "Sample pipeline ready"));
             SetRouteText(T("Shell.WorkspaceStatus.SampleRoute", "Open Pipeline Review or the first step"));
             SetStatusText(T("Shell.WorkspaceStatus.SampleStatus", "Preview runs manually"));
-            SetStatusBrush(okBrush);
+            SetStatusBrush("OpenVision.Workbench.OkBrush", Brushes.SeaGreen);
         }
 
         public void SetPending()
         {
             displayState = DirectRunDisplayState.Pending;
             SetBadgeText(OpenVisionLanguageService.T("Shell.DirectBadgeReady"));
-            Brush pendingBrush = FindBrush("ShellHost.WarnBrush", Brushes.DarkGoldenrod);
-            SetBadgeBrush(pendingBrush);
+            SetBadgeBrush("OpenVision.Workbench.StaleBrush", Brushes.DarkGoldenrod);
             SetTitleText(selectedTitleProvider?.Invoke());
             SetStatusText(OpenVisionLanguageService.T("Shell.DirectStatusReadyDetail"));
-            SetStatusBrush(FindBrush("ShellHost.FieldFocusBrush", Brushes.LightBlue));
+            SetStatusBrush("OpenVision.Workbench.AccentBrush", Brushes.LightBlue);
         }
 
         public void SetSucceeded(string tackTime)
@@ -91,14 +89,13 @@ namespace OpenVisionLab
             displayState = DirectRunDisplayState.Succeeded;
             lastTackTime = tackTime ?? string.Empty;
             SetBadgeText(OpenVisionLanguageService.T("Shell.DirectBadgeOk"));
-            Brush okBrush = FindBrush("ShellHost.OkBrush", Brushes.SeaGreen);
-            SetBadgeBrush(okBrush);
+            SetBadgeBrush("OpenVision.Workbench.OkBrush", Brushes.SeaGreen);
             string elapsed = string.IsNullOrWhiteSpace(tackTime)
                 ? OpenVisionLanguageService.T("Shell.DirectStatusOk")
                 : string.Format(CultureInfo.CurrentCulture, OpenVisionLanguageService.T("Shell.DirectStatusOkFormat"), tackTime);
             SetTitleText(selectedTitleProvider?.Invoke());
             SetStatusText(elapsed);
-            SetStatusBrush(okBrush);
+            SetStatusBrush("OpenVision.Workbench.OkBrush", Brushes.SeaGreen);
         }
 
         public void SetRouteText(string text)
@@ -155,30 +152,23 @@ namespace OpenVisionLab
             }
         }
 
-        private void SetStatusBrush(Brush brush)
+        private void SetStatusBrush(string resourceKey, Brush fallback)
         {
-            if (statusText != null)
-            {
-                statusText.Foreground = brush;
-            }
+            SetBrush(statusText, TextBlock.ForegroundProperty, resourceKey, fallback);
         }
 
-        private void SetBadgeBrush(Brush brush)
+        private void SetBadgeBrush(string resourceKey, Brush fallback)
         {
-            if (badge != null)
-            {
-                badge.Background = brush;
-            }
-
-            if (panel != null)
-            {
-                panel.BorderBrush = brush;
-            }
+            SetBrush(badge, Border.BackgroundProperty, "OpenVision.Workbench.PanelAltBrush", Brushes.Transparent);
+            SetBrush(badgeText, TextBlock.ForegroundProperty, resourceKey, fallback);
+            SetBrush(panel, Border.BorderBrushProperty, resourceKey, fallback);
         }
 
-        private Brush FindBrush(string resourceKey, Brush fallback)
+        private void SetBrush(FrameworkElement element, DependencyProperty property, string resourceKey, Brush fallback)
         {
-            return resourceHost?.FindResource(resourceKey) as Brush ?? fallback;
+            if (element == null) { return; }
+            if (resourceHost?.TryFindResource(resourceKey) is Brush) { element.SetResourceReference(property, resourceKey); }
+            else { element.SetValue(property, fallback); }
         }
 
         private static string T(string key, string fallbackText)

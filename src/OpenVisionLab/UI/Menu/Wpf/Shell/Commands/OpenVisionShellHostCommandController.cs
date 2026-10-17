@@ -10,6 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Threading.Tasks;
 using System.Windows;
 namespace OpenVisionLab
 {
@@ -19,6 +20,7 @@ namespace OpenVisionLab
         private readonly Func<string, bool> loadWorkspaceImage;
         private readonly OpenVisionShellHostWorkspacePreviewController workspacePreviewController;
         private readonly OpenVisionZoomableImageController workspaceFallbackZoomController;
+        private readonly IOpenVisionDockedLayerWorkspaceCommands dockedLayerWorkspace;
         private readonly Func<string> workspaceLayerTitleProvider;
         private readonly Func<OpenVisionRecipeContext> recipeContextProvider;
         private readonly Func<string, string, bool> prepareSampleWorkspaceContext;
@@ -26,12 +28,15 @@ namespace OpenVisionLab
         private readonly Action manualWorkspaceImageLoaded;
         private readonly Action<string> rememberWorkspaceImagePath;
         private readonly bool hasRunnableSample;
+        private bool importingWorkspaceImages;
         private string lastWorkspaceImageDirectory;
+        private OpenVisionWorkbenchImagesViewModel workspaceImages;
         public OpenVisionShellHostCommandController(
             Func<Window> ownerProvider,
             Func<string, bool> loadWorkspaceImage,
             OpenVisionShellHostWorkspacePreviewController workspacePreviewController,
             OpenVisionZoomableImageController workspaceFallbackZoomController,
+            IOpenVisionDockedLayerWorkspaceCommands dockedLayerWorkspace,
             Func<string> workspaceLayerTitleProvider,
             Func<OpenVisionRecipeContext> recipeContextProvider,
             Func<string, string, bool> prepareSampleWorkspaceContext = null,
@@ -44,6 +49,7 @@ namespace OpenVisionLab
             this.loadWorkspaceImage = loadWorkspaceImage ?? throw new ArgumentNullException(nameof(loadWorkspaceImage));
             this.workspacePreviewController = workspacePreviewController ?? throw new ArgumentNullException(nameof(workspacePreviewController));
             this.workspaceFallbackZoomController = workspaceFallbackZoomController ?? throw new ArgumentNullException(nameof(workspaceFallbackZoomController));
+            this.dockedLayerWorkspace = dockedLayerWorkspace ?? throw new ArgumentNullException(nameof(dockedLayerWorkspace));
             this.workspaceLayerTitleProvider = workspaceLayerTitleProvider ?? throw new ArgumentNullException(nameof(workspaceLayerTitleProvider));
             this.recipeContextProvider = recipeContextProvider ?? throw new ArgumentNullException(nameof(recipeContextProvider));
             this.prepareSampleWorkspaceContext = prepareSampleWorkspaceContext;
@@ -55,13 +61,16 @@ namespace OpenVisionLab
             hasRunnableSample = LoadRunnableSamples().Count > 0;
         }
 
-        public void PromptAndLoadWorkspaceImage()
+        public void PromptAndLoadWorkspaceImage() => PromptAndLoadWorkspaceImage("");
+
+        public void PromptAndLoadWorkspaceImage(string label)
         {
+            if (importingWorkspaceImages || workspaceImages?.CanEdit == false) { return; }
             OpenFileDialog dialog = new OpenFileDialog
             {
                 Title = OpenVisionLanguageService.T("Shell.WorkspaceLoadImage"),
                 Filter = "Image files|*.bmp;*.png;*.jpg;*.jpeg;*.tif;*.tiff|Bitmap (*.bmp)|*.bmp|PNG (*.png)|*.png|JPEG (*.jpg;*.jpeg)|*.jpg;*.jpeg|TIFF (*.tif;*.tiff)|*.tif;*.tiff|All files|*.*",
-                Multiselect = false,
+                Multiselect = workspaceImages != null,
                 InitialDirectory = ResolveWorkspaceImageDirectory()
             };
 
@@ -69,6 +78,8 @@ namespace OpenVisionLab
             {
                 return;
             }
+
+            if (workspaceImages != null) { AddWorkspaceImages(dialog.FileNames, label ?? ""); return; }
 
             if (!loadWorkspaceImage(dialog.FileName))
             {
@@ -80,10 +91,146 @@ namespace OpenVisionLab
             manualWorkspaceImageLoaded?.Invoke();
         }
 
+        internal void AttachWorkspaceImages(OpenVisionWorkbenchImagesViewModel images) => workspaceImages = images;
+        internal void NotifyRestoredWorkspaceInput(string path) { RecordWorkspaceImagePath(path); manualWorkspaceImageLoaded?.Invoke(); }
+
+        internal bool TryLoadListedImage(string path) => workspaceImages?.CanEdit != false && LoadListedImage(path, showFailure: true);
+        internal bool TryLoadBatchImage(string path) => LoadListedImage(path, showFailure: false);
+
+        private bool LoadListedImage(string path, bool showFailure)
+        {
+            if (!loadWorkspaceImage(path)) { if (showFailure) { ShowWorkspaceImageLoadFailedMessage(path); } return false; }
+            RecordWorkspaceImagePath(path);
+            try
+            {
+                using FileStream file = File.OpenRead(path);
+                workspaceImages?.RecordSourceVersion(path, Convert.ToHexString(SHA256.HashData(file)));
+            }
+            catch (IOException) { workspaceImages?.RecordSourceVersion(path, ""); }
+            catch (UnauthorizedAccessException) { workspaceImages?.RecordSourceVersion(path, ""); }
+            manualWorkspaceImageLoaded?.Invoke();
+            return true;
+        }
+
+        internal int AddWorkspaceImages(IEnumerable<string> paths, string label = "", int nestedExcludedCount = 0, bool sampleImages = false, IReadOnlyDictionary<string, string> imageLabels = null, Action<string> reportFailure = null)
+        {
+            if (importingWorkspaceImages || workspaceImages?.CanEdit == false) { return 0; }
+            string[] submittedPaths = paths?.ToArray() ?? Array.Empty<string>();
+            if (submittedPaths.Length == 0) { return 0; }
+            importingWorkspaceImages = true;
+            OpenVisionWorkbenchImagesViewModel images = workspaceImages;
+            try
+            {
+                Window owner = ownerProvider();
+                OpenVisionRecipeContext context = recipeContextProvider();
+                if (images != null) { images.IsSampleImport = sampleImages; }
+                images?.NotifyImportStarted(submittedPaths.Length);
+                bool ownerWasLoaded = owner?.IsLoaded == true;
+                var dispatcher = owner?.Dispatcher ?? System.Windows.Threading.Dispatcher.CurrentDispatcher;
+                List<(string Path, string Name, System.Windows.Media.Imaging.BitmapSource Preview)> prepared = new();
+                List<string> failed = new();
+                Task preparation = Task.Run(() =>
+                {
+                    foreach (string path in submittedPaths)
+                    {
+                        try
+                        {
+                            string fullPath = Path.GetFullPath(path);
+                            using System.Drawing.Bitmap decoded = new System.Drawing.Bitmap(fullPath);
+                            var preview = OpenVisionBitmapImagePreviewFactory.TryCreateFromPath(fullPath, 160)
+                                ?? OpenVisionBitmapImagePreviewFactory.Create(decoded, 160);
+                            if (preview == null) { throw new InvalidDataException("Image preview missing."); }
+                            prepared.Add((fullPath, Path.GetFileName(fullPath), preview));
+                        }
+                        catch (Exception ex)
+                        {
+                            failed.Add(path);
+                            OVLog.Write(LogCategory.Main, LogLevel.Error, "Workspace image list load failed.", path, ex);
+                        }
+                    }
+                });
+                var frame = new System.Windows.Threading.DispatcherFrame();
+                Task completion = preparation.ContinueWith(_ => dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, new Action(() => frame.Continue = false)), TaskScheduler.Default);
+                try { System.Windows.Threading.Dispatcher.PushFrame(frame); }
+                finally
+                {
+                    try { preparation.GetAwaiter().GetResult(); }
+                    finally { completion.GetAwaiter().GetResult(); }
+                }
+                OpenVisionRecipeContext currentContext = recipeContextProvider();
+                if (!ReferenceEquals(images, workspaceImages) || images?.CanEdit == false || !ReferenceEquals(owner, ownerProvider())
+                    || dispatcher.HasShutdownStarted || (ownerWasLoaded && !owner.IsLoaded)
+                    || context?.Name != currentContext?.Name || context?.PipelineName != currentContext?.PipelineName) { return 0; }
+                List<OpenVisionWorkbenchImageItem> added = prepared.Select(image => new OpenVisionWorkbenchImageItem(image.Path, image.Name, image.Preview) { Label = imageLabels != null && imageLabels.TryGetValue(image.Path, out string imageLabel) ? imageLabel : label }).ToList();
+                int count = workspaceImages?.AddImages(added) ?? 0;
+                if (added.Count > 0 && (workspaceImages == null || workspaceImages.CurrentIndex < 0)) { TryLoadListedImage(added[0].Path); }
+                if (failed.Count > 0) { (reportFailure ?? ShowWorkspaceImageLoadFailedMessage)(string.Join(Environment.NewLine, failed)); }
+                if (added.Count + failed.Count > 0) { workspaceImages?.NotifyImportCompleted(count, failed.Count, nestedExcludedCount); }
+                return count;
+            }
+            finally { if (images != null) { images.IsSampleImport = false; } importingWorkspaceImages = false; }
+        }
+
+        public void PromptAndOpenWorkspaceFolder(string label)
+        {
+            if (importingWorkspaceImages || workspaceImages?.CanEdit == false) { return; }
+            OpenFolderDialog dialog = new OpenFolderDialog
+            {
+                Title = OpenVisionLanguageService.T("Workbench.Viewer.OpenFolder"),
+                InitialDirectory = ResolveWorkspaceImageDirectory(),
+                Multiselect = false
+            };
+            Window owner = ownerProvider();
+            bool ownerWasLoaded = owner?.IsLoaded == true;
+            if (dialog.ShowDialog(owner) != true) { return; }
+            try
+            {
+                bool IsImagePath(string path) => new[] { ".bmp", ".png", ".jpg", ".jpeg", ".tif", ".tiff" }.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase);
+                string[] top = Directory.EnumerateFiles(dialog.FolderName).Where(IsImagePath).OrderBy(path => path, StringComparer.OrdinalIgnoreCase).ToArray();
+                var options = new EnumerationOptions { RecurseSubdirectories = true, IgnoreInaccessible = true, AttributesToSkip = FileAttributes.ReparsePoint };
+                int nested = Directory.EnumerateFiles(dialog.FolderName, "*", options).Count(path => IsImagePath(path) && !string.Equals(Path.GetDirectoryName(path), dialog.FolderName, StringComparison.OrdinalIgnoreCase));
+                OpenVisionWorkbenchImagesViewModel images = workspaceImages;
+                OpenVisionRecipeContext context = recipeContextProvider();
+                AddWorkspaceImages(top, label ?? "", nested);
+                OpenVisionRecipeContext currentContext = recipeContextProvider();
+                if (!ReferenceEquals(images, workspaceImages) || images?.CanEdit == false || !ReferenceEquals(owner, ownerProvider())
+                    || owner?.Dispatcher.HasShutdownStarted == true || (ownerWasLoaded && !owner.IsLoaded)
+                    || context?.Name != currentContext?.Name || context?.PipelineName != currentContext?.PipelineName) { return; }
+                if (nested > 0)
+                {
+                    string text = string.Format(CultureInfo.CurrentCulture, OpenVisionLanguageService.T("Workbench.Images.NestedIgnored"), nested);
+                    OVLog.Write(LogCategory.Main, LogLevel.Info, text);
+                    MessageBox.Show(ownerProvider(), text, "OpenVisionLab", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                OVLog.Write(LogCategory.Main, LogLevel.Error, "Workspace image folder load failed.", dialog.FolderName, ex);
+                if (!ownerWasLoaded || owner?.IsLoaded == true) { ShowWorkspaceImageLoadFailedMessage(dialog.FolderName); }
+            }
+        }
+
         public void FitWorkspaceImage()
         {
             workspaceFallbackZoomController.Reset();
-            workspacePreviewController.RefreshCanvas();
+            workspacePreviewController.FitImageToView();
+            dockedLayerWorkspace.FitLayerImages();
+        }
+
+        internal IOpenVisionDockedLayerViewer ActiveLayerViewer => dockedLayerWorkspace.ActiveLayerViewer;
+
+        public void ZoomWorkspaceImage(double factor)
+        {
+            IOpenVisionDockedLayerViewer viewer = ActiveLayerViewer;
+            if (viewer != null) { viewer.ZoomImage(factor); }
+            else { workspaceFallbackZoomController.ZoomImage(factor); }
+        }
+
+        public void ShowWorkspaceOriginalSize()
+        {
+            IOpenVisionDockedLayerViewer viewer = ActiveLayerViewer;
+            if (viewer != null) { viewer.ShowOriginalSize(); }
+            else { workspaceFallbackZoomController.ShowOriginalSize(); }
         }
 
         public void PromptAndSaveWorkspaceImage()
@@ -110,6 +257,37 @@ namespace OpenVisionLab
             }
         }
 
+        public void PromptAndSaveDisplayImage(string name, System.Drawing.Bitmap image)
+        {
+            if (image == null) { return; }
+            SaveFileDialog dialog = new SaveFileDialog
+            {
+                Title = OpenVisionLanguageService.T("ToolView.SaveImage"),
+                Filter = "PNG (*.png)|*.png|Bitmap (*.bmp)|*.bmp|JPEG (*.jpg)|*.jpg|TIFF (*.tif)|*.tif",
+                FileName = OpenVisionPreviewImageFileService.CreateDefaultImageFileName(name),
+                AddExtension = true, DefaultExt = ".png"
+            };
+            if (dialog.ShowDialog(ownerProvider()) != true) { return; }
+            if (TrySaveDisplayImage(image, dialog.FileName)) { OpenVisionImageDirectoryResolver.RememberImagePath(dialog.FileName); }
+            else { MessageBox.Show(ownerProvider(), OpenVisionLanguageService.T("Workbench.Pane.SaveFailed"), "OpenVisionLab", MessageBoxButton.OK, MessageBoxImage.Warning); }
+        }
+
+        internal static bool TrySaveDisplayImage(System.Drawing.Bitmap image, string path)
+        {
+            if (image == null || string.IsNullOrWhiteSpace(path)) { return false; }
+            try
+            {
+                using System.Drawing.Bitmap savable = OpenVisionPreviewImageFileService.CreateSavableBitmap(image);
+                savable.Save(path, OpenVisionPreviewImageFileService.ResolveImageFormat(path));
+                return true;
+            }
+            catch (Exception ex)
+            {
+                OVLog.Write(LogCategory.Main, LogLevel.Error, "Display image save failed.", path, ex);
+                return false;
+            }
+        }
+
         public void RecordWorkspaceImagePath(string path)
         {
             try
@@ -129,6 +307,40 @@ namespace OpenVisionLab
             }
             catch (Exception)
             {
+            }
+        }
+
+        public void OpenImageCompare()
+        {
+            if (TryOpenImageCompare(AppPathService.InstallationRootDirectory, Process.Start, out string failureDetail)) { return; }
+            OVLog.Write(LogCategory.Main, LogLevel.Error, "Image comparison tool open failed.", failureDetail);
+            string message = string.Format(CultureInfo.CurrentCulture, OpenVisionLanguageService.T("Shell.ImageCompareOpenFailedMessage"), failureDetail);
+            MessageBox.Show(ownerProvider(), message, "OpenVisionLab", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+
+        internal static bool TryOpenImageCompare(string installationDirectory, Func<ProcessStartInfo, Process> startProcess, out string failureDetail)
+        {
+            try
+            {
+                string directory = Path.Combine(installationDirectory, "Tools", "ImageCompare");
+                string executable = Path.Combine(directory, "OpenVisionLab.ImageCompare.exe");
+                foreach (string name in new[] { "OpenVisionLab.ImageCompare.exe", "OpenVisionLab.ImageCompare.dll", "OpenVisionLab.ImageCompare.runtimeconfig.json" })
+                {
+                    if (!File.Exists(Path.Combine(directory, name)))
+                    {
+                        failureDetail = string.Format(CultureInfo.CurrentCulture, OpenVisionLanguageService.T("Shell.ImageCompareNotFoundMessage"), Path.Combine(directory, name));
+                        return false;
+                    }
+                }
+                using Process process = startProcess(new ProcessStartInfo { FileName = executable, WorkingDirectory = directory, UseShellExecute = true });
+                if (process == null) { throw new InvalidOperationException("Image comparison process was not started."); }
+                failureDetail = string.Empty;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                failureDetail = ex.Message;
+                return false;
             }
         }
 
@@ -165,6 +377,29 @@ namespace OpenVisionLab
         public bool HasRunnableSample()
         {
             return hasRunnableSample;
+        }
+
+        public void PromptAndOpenSampleImages()
+        {
+            if (importingWorkspaceImages || workspaceImages?.CanEdit == false) { return; }
+            List<VisionPipelineSampleCatalogItem> samples = LoadRunnableSamples();
+            if (samples.Count == 0) { return; }
+            IReadOnlyList<VisionPipelineSampleCatalogItem> selection;
+            bool useLabels;
+            importingWorkspaceImages = true;
+            try
+            {
+                if (!OpenVisionWorkspaceSamplePickerWindow.TrySelectImages(ownerProvider(), samples, out selection, out useLabels)) { return; }
+            }
+            finally { importingWorkspaceImages = false; }
+            AddSampleImages(selection, useLabels);
+        }
+
+        internal int AddSampleImages(IEnumerable<VisionPipelineSampleCatalogItem> samples, bool useCatalogLabels, Action<string> reportFailure = null)
+        {
+            var selected = (samples ?? Enumerable.Empty<VisionPipelineSampleCatalogItem>()).Where(item => item != null && !string.IsNullOrWhiteSpace(item.ImageFullPath)).GroupBy(item => item.ImageFullPath, StringComparer.OrdinalIgnoreCase).Select(group => group.First()).ToArray();
+            var labels = selected.ToDictionary(item => item.ImageFullPath, item => !useCatalogLabels ? "" : string.Equals(item.PairRole, "Good", StringComparison.OrdinalIgnoreCase) ? "good" : string.Equals(item.PairRole, "Bad", StringComparison.OrdinalIgnoreCase) ? "bad" : "", StringComparer.OrdinalIgnoreCase);
+            return AddWorkspaceImages(selected.Select(item => item.ImageFullPath), sampleImages: true, imageLabels: labels, reportFailure: reportFailure);
         }
 
         public void PromptAndOpenRunnableSample()

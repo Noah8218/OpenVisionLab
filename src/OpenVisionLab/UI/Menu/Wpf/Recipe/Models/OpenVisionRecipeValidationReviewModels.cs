@@ -525,6 +525,7 @@ namespace OpenVisionLab
             TableAcceptanceText = ResolveTableAcceptanceText(step);
             ParameterPreviewText = BuildParameterPreviewText(step);
             FullParameterText = BuildFullParameterText(step);
+            FullParameterTextWithUnits = BuildFullParameterTextWithUnits(step);
             RoiMetadataText = BuildRoiMetadataText(step);
             TemplateMetadataText = BuildTemplateMetadataText(step);
             EditorActionText = BuildEditorActionText(ToolType);
@@ -567,6 +568,8 @@ namespace OpenVisionLab
         public string ParameterPreviewText { get; }
 
         public string FullParameterText { get; }
+
+        public string FullParameterTextWithUnits { get; }
 
         public string RoiMetadataText { get; }
 
@@ -746,6 +749,25 @@ namespace OpenVisionLab
                     .Select(parameter => parameter.Key + " = " + (parameter.Value ?? string.Empty)));
         }
 
+        private static string BuildFullParameterTextWithUnits(VisionPipelineStep step)
+        {
+            if (step?.Parameters == null || step.Parameters.Count == 0)
+            {
+                return OpenVisionRecipeText.Local("파라미터 없음", "No parameters");
+            }
+
+            return string.Join(
+                Environment.NewLine,
+                step.Parameters
+                    .OrderBy(parameter => parameter.Key, StringComparer.OrdinalIgnoreCase)
+                    .Select(parameter =>
+                    {
+                        string unit = VisionToolParameterGuideCatalog.ResolveUnitForSavedParameter(parameter.Key);
+                        return parameter.Key + " = " + (parameter.Value ?? string.Empty)
+                            + (string.IsNullOrWhiteSpace(unit) ? string.Empty : " " + unit);
+                    }));
+        }
+
         private static string BuildRoiMetadataText(VisionPipelineStep step)
         {
             IDictionary<string, string> parameters = step?.Parameters;
@@ -756,7 +778,10 @@ namespace OpenVisionLab
 
             bool useRoi = GetBoolParameter(parameters, "USE_ROI");
             bool useMultiRoi = GetBoolParameter(parameters, "USE_MULTI_ROI");
-            string roi = GetParameter(parameters, useMultiRoi ? "CvROIS" : "CvROI");
+            bool showSingleRoi = !parameters.ContainsKey("USE_ROI") || useRoi;
+            bool showMultiRoi = !parameters.ContainsKey("USE_MULTI_ROI") || useMultiRoi;
+            string roi = useMultiRoi ? GetParameter(parameters, "CvROIS")
+                : showSingleRoi ? GetParameter(parameters, "CvROI") : string.Empty;
             if (string.IsNullOrWhiteSpace(roi))
             {
                 roi = string.Join(
@@ -764,7 +789,9 @@ namespace OpenVisionLab
                     parameters
                         .Where(parameter => parameter.Key?.IndexOf("ROI", StringComparison.OrdinalIgnoreCase) >= 0)
                         .Where(parameter => !string.IsNullOrWhiteSpace(parameter.Key)
-                            && !parameter.Key.StartsWith("USE_", StringComparison.OrdinalIgnoreCase))
+                            && !parameter.Key.StartsWith("USE_", StringComparison.OrdinalIgnoreCase)
+                            && (showSingleRoi || !string.Equals(parameter.Key, "CvROI", StringComparison.OrdinalIgnoreCase))
+                            && (showMultiRoi || !string.Equals(parameter.Key, "CvROIS", StringComparison.OrdinalIgnoreCase)))
                         .OrderBy(parameter => parameter.Key, StringComparer.OrdinalIgnoreCase)
                         .Take(3)
                         .Select(parameter => parameter.Key + "=" + parameter.Value));
@@ -772,7 +799,7 @@ namespace OpenVisionLab
 
             if (string.IsNullOrWhiteSpace(roi))
             {
-                return useRoi
+                return useRoi || useMultiRoi
                     ? OpenVisionRecipeText.Local("ROI: 켜짐, 영역 값 없음", "ROI: enabled, no region value")
                     : OpenVisionRecipeText.Local("ROI: 전체 이미지", "ROI: full image");
             }

@@ -29,6 +29,9 @@ namespace OpenVisionLab
         private readonly Button openSelectedLayerWindowButton;
         private readonly Button dockSelectedLayerButton;
         private readonly Button clearDockedLayersButton;
+        private OpenVisionDockDocumentRefreshResult dockedLayerRefreshResult;
+        private string workspaceRouteText;
+        private string workspaceRouteTextKey;
 
         public OpenVisionShellHostLayerWorkspacePresenter(
             OpenVisionShellHostWorkspacePreviewController workspacePreviewController,
@@ -113,6 +116,8 @@ namespace OpenVisionLab
                 detail = OpenVisionShellHostLayerDetailState.Empty();
             }
 
+            workspaceRouteText = detail.RouteText;
+            workspaceRouteTextKey = detail.RouteTextKey;
             ShowWorkspaceForImageState(detail.HasImage);
             workspacePreviewController.SetLayer(detail, image => ApplyWorkspaceFallbackImage(detail, image));
 
@@ -189,6 +194,7 @@ namespace OpenVisionLab
                 return;
             }
 
+            dockedLayerRefreshResult = result;
             ShowWorkspaceForImageState(result.HasDocuments);
 
             if (workspaceStatusText == null)
@@ -198,16 +204,26 @@ namespace OpenVisionLab
 
             if (!result.HasDocuments)
             {
-                workspaceStatusText.Text = string.IsNullOrWhiteSpace(selectedLayerRouteText?.Text)
-                    ? OpenVisionLanguageService.T("Shell.LayerDetailPending")
-                    : selectedLayerRouteText.Text;
+                ApplyLocalization();
                 return;
             }
 
-            workspaceStatusText.Text = string.Format(
-                CultureInfo.CurrentCulture,
-                OpenVisionLanguageService.T("Shell.DockedLayerStatusFormat"),
-                result.DocumentCount);
+            ApplyLocalization();
+        }
+
+        public void ApplyLocalization()
+        {
+            if (workspaceStatusText == null) { return; }
+            if (dockedLayerRefreshResult?.HasDocuments == true)
+            {
+                workspaceStatusText.Text = string.Format(CultureInfo.CurrentCulture, OpenVisionLanguageService.T("Shell.DockedLayerStatusFormat"), dockedLayerRefreshResult.DocumentCount);
+                return;
+            }
+
+            string routeText = !string.IsNullOrWhiteSpace(workspaceRouteTextKey) ? OpenVisionLanguageService.T(workspaceRouteTextKey)
+                : string.IsNullOrWhiteSpace(workspaceRouteText) ? OpenVisionLanguageService.T("Shell.LayerDetailPending") : workspaceRouteText;
+            workspaceStatusText.Text = routeText;
+            if (selectedLayerRouteText != null) { selectedLayerRouteText.Text = routeText; }
         }
 
         public void ApplyWorkspacePointerStatus(OpenVisionZoomableImageStatus status)
@@ -219,13 +235,13 @@ namespace OpenVisionLab
 
             if (status?.HasPixel == true)
             {
-                workspaceCoordinatesText.Text = status.FormatCoordinates();
-                workspacePixelText.Text = status.FormatPixel();
+                workspaceCoordinatesText.SetCurrentValue(TextBlock.TextProperty, status.FormatCoordinates());
+                workspacePixelText.SetCurrentValue(TextBlock.TextProperty, status.FormatPixel());
                 return;
             }
 
-            workspaceCoordinatesText.Text = "X:- Y:-";
-            workspacePixelText.Text = "GV - | RGB -";
+            workspaceCoordinatesText.SetCurrentValue(TextBlock.TextProperty, "X:- Y:-");
+            workspacePixelText.SetCurrentValue(TextBlock.TextProperty, "GV - | RGB -");
         }
 
         private void ApplyWorkspaceFallbackImage(OpenVisionShellHostLayerDetailState detail, System.Drawing.Bitmap image)
@@ -253,7 +269,7 @@ namespace OpenVisionLab
 
         private void ShowWorkspaceForImageState(bool hasImageOrDocument)
         {
-            if (hasImageOrDocument)
+            if (hasImageOrDocument || dockedLayerRefreshResult?.HasDocuments == true)
             {
                 ShowDockedWorkspace();
                 return;

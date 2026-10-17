@@ -23,9 +23,9 @@ PropertyGrid.Type.EdgeBasedMatchingProperty.AUTO_MPOINT_MIN_UNIQUENESS.DisplayNa
 PropertyGrid.Type.EdgeBasedMatchingProperty.AUTO_MPOINT_MIN_UNIQUENESS.Description	학습 위치 점수와 가장 강한 경쟁 위치 점수의 최소 차이입니다. 반복 패턴이 많은 이미지에서는 높이십시오.	Minimum score margin between the taught location and the strongest competing location. Raise this for repetitive images.
 PropertyGrid.Type.EdgeBasedMatchingProperty.AUTO_MPOINT_MAX_POSITION_ERROR.DisplayName	최대 위치 오차	Max position error
 PropertyGrid.Type.EdgeBasedMatchingProperty.AUTO_MPOINT_MAX_POSITION_ERROR.Description	제안 패턴이 합성 재배치 검증에서 허용할 최대 픽셀 위치 오차입니다.	Maximum synthetic relocation error in pixels allowed for a suggested pattern.
-PropertyGrid.Type.EdgeBasedMatchingProperty.AUTO_MPOINT_MIN_REPRESENTATIVE_IMAGES.DisplayName	최소 대표 이미지 수	Min representative images
+PropertyGrid.Type.EdgeBasedMatchingProperty.AUTO_MPOINT_MIN_REPRESENTATIVE_IMAGES.DisplayName	최소 대표 이미지 수	Min rep. images
 PropertyGrid.Type.EdgeBasedMatchingProperty.AUTO_MPOINT_MIN_REPRESENTATIVE_IMAGES.Description	실제 이미지 매칭률로 후보를 자동 선정할 때 필요한 추가 대표 이미지의 최소 개수입니다.	Minimum number of additional representative images required when Auto MPoint ranks candidates by actual cross-image matching performance.
-PropertyGrid.Type.EdgeBasedMatchingProperty.AUTO_MPOINT_MIN_REPRESENTATIVE_SUCCESS_RATE.DisplayName	최소 대표 성공률	Min representative success
+PropertyGrid.Type.EdgeBasedMatchingProperty.AUTO_MPOINT_MIN_REPRESENTATIVE_SUCCESS_RATE.DisplayName	최소 대표 성공률	Min rep. success rate
 PropertyGrid.Type.EdgeBasedMatchingProperty.AUTO_MPOINT_MIN_REPRESENTATIVE_SUCCESS_RATE.Description	선택한 대표 이미지에서 요구하는 0..1 매칭 성공률입니다. 이 값보다 낮은 후보는 탈락합니다.	Minimum 0..1 matching success rate across the selected representative images. Candidates below this rate are rejected.
 VisionTool.AutoMPoint.Title	Auto MPoint 최적 패턴	Auto MPoint best pattern
 VisionTool.AutoMPoint.Suggested	자동 1순위	Automatic best
@@ -170,7 +170,7 @@ VisionTool.TemplateStatus.NotSelected	템플릿 미선택	Template not selected
 VisionTool.Review.FeatureRatioCriteriaFormat	Ratio <= {0:0.###}	Ratio <= {0:0.###}
 VisionTool.Review.RansacCriteriaFormat	RANSAC {0:0.#}	RANSAC {0:0.#}
 VisionTool.Line.PurposeLabel	목적	Purpose
-VisionTool.Line.SettingLabel	라인	Setting
+VisionTool.Line.SettingLabel	라인	Line
 VisionTool.Line.Purpose.Edge	엣지	Edge
 VisionTool.Line.Purpose.Measure	측정	Measure
 VisionTool.Line.Purpose.Intersection	교차	Intersection
@@ -1002,7 +1002,7 @@ Shell.RoutePipelineReview	예상 경로: Pipeline Review 선택 Step	Expected: s
 Shell.PendingTool.NavStatus	준비	Pending
 Shell.PendingTool.NavDescription	도구 화면을 준비 중입니다.	Tool view is being prepared.
 Shell.PendingTool.Status	준비 중	Pending
-Shell.PendingTool.Message	이 도구 화면은 아직 준비 중입니다. 완료 후 이 창에서 바로 실행됩니다.	This tool view is being prepared. It will open here when it is ready.
+Shell.PendingTool.Message	이 툴 화면은 준비 중입니다.	This tool view is being prepared.
 Shell.PendingTool.Route	메인 작업영역과 레이어 선택은 계속 사용할 수 있습니다.	Main workspace and layer selection remain available.
 Shell.ReadyFoundation	준비	Ready
 Shell.ReadySelectedFormat	준비 | 선택: {0}	Ready | Selected: {0}
@@ -1035,7 +1035,7 @@ Shell.WorkspaceLoadImageStatusFormat	Main 이미지 로드됨: {0}	Main image lo
 ToolView.NoInputImageTitle	입력 이미지 없음	No input image
 ToolView.NoInputImageDetail	이미지를 로드해 이 도구의 테스트를 시작하십시오.	Load an image to start testing this tool.
 ToolView.NoOutputImageTitle	결과 이미지 없음	No result image
-ToolView.NoOutputImageDetail	미리보기를 실행하면 결과 이미지가 표시됩니다.	Run Preview to display a result image.
+ToolView.NoOutputImageDetail	툴 실행(F8)을 누르세요.	Press Run tool (F8).
 ToolView.LoadImage	이미지 로드...	Load Image...
 ToolView.LoadImageButton	이미지 로드	Load Image
 ToolView.SaveImage	이미지 저장...	Save Image...
@@ -1287,20 +1287,20 @@ Main.LogDockTitleHidden	Log 도킹 제목 숨김	Log dock title hidden
 Main.GuideOpened	가이드 열기	Guide opened
 VisionMenu.Morphology	모폴로지	Morphology
 VisionMenu.Filter	필터	Filter
-VisionMenu.Threshold	스레시홀드	Threshold
-VisionMenu.Arithmetic	산술 연산	Arithmetic
-VisionMenu.EdgeDetection	엣지 검출	Edge Detection
-VisionMenu.RotateAndScale	회전 / 스케일	Rotate / Scale
-VisionMenu.AffineTransform	어파인 변환	Affine Transform
-VisionMenu.Histogram	히스토그램	Histogram
-VisionMenu.HSV	HSV	HSV
-VisionMenu.Blob	블랍	Blob
+VisionMenu.Threshold	이진화	Threshold
+VisionMenu.Arithmetic	이미지 연산	Image Arithmetic
+VisionMenu.EdgeDetection	에지 검출	Edge Detection
+VisionMenu.RotateAndScale	회전·스케일	Rotate / Scale
+VisionMenu.AffineTransform	아핀 변환	Affine Transform
+VisionMenu.Histogram	히스토그램 보정	Histogram Correction
+VisionMenu.HSV	HSV 색 추출	HSV Color Extract
+VisionMenu.Blob	블롭	Blob
 VisionMenu.Contour	컨투어	Contour
-VisionMenu.Matching	매칭	Matching
-VisionMenu.EdgeBasedMatching	엣지 기반 매칭	Edge Based Matching
-VisionMenu.FeatureMatching	특징 매칭	Feature Matching
-VisionMenu.Line	라인	Line
-VisionMenu.Mean	평균	Mean
+VisionMenu.Matching	패턴 매칭	Pattern Matching
+VisionMenu.EdgeBasedMatching	형상 매칭	Shape Matching (Edge Based)
+VisionMenu.FeatureMatching	특징점 매칭	Feature Matching
+VisionMenu.Line	라인 측정	Line Measure
+VisionMenu.Mean	평균 밝기	Mean Brightness
 VisionMenu.Pipeline	파이프라인	Pipeline
 Main.Idle	대기 중	Idle
 AiRecipe.Title	AI Recipe 가져오기	AI Recipe Import
@@ -1528,8 +1528,8 @@ Threshold.OutputResult	출력 레이어	Output Result
 Threshold.ResultType	결과 타입	Result type
 Threshold.Method	계산 방식	Method
 Threshold.MaxValue	최대값	Max value
-Threshold.BlockSize	Block size	Block size
-Threshold.Weight	Weight	Weight
+Threshold.BlockSize	블록 크기	Block size
+Threshold.Weight	보정값 (C)	Correction (C)
 Threshold.BasicTitle	일반 Threshold	Basic Threshold
 Threshold.BasicHint	단일 기준값	Single cutoff
 Threshold.RangeTitle	범위 Threshold	Range Threshold
@@ -1573,6 +1573,10 @@ Log.SummaryMode	요약	Summary
 Log.DetailMode	상세	Details
 Log.HeaderSummary	실행 로그 - 요약	Run Log - Summary
 Log.HeaderDetail	실행 로그 - 상세	Run Log - Details
+Log.Copy	복사	Copy
+Log.CopySucceeded	로그를 복사했습니다.	Logs copied.
+Log.CopyFailed	로그를 복사하지 못했습니다. 다시 시도하세요.	Could not copy logs. Try again.
+Log.Tooltip.Copy	현재 세션의 모든 로그를 복사합니다.	Copy all logs in the current session.
 Log.Clear	지우기	Clear
 Log.Folder	폴더	Folder
 Log.AutoScroll	자동 스크롤	Auto Scroll
@@ -1599,7 +1603,7 @@ Log.Tooltip.FilterCombo	전체 로그를 끄면 레벨 또는 영역을 선택�
 Localization.Title	다국어 편집기	Localization Editor
 Localization.Language	현재 언어	Current Language
 Localization.Search	검색	Search
-PropertyGrid.Search.NoResults	'{0}'에 해당하는 파라미터가 없습니다. Esc 키로 검색을 지울 수 있습니다.	No properties match '{0}'. Press Esc to clear the search.
+PropertyGrid.Search.NoResults	‘{0}’ 검색 결과 없음 (Esc: 지우기)	No match for ‘{0}’ (Esc: clear)
 PropertyGrid.Search.ToolTip	파라미터 이름으로 필터링합니다. Esc 키로 검색을 지울 수 있습니다.	Filter properties by name. Press Esc to clear the search.
 Localization.Key	키	Key
 Localization.Korean	한국어	Korean
@@ -1618,10 +1622,10 @@ PropertyGrid.Category.Range	범위	Range
 PropertyGrid.Category.Adaptive_Threshold	적응형 이진화	Adaptive Threshold
 PropertyGrid.Category.ROI	ROI	ROI
 PropertyGrid.Category.Image_Process	이미지 처리	Image Process
-PropertyGrid.Category.Blob_Parameter	블랍	Blob
+PropertyGrid.Category.Blob_Parameter	블롭	Blob
 PropertyGrid.Category.Contour	컨투어	Contour
 PropertyGrid.Category.Matching	매칭	Matching
-PropertyGrid.Category.Edge	엣지	Edge
+PropertyGrid.Category.Edge	에지	Edge
 PropertyGrid.Category.Canny	Canny	Canny
 PropertyGrid.Category.Sobel	Sobel	Sobel
 PropertyGrid.Category.Scharr	Scharr	Scharr
@@ -1642,7 +1646,7 @@ PropertyGrid.Category.Morphology	모폴로지	Morphology
 PropertyGrid.Category.Transform	변환	Transform
 PropertyGrid.Category.Fixture	기준 좌표	Fixture
 PropertyGrid.Property.NAME.DisplayName	이름	Name
-PropertyGrid.Property.PIXELPERMM.DisplayName	Pixel / mm	Pixel / mm
+PropertyGrid.Property.PIXELPERMM.DisplayName	분해능 (mm/px)	Resolution (mm/px)
 PropertyGrid.Property.Enabled.DisplayName	사용	Enabled
 PropertyGrid.Property.InputLayer.DisplayName	입력 레이어	Input Layer
 PropertyGrid.Property.InputLayer.Description	이 Step에서 사용할 입력 이미지 레이어입니다. 연결된 Step은 보통 이전 Step의 출력 레이어를 입력으로 사용합니다.	Layer image used as this step input. Linked steps normally use the previous step output.
@@ -1675,13 +1679,13 @@ PropertyGrid.Property.ALLOW_BRANCH_INPUT.Description	Matching Step과 같은 원
 PropertyGrid.Property.USE_THRESHOLD.DisplayName	이진화 사용	Use threshold
 PropertyGrid.Property.USE_BITWISENOT.DisplayName	결과 반전	Invert result
 PropertyGrid.Property.THRESHOLD_TYPES.DisplayName	이진화 타입	Threshold type
-PropertyGrid.Property.THRESHOLD.DisplayName	기준값	Threshold
-PropertyGrid.Property.USE_ADAPTIVE_THRESHOLD.DisplayName	적응형 이진화 사용	Use adaptive threshold
+PropertyGrid.Property.THRESHOLD.DisplayName	임계값	Threshold
+PropertyGrid.Property.USE_ADAPTIVE_THRESHOLD.DisplayName	적응형 이진화 사용	Adaptive thresholding
 PropertyGrid.Property.ADAPTIVE_THRESHOLD.DisplayName	적응형 기준값	Adaptive threshold
 PropertyGrid.Property.ADAPTIVE_THRESHOLD_TYPES.DisplayName	적응형 결과 타입	Adaptive type
 PropertyGrid.Property.ADAPTIVE_THRESHOLD_ALGORITHM.DisplayName	적응형 계산 방식	Adaptive algorithm
 PropertyGrid.Property.BlockSize.DisplayName	블록 크기	Block size
-PropertyGrid.Property.Weight.DisplayName	가중치	Weight
+PropertyGrid.Property.Weight.DisplayName	보정값 (C)	Correction (C)
 PropertyGrid.Property.USE_ROI.DisplayName	ROI 사용	Use ROI
 PropertyGrid.Property.USE_MULTI_ROI.DisplayName	다중 ROI 사용	Use multi ROI
 PropertyGrid.Property.CvROI.DisplayName	ROI	ROI
@@ -1710,9 +1714,9 @@ PropertyGrid.Property.MedianKernelSize.DisplayName	Median 커널	Median kernel s
 PropertyGrid.Property.Diameter.DisplayName	직경	Diameter
 PropertyGrid.Property.SigmaColor.DisplayName	Sigma Color	Sigma Color
 PropertyGrid.Property.SigmaSpace.DisplayName	Sigma Space	Sigma Space
-PropertyGrid.Property.EdgeType.DisplayName	엣지 타입	Edge type
-PropertyGrid.Property.CannyThresholdLow.DisplayName	Low 기준값	Low threshold
-PropertyGrid.Property.CannyThresholdHigh.DisplayName	High 기준값	High threshold
+PropertyGrid.Property.EdgeType.DisplayName	에지 타입	Edge type
+PropertyGrid.Property.CannyThresholdLow.DisplayName	Canny 하한 임계값	Canny lower threshold
+PropertyGrid.Property.CannyThresholdHigh.DisplayName	Canny 상한 임계값	Canny upper threshold
 PropertyGrid.Property.CannyApertureSize.DisplayName	Aperture 크기	Aperture size
 PropertyGrid.Property.UseL2Gradient.DisplayName	L2 Gradient 사용	Use L2 gradient
 PropertyGrid.Property.SobelDegreeX.DisplayName	Sobel X 차수	Sobel X degree
@@ -1740,13 +1744,13 @@ PropertyGrid.Property.DestinationPoint2X.DisplayName	목표 점 2 X	Destination 
 PropertyGrid.Property.DestinationPoint2Y.DisplayName	목표 점 2 Y	Destination point 2 Y
 PropertyGrid.Property.DestinationPoint3X.DisplayName	목표 점 3 X	Destination point 3 X
 PropertyGrid.Property.DestinationPoint3Y.DisplayName	목표 점 3 Y	Destination point 3 Y
-PropertyGrid.Property.ShowAdvancedSettings.DisplayName	고급 설정 표시	Show advanced settings
+PropertyGrid.Property.ShowAdvancedSettings.DisplayName	고급 설정 표시	Advanced settings
 PropertyGrid.Property.OutputWidth.DisplayName	출력 폭	Output width
 PropertyGrid.Property.OutputHeight.DisplayName	출력 높이	Output height
 PropertyGrid.Property.BorderValue.DisplayName	테두리 값	Border value
-PropertyGrid.Property.MinimumSourceTriangleArea.DisplayName	소스 삼각형 최소값	Source triangle minimum
-PropertyGrid.Property.MinimumDestinationTriangleArea.DisplayName	목표 삼각형 최소값	Target triangle minimum
-PropertyGrid.Property.MinimumValidPixelRatio.DisplayName	최소 유효 픽셀 비율	Minimum valid pixel ratio
+PropertyGrid.Property.MinimumSourceTriangleArea.DisplayName	소스 삼각형 최소값	Min source triangle
+PropertyGrid.Property.MinimumDestinationTriangleArea.DisplayName	목표 삼각형 최소값	Min target triangle
+PropertyGrid.Property.MinimumValidPixelRatio.DisplayName	최소 유효 픽셀 비율	Min valid pixel ratio
 PropertyGrid.Property.MIN_AREA.DisplayName	최소 면적	Min area
 PropertyGrid.Property.MAX_AREA.DisplayName	최대 면적	Max area
 PropertyGrid.Property.MIN_WIDTH.DisplayName	최소 바운딩 폭	Min bounding width
@@ -1766,7 +1770,7 @@ PropertyGrid.Property.SCORE_MIN.DisplayName	최소 점수	Min score
 PropertyGrid.Property.SCORE_MIN.Description	검출 결과로 인정할 최소 점수입니다. 높을수록 약한 후보를 더 엄격하게 제외합니다.	Minimum score accepted as a detection. Higher values reject weak candidates more strictly.
 PropertyGrid.Property.MAGNIFIATION.DisplayName	배율	Magnification
 PropertyGrid.Property.MAGNIFIATION.Description	이미지 피라미드 기반 스케일 탐색에 사용하는 배율입니다. 1.0은 등록한 템플릿 원본 크기이며, 값이 달라지면 피라미드 단계에서 크기가 다른 후보를 비교합니다.	Magnification used for image-pyramid based scale search. 1.0 keeps the registered template size; other values compare candidates at different pyramid scales.
-PropertyGrid.Property.NUM_MATCH.DisplayName	매칭 개수	Match count
+PropertyGrid.Property.NUM_MATCH.DisplayName	최대 검출 개수	Maximum detections
 PropertyGrid.Property.NUM_MATCH.Description	검출할 최대 매칭 개수입니다. 1이면 가장 좋은 위치 1개만 사용합니다.	Maximum number of accepted matches. 1 uses only the best candidate.
 PropertyGrid.Property.USE_FIND_ANGLE.DisplayName	각도 탐색 사용	Use angle search
 PropertyGrid.Property.USE_FIND_ANGLE.Description	회전된 템플릿까지 탐색할지 결정합니다. 사용하면 각도 범위와 각도 간격 기준으로 반복 검색합니다.	Search rotated template candidates. When enabled, the angle range and step control repeated searches.
@@ -1776,11 +1780,11 @@ PropertyGrid.Property.FIND_ANGLE_MAX.DisplayName	최대 각도	Max angle
 PropertyGrid.Property.FIND_ANGLE_MAX.Description	각도 탐색의 상한값입니다.	Upper bound for angle search.
 PropertyGrid.Property.FIND_ANGLE_MIN.DisplayName	최소 각도	Min angle
 PropertyGrid.Property.FIND_ANGLE_MIN.Description	각도 탐색의 하한값입니다.	Lower bound for angle search.
-PropertyGrid.Property.PATTERN_PATH.DisplayName	패턴 경로	Pattern path
+PropertyGrid.Property.PATTERN_PATH.DisplayName	템플릿 경로	Template path
 PropertyGrid.Property.PATTERN_PATH.Description	등록한 템플릿 이미지 파일 경로입니다. 이 이미지를 기준으로 매칭을 수행합니다.	Registered template image file path. Matching uses this image as the reference.
-PropertyGrid.Property.USE_CANNY.DisplayName	Canny 사용	Use canny
+PropertyGrid.Property.USE_CANNY.DisplayName	Canny 사용	Use Canny
 PropertyGrid.Property.USE_CANNY.Description	매칭 전에 Canny 엣지 이미지를 사용할지 결정합니다.	Use a Canny edge image before matching.
-PropertyGrid.Property.CANNY_HIGH.DisplayName	Canny High	Canny high
+PropertyGrid.Property.CANNY_HIGH.DisplayName	Canny 상한	Canny upper bound
 PropertyGrid.Property.CANNY_HIGH.Description	Canny 전처리의 High 임계값입니다.	High threshold for Canny preprocessing.
 PropertyGrid.Property.CANNY_LOW.DisplayName	Canny Low	Canny low
 PropertyGrid.Property.CANNY_LOW.Description	Canny 전처리의 Low 임계값입니다.	Low threshold for Canny preprocessing.
@@ -1799,13 +1803,13 @@ PropertyGrid.Property.USE_EXTEND_FIT_LINE.DisplayName	피팅 라인 연장	Exten
 PropertyGrid.Property.EXTEND_FIT_LINE_VALUE.DisplayName	연장 길이	Extend length
 PropertyGrid.Property.AVERAGE_Diff.DisplayName	호환(미적용) · 평균 차이	Compatibility (inactive) · Average diff
 PropertyGrid.Property.AVERAGE_Diff.Description	Recipe/Preset 호환을 위해 보존되는 읽기 전용 값입니다. 현재 LineGauge 런타임은 이 값을 사용하지 않습니다.	Read-only value preserved for Recipe/Preset compatibility. The current LineGauge runtime does not consume it.
-PropertyGrid.Property.USE_AVERAGE_FILTER.DisplayName	호환(미적용) · 평균 필터	Compatibility (inactive) · Average filter
+PropertyGrid.Property.USE_AVERAGE_FILTER.DisplayName	호환(미적용) · 평균 필터	Mean filter (inactive)
 PropertyGrid.Property.USE_AVERAGE_FILTER.Description	Recipe/Preset 호환을 위해 보존되는 읽기 전용 값입니다. 현재 LineGauge 런타임은 평균 필터를 켜지 않습니다.	Read-only value preserved for Recipe/Preset compatibility. The current LineGauge runtime does not enable an average filter.
 PropertyGrid.Property.AVERAGE_FILTER_TYPE.DisplayName	호환(미적용) · 평균 축	Compatibility (inactive) · Average axis
 PropertyGrid.Property.AVERAGE_FILTER_TYPE.Description	Recipe/Preset 호환을 위해 보존되는 읽기 전용 X/Y 값입니다. 현재 LineGauge 런타임은 이 값을 사용하지 않습니다.	Read-only X/Y value preserved for Recipe/Preset compatibility. The current LineGauge runtime does not consume it.
-PropertyGrid.Property.SHOW_VERTICAL_LINE.DisplayName	레거시 표시 · 스캔 라인	Legacy draw · Scan line
+PropertyGrid.Property.SHOW_VERTICAL_LINE.DisplayName	레거시 표시 · 스캔 라인	Legacy scan line
 PropertyGrid.Property.SHOW_VERTICAL_LINE.Description	레거시 비트맵 Draw 경로용 읽기 전용 값입니다. 현재 WPF 미리보기와 Pipeline Review는 스캔 증거를 유지합니다.	Read-only value for the legacy bitmap Draw path. Current WPF Preview and Pipeline Review retain scan evidence.
-PropertyGrid.Property.SHOW_EDGE.DisplayName	레거시 표시 · 엣지	Legacy draw · Edge
+PropertyGrid.Property.SHOW_EDGE.DisplayName	레거시 표시 · 에지	Legacy draw · Edge
 PropertyGrid.Property.SHOW_EDGE.Description	레거시 비트맵 Draw 경로용 읽기 전용 값입니다. 현재 WPF 미리보기와 Pipeline Review는 엣지 증거를 유지합니다.	Read-only value for the legacy bitmap Draw path. Current WPF Preview and Pipeline Review retain edge evidence.
 PropertyGrid.Property.SHOW_CONTOUR.DisplayName	레거시 표시 · 연결선	Legacy draw · Contour
 PropertyGrid.Property.SHOW_CONTOUR.Description	레거시 비트맵 Draw 경로용 읽기 전용 값입니다. 현재 WPF/Pipeline 오버레이 경로는 이 값을 사용하지 않습니다.	Read-only value for the legacy bitmap Draw path. The current WPF/Pipeline overlay path does not consume it.
@@ -1921,9 +1925,11 @@ PropertyGrid.Type.FeatureMatchingProperty.SCORE_MIN.DisplayName	Ratio 기준	Rat
 PropertyGrid.Type.FeatureMatchingProperty.SCORE_MIN.Description	서로 구별되는 descriptor 매칭을 남기는 Lowe Ratio 기준입니다. 값이 작을수록 엄격하고, 클수록 더 많은 후보를 남깁니다.	Lowe ratio threshold used to keep distinctive descriptor matches. Smaller values are stricter; larger values keep more candidates.
 PropertyGrid.Type.FeatureMatchingProperty.RANSAC_REPROJ_THRESHOLD.DisplayName	RANSAC 허용 오차	RANSAC tolerance
 PropertyGrid.Type.FeatureMatchingProperty.RANSAC_REPROJ_THRESHOLD.Description	특징점 매칭 후 기하 변환을 검증할 때 사용하는 재투영 허용 오차(pixel)입니다. 값이 크면 더 많은 변형을 허용합니다.	Reprojection tolerance in pixels used to validate the geometric transform after feature matching. Higher values allow more variation.
-PropertyGrid.Property.AUTO_PREVIEW.DisplayName	자동 미리보기	Auto preview
+PropertyGrid.Property.AUTO_PREVIEW.DisplayName	값 변경 시 자동 실행	Auto-run on change
 PropertyGrid.Property.AUTO_PREVIEW.Description	파라미터를 바꿀 때마다 자동으로 미리보기를 실행할지 결정합니다. 각도 탐색처럼 오래 걸릴 수 있는 조건에서는 끄고 수동으로 미리보기를 실행하는 것이 안전합니다.	Runs preview automatically after parameter changes. Keep it off for potentially slow searches such as angle search, then run Preview manually.
-VisionTool.ParameterGuide.Header	파라미터 가이드	Parameter Guide
+VisionTool.Kernel.Width	너비	Width
+VisionTool.Kernel.Height	높이	Height
+VisionTool.ParameterGuide.Header	파라미터 안내	Parameter guide
 VisionTool.ParameterGuide.PromptTitle	파라미터를 선택하세요	Select a parameter
 VisionTool.ParameterGuide.PromptDetail	PropertyGrid의 항목을 클릭하거나 키보드로 이동하면 의미와 검출 영향을 여기에서 확인할 수 있습니다.	Click a PropertyGrid row or move to it with the keyboard to see its meaning and detection impact here.
 VisionTool.ParameterGuide.PromptCheck	값을 변경한 뒤에는 미리보기를 직접 실행하고 결과 드로잉과 지표를 비교하세요.	After changing a value, run Preview explicitly and compare the result drawing and metrics.
@@ -2329,18 +2335,18 @@ VisionTool.ParameterGuide.Affine.MinimumValidPixelRatio.Check	AffineValidPixelRa
 PropertyGrid.Type.BlobProperty.MAX_AREA.DisplayName	최대 면적	Maximum area
 PropertyGrid.Type.BlobProperty.MAX_WIDTH.DisplayName	최대 바운딩 폭	Maximum bounding width
 PropertyGrid.Type.BlobProperty.MAX_HEIGHT.DisplayName	최대 바운딩 높이	Maximum bounding height
-PropertyGrid.Type.ContourProperty.USE_APPROXPOLYDP.DisplayName	다각형 추가 근사	Additional polygon approximation
+PropertyGrid.Type.ContourProperty.USE_APPROXPOLYDP.DisplayName	다각형 추가 근사	Approximate polygon
 PropertyGrid.Type.ContourProperty.DrawMode.DisplayName	표시 방식	Drawing mode
-PropertyGrid.Type.ContourProperty.ApproximationModes.DisplayName	윤곽점 근사 방식	Contour approximation mode
+PropertyGrid.Type.ContourProperty.ApproximationModes.DisplayName	윤곽점 근사 방식	Approximation mode
 PropertyGrid.Type.ContourProperty.DetectMode.DisplayName	윤곽 검색 방식	Contour retrieval mode
-PropertyGrid.Type.ContourProperty.EPSILON.DisplayName	근사 허용 오차	Approximation epsilon
+PropertyGrid.Type.ContourProperty.EPSILON.DisplayName	근사 허용 오차	Approx epsilon
 PropertyGrid.Type.ContourProperty.MAX_AREA.DisplayName	최대 면적	Maximum area
 PropertyGrid.Type.ContourProperty.MAX_WIDTH.DisplayName	최대 바운딩 폭	Maximum bounding width
 PropertyGrid.Type.ContourProperty.MAX_HEIGHT.DisplayName	최대 바운딩 높이	Maximum bounding height
 PropertyGrid.Type.ContourProperty.DrawColor.DisplayName	표시 색상	Drawing color
 PropertyGrid.Type.ContourProperty.DrawThickness.DisplayName	표시 두께	Drawing thickness
 PropertyGrid.Type.ThresholdToolProperty.Mode.DisplayName	Threshold 모드	Threshold mode
-PropertyGrid.Type.ThresholdToolProperty.Threshold.DisplayName	기준 밝기	Threshold value
+PropertyGrid.Type.ThresholdToolProperty.Threshold.DisplayName	임계값	Threshold
 PropertyGrid.Type.ThresholdToolProperty.MaxValue.DisplayName	출력 최대값	Output maximum
 PropertyGrid.Type.ThresholdToolProperty.ThresholdType.DisplayName	일반 결과 극성	Basic result polarity
 PropertyGrid.Type.ThresholdToolProperty.RangeMin.DisplayName	범위 하한	Range minimum
@@ -2348,8 +2354,8 @@ PropertyGrid.Type.ThresholdToolProperty.RangeMax.DisplayName	범위 상한	Range
 PropertyGrid.Type.ThresholdToolProperty.Invert.DisplayName	범위 반전	Range invert
 PropertyGrid.Type.ThresholdToolProperty.AdaptiveType.DisplayName	Adaptive 계산 방식	Adaptive method
 PropertyGrid.Type.ThresholdToolProperty.AdaptiveThresholdType.DisplayName	Adaptive 결과 극성	Adaptive result polarity
-PropertyGrid.Type.ThresholdToolProperty.BlockSize.DisplayName	로컬 블록 크기	Local block size
-PropertyGrid.Type.ThresholdToolProperty.Weight.DisplayName	로컬 보정값	Local correction
+PropertyGrid.Type.ThresholdToolProperty.BlockSize.DisplayName	블록 크기	Block size
+PropertyGrid.Type.ThresholdToolProperty.Weight.DisplayName	보정값 (C)	Correction (C)
 PropertyGrid.Type.MorphologyToolProperty.Operator.DisplayName	모폴로지 연산	Morphology operation
 PropertyGrid.Type.MorphologyToolProperty.Shape.DisplayName	커널 형상	Kernel shape
 PropertyGrid.Type.MorphologyToolProperty.KernelWidth.DisplayName	커널 폭	Kernel width
@@ -2598,3 +2604,665 @@ VisionTool.ParameterGuide.FeatureMatching.Ransac.BestWhen	영상 해상도와 �
 VisionTool.ParameterGuide.FeatureMatching.Ransac.Risk	너무 큰 값은 잘못된 대응을 inlier로 세어 ScoreMax를 부풀리고, 너무 작은 값은 정상 블러·스케일·특징 위치 오차에도 검출 실패를 만듭니다.	Too large counts wrong correspondences as inliers and inflates ScoreMax; too small causes failures from normal blur, scale, or feature-location error.
 VisionTool.ParameterGuide.FeatureMatching.Ransac.Check	Preview의 변환 사각형·중심·크기·각도와 ScoreMax를 함께 보고 Good/Bad·N장 샘플에서 틀린 위치가 높은 점수로 통과하지 않는지 확인하세요.	Inspect transformed quadrilateral, center, size, angle, and ScoreMax together, and verify on Good/Bad and N-samples that wrong locations do not pass with high scores.
 VisionTool.ParameterGuide.InactiveValueFormat	현재 비활성: {0} 값이 {1}일 때 사용됩니다.	Currently inactive: used when {0} is {1}.
+PropertyGrid.Property.USE_MASKING.DisplayName	마스킹 사용	Use masking
+PropertyGrid.Property.USE_COARSE_TO_FINE_ANGLE_SEARCH.DisplayName	단계적 각도 탐색	Coarse angle search
+PropertyGrid.Property.COARSE_ANGLE_STEP.DisplayName	1차 각도 간격	Coarse angle step
+PropertyGrid.Property.COARSE_ANGLE_TOP_K.DisplayName	1차 후보 각도 수	Coarse candidates
+PropertyGrid.Property.USE_FIND_SCALE.DisplayName	배율 탐색 사용	Use scale search
+PropertyGrid.Property.FIND_SCALE_MIN.DisplayName	최소 배율	Minimum scale
+PropertyGrid.Property.FIND_SCALE_MAX.DisplayName	최대 배율	Maximum scale
+PropertyGrid.Property.FIND_SCALE_STEP.DisplayName	배율 간격	Scale step
+PropertyGrid.Property.USE_PYRAMID_POSITION_PROPOSAL.DisplayName	피라미드 위치 후보 사용	Pyramid proposals
+PropertyGrid.Property.PYRAMID_POSITION_TOP_N.DisplayName	위치 후보 수	Position candidates
+PropertyGrid.Property.PYRAMID_POSITION_MIN_SCORE.DisplayName	위치 후보 최소 점수	Min candidate score
+PropertyGrid.Property.CANNY_APERTURE_SIZE.DisplayName	Canny 커널 크기	Canny kernel size
+PropertyGrid.Property.USE_L2_GRADIENT.DisplayName	L2 기울기 사용	Use L2 gradient
+PropertyGrid.Property.ALLOW_GLOBAL_POLARITY_REVERSAL.DisplayName	전체 극성 반전 허용	Global polarity reversal
+PropertyGrid.Property.CONTOUR_RETRIEVAL_MODE.DisplayName	윤곽 검색 방식	Contour retrieval mode
+PropertyGrid.Property.CONTOUR_APPROXIMATION_MODE.DisplayName	윤곽점 근사 방식	Contour approx. mode
+PropertyGrid.Property.MAX_TEMPLATE_POINTS.DisplayName	최대 모델 점 수	Maximum model points
+PropertyGrid.Property.MIN_GRADIENT_MAGNITUDE.DisplayName	최소 기울기 크기	Min gradient strength
+PropertyGrid.Property.SEARCH_STEP.DisplayName	탐색 간격 (px)	Search step (px)
+PropertyGrid.Property.USE_POSITION_REFINE.DisplayName	위치 정밀 보정	Refine position
+PropertyGrid.Property.USE_SUBPIXEL_REFINE.DisplayName	서브픽셀 보정	Subpixel refinement
+PropertyGrid.Property.GREEDINESS.DisplayName	Greediness (탐색 생략 강도)	Greediness
+PropertyGrid.Property.USE_HYBRID_VERIFY.DisplayName	하이브리드 검증	Hybrid verification
+PropertyGrid.Property.HYBRID_VERIFY_TOP_N.DisplayName	하이브리드 검증 후보 수	Hybrid candidates
+PropertyGrid.Property.HYBRID_VERIFY_IMAGE_WEIGHT.DisplayName	영상 유사도 가중치	Similarity weight
+PropertyGrid.Type.EdgeBasedMatchingProperty.CANNY_LOW.DisplayName	Canny 범위	Canny range
+PropertyGrid.Category.Scale	배율	Scale
+PropertyGrid.Category.Search	탐색	Search
+PropertyGrid.Category.Edge_Model	에지 모델	Edge Model
+PropertyGrid.Category.Angle	각도	Angle
+Workbench.Menu.File	파일	File
+Workbench.Menu.Edit	편집	Edit
+Workbench.Menu.View	보기	View
+Workbench.Menu.Run	실행	Run
+Workbench.Menu.Tools	도구	Tools
+Workbench.Menu.Help	도움말	Help
+Workbench.Menu.NewRecipe	새 레시피…	New recipe…
+Workbench.Menu.RecipeManager	레시피 관리…	Recipe manager…
+Workbench.Menu.SaveRecipe	레시피 저장	Save recipe
+Workbench.Menu.SaveAs	다른 이름으로 저장…	Save as…
+Workbench.Menu.OpenImage	이미지 열기…	Open images…
+Workbench.Menu.OpenFolder	이미지 폴더 열기…	Open image folder…
+Workbench.Menu.SaveImage	현재 창 이미지 저장…	Save current image…
+Workbench.Menu.ImportXml	파이프라인 XML 가져오기…	Import pipeline XML…
+Workbench.Menu.ExportXml	파이프라인 XML 내보내기…	Export pipeline XML…
+Workbench.Menu.Undo	실행 취소	Undo
+Workbench.Menu.Redo	다시 실행	Redo
+Workbench.Menu.RenameStep	이름 바꾸기	Rename
+Workbench.Menu.DuplicateStep	복제	Duplicate
+Workbench.Menu.ToggleStep	사용/사용 안 함	Enable/Disable
+Workbench.Menu.MoveUp	위로 이동	Move up
+Workbench.Menu.MoveDown	아래로 이동	Move down
+Workbench.Menu.DeleteStep	삭제	Delete
+Workbench.Menu.PipelinePanel	파이프라인 패널	Pipeline panel
+Workbench.Menu.ToolPanel	툴 패널	Tool panel
+Workbench.Menu.BottomPanel	하단 패널	Bottom panel
+Workbench.Menu.ToolPanelWide	툴 패널 넓게	Wide tool panel
+Workbench.Menu.Dark	어두운 테마	Dark theme
+Workbench.Menu.Light	밝은 테마	Light theme
+Workbench.Menu.ResetLayout	화면 배치 초기화	Reset layout
+Workbench.Menu.RunHistory	실행 이력…	Run history…
+Workbench.Menu.LayerManager	레이어 관리…	Layer manager…
+Workbench.Menu.Compare	이미지 비교 도구	Image comparison tool
+Workbench.Menu.Tcp	TCP 연동 설정…	TCP integration settings…
+Workbench.Menu.Guide	사용 설명서	User manual
+Workbench.Menu.Learn	학습	Learn
+Workbench.Menu.Shortcuts	단축키	Keyboard shortcuts
+Workbench.Shortcuts.RunToolOrStep	툴 실행 / 선택 단계만 실행	Run tool / selected step
+Workbench.Shortcuts.Stop	중지 (현재 이미지 처리 후)	Stop after the current image
+Workbench.Shortcuts.SelectImages	이미지 전체 선택 (이미지 탭)	Select all images (Images tab)
+Workbench.Shortcuts.AddTool	새 툴을 파이프라인에 추가	Add the new tool to the pipeline
+Workbench.Shortcuts.PreviousNext	이전 / 다음 이미지	Previous / next image
+Workbench.Shortcuts.Split	화면 분할 (뷰어에 초점)	Viewer layout (viewer focused)
+Workbench.Shortcuts.Rename	단계 이름 바꾸기	Rename the selected step
+Workbench.Shortcuts.Duplicate	선택 단계 복제	Duplicate the selected step
+Workbench.Shortcuts.Enable	선택 단계 사용 / 사용 안 함	Enable / disable the selected step
+Workbench.Shortcuts.Delete	선택 단계 삭제	Delete the selected step
+Workbench.Shortcuts.Move	단계 순서 이동	Move the selected step
+Workbench.Shortcuts.UndoRedo	실행 취소 / 다시 실행	Undo / redo
+Workbench.Shortcuts.Escape	ROI 편집 취소 · 메뉴/대화상자 닫기 · 툴 패널 선택 해제	Cancel ROI editing · close menus/dialogs · clear tool selection
+Workbench.Shortcuts.Panels	파이프라인 / 툴 / 하단 패널 접기·펼치기	Toggle pipeline / tool / bottom panels
+Workbench.Shortcuts.Show	단축키 보기	Show keyboard shortcuts
+Workbench.Product.Identity	규칙식 비전 레시피 작업대	Rule-based vision recipe workbench
+Workbench.Menu.About	OpenVisionLab 정보	About OpenVisionLab
+Workbench.Recipe.Label	레시피	Recipe
+Workbench.Command.Image	이미지	Images
+Workbench.Command.RunPipeline	파이프라인 실행	Run pipeline
+Workbench.Command.RunToStep	이 단계까지	Run to here
+Workbench.Command.Batch	일괄 검사	Batch inspection
+Workbench.Menu.Stop	중지	Stop
+Workbench.Command.StopTooltip	중지 (Shift+F5) — 현재 이미지 처리 후 멈춤	Stop (Shift+F5) — after the current image
+Workbench.Images.AddFile	이미지 파일…	Image files…
+Workbench.Images.AddFolder	폴더…	Folder…
+Workbench.Images.AddSamples	예제 이미지…	Sample images…
+Workbench.Images.AddGoodFile	양품 이미지…	Good images…
+Workbench.Images.AddBadFile	불량 이미지…	Bad images…
+Workbench.Pipeline.Title	파이프라인	Pipeline
+Workbench.Tools.Title	툴 목록	Tools
+Workbench.Tools.Search	툴 검색 (예: 이진화, blob, 개수)	Search tools (e.g. threshold, blob, count)
+Workbench.Tools.NoMatch	검색 결과 없음	No results
+Workbench.Tools.GroupPre	전처리	Preprocess
+Workbench.Tools.GroupLocate	위치·정렬	Locate & align
+Workbench.Tools.GroupInspect	검사·측정	Inspect & measure
+Workbench.Tools.NeedTemplate	템플릿 필요	Template needed
+Workbench.Tools.TwoInputs	입력 2개	Two inputs
+Workbench.Tools.NotAddable	추가 불가	Cannot add
+Workbench.Empty.NoStep	선택한 단계 없음	No step selected
+Workbench.Viewer.Fit	맞춤	Fit
+Workbench.Viewer.OriginalSize	원본 크기	Original size
+Workbench.Viewer.CurrentZoom	현재 배율	Current zoom
+Workbench.Viewer.Single	1화면	Single
+Workbench.Viewer.Split2	2분할	2-up
+Workbench.Viewer.Split4	4분할	4-up
+Workbench.Viewer.Sync	확대·이동 동기화	Sync zoom & pan
+Workbench.Tool.Unavailable	(사용할 수 없음)	(unavailable)
+Workbench.Tool.PanelTitle	툴 패널	Tool panel
+Workbench.Tool.Empty	단계를 선택하거나 툴을 추가하세요	Select a step or add a tool
+Workbench.Bottom.Images	이미지	Images
+Workbench.Bottom.Results	결과	Results
+Workbench.Bottom.Log	로그	Log
+Workbench.Bottom.Collapse	하단 패널 접기	Collapse bottom panel
+Workbench.Bottom.Expand	하단 패널 펼치기	Expand bottom panel
+Workbench.Viewer.NoImage	이미지 없음	No image
+Workbench.Viewer.EmptyDetail	이미지 파일을 여세요.	Open an image file.
+Workbench.Viewer.OpenImage	이미지 열기	Open image
+Workbench.Viewer.OpenFolder	폴더 열기	Open folder
+Workbench.Viewer.OpenSamples	예제 이미지	Sample images
+Workbench.Results.None	결과 없음	No results
+Workbench.StatusBar.Ready	준비	Ready
+Workbench.Action.ImageOpened	이미지를 열었습니다.	Image opened.
+Workbench.Action.ImageCleared	이미지를 닫았습니다.	Image cleared.
+Workbench.Action.RunStarted	실행 중…	Running…
+Workbench.Action.RunCompletedFormat	실행 완료 · {0} · {1}	Run completed · {0} · {1}
+Workbench.Action.RunEnded	실행이 종료되었습니다.	Run ended.
+Workbench.Action.RunFailed	실행 중 오류가 발생했습니다.	The run failed.
+Workbench.Action.RunPrevious	실행 결과가 이전 상태입니다.	The run result is previous.
+Workbench.StatusBar.Log	로그	Log
+Workbench.Command.RunPipelineCurrent	파이프라인 실행 (현재 이미지)	Run pipeline (current image)
+Workbench.Command.RunStepOnly	선택 단계만 실행	Run selected step
+Workbench.Command.BatchAll	일괄 검사 (전체 이미지)	Batch (all images)
+Workbench.Command.BatchSelected	일괄 검사 (선택 이미지)	Batch (selected images)
+Workbench.ValidationSet.SaveTitle	검증 세트로 저장	Save as validation set
+Workbench.ValidationSet.LoadTitle	검증 세트 불러오기	Load validation set
+Workbench.Llm.Title	LLM 보조 · XML 초안	LLM assist · XML draft
+Workbench.Llm.ToolPalette	LLM 보조 (XML 초안)	LLM assist (XML draft)
+Workbench.Pane.Layer	레이어	Layer
+Workbench.Pane.Input	입력 이미지	Input image
+Workbench.Pane.Output	출력 이미지	Output image
+Workbench.Pane.Final	판정 오버레이	Final verdict overlay
+Workbench.Pane.FinalName	원본 + 판정	Original + verdict
+Workbench.Pane.NoSelection	선택 없음	No selection
+Workbench.Pane.Judgement	판정	Verdict
+Workbench.Pane.Snapshot	스냅샷	Snapshot
+Workbench.Pane.InputKind	입력	Input
+Workbench.Pane.OutputKind	출력	Output
+Workbench.Pane.NoStep	선택한 단계 없음	No step selected
+Workbench.Pane.SelectStep	파이프라인에서 단계를 선택하세요.	Select a step in the pipeline.
+Workbench.Pane.SelectImage	다른 이미지를 선택하세요.	Select another image.
+Workbench.Pane.NotMade	‘{0}’ 생성 전	‘{0}’ has not been produced.
+Workbench.Pane.Pin	이 이미지로 고정 / 고정 해제	Pin / unpin this image
+Workbench.Pane.Menu	창 메뉴	Pane menu
+Workbench.Pane.Save	이미지 저장…	Save image…
+Workbench.Pane.Open	새 창으로 보기	Open in new window
+Workbench.Pane.ClearSnapshots	스냅샷 모두 지우기	Clear all snapshots
+Workbench.Pane.SaveFailed	이미지를 저장하지 못했습니다. 경로를 확인하고 다시 시도하세요.	Could not save the image. Check the path and try again.
+Workbench.Pipeline.AddTool	툴 추가	Add tool
+Workbench.Pipeline.Input	입력: 원본	Input: original
+Workbench.Pipeline.StepCountFormat	{0}단계	{0} steps
+Workbench.Pipeline.JudgedCountFormat	판정 {0}	{0} judged
+Workbench.Pipeline.Default	기본	Default
+Workbench.Pipeline.Empty	단계 없음	No steps
+Workbench.Pipeline.EmptyDetail	툴 목록에서 툴을 선택하세요.	Pick a tool from the list.
+Workbench.Pipeline.New	새 파이프라인…	New pipeline…
+Workbench.Pipeline.Duplicate	파이프라인 복제	Duplicate pipeline
+Workbench.Pipeline.Rename	이름 바꾸기…	Rename…
+Workbench.Pipeline.Delete	파이프라인 삭제…	Delete pipeline…
+Workbench.Pipeline.BranchTooltipFormat	앞 단계 출력이 아닌 ‘{0}’를 입력으로 사용(분기)	Uses ‘{0}’ instead of the previous output (branch)
+Workbench.Step.DeleteConfirmFormat	‘{0}’ 단계를 삭제할까요?	Delete step ‘{0}’?
+Workbench.Step.DeleteDetail	이 단계의 출력을 쓰는 뒤 단계는 오류가 됩니다. (Ctrl+Z: 되돌리기)	Later steps that use this output will fail. (Ctrl+Z: undo)
+Workbench.Validate.InputMissingFormat	입력 이미지 ‘{0}’를 만드는 앞 단계가 없습니다.	No earlier step creates input ‘{0}’.
+Workbench.Validate.InputBMissing	입력 B를 만드는 앞 단계가 없습니다.	No earlier step creates input B.
+Workbench.Validate.OutputInvalid	출력 이름이 없거나 원본(Main)입니다.	The output name is empty or Main.
+Workbench.Validate.OutputDuplicateFormat	출력 이름 ‘{0}’이 앞 단계와 겹칩니다.	Output name ‘{0}’ is used by an earlier step.
+Workbench.Validate.ToolNotInPipeline	파이프라인에서 쓸 수 없는 툴입니다.	This tool cannot run in a pipeline.
+Workbench.Verdict.Title	최종 판정	Final verdict
+Workbench.Verdict.NoImage	이미지 없음	No image
+Workbench.Verdict.NotRun	실행 전 (F5)	Not run (F5)
+Workbench.Verdict.OkFormat	판정 단계 {0}/{1} OK	{0}/{1} judged steps OK
+Workbench.Verdict.NgFormat	NG 단계 {0} {1}	NG at step {0} {1}
+Workbench.Verdict.ErrorFormat	오류 단계 {0} {1}	Error at step {0} {1}
+Workbench.Verdict.NotRunAfterFormat	이후 {0}단계 미실행	{0} later steps not run
+Workbench.Verdict.Previous	이전 결과	Previous result
+Workbench.Status.Ok	OK	OK
+Workbench.Status.Ng	NG	NG
+Workbench.Status.Done	완료	Done
+Workbench.Status.Error	오류	Error
+Workbench.Status.NotRun	미실행	Not run
+Workbench.Status.Disabled	사용 안 함	Disabled
+Workbench.Status.Previous	이전 결과	Previous
+Workbench.Status.Running	실행 중	Running
+Workbench.Status.Cancelled	취소	Cancelled
+Workbench.Status.NoVerdict	판정 없음	No verdict
+Workbench.Pane.Original	원본	Original
+Workbench.Save.Failed	레시피를 저장하지 못했습니다.	Could not save the recipe.
+Workbench.Pending.Title	저장 확인	Save changes
+Workbench.Pending.BodyFormat	‘{0}’ 레시피의 변경 내용을 저장하시겠습니까?	Save changes to recipe ‘{0}’?
+Workbench.Pending.CountFormat	변경 {0}건	{0} changes
+Workbench.Pending.Cancel	취소	Cancel
+Workbench.Pending.DontSave	저장 안 함	Don't save
+Workbench.Pending.Save	저장	Save
+Workbench.Metric.ResultCount	검출 개수	Detection count
+Workbench.Metric.AreaMax	최대 면적	Maximum area
+Workbench.Metric.AreaMin	최소 면적	Minimum area
+Workbench.Metric.AreaAvg	평균 면적	Average area
+Workbench.Metric.BoundsWidthMax	최대 폭	Maximum width
+Workbench.Metric.BoundsHeightMax	최대 높이	Maximum height
+Workbench.Metric.ScoreMax	최고 점수	Best score
+Workbench.Metric.EdgeCount	에지 점 수	Edge point count
+Workbench.Metric.LineLengthMax	직선 길이	Line length
+Workbench.Metric.LineAngleAvg	직선 각도	Line angle
+Workbench.Metric.DistancePxAvg	평균 거리	Average distance
+Workbench.Metric.DistanceMmAvg	평균 거리	Average distance
+Workbench.Metric.DistanceMmRange	거리 편차	Distance range
+Workbench.Metric.DistanceCount	측정 수	Measurement count
+Workbench.Metric.IntersectionX	교차점 X	Intersection X
+Workbench.Metric.IntersectionY	교차점 Y	Intersection Y
+Workbench.Metric.MeanValueAvg	평균 밝기	Mean brightness
+Workbench.Metric.MeanStdDev	밝기 표준편차	Brightness standard deviation
+Workbench.Metric.ForegroundRatio	흰 픽셀 비율	White pixel ratio
+Workbench.Metric.MaskPixelRatio	마스크 비율	Mask ratio
+Workbench.Metric.MaskPixelCount	마스크 픽셀	Mask pixels
+Workbench.Acc.MinimumFormat	{0} 이상	{0} or more
+Workbench.Acc.MaximumFormat	{0} 이하	{0} or less
+Workbench.Unit.CountFormat	{0}개	{0} items
+Workbench.Acc.Target	기준	Limit
+Workbench.Acc.Lower	하한	Lower
+Workbench.Acc.Upper	상한	Upper
+Workbench.Acc.Title	판정 조건	Acceptance
+Workbench.Acc.Metric	판정 항목	Metric
+Workbench.Acc.Limits	허용 범위	Limits
+Workbench.Acc.TimeLimit	처리 시간	Time limit
+Workbench.Acc.TimeUnit	ms 이하	ms or less
+Workbench.Unit.Count	개	items
+Workbench.Acc.BelowFormat	{0} · {1} {2} 미달	{0} · below {1} {2}
+Workbench.Acc.AboveFormat	{0} · {1} {2} 초과	{0} · above {1} {2}
+Workbench.Acc.TimeOverFormat	처리 시간 {0} · 제한 {1} ms 초과	Time {0} · over {1} ms
+Workbench.Metric.ResultImageWidth	결과 폭	Result width
+Workbench.Tool.Template	템플릿	Template
+Workbench.Tool.TemplateDraw	영상에서 등록	Draw on image
+Workbench.Tool.TemplateRedraw	다시 등록	Redraw
+Workbench.Tool.TemplateFile	파일…	File…
+Workbench.Tool.AutoMPoint	최적 패턴 추천	Suggest pattern
+Workbench.Tool.TemplateMissing	템플릿 없음	No template
+Workbench.Validate.Detail.01NoEnabled	사용 중인 단계가 없습니다.	Pipeline has no enabled steps.
+Workbench.Validate.Detail.02Empty	파이프라인에 단계가 없습니다.	Pipeline has no steps.
+Workbench.Validate.Detail.03Null	파이프라인이 없습니다.	Pipeline is null.
+Workbench.Validate.Detail.04NullStep	단계가 없습니다.	step is null.
+Workbench.Validate.Detail.05Name	단계 이름이 없습니다.	Name is required.
+Workbench.Validate.Detail.06Time	처리 시간 상한은 0 이상이어야 합니다.	MaxElapsedMilliseconds cannot be negative.
+Workbench.Validate.Detail.07AcceptanceRange	판정 하한이 상한보다 큽니다.	acceptance metric minimum is greater than maximum.
+Workbench.Validate.Detail.08RoiRequired	USE_ROI=true이면 {0}가 필요합니다.	{0} is required when USE_ROI=true.
+Workbench.Validate.Detail.09RoiCount	{0}에 ROI가 하나 이상 필요합니다.	{0} must contain at least one ROI.
+Workbench.Validate.Detail.10RoiFormat	{0} 형식: x,y,width,height(정수).	{0} must be four comma-separated integers (x,y,width,height).
+Workbench.Validate.Detail.11RoiSize	{0}의 폭과 높이는 0보다 커야 합니다.	{0} width and height must be greater than zero.
+Workbench.Validate.Detail.12RoiOrigin	{0}의 x와 y는 0 이상이어야 합니다.	{0} x and y must be non-negative.
+Workbench.Validate.Detail.13SourceTriangle	원본 삼각형 면적 {0} · 기준 {1} 미달	source point triangle area {0} is below MinimumSourceTriangleArea {1}.
+Workbench.Validate.Detail.14DestinationTriangle	출력 삼각형 면적 {0} · 기준 {1} 미달	destination point triangle area {0} is below MinimumDestinationTriangleArea {1}.
+Workbench.Validate.Detail.15InstanceLimits	MIN_INSTANCES ≤ MAX_INSTANCES ≤ 64이어야 합니다.	instance limits must satisfy MIN_INSTANCES <= MAX_INSTANCES <= 64.
+Workbench.Validate.Detail.16PassCount	MIN_PASS_COUNT는 MAX_INSTANCES 이하여야 합니다.	MIN_PASS_COUNT cannot exceed MAX_INSTANCES.
+Workbench.Validate.Detail.17MultiMatchGate	MultiMatchMean은 InstanceAggregatePassed의 판정 범위가 1~1이어야 합니다.	MultiMatchMean requires acceptance metric InstanceAggregatePassed with exact range 1..1.
+Workbench.Validate.Detail.18CircleRoi	CircleGauge에는 USE_ROI=true와 확인한 CvROI 하나가 필요합니다.	CircleGauge requires USE_ROI=true and one reviewed CvROI.
+Workbench.Validate.Detail.19CircleEmpty	CircleGauge에는 비어 있지 않은 CvROI가 필요합니다.	CircleGauge requires a non-empty CvROI.
+Workbench.Validate.Detail.20Mode	MeasurementMode 값: {0}.	MeasurementMode must be one of {0}.
+Workbench.Validate.Detail.21DistinctDatum	기준 A와 B는 서로 다른 Segment 결과를 참조해야 합니다.	datum A and datum B must reference distinct Segment results.
+Workbench.Validate.Detail.22LineSource	LineFixture의 입력 단계 ‘{0}’는 Line 또는 LineGauge여야 합니다.	LineFixture source '{0}' must use Line or LineGauge.
+Workbench.Validate.Detail.23MultiEarlier	다중 매칭 입력 단계 ‘{0}’가 앞의 사용 단계에 없습니다.	multi-match source '{0}' must be an earlier enabled Step.
+Workbench.Validate.Detail.24MultiAmbiguous	다중 매칭 입력 단계 ‘{0}’가 중복됩니다.	multi-match source '{0}' is ambiguous.
+Workbench.Validate.Detail.25MatchingSource	입력 단계 ‘{0}’는 패턴 매칭 또는 형상 매칭이어야 합니다.	source '{0}' must use Matching or EdgeBasedMatching.
+Workbench.Validate.Detail.26SameCoordinate	입력 단계 ‘{0}’의 좌표계는 ‘{1}’이어야 합니다.	source '{0}' must use the same input coordinate layer '{1}'.
+Workbench.Validate.Detail.27Matches	입력 단계 ‘{0}’는 NUM_MATCH ≥ 2이어야 합니다.	source '{0}' must request NUM_MATCH >= 2.
+Workbench.Validate.Detail.28TwoRequired	{0}와 {1}가 필요합니다.	{0} and {1} are required.
+Workbench.Validate.Detail.29GeometryEarlier	측정 입력 단계 ‘{0}’가 앞의 사용 단계에 없습니다.	geometry source '{0}' must be an earlier enabled Step.
+Workbench.Validate.Detail.30GeometryAmbiguous	측정 입력 단계 ‘{0}’가 앞의 {1}개 단계에서 중복됩니다.	geometry source '{0}' is ambiguous ({1} earlier Steps).
+Workbench.Validate.Detail.31CoordinateMismatch	입력 ‘{0}’의 좌표계 ‘{1}’가 이 단계의 입력 ‘{2}’와 다릅니다.	source '{0}' uses coordinate layer '{1}', but the consumer input is '{2}'.
+Workbench.Validate.Detail.32FeatureOutput	입력 결과 ‘{0}/{1}’가 ‘{2}’의 지원 출력 형식이 아닙니다.	source feature '{0}/{1}' is not a supported typed output of '{2}'.
+Workbench.Validate.Detail.33FeatureKind	입력 {0}: {2}에는 {1}가 필요하지만 ‘{3}/{4}’는 {5}입니다.	source {0} requires {1} for {2}, but '{3}/{4}' is {5}.
+Workbench.Validate.Detail.34GapRoi	간격 에지 쌍에는 USE_ROI=true와 확인한 CvROI 하나가 필요합니다.	Gap edge-pair mode requires USE_ROI=true and one reviewed CvROI.
+Workbench.Validate.Detail.35Reference	ReferenceDifference에는 ReferencePath1이 필요합니다.	at least ReferencePath1 is required for ReferenceDifference.
+Workbench.Validate.Detail.36ArithmeticMode	ArithmeticMode 값: Operation 또는 Offset.	ArithmeticMode expects Operation or Offset.
+Workbench.Validate.Detail.37ArithmeticOperation	지원하지 않는 ArithmeticOperation: ‘{0}’.	unsupported ArithmeticOperation '{0}'.
+Workbench.Validate.Detail.38MergeLayer	병합 입력 이미지 ‘{0}’가 앞 단계에 없습니다.	OverlayMerge SourceLayer '{0}' does not exist before this step.
+Workbench.Validate.Detail.39MergeStep	병합 입력 단계 ‘{0}’가 앞 단계에 없습니다.	OverlayMerge SourceStep '{0}' does not exist before this step.
+Workbench.Validate.Detail.40Calibration	mm 판정에는 PIXELPERMM > 0이어야 합니다.	PIXELPERMM must be greater than 0 when an mm acceptance metric is used.
+Workbench.Validate.Detail.41UniqueCount	{0}에는 NUM_MATCH=1이어야 합니다.	{0} requires NUM_MATCH=1.
+Workbench.Validate.Detail.42UniqueRoi	{0}에는 USE_MULTI_ROI=false여야 합니다.	{0} requires USE_MULTI_ROI=false.
+Workbench.Validate.Detail.43FixtureType	{0}는 패턴 매칭 또는 LineFixture에서 지원합니다.	{0} supports Matching or LineFixture.
+Workbench.Validate.Detail.44FrameName	좌표 기준 생성 단계에는 {0}가 필요합니다.	{0} is required for a fixture producer.
+Workbench.Validate.Detail.45FrameDuplicate	좌표 기준 ‘{0}’가 앞 단계와 겹칩니다.	fixture frame '{0}' is already published by an earlier step.
+Workbench.Validate.Detail.46FixtureCount	좌표 기준 생성 단계에는 NUM_MATCH=1이어야 합니다.	fixture producers require NUM_MATCH=1.
+Workbench.Validate.Detail.47ReferenceSize	{0}와 {1}를 모두 지정하거나, 평행 이동 v1에서는 둘 다 비워야 합니다.	set both {0} and {1}, or leave both unset for translation-only v1.
+Workbench.Validate.Detail.48PublishConsume	한 단계에서 좌표 기준을 만들고 사용할 수 없습니다.	one step cannot publish and consume a fixture frame.
+Workbench.Validate.Detail.49FrameEarlier	좌표 기준 ‘{0}’를 만드는 앞의 사용 단계가 없습니다.	fixture frame '{0}' must be published by an earlier enabled fixture producer.
+Workbench.Validate.Detail.50NormalizeTool	{0}=NormalizeImage에는 회전·스케일이어야 합니다.	{0}=NormalizeImage requires RotateScale.
+Workbench.Validate.Detail.51NormalizeRoi	NormalizeImage는 원본 전체를 사용합니다. ROI와 마스크는 사용할 수 없습니다.	NormalizeImage works on the complete source image and does not accept ROI or masks.
+Workbench.Validate.Detail.52TaughtSize	NormalizeImage 실행 전 ‘{0}’ 단계에 기준 이미지의 폭과 높이가 필요합니다.	producer '{0}' requires taught reference image width and height before NormalizeImage can run.
+Workbench.Validate.Detail.53Ratio	{0}는 0보다 크고 1 이하여야 합니다.	{0} must be greater than zero and no more than one.
+Workbench.Validate.Detail.54OneRoi	{0}=true이면 사용 중인 CvROI가 하나 필요합니다.	one enabled CvROI is required when {0}=true.
+Workbench.Validate.Detail.55FixtureMultiRoi	평행 이동 좌표 기준 v1은 CvROI 하나를 지원합니다. 여러 ROI와 마스크는 변환하지 않습니다.	translation-only fixture v1 supports one CvROI and does not transform multi-ROI or masks.
+Workbench.Validate.Detail.56FixtureInput	입력 이미지 ‘{0}’는 좌표 기준의 원본 이미지 ‘{1}’와 같아야 합니다.	input layer '{0}' must match fixture source layer '{1}'.
+Workbench.Validate.Detail.57ScaleLimits	{0}와 {1}를 모두 지정하고 0 < 하한 ≤ 상한이어야 합니다.	set both {0} and {1} with 0 < minimum <= maximum.
+Workbench.Validate.Detail.58NumericRequired	{0} 숫자가 필요합니다.	numeric {0} is required.
+Workbench.Validate.Detail.59PointCount	검출점 아핀 변환에는 Point 결과 참조 세 개가 필요합니다.	detected-point Affine requires three source Point feature references.
+Workbench.Validate.Detail.60PointDistinct	검출점 아핀 변환의 Point 참조는 서로 달라야 합니다.	detected-point Affine source Point references must be distinct.
+Workbench.Validate.Detail.61PointReference	Point 참조 ‘{0}’ 형식: 단계 이름/결과 이름.	invalid Point feature reference '{0}'. Use StepName/FeatureName.
+Workbench.Validate.Detail.62PointEarlier	입력 단계 ‘{0}’가 앞의 사용 단계에 없습니다.	source Step '{0}' is not an earlier enabled Step.
+Workbench.Validate.Detail.63PointAmbiguous	입력 단계 ‘{0}’가 중복됩니다.	source Step '{0}' is ambiguous.
+Workbench.Validate.Detail.64PointDeclared	‘{0}’가 선언된 Point 결과가 아닙니다.	'{0}' is not a declared Point feature.
+Workbench.Validate.Detail.65AffineCoordinate	입력 ‘{0}’의 좌표계 ‘{1}’가 아핀 변환 입력 ‘{2}’와 다릅니다.	source '{0}' uses coordinate layer '{1}', but Affine input is '{2}'.
+Workbench.Validate.Detail.79GreaterZero	{0}는 0보다 커야 합니다.	{0} must be greater than zero.
+Workbench.Validate.Detail.80GreaterThan	{0}는 {1}보다 커야 합니다.	{0} must be greater than {1}.
+Workbench.Validate.Detail.81NonNegative	{0}는 0 이상이어야 합니다.	{0} cannot be negative.
+Workbench.Validate.Detail.82AtLeastZero	{0}는 0 이상이어야 합니다.	{0} must be zero or greater.
+Workbench.Validate.Detail.83LessEqual	{0}는 {1} 이하여야 합니다.	{0} must be {1} or less.
+Workbench.Validate.Detail.84Finite	{0}는 유한한 값이어야 합니다.	{0} must be finite.
+Workbench.Validate.Detail.85MinMax	{0}가 {1}보다 큽니다.	{0} is greater than {1}.
+Workbench.Validate.Detail.86Range	{0} 범위: {1}~{2}.	{0} expects a value between {1} and {2}.
+Workbench.Validate.Detail.87ZeroPair	{0}와 {1}가 모두 0일 수 없습니다.	{0} and {1} cannot both be 0.
+Workbench.Validate.Detail.88UnitInterval	{0} 범위: 0~1(백분율 아님).	{0} expects a 0..1 value, not a percentage.
+Workbench.Validate.Detail.89Boolean	‘{0}’ 값: True 또는 False.	'{0}' expects True or False.
+Workbench.Validate.Detail.90Integer	‘{0}’에 정수가 필요합니다.	'{0}' expects an integer value.
+Workbench.Validate.Detail.91Numeric	‘{0}’에 숫자가 필요합니다.	'{0}' expects a numeric value.
+Workbench.Validate.Detail.92Enum	‘{0}’ 값: {1}.	'{0}' expects one of {1}.
+Workbench.Validate.Detail.93SharedMode	‘{0}’ 값: PinArrayGap 또는 GeometryMeasure 모드.	'{0}' expects a PinArrayGap or GeometryMeasure mode.
+Workbench.Validate.Detail.99Required	{0}가 필요합니다.	{0} is required.
+Workbench.Tool.NewFormat	새 툴 · {0}	New tool · {0}
+Workbench.Tool.AddToPipeline	파이프라인에 추가	Add to pipeline
+Workbench.Tool.RunTool	툴 실행	Run tool
+Workbench.Tool.RunStep	단계 실행	Run step
+Workbench.Tool.BadgeTesting	테스트 중	Testing
+Workbench.Tool.BadgeChanged	변경됨	Changed
+Workbench.Tool.BadgeSaved	저장됨	Saved
+Workbench.Tool.Wide	넓게 보기	Wide
+Workbench.Tool.Float	분리 (별도 창)	Float
+Workbench.Tool.Dock	오른쪽에 도킹	Dock right
+Workbench.Tool.Menu	툴 메뉴	Tool menu
+Workbench.Tool.ParameterGuide	파라미터 안내	Parameter guide
+Workbench.Tool.LearnFormat	{0} 학습	Learn {0}
+Workbench.Tool.RestoreDefaults	기본값으로 되돌리기	Restore defaults
+Workbench.Tool.DuplicateStep	단계 복제	Duplicate step
+Workbench.Tool.SameToolNewTest	같은 툴로 새로 테스트	Test again with this tool
+Workbench.Tool.DeleteStep	단계 삭제	Delete step
+Workbench.Tool.Defaults	기본값	Defaults
+Workbench.Tool.Revert	되돌리기	Revert
+Workbench.Tool.RunTo	이 단계까지	Run to here
+Workbench.Step.Reverted	저장된 값으로 되돌렸습니다.	Reverted to saved values.
+Workbench.Tool.NTest	N장 테스트	Test on N images
+Workbench.Tool.AddAfter	선택 단계 뒤에 추가	Add after selected
+Workbench.Tool.AddBefore	선택 단계 앞에 추가	Add before selected
+Workbench.Tool.AddEnd	맨 끝에 추가	Add at end
+Workbench.Tool.AddTooltip	파이프라인에 추가 (Ctrl+Enter)	Add to pipeline (Ctrl+Enter)
+Workbench.Tool.NotAddableTooltip	파이프라인에 추가할 수 없는 툴입니다	This tool cannot be added to a pipeline
+Workbench.Tool.Input	입력	Input
+Workbench.Tool.Output	출력	Output
+Workbench.Tool.InputA	입력 A	Input A
+Workbench.Tool.InputB	입력 B	Input B
+Workbench.Result.NotRunTool	F8: 툴 실행	F8: run tool
+Workbench.Result.NotRunStep	F8: 단계 실행 · F5: 파이프라인 실행	F8: run step · F5: run pipeline
+Workbench.Result.Previous	설정이 바뀌었습니다. 다시 실행하세요.	Settings changed. Run again.
+Workbench.Result.AutoRun	값 변경 시 자동 실행	Run on change
+Workbench.Result.AutoRunTooltip	값을 바꾸면 이 툴만 다시 실행합니다. 뒤 단계는 ‘이전 결과’로 표시됩니다.	Reruns only this tool; later steps show ‘previous result’.
+Workbench.Tool.Presets	프리셋	Presets
+Workbench.Tool.PresetBasic	처음 설정	First setup
+Workbench.Tool.PresetFast	빠른 검사	Fast check
+Workbench.Tool.PresetPrecise	정밀 검사	Precise check
+Workbench.Tool.PresetAppliedFormat	프리셋 ‘{0}’ 적용	Preset ‘{0}’ applied
+Workbench.Tool.LinePurpose	측정 목적	Purpose
+Workbench.Tool.LineEdge	에지	Edge
+Workbench.Tool.LineMeasure	거리 측정	Distance
+Workbench.Tool.LineIntersection	교차점	Intersection
+Workbench.Tool.LineDrawRoiFormat	Line {0} ROI 그리기	Draw Line {0} ROI
+Workbench.Tool.LineNoteMeasure	Line A–B 거리 · 분해능(mm/px)을 넣으면 mm 표시	Line A–B distance · mm with resolution
+Workbench.Tool.LineNoteIntersection	Line A·B 교차점	Line A·B intersection
+Workbench.Tool.LineNoteEdge	에지 점 · 직선	Edge points · line
+Workbench.Tool.LineEditingFormat	편집: Line {0}	Editing: Line {0}
+PropertyGrid.Range.Lower	하한	Lower
+PropertyGrid.Range.Upper	상한	Upper
+Workbench.Viewer.Overlay	오버레이 표시	Show overlays
+Workbench.Viewer.Roi	ROI 표시	Show ROI
+
+Workbench.Images.Add	추가 ▾	Add ▾
+Workbench.Images.Label	양불	Label
+Workbench.Images.All	전체	All
+Workbench.Images.Before	검사 전	Not inspected
+Workbench.Images.Good	양품	Good
+Workbench.Images.Bad	불량	Bad
+Workbench.Images.SetGood	양품으로 지정	Mark as good
+Workbench.Images.SetBad	불량으로 지정	Mark as bad
+Workbench.Images.ClearLabel	양불 지우기	Clear label
+Workbench.Images.SelectAll	전체 선택 (Ctrl+A)	Select all (Ctrl+A)
+Workbench.Images.ClearSelection	선택 해제	Clear selection
+Workbench.Images.RemoveTip	목록에서 제거 (파일은 유지)	Remove from list (keep files)
+Workbench.Images.Thumbs	썸네일	Thumbnails
+Workbench.Images.List	목록	List
+Workbench.Images.Previous	이전 이미지 (PgUp)	Previous image (PgUp)
+Workbench.Images.Next	다음 이미지 (PgDn)	Next image (PgDn)
+Workbench.Images.AddGoodFolder	양품 폴더…	Good image folder…
+Workbench.Images.AddBadFolder	불량 폴더…	Bad image folder…
+Workbench.Images.NestedIgnored	하위 폴더 이미지 {0}장은 목록에 넣지 않았습니다.	{0} images in subfolders were excluded.
+Workbench.Images.FileName	파일명	File name
+Workbench.Images.Result	결과	Result
+Workbench.Images.Mismatch	불일치	Mismatch
+Workbench.Images.FailedStep	NG/오류 단계	NG/error step
+Workbench.Images.Judgment	판정 값	Judgment value
+Workbench.Images.Elapsed	처리 시간	Processing time
+Workbench.Images.ToolTest	툴 테스트	Tool test
+Workbench.Images.NoMatches	이 조건에 맞는 이미지가 없습니다.	No images match this filter.
+Workbench.Results.NewTool	새 툴	New tool
+Workbench.Results.Test	테스트	Test
+Workbench.Results.MinimumAreaFormat	하한 {0:N0}	min {0:N0}
+Workbench.Results.MaximumAreaFormat	상한 {0:N0}	max {0:N0}
+Workbench.Results.Final	최종	Final
+Workbench.Results.SelectStep	단계를 선택하세요.	Select a step.
+Workbench.Results.ObjectsFormat	객체 목록 · 검출 {0} · 제외 {1}	Objects · detected {0} · rejected {1}
+Workbench.Results.CandidatesFormat	검출 후보 · {0}개	Candidates · {0}
+Workbench.Results.Values	결과값	Result values
+Workbench.Results.NoCandidates	최소 점수 이상인 후보 없음	No candidates above the minimum score
+Workbench.Results.NoObjects	검출 없음	No detections
+Workbench.Results.Detected	검출	Detected
+Workbench.Results.Rejected	제외	Rejected
+Workbench.Results.ShowRejected	제외 후보도 표시	Show rejected candidates
+Workbench.Results.OutputStatisticsFormat	 · 평균 {0:N1} · 최소 {1:0.###} · 최대 {2:0.###} GV	 · mean {0:N1} · min {1:0.###} · max {2:0.###} GV
+Workbench.Results.AreaLimitsFormat	면적 (px²) · 하한 {0:N0} · 상한 {1:N0}	Area (px²) · min {0:N0} · max {1:N0}
+Workbench.Results.ByStep	단계별 결과	Step results
+Workbench.Results.Step	단계	Step
+Workbench.Results.Tool	툴	Tool
+Workbench.Results.Result	결과	Result
+Workbench.Results.Summary	판정 값 / 요약	Value / summary
+Workbench.Results.Time	시간	Time
+Workbench.Results.No	No	No
+Workbench.Results.State	판정	State
+Workbench.Results.Area	면적 (px²)	Area (px²)
+Workbench.Results.CenterX	중심 X	Center X
+Workbench.Results.CenterY	중심 Y	Center Y
+Workbench.Results.Width	폭	Width
+Workbench.Results.Height	높이	Height
+Workbench.Results.Reason	제외 사유	Reject reason
+Workbench.Results.Score	점수	Score
+Workbench.Results.Angle	각도	Angle
+Workbench.Results.Size	크기	Size
+Workbench.Results.Metric	측정값	Metric
+Workbench.Results.Value	값	Value
+Workbench.Results.Output	출력 이미지	Output image
+Workbench.Results.Metric.MeanValueMin	최소 밝기	Minimum brightness
+Workbench.Results.Metric.MeanValueMax	최대 밝기	Maximum brightness
+Workbench.Results.Metric.BoundsWidthMin	최소 폭	Minimum width
+Workbench.Results.Metric.BoundsWidthAvg	평균 폭	Average width
+Workbench.Results.Metric.BoundsHeightMin	최소 높이	Minimum height
+Workbench.Results.Metric.BoundsHeightAvg	평균 높이	Average height
+Workbench.Batch.LoadError	이미지를 불러올 수 없습니다: {0}	Could not load image: {0}
+Workbench.Batch.Progress	일괄 검사 중 {0}/{1} · {2}	Batch inspection {0}/{1} · {2}
+Workbench.Batch.Stopping	현재 이미지 처리 후 중지…	Stopping after the current image…
+Workbench.Batch.Summary	일괄 검사 · {0} · {1}장 · OK {2} · NG {3} · 오류 {4}	Batch inspection · {0} · {1} images · OK {2} · NG {3} · Errors {4}
+Workbench.Batch.Stopped	중지, 계획 {0}장	Stopped, {0} planned
+Workbench.Batch.LabelSummary	판정 일치 {0}/{1} ({4:0.0}%) · 과검 {2} · 미검 {3}	Label agreement {0}/{1} ({4:0.0}%) · Over-rejection {2} · Misses {3}
+Workbench.Batch.Times	처리 시간 평균 {0} · p95 {1} · 최대 {2}	Processing time average {0} · p95 {1} · Maximum {2}
+Workbench.Batch.Stale	설정 변경됨 · 재검사 필요	Settings changed · Run again
+Workbench.Batch.Unlabeled	양불 미지정	Labels unspecified
+Workbench.Batch.Over	과검	Over-rejection
+Workbench.Batch.Under	미검	Miss
+Workbench.Batch.All	일괄 검사 (전체 이미지)	Batch inspection (all images)
+Workbench.Batch.Selected	일괄 검사 (선택 이미지)	Batch inspection (selected images)
+Workbench.Recipe.NewTitle	새 레시피	New recipe
+Workbench.Recipe.SaveAsTitle	다른 이름으로 저장	Save as
+Workbench.Recipe.Name	레시피 이름 *	Recipe name *
+Workbench.Recipe.Description	설명 (선택)	Description (optional)
+Workbench.Recipe.FirstPipeline	첫 파이프라인 이름	First pipeline name
+Workbench.Recipe.DefaultPipeline	기본 파이프라인	Default pipeline
+Workbench.Recipe.Start	시작 방식	Start with
+Workbench.Recipe.Empty	빈 레시피	Empty recipe
+Workbench.Recipe.CopyCurrent	현재 파이프라인 복사	Copy current pipeline
+Workbench.Recipe.Create	만들기	Create
+Workbench.Recipe.Save	저장	Save
+Workbench.Recipe.Saved	저장됨	Saved
+Workbench.Recipe.Unsaved	저장 안 됨	Unsaved
+Workbench.Recipe.Error	저장 상태 오류	Save error
+Workbench.Recipe.SavedHelp	현재 작업본에 저장하지 않은 변경이 없습니다.	The current working copy has no unsaved changes.
+Workbench.Recipe.UnsavedHelp	저장하지 않은 변경이 있습니다.	There are unsaved changes.
+Workbench.Recipe.CopySuffix	복사	copy
+Workbench.Recipe.NameRequired	레시피 이름을 입력하세요.	Enter a recipe name.
+Workbench.Recipe.NameInvalid	이름은 60자 이하이며 파일명에 사용할 수 있는 문자여야 합니다.	Use a valid file name of 60 characters or fewer.
+Workbench.Recipe.NameExists	이미 있는 레시피 이름입니다. 다른 이름을 입력하세요.	A recipe with this name exists. Enter another name.
+Workbench.Recipe.DescriptionInvalid	설명은 120자 이하로 입력하세요.	Limit the description to 120 characters.
+Workbench.Recipe.PipelineInvalid	첫 파이프라인 이름은 60자 이하의 올바른 파일명이어야 합니다.	Use a valid first pipeline name of 60 characters or fewer.
+Workbench.Recipe.SaveFailed	레시피 저장에 실패했습니다.	Could not save the recipe.
+Workbench.ValidationSet.Name	검증 세트 이름	Validation set name
+Workbench.ValidationSet.NameRequired	이름을 입력하세요.	Enter a name.
+Workbench.ValidationSet.NameInvalid	이름은 60자 이하이며 \ / : * ? " < > | 문자를 쓸 수 없습니다.	Use a name of 60 characters or fewer without \ / : * ? " < > |.
+Workbench.ValidationSet.NameExists	같은 이름의 검증 세트가 있습니다.	A validation set with this name already exists.
+Workbench.ValidationSet.NoLabels	양불이 지정된 이미지가 없습니다.	No labeled images.
+Workbench.ValidationSet.FileRequired	양불 이미지의 지원되는 파일 경로가 필요합니다.	Each labeled image needs a supported existing file.
+Workbench.ValidationSet.SaveBodyFormat	양불 지정 이미지 {0}장 (양품 {1} · 불량 {2})	{0} labeled images (good {1} · bad {2})
+Workbench.ValidationSet.SaveExcludedFormat	 · 미지정 {0}장 제외	 · {0} unlabeled skipped
+Workbench.ValidationSet.DefaultName	검증 세트_{0}	Validation_set_{0}
+Workbench.ValidationSet.AddedFormat	검증 세트 ‘{0}’를 추가했습니다.	Added validation set ‘{0}’.
+Workbench.ValidationSet.LoadedFormat	검증 세트 ‘{0}’를 불러왔습니다.	Loaded validation set ‘{0}’.
+Workbench.ValidationSet.Empty	검증 세트에 이미지가 없습니다.	The validation set has no images.
+Workbench.ValidationSet.NoSets	검증 세트 없음	No validation sets
+Workbench.ValidationSet.ImageFailed	이미지를 불러올 수 없습니다: {0}	Image could not be loaded: {0}
+Workbench.ValidationSet.Manage	검증 세트 관리	Manage validation sets
+Workbench.Images.ValidationSet	검증 세트	Validation set
+Shell.ImageCompareNotFoundMessage	이미지 비교 도구 파일이 없습니다.\n{0}	Image comparison tool file is missing.\n{0}
+Shell.ImageCompareOpenFailedMessage	이미지 비교 도구를 열지 못했습니다.\n{0}	Unable to open the image comparison tool.\n{0}
+Workbench.Pipeline.DefaultNamePrefix	파이프라인	Pipeline
+Workbench.Pipeline.NewTitle	새 파이프라인	New pipeline
+Workbench.Pipeline.RenameTitle	파이프라인 이름 바꾸기	Rename pipeline
+Workbench.Pipeline.RenameFailed	파이프라인 이름을 바꾸지 못했습니다.	Unable to rename the pipeline.
+Workbench.Pipeline.CopyFailedFormat	파이프라인을 복제하지 못했습니다. {0}	Unable to duplicate the pipeline. {0}
+Workbench.Pipeline.ExportFailedFormat	파이프라인 XML을 내보내지 못했습니다. {0}	Unable to export the pipeline XML. {0}
+Workbench.Pipeline.SelectionChanged	선택된 파이프라인이 바뀌었습니다. 다시 열어 주세요.	The selected pipeline changed. Open the dialog again.
+Workbench.Pipeline.Name	파이프라인 이름	Pipeline name
+Workbench.Pipeline.NameRequired	파이프라인 이름을 입력하세요.	Enter a pipeline name.
+Workbench.Pipeline.NameInvalid	올바른 파이프라인 이름을 입력하세요 (최대 60자).	Enter a valid pipeline name (up to 60 characters).
+Workbench.Pipeline.NameExists	같은 이름의 파이프라인이 있습니다.	A pipeline with that name already exists.
+Workbench.Pipeline.CreateFailed	파이프라인을 저장하지 못했습니다.	Unable to save the pipeline.
+Workbench.Pipeline.RecipeChanged	현재 레시피가 바뀌었습니다. 다시 열어 주세요.	The current recipe changed. Open the dialog again.
+Workbench.Run.ImageCountFormat	{0}장	Images: {0}
+Workbench.Run.ImagePositionFormat	이미지 {0}/{1}	Image {0}/{1}
+Workbench.Run.Progress	실행 중 {0}/{1}	Running {0}/{1}
+Workbench.Run.StoppingProgress	중지 대기 {0}/{1}	Stopping {0}/{1}
+Workbench.Action.UndoCompleted	실행 취소했습니다.	Undo completed.
+Workbench.Action.RedoCompleted	다시 실행했습니다.	Redo completed.
+Workbench.Action.InputChangedFormat	입력: {0}	Input: {0}
+Workbench.Action.OutputChangedFormat	출력: {0}	Output: {0}
+Workbench.Action.RecipeSaved	레시피를 저장했습니다.	Recipe saved.
+Workbench.Action.RecipeOpenedFormat	‘{0}’ 레시피를 열었습니다.	Recipe '{0}' opened.
+Workbench.Action.PipelineSwitchedFormat	파이프라인 ‘{0}’로 전환했습니다.	Switched to pipeline '{0}'.
+Workbench.Pane.EmptyImageDetail	이미지나 폴더를 열거나 여기로 끌어다 놓으세요.	Open an image or folder, or drag and drop it here.
+Workbench.Action.ToolTestOpenedFormat	{0} 테스트 · F8: 실행 · Ctrl+Enter: 파이프라인에 추가	{0} test · F8: run · Ctrl+Enter: add to pipeline
+Workbench.Action.ToolTestOpenedRunOnlyFormat	{0} 테스트 · F8: 실행	{0} test · F8: run
+Workbench.Pane.RunPrompt	을 누르세요	Press
+Workbench.Action.DefaultsRestored	기본값으로 되돌렸습니다.	Restored defaults.
+Workbench.Action.StepAdded	단계를 추가했습니다.	Step added.
+Workbench.Action.StepRunStartedFormat	‘{0}’ 단계 실행 중…	Running step ‘{0}’…
+Workbench.Action.StepRunCompletedFormat	단계 실행 완료 · {0} · {1}	Step run completed · {0} · {1}
+Workbench.Action.ToolRunStartedFormat	{0} 툴 실행 중…	Running {0} tool…
+Workbench.Action.ToolRunCompletedFormat	툴 실행 완료 · {0} · {1}	Tool run completed · {0} · {1}
+Workbench.Action.SampleImagesOpening	예제 이미지를 여는 중…	Opening sample image…
+Workbench.Action.SampleImagesOpenedFormat	예제 이미지 {0}장을 열었습니다.	Opened {0} sample images.
+Workbench.Samples.Title	예제 이미지	Sample images
+Workbench.Samples.Intro	목록에 추가할 이미지를 선택하세요.	Select an image to add to the list.
+Workbench.Samples.AddImage	이미지 추가	Add image
+Workbench.Samples.SelectionNotice	이미지와 추가 방식을 선택하세요.	Choose an image and how to add it.
+Workbench.Samples.RoleWithLabelsFormat	선택한 이미지 {0}장 · 기록된 양불 포함	Selected images: {0} · Include recorded labels
+Workbench.Samples.RoleWithoutLabelsFormat	선택한 이미지 {0}장 · 양불 없이 추가	Selected images: {0} · Add without labels
+Workbench.Action.ImagesOpeningFormat	이미지 {0}장을 여는 중…	Opening images: {0}…
+Workbench.Action.ImagesAddedFormat	이미지 {0}장 추가	Images added: {0}
+Workbench.Action.ImagesFailedSuffixFormat	 · 실패 {0}장	 · {0} failed
+Workbench.Action.ImagesNestedExcludedSuffixFormat	 · 하위 폴더 {0}장 제외	 · {0} images in subfolders excluded
+Workbench.Action.BatchCompletedFormat	일괄 검사 완료 · OK {0} · NG {1} · 오류 {2}	Batch inspection complete · OK {0} · NG {1} · Errors {2}
+Workbench.Action.BatchStoppedFormat	일괄 검사 중지됨 · OK {0} · NG {1} · 오류 {2}	Batch inspection stopped · OK {0} · NG {1} · Errors {2}
+Workbench.Action.RoiEditing	ROI 드래그 · 모서리로 크기 조절 · Enter 적용 · Esc 취소	Drag ROI · resize from corners · Enter to apply · Esc to cancel
+Workbench.Action.TemplateEditing	템플릿 영역 드래그 · Enter 적용 · Esc 취소	Drag template region · Enter to apply · Esc to cancel
+Workbench.Action.RoiApplied	ROI를 적용했습니다.	ROI applied.
+Workbench.Action.TemplateRegistered	템플릿을 등록했습니다.	Template registered.
+Workbench.Action.RoiEditCanceled	ROI 편집을 취소했습니다.	ROI editing canceled.
+Workbench.Action.PipelineRunStarted	파이프라인 실행 중…	Running pipeline…
+Workbench.Action.PrefixRunStartedFormat	‘{0}’까지 실행 중…	Running through ‘{0}’…
+Workbench.Action.PipelineRunCompletedFormat	파이프라인 실행 완료 · {0} · {1}	Pipeline run completed · {0} · {1}
+Workbench.Action.PrefixRunCompletedFormat	이 단계까지 실행 완료 · {0} · {1}	Run to here completed · {0} · {1}
+Workbench.Tool.NImageCountFormat	이미지 {0}장 테스트	Test {0} images
+Workbench.Tool.NImagePrefixFormat	 · 앞 단계 포함: {0}	 · predecessors: {0}
+Workbench.Action.NImageProgressFormat	N장 테스트 {0}/{1} · {2}	N-image test {0}/{1} · {2}
+Workbench.Action.NImageCompletedFormat	N장 테스트 완료 · {0}장 (앞 단계 {3}개 포함)	N-image test completed · {0} images ({3} predecessors included)
+Workbench.Action.NImageStoppedFormat	N장 테스트 중지 · {0}장 (계획 {1}장 · 앞 단계 {3}개 포함)	N-image test stopped · {0} images (planned {1} · {3} predecessors included)
+Workbench.Images.TrialFormat	테스트 {0}	Test {0}
+Workbench.Command.ContextUnavailable	현재 작업을 마친 뒤 다시 시도하세요.	Finish the current operation and try again.
+Workbench.Command.NoActiveRun	실행 중인 검사가 없습니다.	No inspection is running.
+Workbench.Command.FixToolSettings	툴의 잘못된 설정을 먼저 수정하세요.	Correct the invalid tool settings first.
+Workbench.Menu.RecentRecipes	최근 레시피	Recent recipes
+Workbench.Menu.NoRecentRecipes	최근 레시피 없음	No recent recipes
+Workbench.Recipe.InUse	사용 중	In use
+Workbench.Recipe.RecentSaveFailed	최근 레시피 기록을 저장하지 못했습니다.	Could not save recent recipes.
+Workbench.Manager.SortRecent	최근 수정순	Recently modified
+Workbench.Manager.SortName	이름순	Name order
+Workbench.Manager.Pipelines	파이프라인	Pipelines
+Workbench.Manager.Steps	전체 단계	All steps
+Workbench.Manager.Sets	검증 세트	Validation sets
+Workbench.Manager.Runs	최근 일괄 검사	Recent batch inspections
+Workbench.Manager.ReadOnly	읽기 전용 기록	Read-only history
+Workbench.Manager.NoRuns	기록 없음	No history
+Workbench.Manager.NoSets	검증 세트 없음	No validation sets
+Workbench.Manager.LibraryDetailFormat	r{0} / {1} / 파이프라인 {2} / 검증 세트 {3}	r{0} / {1} / Pipelines {2} / Validation sets {3}
+Workbench.Recipe.DeleteTitle	레시피 삭제	Delete recipe
+Workbench.Recipe.DeleteConfirmFormat	‘{0}’ 레시피를 삭제할까요?	Delete recipe ‘{0}’?
+Workbench.Recipe.DeleteDetail	파이프라인, 검증 세트, 실행 이력이 함께 삭제되며 되돌릴 수 없습니다.	Pipelines, validation sets, and run history will be deleted. This cannot be undone.
+Workbench.ValidationSet.SetNotCurrent	현재 레시피의 검증 세트를 선택하세요.	Select a validation set from the current recipe.
+Workbench.ValidationSet.SetChanged	검증 세트가 변경되었습니다. 창을 닫고 다시 불러오세요.	The validation set has changed. Close and reopen the chooser.
+Workbench.ValidationSet.HashMissing	저장된 이미지 내용 정보가 없습니다: {0}	Saved image content identity is missing: {0}
+Workbench.ValidationSet.ImageChanged	이미지 파일이 저장된 내용과 다릅니다: {0}	The image file differs from its saved content: {0}
+Workbench.History.Note	저장된 배치 기록을 읽기 전용으로 조회합니다. 시간은 동일한 이미지 묶음에서만 비교하세요. 현재 작업본과 과거 설정은 별개입니다.	Saved batches are read only. Compare timing only for the same image corpus. Historical settings are separate from the current working copy.
+Workbench.History.Empty	기록 없음	No records
+Workbench.History.ReadFailed	실행 이력을 읽지 못했습니다.	Could not read run history.
+Workbench.History.Date	일시	Date
+Workbench.History.Pipeline	파이프라인 · 실행 당시 설정	Pipeline · saved source
+Workbench.History.N	N	N
+Workbench.History.OK	OK	OK
+Workbench.History.NG	NG	NG
+Workbench.History.Error	오류	Error
+Workbench.History.Match	정합/라벨	Match/labeled
+Workbench.History.FalseAccept	미검	False accept
+Workbench.History.FalseReject	과검	False reject
+Workbench.History.Average	평균	Average
+Workbench.History.P95	p95	p95
+Workbench.History.Title	실행 이력	Run history
+Workbench.Llm.ManualNote	요청문을 복사해 LLM에 붙여넣고, 받은 XML을 붙여넣어 검증합니다.	Copy the request into your LLM, then paste its XML response here and validate it.
+Workbench.Llm.Request	1 요청 작성	1 Request
+Workbench.Llm.Response	2 응답 XML	2 Response XML
+Workbench.Llm.Review	3 검토·저장	3 Review and save
+Workbench.Llm.Goal	검사 목표	Inspection goal
+Workbench.Llm.Intent	검사 종류	Inspection type
+Workbench.Llm.IncludePipeline	현재 파이프라인 작업본 포함	Include current pipeline working copy
+Workbench.Llm.IncludeImage	현재 이미지 크기 정보 포함	Include current image dimensions
+Workbench.Llm.ImageBoundary	이미지 픽셀은 포함하지 않습니다. 밝기 통계는 현재 제공되지 않습니다.	No image pixels are included. Brightness statistics are not currently available.
+Workbench.Llm.BuildPrompt	요청문 만들기	Build request
+Workbench.Llm.CopyPrompt	요청문 복사	Copy request
+Workbench.Llm.Xml	LLM 응답 XML (VisionPipeline)	LLM response XML (VisionPipeline)
+Workbench.Llm.Validate	XML 검증	Validate XML
+Workbench.Llm.Paste	붙여넣기	Paste
+Workbench.Llm.NewName	새 파이프라인 이름	New pipeline name
+Workbench.Llm.CompareBoundary	현재 저장된 파이프라인과 비교합니다. 저장하지 않은 편집 내용은 비교에 포함되지 않습니다.	Compared with the current saved pipeline. Unsaved edits are not included in this comparison.
+Workbench.Llm.OpenSaved	저장 후 이 파이프라인 열기	Open this pipeline after saving
+Workbench.Llm.SaveBoundary	새 파이프라인으로 저장합니다.	Save as a new pipeline.
+Workbench.Llm.Next	다음	Next
+Workbench.Llm.SaveNew	새 파이프라인으로 저장	Save as new pipeline
+Workbench.Llm.ContextChanged	현재 작업 대상이 바뀌었습니다. 창을 닫고 다시 열어 검증하세요.	The current work context changed. Close and reopen this dialog, then validate again.
+Workbench.Llm.SaveFailed	새 파이프라인을 저장하지 못했습니다.	Could not save the new pipeline.
+Workbench.Llm.Index	#	#
+Workbench.Llm.StepName	단계	Step
+Workbench.Llm.Tool	툴	Tool
+Workbench.Llm.Route	입력 → 출력	Input → output
+Workbench.Llm.Judgment	판정	Judgment
+Workbench.Llm.Compare	저장된 파이프라인과 비교	Compared with saved pipeline
+Workbench.Llm.ValidateBeforeSave	응답 XML을 검증한 뒤 검토·저장에서 저장하세요.	Validate the response XML, then save from Review and save.
+Workbench.Llm.PendingPromptBoundary	반영 대기 중인 편집값은 요청문에서 제외됩니다.	The request excludes pending edits.
+Workbench.LayerManager.Note	현재 이미지의 레이어를 관리합니다.	Manage layers for the current image.
+Workbench.LayerManager.Name	이름	Name
+Workbench.LayerManager.Origin	만든 곳	Created by
+Workbench.LayerManager.Size	크기	Size
+Workbench.LayerManager.UnknownOrigin	미기록	Not recorded
+Workbench.LayerManager.NotStored	보관 안 됨	Not stored
+Workbench.LayerManager.SelectionNote	목록 선택과 뷰어 조회는 현재 입력과 레이어 표시를 바꾸지 않습니다.	Selecting a row or viewing it does not change current inputs or the displayed layer.
+Workbench.LayerManager.ProtectedNote	원본과 현재 검사 입력 레이어는 이름을 바꾸거나 삭제할 수 없습니다.	The Original layer and current inspection input layers cannot be renamed or deleted.
+Workbench.LayerManager.RenameName	선택한 레이어의 새 이름	New name for selected layer
+Workbench.LayerManager.Viewer	뷰어 열기	Open viewer
+Workbench.LayerManager.AddImage	이미지를 레이어로 추가…	Add image as layer…
+Workbench.LayerManager.AddCanceled	이미지 추가를 취소했습니다.	Image addition canceled.
+Workbench.LayerManager.Added	이미지를 새 레이어로 추가했습니다.	Image added as a new layer.
+Workbench.LayerManager.AddFailed	이미지를 추가하지 못했습니다.	Could not add the image.
+Workbench.LayerManager.RenameFailed	이름을 바꾸지 못했습니다. 사용 중인 레이어인지, 같은 이름이 있는지 확인하세요.	Could not rename the layer. Check whether it is in use or the name already exists.
+Workbench.LayerManager.Renamed	레이어 이름을 바꿨습니다.	Layer renamed.
+Workbench.LayerManager.Protected	이 레이어는 삭제할 수 없습니다. 현재 입력으로 사용 중인지 확인하세요.	This layer cannot be deleted. Check whether it is used as a current input.
+Workbench.LayerManager.Deleted	선택한 레이어를 삭제했습니다.	Selected layer deleted.

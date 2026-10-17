@@ -36,6 +36,8 @@ namespace OpenVisionLab.ImageCanvas.Views
 		{
 			InitializeComponent();
 			ApplyChromeVisibility();
+			ApplyModeLocalization();
+			global::OpenVisionLab.OpenVisionLanguageService.LanguageChanged += OnLanguageChanged;
 
 			Loaded += ImageCanvasView_Loaded;
 			DataContextChanged += ImageCanvasView_DataContextChanged;
@@ -80,6 +82,18 @@ namespace OpenVisionLab.ImageCanvas.Views
 				viewerToolBarTray.Visibility = ShowToolBar ? Visibility.Visible : Visibility.Collapsed;
 				toolBarColumn.Width = ShowToolBar ? new GridLength(35) : new GridLength(0);
 			}
+		}
+
+		private void OnLanguageChanged(object sender, EventArgs e) => Dispatcher.Invoke(ApplyModeLocalization);
+
+		private void ApplyModeLocalization()
+		{
+			if (disposed) { return; }
+			bool english = global::OpenVisionLab.OpenVisionLanguageService.CurrentLanguage == global::OpenVisionLab.OpenVisionLanguage.English;
+			Resources["ImageCanvas.RoiModeName"] = english ? "ROI selection mode" : "ROI 선택 모드";
+			Resources["ImageCanvas.MeasureModeName"] = english ? "Measurement mode" : "측정 모드";
+			Resources["ImageCanvas.ModeOn"] = english ? "On" : "켜짐";
+			Resources["ImageCanvas.ModeOff"] = english ? "Off" : "꺼짐";
 		}
 
 		void IImageCanvasContextMenuHost.OpenContextMenu()
@@ -187,12 +201,11 @@ namespace OpenVisionLab.ImageCanvas.Views
 			int height = System.Math.Max(1, (int)System.Math.Round(imageBoxCameraTwoD.ActualHeight));
 			System.Windows.Forms.Control child = imageBoxCameraTwoD.Child;
 
-			// WindowsFormsHost can leave the native OpenGL HWND at its designer size; keep it inside the WPF slot.
+			// WindowsFormsHost owns the child bounds; Dock.Fill would collapse them to the adapter's zero size during measure.
 			child.AutoSize = false;
 			child.MinimumSize = System.Drawing.Size.Empty;
 			child.Dock = System.Windows.Forms.DockStyle.None;
 			child.SetBounds(0, 0, width, height);
-			child.Dock = System.Windows.Forms.DockStyle.Fill;
 		}
 		private void ImageCanvasView_Unloaded(object sender, RoutedEventArgs e)
 		{
@@ -224,6 +237,7 @@ namespace OpenVisionLab.ImageCanvas.Views
 			}
 
 			disposed = true;
+			global::OpenVisionLab.OpenVisionLanguageService.LanguageChanged -= OnLanguageChanged;
 			if (pendingImageViewerRefresh?.Status == DispatcherOperationStatus.Pending)
 			{
 				pendingImageViewerRefresh.Abort();

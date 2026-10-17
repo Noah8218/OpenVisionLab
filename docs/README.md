@@ -1,25 +1,28 @@
 # OpenVisionLab 문서 시작점
 
-Updated: 2026-09-15 KST
+Updated: 2026-10-13 KST
 
-이 파일은 사람과 도구가 함께 쓰는 단일 문서 진입점입니다. 전체 문서를 시간순으로
-읽지 말고 아래 공통 4개 문서와 작업별 경로만 읽습니다.
+이 파일은 사용자 문서와 소스 탐색을 연결하는 단일 문서 진입점입니다.
 
 ## Start Here
 
-1. [`AGENTS.md`](../AGENTS.md) — 저장소 규칙, 제품 범위, 변경·검증 계약
-2. [`OPENVISIONLAB_CURRENT_HANDOFF.md`](admin/OPENVISIONLAB_CURRENT_HANDOFF.md) — 현재 상태와 실제 다음 우선순위
-3. [`OPENVISIONLAB_PRODUCT_TARGET_AND_MAIN_VIEWS.md`](roadmap/OPENVISIONLAB_PRODUCT_TARGET_AND_MAIN_VIEWS.md) — 제품 정체성과 화면 책임
-4. [`OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md`](contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md) — 회귀시키면 안 되는 동작
+1. [기여 규칙](../AGENTS.md)을 확인합니다.
+2. [CODEBASE_STRUCTURE.md](admin/CODEBASE_STRUCTURE.md)의 Start Here에서 실행 프로젝트와 기능 owner를 찾습니다.
+3. [안정 계약](contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md)의 General Rules와 변경 경로의 관련 절을 읽습니다.
 
-선행개발 전 전체 점검 결과와 처음 접하는 개발자를 위한 판독 순서는
-[`OPENVISIONLAB_PREDEVELOPMENT_PRIORITIES_1_TO_5_20260915.md`](reports/OPENVISIONLAB_PREDEVELOPMENT_PRIORITIES_1_TO_5_20260915.md)에
-정리되어 있습니다.
-
-기계 판독 경로는 [`LLM_DOCUMENT_INDEX.json`](LLM_DOCUMENT_INDEX.json), 상세 문서
-등록부는 [`OPENVISIONLAB_DOCUMENTATION_MAP.md`](admin/OPENVISIONLAB_DOCUMENTATION_MAP.md)입니다.
+기계 판독 경로는 [LLM_DOCUMENT_INDEX.json](LLM_DOCUMENT_INDEX.json)입니다.
+실제 동작과 의존성은 소스·프로젝트·스키마가 원본이며 문서 지도는 검색 진입점입니다.
 
 ## Visual Studio에서 열고 실행하기
+
+다른 PC에서는 GitHub Desktop으로 `https://github.com/Noah8218/OpenVisionLab.git`의
+`main`을 짧은 경로에 클론합니다. Visual Studio의 `.NET 데스크톱 개발` 워크로드와
+.NET 8 SDK/Desktop Runtime을 준비하고 개발 터미널의 `git --version`도 확인합니다.
+환경 검증은 `tools/VerifySourceBuild.ps1`, 설치 조건은 루트 `README.md`가 안내합니다.
+저장소 안의 DLL·연동 NuGet 패키지·잠금 파일을 함께 사용하며 다른 프로젝트 소스는 필요하지 않습니다.
+패키지를 바꿀 때는 일반 restore로 잠금 파일을 갱신한 뒤 `--locked-mode`로 검증합니다.
+
+사용 중인 Recipe·이미지·개인 설정은 소스와 별도로 보존합니다. 필요한 데이터는 `OPENVISIONLAB_DATA_ROOT` 및 외부 이미지 경로를 확인해 이관합니다.
 
 | 항목 | 경로 또는 값 |
 | --- | --- |
@@ -36,37 +39,26 @@ dotnet build OpenVisionLab.sln -c Debug -p:Platform="Any CPU" --no-restore
 & .\bin\Debug\OpenVisionLab.exe
 ```
 
-솔루션에는 제품 앱 1개, 제품 라이브러리 12개, 검증 도구 3개가 있습니다. 정확한
-프로젝트 역할과 `ProjectReference` 방향은
-[`CODEBASE_STRUCTURE.md`](admin/CODEBASE_STRUCTURE.md)의 `Start Here` 표를 사용합니다.
+위 명령은 소스 개발 시작 경로입니다. UI 검사는 변경을 포함한 빌드 identity를 기록하고 기존 사용자 데이터를 격리합니다.
+프로젝트·출력·의존성은 솔루션과 `.csproj`가 원본이며, 탐색은
+[`CODEBASE_STRUCTURE.md`](admin/CODEBASE_STRUCTURE.md)의 `Start Here`에서 시작합니다.
 
 ## 제품 코드와 검증 코드 구분
 
-| 목적 | 먼저 읽을 위치 |
-| --- | --- |
-| 제품 시작과 Shell 조합 | `Program.cs` → `OpenVisionLabApplication.cs` → `OpenVisionShellHostView.xaml(.cs)` |
-| Recipe/Pipeline 실행 | `RecipeCommandSurface.cs` → `OpenVisionPipelineReviewDocument.cs` → `VisionPipelineExecutionService.cs` |
-| Tool 편집/Preview | `UI/VisionTest/Wpf/ToolViews` → 해당 Presenter/Controller → Pipeline Tool |
-| 화면 없는 계약 검증 | `tools/VisionRecipeRunnerSmoke`의 해당 `*Contract.cs` |
-| 실제 WPF 화면 검증 | `tools/PipelineViewerScreenshotSmoke`와 `tools/RunUiPrecheck.ps1` |
-| 제품 EXE smoke | `tools/OpenVisionLab.DirectSmokeRunner/OpenVisionLabDirectSmokeRunner.cs` |
-
-검증 도구의 큰 `Program.cs`는 제품 정책 소유자가 아닙니다. 제품 동작은 `src/`의
+책임별 코드 탐색과 검증 진입점은 [owner 지도](admin/CODEBASE_STRUCTURE.md) 한 곳에서 찾습니다.
+검증 도구의 `Program.cs`는 제품 정책 소유자가 아닙니다. 제품 동작은 `src/`의
 기존 concrete owner에서 수정하고, 가장 가까운 contract와 필요한 WPF smoke로
-확인합니다. 생성 로그·스크린샷·임시 데이터는
-`D:\OpenVisionLab-TestData\OpenVisionLab_Dev`에 둡니다.
+확인합니다. 생성 로그·스크린샷·임시 데이터는 소스와 사용자 데이터에서 분리한 검사 출력 폴더에 둡니다.
 
 ## 작업별 경로
 
-| 작업 | 공통 4개 다음에 읽을 문서 |
+| 작업 | 기본 읽기 다음에 필요한 범위만 찾을 문서 |
 | --- | --- |
-| UI/UX 또는 WPF 상태 | `WPF_UI_UX_RULES.md`(전역) → `docs/runbooks/UI_SCREENSHOT_SMOKE.md` |
-| Recipe/Pipeline/Tool | `docs/reports/OPENVISIONLAB_RECIPE_EXECUTION_STRUCTURE_20260908.md` |
-| ImageCanvas/ROI/OpenGL | `docs/reports/OPENVISIONLAB_WPF_VIEW_MVVM_PORTABILITY_AUDIT_20260913.md` → 관련 ImageCanvas owner 보고서 |
-| 외부 DLL/재배포 | `docs/contracts/openvisionlab/OPENVISIONLAB_EXTERNAL_REFERENCE_POLICY.md` → `dll/OpenVisionLab-Vision-SDK/sdk-manifest.json` |
-| 사용자 매뉴얼/Learn | `docs/manual/README.md` → `docs/learn/README.md` |
-| 상용 도구 비교 | `docs/roadmap/OPENVISIONLAB_COMMERCIAL_VIDEO_DEVELOPMENT_BACKLOG_20260727.md` |
-| 과거 P 번호/결정 | `docs/reports/OPENVISIONLAB_COMPLETED_TRACKER.md` → `docs/admin/archive`에서 검색 |
+| UI/UX 또는 WPF 상태 | [안정 계약](contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md) → [UI smoke](runbooks/UI_SCREENSHOT_SMOKE.md) → 해당 View/owner |
+| Recipe/Pipeline/Tool | 안정 계약의 편집·실행·라우팅·저장 절 → owner 지도의 Recipe/Pipeline 읽기 순서 |
+| ImageCanvas/ROI/OpenGL | owner 지도의 ImageCanvas 경로 → [외부 consumer 계약](contracts/openvisionlab/OPENVISIONLAB_IMAGECANVAS_EXTERNAL_CONSUMER_MANIFEST.json) |
+| 외부 DLL/재배포 | [외부 참조 정책](contracts/openvisionlab/OPENVISIONLAB_EXTERNAL_REFERENCE_POLICY.md) → `dll/OpenVisionLab-Vision-SDK/sdk-manifest.json` |
+| 사용자 매뉴얼/Learn | [매뉴얼](manual/README.md) → [Learn](learn/README.md) |
 
 세부 경로는 `LLM_DOCUMENT_INDEX.json`의 같은 목적 route를 따릅니다.
 
@@ -83,21 +75,13 @@ dotnet build OpenVisionLab.sln -c Debug -p:Platform="Any CPU" --no-restore
 
 ## 문서 유지 규칙
 
-1. 현재 상태는 `OPENVISIONLAB_CURRENT_HANDOFF.md` 한 곳에만 기록합니다.
-2. 구조 owner와 읽기 순서는 `CODEBASE_STRUCTURE.md` 한 곳에만 기록합니다.
-3. 완료 과정·명령 원문·스크린샷 목록은 `docs/reports` 또는 D 드라이브 증거에 둡니다.
-4. 누적 chronology는 `docs/admin/archive`에 보존하고 활성 문서에 다시 붙이지 않습니다.
-5. 새 보고서는 실제로 재사용할 결정·증거가 있을 때만 만들고, 색인에는 필요한 route에만 넣습니다.
-6. 루트의 호환 redirect는 외부 링크 조사 없이 삭제하지 않습니다.
-
-검증:
+1. owner와 읽기 순서는 `admin/CODEBASE_STRUCTURE.md` 한 곳에서 찾습니다.
+2. 코드·설정·스키마가 원본인 값은 해당 경로와 검증 명령을 연결합니다.
+3. 동작 계약과 사용자 안내는 변경된 소스와 함께 갱신합니다.
+4. 공개 링크는 보존된 canonical 문서로 연결하고 호환 redirect의 목적지를 확인합니다.
+5. 테스트 출력과 개인 데이터를 문서 원천 및 공개 샘플에 섞지 않습니다.
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File tools\TestDocumentationIndex.ps1
-rg -n "<검색어>" AGENTS.md docs
-rg --files docs | rg "<파일명 일부>"
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/TestDocumentationIndex.ps1
+rg -n "<검색어>" docs/contracts src tools
 ```
-
-2026-09-14 이전의 비대해진 진입점 원문은
-[`DOCUMENTATION_ENTRYPOINT_HISTORY_20260914.md`](admin/archive/DOCUMENTATION_ENTRYPOINT_HISTORY_20260914.md)에
-보존했습니다.

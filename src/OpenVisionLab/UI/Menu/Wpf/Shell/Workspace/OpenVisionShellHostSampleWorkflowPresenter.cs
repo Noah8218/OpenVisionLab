@@ -69,7 +69,7 @@ namespace OpenVisionLab
         public void ApplyLocalization()
         {
             SetText(pipelineButtonText, Local("Pipeline 보기", "View Pipeline"));
-            SetText(firstStepButtonText, Local("첫 단계 열기", "Open First Step"));
+            SetText(firstStepButtonText, Local("첫 단계 도구 열기", "Open First Step Tool"));
         }
 
         public void ShowForActiveSample()
@@ -101,8 +101,8 @@ namespace OpenVisionLab
                     string.Format(
                         CultureInfo.CurrentCulture,
                         Local(
-                            "제품군: {0} / 기준: {1}{3} / 다음: Pipeline 보기 -> Run Review 또는 첫 단계 열기 / 흐름: {2}",
-                            "Product group: {0} / Criteria: {1}{3} / Next: View Pipeline -> Run Review or open the first step / Flow: {2}"),
+                            "제품군: {0} / 기준: {1}{3} / 다음: Pipeline 보기 -> Run Review 또는 첫 단계 도구 열기 / 흐름: {2}",
+                            "Product group: {0} / Criteria: {1}{3} / Next: View Pipeline -> Run Review or open the first step tool / Flow: {2}"),
                         state.Category,
                         state.PairRole,
                         state.ToolFlow,
@@ -122,8 +122,8 @@ namespace OpenVisionLab
                     string.Format(
                         CultureInfo.CurrentCulture,
                         Local(
-                            "첫 단계: {0} / 흐름: {1} / 다음: Pipeline 보기 -> Run Review 또는 첫 단계 열기",
-                            "First step: {0} / Flow: {1} / Next: View Pipeline -> Run Review or open the first step"),
+                            "첫 단계: {0} / 흐름: {1} / 다음: Pipeline 보기 -> Run Review 또는 첫 단계 도구 열기",
+                            "First step: {0} / Flow: {1} / Next: View Pipeline -> Run Review or open the first step tool"),
                         state.FirstTool,
                         state.ToolFlow));
             }

@@ -11,6 +11,12 @@ namespace OpenVisionLab
         private OpenVisionShellHostLayerWorkspacePresenter layerWorkspacePresenter;
         private OpenVisionShellHostLayerCommandSurface layerCommands;
         private OpenVisionShellHostWorkspaceCommandSurface workspaceCommands;
+        private OpenVisionWorkbenchPipelineViewModel workbenchPipeline;
+
+        public void AttachWorkbenchPipeline(OpenVisionWorkbenchPipelineViewModel pipeline)
+        {
+            workbenchPipeline = pipeline ?? throw new ArgumentNullException(nameof(pipeline));
+        }
 
         public void AttachDockedLayerWorkspace(IOpenVisionDockedLayerWorkspaceRefresh workspace)
         {
@@ -48,6 +54,7 @@ namespace OpenVisionLab
         public void RefreshHostLayerRows()
         {
             layerRefreshController?.RefreshRows();
+            workbenchPipeline?.RefreshInputState();
         }
 
         public List<string> CreateWorkspaceLayerTitleSnapshot()
@@ -74,6 +81,7 @@ namespace OpenVisionLab
 
         public void ApplyWorkspacePointerStatus(OpenVisionZoomableImageStatus status)
         {
+            if (workspaceCommands != null && !workspaceCommands.ApplyFallbackPointerStatus(status)) { return; }
             layerRefreshController?.ApplyWorkspacePointerStatus(status);
         }
 

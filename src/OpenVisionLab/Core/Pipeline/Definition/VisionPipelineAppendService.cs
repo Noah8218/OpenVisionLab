@@ -91,7 +91,7 @@ namespace OpenVisionLab
             return string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
         }
 
-        private static void EnsureUniqueStepName(VisionPipeline pipeline, VisionPipelineStep step)
+        internal static void EnsureUniqueStepName(VisionPipeline pipeline, VisionPipelineStep step)
         {
             if (pipeline == null || step == null)
             {

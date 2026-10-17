@@ -42,6 +42,20 @@ namespace OpenVisionLab
 
         public bool IsDockedDocumentWorkspaceVisible => dockedDocumentWorkspaceController.IsVisible;
 
+        public void RefreshNativeToolTitle(string title)
+        {
+            FrameworkElement view = documentController.ActiveNativeDocument?.View;
+            if (view == null) { return; }
+            if (ReferenceEquals(dockedToolInspectorController.ActiveContent, view))
+            {
+                dockedToolInspectorController.SetTitle(title);
+            }
+            if (ReferenceEquals(floatingToolWindowHost.ActiveWindow?.HostedContent, view))
+            {
+                floatingToolWindowHost.ActiveWindow.SetTitle(title);
+            }
+        }
+
         public bool ShowDockedToolWindow(FrameworkElement content, string title, double floatingWidth, double floatingHeight)
         {
             return dockedToolInspectorController.Show(content, title, floatingWidth, floatingHeight);
@@ -94,7 +108,9 @@ namespace OpenVisionLab
 
         public bool SuspendFloatingPipelineReviewForRecipeReturn()
         {
-            if (IsDockedToolInspectorVisible || documentController.ActivePipelineReviewDocument == null)
+            OpenVisionPipelineReviewDocument activeReview = documentController.ActivePipelineReviewDocument;
+            bool isHistoricalReview = activeReview?.IsHistoricalRunReview == true;
+            if (IsDockedToolInspectorVisible || activeReview == null)
             {
                 return false;
             }
@@ -102,7 +118,14 @@ namespace OpenVisionLab
             bool hostSuspended = IsDockedDocumentWorkspaceVisible
                 ? dockedDocumentWorkspaceController.SuspendForReuse()
                 : floatingToolWindowHost.HideForReuse();
-            if (!hostSuspended || !documentController.SuspendPipelineReviewForRecipeReturn())
+            if (!hostSuspended
+                || (isHistoricalReview && !documentController.ReturnFromHistoricalPipelineReview()))
+            {
+                return false;
+            }
+
+            if (documentController.ActivePipelineReviewDocument != null
+                && !documentController.SuspendPipelineReviewForRecipeReturn())
             {
                 return false;
             }

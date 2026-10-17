@@ -51,6 +51,18 @@ namespace OpenVisionLab
         public string StepName { get; set; } = string.Empty;
 
         public string TargetName { get; set; } = string.Empty;
+
+        public bool IsWorkbenchCopy { get; set; }
+
+        public bool IsStepDelete { get; set; }
+
+        public bool IsRecipeDelete { get; set; }
+
+        public int ChangeCount { get; set; }
+
+        internal Func<bool> TrySave { get; set; }
+
+        internal Func<string> SaveError { get; set; }
     }
 
     public enum OpenVisionRecipePendingEditTransitionKind

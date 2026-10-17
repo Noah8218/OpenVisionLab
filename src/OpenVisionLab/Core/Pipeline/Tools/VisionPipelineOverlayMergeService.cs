@@ -473,7 +473,7 @@ namespace OpenVisionLab
             }
         }
 
-        private static VisionToolOverlay CloneOverlay(VisionToolOverlay source)
+        internal static VisionToolOverlay CloneOverlay(VisionToolOverlay source)
         {
             VisionToolOverlay clone = new VisionToolOverlay
             {

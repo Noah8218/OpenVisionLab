@@ -26,7 +26,7 @@ using WpfWindow = System.Windows.Window;
 
 namespace OpenVisionLab
 {
-    public sealed partial class OpenGlTemplateEditorWindow : WpfWindow, IPropertyGridTemplateImageEditView
+    public sealed partial class OpenGlTemplateEditorWindow : WpfWindow, IPropertyGridTemplateImageEditView, IInlineImageEditPresentation
     {
         private const double RoiHandleScreenSize = 10D;
         private const double RoiHandleHitSize = 8D;
@@ -53,6 +53,8 @@ namespace OpenVisionLab
         private bool isUpdatingRotationText;
         private double templateRotationDegrees;
         private bool disposed;
+        private string inlinePatternPath;
+        private bool inlineMode;
 
         public OpenGlTemplateEditorWindow(Bitmap image, DrawingRectangle roi, string mode)
         {
@@ -78,6 +80,39 @@ namespace OpenVisionLab
 
             Loaded += OpenGlTemplateEditorWindow_Loaded;
             Closed += OpenGlTemplateEditorWindow_Closed;
+        }
+
+        FrameworkElement IInlineImageEditPresentation.InlineViewport => viewerHost;
+        FrameworkElement IInlineImageEditPresentation.InlinePatternPreview => patternPreviewImage.Parent as FrameworkElement;
+        IReadOnlyList<TextBox> IInlineImageEditPresentation.InlineFields => new[] { txtX, txtY, txtWidth, txtHeight, txtRotation };
+        int IInlineImageEditPresentation.InlineRegionCount => HasValidRegion(selectedRegion) ? 1 : 0;
+        bool IInlineImageEditPresentation.IsMultiInline => false;
+        bool IInlineImageEditPresentation.IsTemplateInline => true;
+        void IInlineImageEditPresentation.InitializeInline()
+        {
+            inlineMode = true; InitializeViewer();
+            FitWpfViewer(); UpdateWpfRoiRectangle(); UpdatePatternPreview(); viewerHost.Focus();
+        }
+        void IInlineImageEditPresentation.FlushInlineCoordinates() => ((IInlineImageEditPresentation)this).AcceptInline();
+        bool IInlineImageEditPresentation.AcceptInline()
+        {
+            if (!int.TryParse(txtX.Text, out int x) || !int.TryParse(txtY.Text, out int y) || !int.TryParse(txtWidth.Text, out int width) || !int.TryParse(txtHeight.Text, out int height) || width <= 0 || height <= 0) { return false; }
+            ApplySingleRoi(ClampToImage(new DrawingRectangle(x, y, width, height)));
+            return HasValidRegion(selectedRegion);
+        }
+        void IInlineImageEditPresentation.WholeInline() => FullRoi_Click(this, null);
+        void IInlineImageEditPresentation.AddInline() { }
+        void IInlineImageEditPresentation.DeleteInline() { }
+        IPropertyGridImageEditView IInlineImageEditPresentation.CreateLargeInlineEditor()
+        {
+            var editor = new OpenGlTemplateEditorWindow(sourceBitmap, new DrawingRectangle(selectedRegion.X, selectedRegion.Y, selectedRegion.Width, selectedRegion.Height), "TRAIN");
+            editor.TemplateRotationDegrees = templateRotationDegrees; editor.LoadPatternPreviewImage(inlinePatternPath); return editor;
+        }
+        void IInlineImageEditPresentation.AcceptLargeInlineEditor(IPropertyGridImageEditView editor)
+        {
+            CvRect region = editor.SelectedRegion;
+            ApplySingleRoi(new DrawingRectangle(region.X, region.Y, region.Width, region.Height));
+            if (editor is IPropertyGridTemplateImageEditView template) { TemplateRotationDegrees = template.TemplateRotationDegrees; }
         }
 
         public CvRect SelectedRegion => selectedRegion;
@@ -134,6 +169,7 @@ namespace OpenVisionLab
 
         public void LoadPatternPreviewImage(string imagePath)
         {
+            inlinePatternPath = imagePath;
             if (!string.IsNullOrWhiteSpace(imagePath))
             {
                 try
@@ -206,6 +242,7 @@ namespace OpenVisionLab
 
         private void ScheduleDeferredCanvasRefresh()
         {
+            if (inlineMode) { return; }
             ScheduleDeferredCanvasRefresh(120);
             ScheduleDeferredCanvasRefresh(420);
         }

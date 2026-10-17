@@ -27,7 +27,7 @@ namespace OpenVisionLab
             string stepDefinitionSha256,
             string reportPath,
             OpenVisionLanguage language,
-            out string error)
+            out string error, IReadOnlyDictionary<string, string> additionalInputPaths = null, IReadOnlyDictionary<string, string> additionalInputSha256 = null)
         {
             error = string.Empty;
             try
@@ -43,6 +43,18 @@ namespace OpenVisionLab
                 List<EvidenceRow> rows = CreateEvidenceRows(summary, language);
                 ApplyReviewQueue(summary, rows, language);
                 string html = BuildHtml(summary, rows, pipelineXml, stepDefinitionSha256, language);
+                if (additionalInputPaths?.Count > 0)
+                {
+                    var inputs = new StringBuilder("<section><h2>Fixed additional inputs</h2>");
+                    foreach (var input in additionalInputPaths)
+                    {
+                        byte[] bytes = File.ReadAllBytes(input.Value);
+                        string sha = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes));
+                        if (additionalInputSha256?.TryGetValue(input.Key, out string expected) != true || sha != expected) { throw new InvalidOperationException("Additional input evidence changed: " + input.Key); }
+                        inputs.Append("<h3>").Append(Encode(input.Key)).Append("</h3><p>").Append(Encode(sha)).Append("</p>").Append("<img alt=\"").Append(Encode(input.Key)).Append("\" src=\"data:image/png;base64,").Append(Convert.ToBase64String(bytes)).Append("\" />");
+                    }
+                    html = html.Replace("</main>", inputs.Append("</section>").ToString() + "</main>");
+                }
                 string fullPath = Path.GetFullPath(reportPath ?? string.Empty);
                 string directory = Path.GetDirectoryName(fullPath)
                     ?? throw new InvalidOperationException(Text(language, "보고서 폴더를 확인하지 못했습니다.", "Could not resolve the report folder."));
@@ -207,7 +219,7 @@ namespace OpenVisionLab
                     .Append("</div><div class=\"caption\"><strong>#")
                     .Append(row.Index.ToString("0000", CultureInfo.InvariantCulture))
                     .Append(" · ")
-                    .Append(Encode(Path.GetFileName(row.Result.SampleImagePath)))
+                    .Append(Encode(string.IsNullOrEmpty(row.Result.SampleImagePath) ? row.Result.SampleName : Path.GetFileName(row.Result.SampleImagePath)))
                     .Append("</strong><br>")
                     .Append(Encode(row.Result.Status)).Append(" · ")
                     .Append(Encode(row.Result.MetricText)).Append(" · ")
@@ -230,7 +242,7 @@ namespace OpenVisionLab
             {
                 html.Append("<tr><td>").Append(row.Index).Append("</td><td title=\"")
                     .Append(Encode(row.Result.SampleImagePath)).Append("\">")
-                    .Append(Encode(Path.GetFileName(row.Result.SampleImagePath))).Append("</td><td class=\"")
+                    .Append(Encode(string.IsNullOrEmpty(row.Result.SampleImagePath) ? row.Result.SampleName : Path.GetFileName(row.Result.SampleImagePath))).Append("</td><td class=\"")
                     .Append(row.Result.Success ? "ok" : "bad").Append("\">")
                     .Append(Encode(row.Result.Status)).Append("</td><td>")
                     .Append(Encode(row.Result.MetricText)).Append("</td><td>")

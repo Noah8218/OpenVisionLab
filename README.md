@@ -1,5 +1,7 @@
 # OpenVisionLab
 
+[한국어](README.ko.md)
+
 OpenVisionLab is an **OpenCvSharp 4 rule-based machine vision workbench**.
 
 It lets users build inspection sequences, adjust tool parameters, and review
@@ -7,13 +9,37 @@ the images and measurements behind each OK/NG decision.
 
 ## Version
 
-Current version: `v2.2.0-dev.5`
+Current version: `v2.2.0-dev.9`
 
-This project is maintained using explicit version numbers. The current value
-is a development candidate; it keeps the existing Recipe/XML and explicit
-Preview/Run contracts while the ownership refactors are verified.
+This project is maintained using explicit version numbers. Versions with a
+`dev` suffix are development builds.
 
 ### Recent version history
+
+#### `v2.2.0-dev.9` (2026-10-17)
+
+- Aligns the offline manual version with the application and preserves Guide checksums across Git checkouts.
+
+#### `v2.2.0-dev.8` (2026-10-17)
+
+- Reduces redundant updates during image selection, tool-editor activation and log filtering.
+- Improves inline tool editing, recipe transitions and inspection-result review.
+- Adds a full Korean README and refreshes the screenshots and workflow recordings.
+
+#### `v2.2.0-dev.7` (2026-10-06)
+
+- Improves Recipe Manager selection and explicit work opening, preserving edits
+  through cancellation and save failures.
+- Modernizes shared controls and nine UI areas, and improves ROI dialog layout,
+  long Tool errors, and input/output layer names.
+- Fixes output-layer target synchronization and updates the main workspace,
+  native Tool forms, Recipe persistence, Pipeline execution and LLM/XML review.
+
+#### `v2.2.0-dev.6` (2026-09-27)
+
+- Includes the recipe workspace sources and integration alpha.4 packages.
+- Adds NuGet lock files for repeatable dependency restores.
+- Clarifies the Visual Studio workload, desktop SDK and Git prerequisites for source builds.
 
 #### `v2.2.0-dev.5` (2026-09-17)
 
@@ -24,19 +50,16 @@ Preview/Run contracts while the ownership refactors are verified.
 
 #### `v2.2.0-dev.4` (2026-09-16)
 
-- Promotes the verified 2D integration consumer, retry/fault-injection, input
-  identity, and output-allocation evidence paths to the next Dev candidate.
-- Records the remaining product-policy and external-environment blockers without
-  making LLM support, hardware, or offline installation a prerequisite.
+- Adds 2D integration checks for retry, fault injection, input identity and
+  output allocation.
 
 #### `v2.2.0-dev.3` (2026-09-16)
 
 - Hardens Pipeline Review, Recipe switching, N-image verification, docking,
   Tool interaction, workspace restoration, storage recovery, and execution
   provenance for clearer deterministic workflows.
-- Adds bounded 2D integration evidence, output-allocation preflight guards,
-  and current Dev verification records without making LLM support a runtime
-  prerequisite.
+- Adds 2D integration checks and output-allocation preflight guards.
+  LLM/XML assistance remains optional.
 
 #### `v2.2.0-dev.2` (2026-09-10)
 
@@ -65,15 +88,47 @@ rule-based inspection recipes from image samples.
   Layer comparison, public samples, and multi-image validation
 - LLM/XML assistance is optional and is not required to use the application
 
+## Build and Check a Recipe
+
+![Create a recipe, load an image and teach inspection tools](docs/assets/demo/readme-workflows/recipe-teaching.gif)
+
+1. In **Recipe Manager**, create `Shape Count`, then choose
+   **Open work with selected inspection** and open an image.
+2. Open **Threshold**. Turn **Run on change** off, set the threshold to `150`,
+   and choose **Run tool (F8)**. Compare the original and binary images, then
+   choose **Add to pipeline → Add at end**.
+3. Open **Contour** and confirm the input is `Threshold_1`. Turn **Use threshold**
+   off, draw the inspection ROI around the five shapes, then choose **Apply**
+   or press **Enter**.
+4. Enable **Acceptance** and select **Detection count**. Check **Lower** and
+   **Upper**, set both to `5`, and press **F8**. Confirm the detected shapes and
+   the count of `5`, then press **Ctrl+Enter** to add the step.
+5. Run the pipeline with **F5**. Review the **Results** tab and compare source,
+   intermediate and output layers in the one-, two- or four-panel viewer.
+6. Save with **Ctrl+S**. Select another recipe and return to reload the saved
+   steps, parameters, ROI and layer connections.
+7. Add Good and Bad images and run **Batch inspection** with the same recipe.
+   Inspect each image's measurements and OK/NG result.
+
+When **Run on change** is off, parameter changes leave the result pending until
+the tool runs. Loading a recipe restores its settings without running the
+inspection. Saving and running are separate actions.
+
+A completed run can have no verdict when no enabled step has acceptance
+criteria. An execution error is separate from an inspection NG. Input or
+parameter changes mark retained results as previous; rerun to obtain current
+results. Batch processing does not retain every intermediate image; run the
+selected image explicitly to inspect those outputs.
+
 ## One Image, Every Inspection Stage
 
-![OpenVisionLab Filter, Threshold, Morphology, Blob, and Contour comparison](docs/assets/demo/openvisionlab_hole_array_pipeline_actual_exe_en.png)
+![OpenVisionLab Filter, Threshold, Morphology, Blob, and Contour comparison](docs/assets/demo/readme-workflows/inspection-stages.png)
 
-The current EXE can keep the source image and every intermediate Layer visible
-at the same time. This public perforated-plate recipe runs `Filter -> Threshold
--> Morphology`, then branches the cleaned Layer to both Blob and Contour. The
-two final panels render 34 accepted holes on the source image; the full-image
-background contour is excluded by the same area gate used by both branches.
+Use the four-panel viewer to compare the source, filtered, binary and cleaned
+images. This public perforated-plate recipe runs `Filter -> Threshold -> Morphology`,
+then branches the cleaned Layer to Blob and Contour. Both branches return
+34 accepted holes, shown in the Results tab. The shared area gate excludes
+the full-image background contour.
 
 [Open the reproducible public Pipeline](docs/samples/public/product/Product_Field_PerforatedPlate_Inspection.pipeline.xml)
 or select `Product_Field_PerforatedPlate_HoleArray` in the sample catalog.
@@ -91,40 +146,45 @@ numbered callouts, and the matching click or review order.
 
 ## Tool Views in the Current EXE
 
-The following recording shows the main Tool Views running in the current Debug
-build. The four panels cover Matching, Line, Blob, and Contour.
+The recording moves through Matching, Line, Blob and Contour settings
+and results in the main workbench.
 
-![OpenVisionLab Tool View demonstration](docs/assets/demo/openvisionlab_tool_views_actual_exe.gif)
+![OpenVisionLab Tool View demonstration](docs/assets/demo/readme-workflows/tool-settings.gif)
 
-[Watch the Tool View MP4](docs/assets/demo/openvisionlab_tool_views_actual_exe.mp4)
+[Watch the Tool View MP4](docs/assets/demo/readme-workflows/tool-settings.mp4)
 
-- Top left: configure a Matching template and review detections
-- Top right: detect a Line, measure a distance, and inspect an intersection
-- Bottom left: configure Blob parameters and review the Preview result
-- Bottom right: configure Contour parameters and review the Preview result
+- Matching: inspect the loaded template, matching scores and detections.
+- Line: choose Edge, Distance or Intersection mode; this example measures pin spacing.
+- Blob: inspect particle detections and count limits.
+- Contour: set the inspection ROI and count limits, then check the detected shapes.
 
-Each result is produced by configuring the Tool View and explicitly selecting
-Preview.
+Use **Run step (F8)** to preview the selected tool or **Run pipeline (F5)**
+to inspect the image with the complete sequence.
 
 ## Chained Processing
 
 OpenVisionLab can connect preprocessing and detection tools in a Pipeline. The
-recording below shows Filter and Morphology in their Tool Views, followed by
-two three-step Pipelines:
+recording below compares intermediate images and results from two three-step
+Pipelines, including the Morphology operation and kernel settings:
 
 - `Filter -> Threshold -> Contour`
 - `Threshold -> Morphology -> Contour`
 
-![OpenVisionLab chained preprocessing demonstration](docs/assets/demo/openvisionlab_preprocess_chains_actual_exe.gif)
+![OpenVisionLab chained preprocessing demonstration](docs/assets/demo/readme-workflows/preprocessing-chains.gif)
 
-[Watch the chained-processing MP4](docs/assets/demo/openvisionlab_preprocess_chains_actual_exe.mp4)
+[Watch the chained-processing MP4](docs/assets/demo/readme-workflows/preprocessing-chains.mp4)
 
 Pipeline Review lets users select each Step, inspect its intermediate image,
 and review the detected objects and drawings from the final Step.
 
-Preview and Run are always explicit user actions. These recordings use public
-example images to demonstrate the workflow; production use requires validation
-with representative application data.
+Run an individual tool with **F8** or the pipeline with **F5**. Tools with a
+**Run on change** option can also run when parameters change.
+
+The next example connects `Filter → Threshold → Contour` and `Threshold → Blob`.
+Compare the input and output images, then inspect the detection count and its
+acceptance limits.
+
+![Preprocessing and particle-count inspection](docs/assets/demo/readme-workflows/sample-inspections.gif)
 
 ## Start Here: Choose the Project
 
@@ -170,9 +230,10 @@ Requirements:
 - `.NET desktop development` workload selected in Visual Studio Installer
 - Internet access for the first NuGet package restore
 
-The workload supplies Visual Studio's Git support, MSBuild, WPF development
-tools, and its matching .NET SDK. A separate Git, PowerShell, or .NET SDK
-installation is not required for this path.
+The workload supplies MSBuild, WPF development tools, and its matching .NET SDK.
+The build also invokes Git directly. Verify `git --version` in the terminal
+used for development; if it fails, install Git for Windows with PATH support
+and restart Visual Studio. GitHub Desktop alone does not establish this check.
 
 1. Open **Visual Studio Installer**.
 2. Find Visual Studio 2022, select **Modify**, select
@@ -180,7 +241,8 @@ installation is not required for this path.
 3. Start Visual Studio and select **Clone a repository**.
 4. Enter `https://github.com/Noah8218/OpenVisionLab.git` and choose a short
    local path such as `C:\src\OpenVisionLab` or `D:\src\OpenVisionLab`.
-5. Open `OpenVisionLab.sln`, select `Debug` and `Any CPU`, then choose
+5. Select branch `main`, open `OpenVisionLab.sln`, set `OpenVisionLab` as the
+   startup project, select `Debug` and `Any CPU`, then choose
    **Build > Build Solution**.
 6. Press **F5** or select the `OpenVisionLab` start button.
 
@@ -271,15 +333,15 @@ dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"
 .\bin\Debug\OpenVisionLab.exe
 ```
 
-![OpenVisionLab main workspace](docs/assets/tutorial/annotated/main_workspace_callouts.png)
+![OpenVisionLab main workspace](docs/assets/demo/readme-workflows/main-workspace.png)
 
-The numbered areas in the main workspace are:
+The main workspace provides these areas:
 
-1. `Tool List`: select the Tool to configure.
-2. `Layer Input`: select or confirm the Layer used as the Tool input.
-3. `Image View`: inspect the source image, intermediate images, and results.
-4. `Run Status`: review the current Tool state and execution status.
-5. `Quick Actions`: open a Tool or add a Step to the Pipeline.
+1. `Pipeline`: review the ordered Steps, Layer connections and final verdict.
+2. `Tools`: select a Tool to configure and add to the Pipeline.
+3. `Image viewer`: compare source, intermediate and output Layers in one, two or four panels.
+4. `Tool panel`: confirm the input Layer, edit parameters, ROI and acceptance limits, then run the Tool. Changing a viewer Layer does not change the Tool input.
+5. `Images` / `Results`: manage inspection images and review Step measurements, execution states and OK/NG reasons.
 
 ## Product Scope
 
@@ -319,7 +381,7 @@ Load image
 | Layer Docking | Compare source, intermediate, and final images in tabs or split views |
 | Tool View | Configure Threshold, Filter, Morphology, Blob, Contour, Matching, FeatureMatching, Line, Mean, and other tools |
 | PropertyGrid | Edit Tool parameters through a consistent property interface |
-| Preview / Run | Generate results only when the user explicitly requests execution |
+| Preview / Run | Run a tool or a complete Pipeline; control parameter-triggered execution with Run on change where supported |
 | Pipeline / Recipe | Connect multiple Tools as ordered Steps and save them as XML |
 | Pipeline Review | Inspect Step inputs and outputs, measurements, drawings, logs, and OK/NG reasons |
 | Sample Catalog | Browse sample images, baseline Pipelines, expected results, and Good/Bad pairs |
@@ -329,8 +391,8 @@ Load image
 
 ## Public Samples
 
-The `docs/samples/public` directory contains synthetic examples for learning
-the basic workflow. Each sample includes an image, a recommended Pipeline,
+The `docs/samples/public` directory contains example images and Pipelines
+for learning the inspection workflow. Each sample includes an image, a recommended Pipeline,
 measurements to inspect, and a Good/Bad expectation.
 
 The public distribution catalogs are:
@@ -341,7 +403,7 @@ The public distribution catalogs are:
 The root `Sample/` directory is reserved for local or third-party data and is
 not part of the public sample distribution.
 
-![OpenVisionLab public sample catalog](docs/assets/tutorial/annotated/sample_catalog_public_callouts.png)
+![OpenVisionLab public sample catalog](docs/assets/demo/readme-workflows/sample-catalog.png)
 
 Representative sample pairs:
 
@@ -355,6 +417,18 @@ Representative sample pairs:
 | Compare feature-matching scores | `Public_Feature_Card_Good` | `Public_Feature_Card_Wrong_Bad` | `ScoreMax`, `ResultCount` |
 | Compare edge-based shapes | `Public_Edge_Fiducial_Good` | `Public_Edge_Fiducial_Wrong_Bad` | `ScoreMax`, `ResultCount` |
 | Measure a distance with Line | `Public_Line_Pins_Good` | `Public_Line_Pins_WidePin_Bad` | `DistanceMmAvg` |
+
+Use the saved `Shape Count` recipe on the original and missing-shape images.
+Assign **Good** and **Bad** labels, then run **Batch inspection**. With the ROI
+and count limits above, the original returns **5 detections / OK** and the
+missing-shape image returns **2 detections / NG**. The batch contains
+**1 OK, 1 NG and 0 errors**.
+
+Good/Bad labels specify the expected class; OK/NG is the inspection result.
+Select an image to review its result, then compare the source, processed image,
+overlays and acceptance limits. **Page Up** returns to the previous image.
+
+![Reload a recipe and compare Good and Bad inspection results](docs/assets/demo/readme-workflows/recipe-validation.gif)
 
 ## Tool Architecture
 
@@ -387,7 +461,7 @@ Users can inspect:
 - the reason for an OK or NG result;
 - the parameters that may need adjustment.
 
-![OpenVisionLab Pipeline Review](docs/assets/tutorial/annotated/pipeline_matching_review_callouts.png)
+![OpenVisionLab Pipeline Review](docs/assets/demo/readme-workflows/pipeline-results.png)
 
 ## Build
 
@@ -451,22 +525,21 @@ requires evidence from the current build.
 - Release and version policy:
   [docs/OPENVISIONLAB_RELEASE_VERSION_POLICY.md](docs/OPENVISIONLAB_RELEASE_VERSION_POLICY.md)
 
-A release candidate must pass the build, readiness, external-reference, and
-public-sample checks, plus any UI or EXE checks required by the change.
+The product version is defined in `src/OpenVisionLab/OpenVisionLab.csproj`.
+The version shown above and the change history follow that value.
 
 ## Roadmap
 
-The following documents define the current product direction and development
-priorities:
+Changes are reviewed against the inspection workflow and its existing contracts:
 
-- [Product target and main views](docs/OPENVISIONLAB_PRODUCT_TARGET_AND_MAIN_VIEWS.md)
-- [Product identity and roadmap](docs/OPENVISIONLAB_PRODUCT_IDENTITY_AND_ROADMAP.md)
-- [Current status and next steps](docs/OPENVISIONLAB_STATUS_AND_NEXT_STEPS.md)
-- [Validation Suite and Result Archive design](docs/OPENVISIONLAB_VALIDATION_SUITE_RESULT_ARCHIVE_DESIGN_20260707.md)
+- [Inspection workflows](docs/manual/README.md)
+- [Tool and Recipe contracts](docs/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md)
+- [Public examples](docs/samples/public/README.md)
+- [Source ownership](docs/admin/CODEBASE_STRUCTURE.md)
 
-New features are selected from reproducible operator problems and representative
-inspection data. The current status documents distinguish completed work from
-conditional backlog items.
+For a tool change, include the input images, parameters, output Layer and
+acceptance metrics. For a workflow change, include a reproducible operator task
+and evidence from the affected controls.
 
 ## Scope and Limitations
 
@@ -483,7 +556,7 @@ conditional backlog items.
 - [Tutorial](docs/learn/OPENVISIONLAB_TUTORIAL.md)
 - [Learn Mode guide](docs/learn/README.md)
 - [Stable feature contracts](docs/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md)
-- [Current status and next steps](docs/OPENVISIONLAB_STATUS_AND_NEXT_STEPS.md)
+- [Documentation index](docs/README.md)
 - [Public sample catalog](docs/samples/OpenVisionLab.PublicSampleCatalog.csv)
 - [Product sample catalog](docs/samples/OpenVisionLab.ProductSampleCatalog.csv)
 
@@ -492,11 +565,11 @@ conditional backlog items.
 OpenVisionLab is licensed under the
 [Apache License 2.0](LICENSE).
 
-This project includes software developed by Noah Choi.
+This project includes software developed by 최노아(Noah-Choi).
 
 ```text
-This project includes software developed by 최노아 (Noah Choi).
-Copyright (c) 2026 최노아 (Noah Choi).
+This project includes software developed by 최노아(Noah-Choi).
+Copyright (c) 2026 최노아(Noah-Choi).
 ```
 
 Commercial use, modification, and redistribution are permitted under the

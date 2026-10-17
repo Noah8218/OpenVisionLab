@@ -8,6 +8,35 @@ namespace OpenVisionLab
 {
     internal sealed class OpenVisionRecipePipelineLifecycleUseCase
     {
+        internal OpenVisionRecipePipelineLifecycleResult CreateEmpty(string recipeName, string requestedName)
+        {
+            if (string.IsNullOrWhiteSpace(requestedName) || requestedName.Trim().Length > 60
+                || !RecipeWorkspaceService.TryNormalizeStoragePathSegment(requestedName, VisionPipelineAppendService.DefaultPipelineName, "Pipeline name", out string name, out string error))
+            {
+                return OpenVisionRecipePipelineLifecycleResult.Failure("Invalid pipeline name.");
+            }
+            if (RecipeWorkspaceService.GetVisionPipelineNames(recipeName).Contains(name, StringComparer.OrdinalIgnoreCase))
+            {
+                return OpenVisionRecipePipelineLifecycleResult.Failure("A pipeline with that name already exists.");
+            }
+            string target = RecipeWorkspaceService.GetVisionPipelinePath(recipeName, name);
+            try
+            {
+                VisionPipelineStorage.Save(recipeName, new VisionPipeline { Name = name });
+                if (!VisionPipelineStorage.TryLoadFromFile(target, out VisionPipeline created, out error) || created == null)
+                {
+                    if (System.IO.File.Exists(target)) { System.IO.File.Delete(target); }
+                    return OpenVisionRecipePipelineLifecycleResult.Failure(error);
+                }
+                return OpenVisionRecipePipelineLifecycleResult.Success(name, string.Empty);
+            }
+            catch (Exception exception)
+            {
+                if (System.IO.File.Exists(target)) { System.IO.File.Delete(target); }
+                return OpenVisionRecipePipelineLifecycleResult.Failure(exception.GetBaseException().Message);
+            }
+        }
+
         public OpenVisionRecipePipelineLifecycleResult Activate(string recipeName, string pipelineName)
         {
             VisionPipelineStorage.SaveActivePipelineName(recipeName, pipelineName);
@@ -17,7 +46,8 @@ namespace OpenVisionLab
         public OpenVisionRecipePipelineLifecycleResult Duplicate(
             string recipeName,
             string sourcePipelineName,
-            string requestedName)
+            string requestedName,
+            bool activateCopy = true)
         {
             string baseName = string.Equals(sourcePipelineName, requestedName, StringComparison.OrdinalIgnoreCase)
                 ? sourcePipelineName + "_Copy"
@@ -36,7 +66,10 @@ namespace OpenVisionLab
                 return OpenVisionRecipePipelineLifecycleResult.Failure(message);
             }
 
-            VisionPipelineStorage.SaveActivePipelineName(recipeName, targetName);
+            if (activateCopy)
+            {
+                VisionPipelineStorage.SaveActivePipelineName(recipeName, targetName);
+            }
             return OpenVisionRecipePipelineLifecycleResult.Success(targetName, message);
         }
 

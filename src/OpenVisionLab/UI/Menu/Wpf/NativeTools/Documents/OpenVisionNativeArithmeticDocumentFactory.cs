@@ -8,22 +8,25 @@ namespace OpenVisionLab
         private const string ToolName = "Arithmetic";
         private const string DefaultOutputLayer = "Arithmetic_Preview";
 
-        internal static OpenVisionNativeToolDocument Create(IDisplayManager displayManager)
+        internal static OpenVisionNativeToolDocument Create(IDisplayManager displayManager, bool forWorkbench = false)
         {
             ArithmeticToolWpfView view = new ArithmeticToolWpfView();
             string settingsConfigName = OpenVisionNativeToolSettingsStore.CreateConfigName(ToolName);
-            ArithmeticToolSettings settings = OpenVisionNativeToolSettingsStore.Load(settingsConfigName, new ArithmeticToolSettings());
+            ArithmeticToolSettings settings = forWorkbench ? OpenVisionNativeToolSettingsStore.LoadExisting(settingsConfigName, new ArithmeticToolSettings())
+                : OpenVisionNativeToolSettingsStore.Load(settingsConfigName, new ArithmeticToolSettings());
             ConfigureOperations(view);
             view.ApplyPersistedSettings(settings);
-            view.ParameterChanged += (sender, e) =>
-                OpenVisionNativeToolSettingsStore.Save(settingsConfigName, view.CaptureSettings());
-
-            return new OpenVisionNativeToolDocument(
+            OpenVisionNativeToolDocument document = new OpenVisionNativeToolDocument(
                 displayManager,
                 view,
                 view,
                 ToolName,
                 DefaultOutputLayer);
+            view.ParameterChanged += (sender, e) => document.RecordParameterChange(() => OpenVisionNativeToolSettingsStore.Save(settingsConfigName, view.CaptureSettings()));
+            document.ConfigureParameterState(forWorkbench, () => view.CaptureSettings(), snapshot => view.ApplyPersistedSettings((ArithmeticToolSettings)snapshot),
+                context => OpenVisionNativeToolSettingsStore.LoadExisting(settingsConfigName, new ArithmeticToolSettings(), context.Name),
+                step => view.ApplyPersistedSettings(VisionPipelineStepPropertyMapper.CreateArithmeticSettings(step)), createDefaults: () => new ArithmeticToolSettings());
+            return document;
         }
 
         private static void ConfigureOperations(ArithmeticToolWpfView view)

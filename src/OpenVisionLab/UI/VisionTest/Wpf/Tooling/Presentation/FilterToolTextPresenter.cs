@@ -46,8 +46,8 @@ namespace OpenVisionLab
             kernelGroup.Header = ResolveText("PropertyGrid.Category.Kernel", "Kernel");
             filterTypeLabel.Text = ResolveText("PropertyGrid.Property.FilterType.DisplayName", "Filter type");
             borderTypeLabel.Text = ResolveText("PropertyGrid.Property.BorderType.DisplayName", "Border type");
-            kernelWidthLabel.Text = ResolveText("PropertyGrid.Property.KernelWidth.DisplayName", "Kernel width");
-            kernelHeightLabel.Text = ResolveText("PropertyGrid.Property.KernelHeight.DisplayName", "Kernel height");
+            kernelWidthLabel.Text = ResolveText("VisionTool.Kernel.Width", "Width");
+            kernelHeightLabel.Text = ResolveText("VisionTool.Kernel.Height", "Height");
             medianKernelLabel.Text = ResolveText("PropertyGrid.Property.MedianKernelSize.DisplayName", "Median kernel size");
             diameterLabel.Text = ResolveText("PropertyGrid.Property.Diameter.DisplayName", "Diameter");
             sigmaColorLabel.Text = ResolveText("PropertyGrid.Property.SigmaColor.DisplayName", "Sigma Color");

@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
+using System.Xml.Linq;
 
 internal static class ShellRecipeBasicLifecycleViewContract
 {
@@ -68,25 +70,23 @@ internal static class ShellRecipeBasicLifecycleViewContract
                 "Shell does not compose the named Recipe basic lifecycle view.");
             passed.Add("Shell composition uses the named Recipe basic lifecycle view");
 
+            XNamespace wpf = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+            XElement workbench = XDocument.Parse(shellView).Descendants(wpf + "Grid")
+                .Single(element => (string?)element.Attribute("AutomationProperties.AutomationId") == "HostRecipeManagerWorkbenchGrid");
+            XElement libraryColumn = workbench.Element(wpf + "Grid.ColumnDefinitions")!.Elements().First();
             Require(
-                shellView.Contains(
-                    "<local:OpenVisionRecipeBasicLifecycleView.Style>",
-                    StringComparison.Ordinal)
-                && shellView.Contains(
-                    "<DataTrigger Binding=\"{Binding IsChecked, ElementName=recipeAdvancedReviewToggle}\" Value=\"True\">",
-                    StringComparison.Ordinal)
-                && shellView.Contains(
-                    "<Setter Property=\"Visibility\" Value=\"Collapsed\" />",
-                    StringComparison.Ordinal)
-                && !shellView.Contains(
-                    "<Grid x:Name=\"recipeBasicLifecyclePanel\">",
-                    StringComparison.Ordinal),
-                "Advanced-review visibility or the former inline Grid boundary changed.");
-            passed.Add("advanced-review visibility stays in the Shell namescope");
+                libraryColumn.Descendants(wpf + "DataTrigger").Any(trigger =>
+                    ((string?)trigger.Attribute("Binding"))?.Contains("recipeAdvancedReviewToggle", StringComparison.Ordinal) == true
+                    && (string?)trigger.Attribute("Value") == "True"
+                    && trigger.Elements(wpf + "Setter").Any(setter => (string?)setter.Attribute("Property") == "Width" && (string?)setter.Attribute("Value") == "0"))
+                && !shellView.Contains("<Grid x:Name=\"recipeBasicLifecyclePanel\">", StringComparison.Ordinal),
+                "Shell library column no longer collapses during main/advanced work.");
+            passed.Add("Shell owns the actual library-column visibility boundary; runtime main-entry smoke checks rendered hiding");
 
             string[] requiredBindings =
             {
-                "RecipeCommands.EditRecipeNameLabelText",
+                "RecipeCommands.RecipeManagerNameEditHintText",
+                "RecipeCommands.CancelRecipeNameEditCommand",
                 "RecipeCommands.EditRecipeName",
                 "RecipeCommands.CreateNamedRecipeCommand",
                 "RecipeCommands.DuplicateRecipeCommand",
@@ -128,10 +128,27 @@ internal static class ShellRecipeBasicLifecycleViewContract
                 "Lifecycle view retained Shell-only toggle coupling or lost stretch layout.");
             passed.Add("new view owns presentation layout without Shell toggle coupling");
 
-            Require(
-                !File.Exists(lifecycleCodeBehindPath),
-                "Lifecycle view retains a manual code-behind file even though its XAML has no view-specific behavior.");
-            passed.Add("view uses compiled XAML without a redundant manual code-behind file");
+            string initializationOnly = "usingSystem.Windows.Controls;namespaceOpenVisionLab{publicpartialclassOpenVisionRecipeBasicLifecycleView:UserControl{publicOpenVisionRecipeBasicLifecycleView(){InitializeComponent();}}}";
+            Require(!File.Exists(lifecycleCodeBehindPath)
+                || Regex.Replace(File.ReadAllText(lifecycleCodeBehindPath), @"\s", string.Empty) == initializationOnly,
+                "Lifecycle code-behind contains behavior beyond compiled-XAML initialization.");
+            passed.Add("View code-behind is absent or initialization-only; CRUD state remains in RecipeCommands");
+            Require(lifecycleView.Contains("Key=\"Enter\" Command=\"{Binding RecipeCommands.RenameRecipeCommand}\"", StringComparison.Ordinal)
+                && lifecycleView.Contains("Key=\"Escape\" Command=\"{Binding RecipeCommands.CancelRecipeNameEditCommand}\"", StringComparison.Ordinal)
+                && shellView.Contains("mvvmBehaviors:InputCommandBehaviors.FocusOnKey=\"F2\"", StringComparison.Ordinal)
+                && shellView.Contains("mvvmBehaviors:InputCommandBehaviors.FocusTarget=\"{Binding ElementName=recipeBasicLifecyclePanel}\"", StringComparison.Ordinal),
+                "Manager keyboard focus/save/cancel bindings are missing.");
+            passed.Add("F2 uses the presentation Behavior; Enter/Esc use existing state-owner commands");
+            XNamespace behaviors = "clr-namespace:OpenVisionLab.Mvvm.Behaviors;assembly=OpenVisionLab.Mvvm";
+            XElement pipelineList = XDocument.Parse(shellView).Descendants(wpf + "ListBox")
+                .Single(element => (string?)element.Attribute("AutomationProperties.AutomationId") == "HostRecipeStoredInspectionSelector");
+            Require((string?)pipelineList.Attribute(behaviors + "InputCommandBehaviors.FocusOnKey") == "F2"
+                && (string?)pipelineList.Attribute(behaviors + "InputCommandBehaviors.FocusTarget") == "{Binding ElementName=recipeManagerPipelineNameEditor}"
+                && (string?)pipelineList.Attribute("SelectedItem") == "{Binding RecipeCommands.RecipeManagerSelectedPipelineOption, Mode=TwoWay}"
+                && pipelineList.Descendants(wpf + "Setter").Any(setter => (string?)setter.Attribute("Property") == "AutomationProperties.Name"
+                    && (string?)setter.Attribute("Value") == "{Binding PipelineName}"),
+                "Stored inspection list lost its contextual F2 target or accessible pipeline name.");
+            passed.Add("Saved inspection list exposes pipeline names and routes F2 to its own name editor");
 
             Require(
                 recipeCommands.Contains("CreateNamedRecipeCommand", StringComparison.Ordinal)

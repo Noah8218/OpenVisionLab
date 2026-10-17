@@ -100,6 +100,12 @@ namespace OpenVisionLab
                 null).ConfigureAwait(false);
         }
 
+        internal Task<VisionRecipeRunResult> RunAsync(VisionPipeline pipeline, Mat sourceImage, string inputLayerName,
+            int stepTimeoutMilliseconds, CancellationToken cancellationToken, IReadOnlyDictionary<string, Mat> additionalSources)
+        {
+            return RunAsync(pipeline, sourceImage, inputLayerName, stepTimeoutMilliseconds, cancellationToken, null, null, additionalSources);
+        }
+
         private async Task<VisionRecipeRunResult> RunAsync(
             VisionPipeline pipeline,
             Mat sourceImage,
@@ -107,7 +113,7 @@ namespace OpenVisionLab
             int stepTimeoutMilliseconds,
             CancellationToken cancellationToken,
             string originalXmlText,
-            byte[] originalXmlBytes)
+            byte[] originalXmlBytes, IReadOnlyDictionary<string, Mat> additionalSources = null)
         {
             if (pipeline == null)
             {
@@ -131,7 +137,7 @@ namespace OpenVisionLab
                 originalXmlBytes);
             VisionPipelineValidationResult validation = VisionPipelineValidator.Validate(
                 executionPlan.EffectivePipeline,
-                new[] { sourceLayer });
+                new[] { sourceLayer }.Concat(additionalSources?.Keys ?? Enumerable.Empty<string>()));
             if (!validation.Success)
             {
                 throw new VisionPipelineValidationException(validation);
@@ -146,6 +152,11 @@ namespace OpenVisionLab
             using (VisionPipelineContext context = new VisionPipelineContext())
             {
                 context.SetLayer(sourceLayer, sourceImage);
+                foreach (var source in additionalSources ?? new Dictionary<string, Mat>())
+                {
+                    if (string.IsNullOrWhiteSpace(source.Key) || string.Equals(source.Key, DefaultInputLayer, StringComparison.OrdinalIgnoreCase) || string.Equals(source.Key, sourceLayer, StringComparison.OrdinalIgnoreCase) || source.Value == null || source.Value.Empty()) { throw new ArgumentException("Invalid additional input snapshot: " + source.Key); }
+                    context.SetLayer(source.Key, source.Value);
+                }
                 VisionPipelineRunResult runResult = null;
                 try
                 {

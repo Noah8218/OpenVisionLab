@@ -10,30 +10,30 @@ namespace OpenVisionLab.Composition
         // Composition roots ask this service for collaborators; WPF views receive contracts through constructors.
         // Add ViewModel factories here after choosing the tool lane documented in VISION_TOOL_NATIVE_WPF_EXTENSION_GUIDE.
         // For algorithm tools, ViewModels support summaries/normalization around PropertyGrid-owned property models; they do not replace the PropertyGrid UI contract.
-        public static IThresholdToolViewModel CreateThresholdToolViewModel()
+        public static IThresholdToolViewModel CreateThresholdToolViewModel(System.Action<ThresholdToolSettings> settingsChanged = null, bool readOnlyLoad = false)
         {
-            var viewModel = new ThresholdToolViewModel();
-            viewModel.ApplySettings(OpenVisionNativeToolSettingsStore.Load(
-                OpenVisionNativeToolSettingsStore.CreateConfigName("Threshold"),
-                new ThresholdToolSettings()));
+            string configName = OpenVisionNativeToolSettingsStore.CreateConfigName("Threshold");
+            var viewModel = new ThresholdToolViewModel(configName, settingsChanged);
+            viewModel.ApplySettings(readOnlyLoad ? OpenVisionNativeToolSettingsStore.LoadExisting(configName, new ThresholdToolSettings())
+                : OpenVisionNativeToolSettingsStore.Load(configName, new ThresholdToolSettings()));
             return viewModel;
         }
 
-        public static IFilterToolViewModel CreateFilterToolViewModel()
+        public static IFilterToolViewModel CreateFilterToolViewModel(System.Action<FilterToolSettings> settingsChanged = null, bool readOnlyLoad = false)
         {
-            var viewModel = new FilterToolViewModel();
-            viewModel.ApplySettings(OpenVisionNativeToolSettingsStore.Load(
-                OpenVisionNativeToolSettingsStore.CreateConfigName("Filter"),
-                new FilterToolSettings()));
+            string configName = OpenVisionNativeToolSettingsStore.CreateConfigName("Filter");
+            var viewModel = new FilterToolViewModel(configName, settingsChanged);
+            viewModel.ApplySettings(readOnlyLoad ? OpenVisionNativeToolSettingsStore.LoadExisting(configName, new FilterToolSettings())
+                : OpenVisionNativeToolSettingsStore.Load(configName, new FilterToolSettings()));
             return viewModel;
         }
 
-        public static IMorphologyToolViewModel CreateMorphologyToolViewModel()
+        public static IMorphologyToolViewModel CreateMorphologyToolViewModel(System.Action<MorphologyToolSettings> settingsChanged = null, bool readOnlyLoad = false)
         {
-            var viewModel = new MorphologyToolViewModel();
-            viewModel.ApplySettings(OpenVisionNativeToolSettingsStore.Load(
-                OpenVisionNativeToolSettingsStore.CreateConfigName("Morphology"),
-                new MorphologyToolSettings()));
+            string configName = OpenVisionNativeToolSettingsStore.CreateConfigName("Morphology");
+            var viewModel = new MorphologyToolViewModel(configName, settingsChanged);
+            viewModel.ApplySettings(readOnlyLoad ? OpenVisionNativeToolSettingsStore.LoadExisting(configName, new MorphologyToolSettings())
+                : OpenVisionNativeToolSettingsStore.Load(configName, new MorphologyToolSettings()));
             return viewModel;
         }
 

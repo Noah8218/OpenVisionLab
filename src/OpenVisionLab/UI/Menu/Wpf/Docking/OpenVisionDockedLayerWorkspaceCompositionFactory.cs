@@ -27,7 +27,8 @@ namespace OpenVisionLab
                     content.DocumentContentPredicate,
                     OpenVisionDockedLayerDocumentProjection.CreateDocumentState,
                     OpenVisionDockedLayerDocumentProjection.CreateWorkspaceState,
-                    options.CanOpenLayer,
+                    id => content.ContentSource is OpenVisionDockedLayerContentSource { MainViewer: not null } source
+                        ? source.MainViewer.FindPane(id) != null : options.CanOpenLayer(id),
                     options.IsLoadedProvider,
                     options.ApplyRefreshResult,
                     options.RefreshLayerActions));

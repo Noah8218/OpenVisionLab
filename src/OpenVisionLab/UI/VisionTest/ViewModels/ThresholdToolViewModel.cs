@@ -13,6 +13,7 @@ namespace OpenVisionLab.ViewModels
     internal sealed class ThresholdToolViewModel : ObservableObject, IThresholdToolViewModel
     {
         private readonly string settingsConfigName;
+        private readonly Action<ThresholdToolSettings> settingsChanged;
         private bool suppressSettingsSave;
         private ThresholdToolMode mode = ThresholdToolMode.Threshold;
         private double threshold = 127;
@@ -32,8 +33,9 @@ namespace OpenVisionLab.ViewModels
         {
         }
 
-        public ThresholdToolViewModel(string settingsConfigName)
+        public ThresholdToolViewModel(string settingsConfigName, Action<ThresholdToolSettings> settingsChanged = null)
         {
+            this.settingsChanged = settingsChanged;
             this.settingsConfigName = string.IsNullOrWhiteSpace(settingsConfigName)
                 ? OpenVisionNativeToolSettingsStore.CreateConfigName("Threshold")
                 : settingsConfigName;
@@ -222,7 +224,9 @@ namespace OpenVisionLab.ViewModels
                 return;
             }
 
-            OpenVisionNativeToolSettingsStore.Save(settingsConfigName, CaptureSettings());
+            ThresholdToolSettings settings = CaptureSettings();
+            if (settingsChanged != null) { settingsChanged(settings); }
+            else { OpenVisionNativeToolSettingsStore.Save(settingsConfigName, settings); }
         }
 
         private static string CreateSummary(ThresholdToolProperty property)

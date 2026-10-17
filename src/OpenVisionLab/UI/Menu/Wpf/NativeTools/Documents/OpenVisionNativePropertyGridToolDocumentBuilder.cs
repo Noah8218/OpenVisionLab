@@ -25,7 +25,8 @@ namespace OpenVisionLab
             Func<VisionToolTemplateStatus> getTemplateStatus = null,
             Action<string> applyTemplatePathForTest = null,
             Action<string> reloadTemplateIfPatternChanged = null,
-            Action persistSelectedObject = null)
+            Action persistSelectedObject = null,
+            Func<TView, OpenVisionNativePreviewOperation> capturePreview = null)
         {
             ToolName = string.IsNullOrWhiteSpace(toolName) ? throw new ArgumentException("Tool name is required.", nameof(toolName)) : toolName;
             DefaultOutputLayer = string.IsNullOrWhiteSpace(defaultOutputLayer) ? ToolName + "_Preview" : defaultOutputLayer;
@@ -33,7 +34,12 @@ namespace OpenVisionLab
             CreateProperty = createProperty ?? throw new ArgumentNullException(nameof(createProperty));
             GetSummary = getSummary ?? throw new ArgumentNullException(nameof(getSummary));
             CreateView = createView ?? throw new ArgumentNullException(nameof(createView));
-            ExecutePreview = executePreview ?? throw new ArgumentNullException(nameof(executePreview));
+            if (executePreview == null && capturePreview == null)
+            {
+                throw new ArgumentNullException(nameof(executePreview));
+            }
+            ExecutePreview = executePreview;
+            CapturePreview = capturePreview;
             CreateStep = createStep ?? VisionPipelineStepBuilder.FromProperty;
             GetTemplateStatus = getTemplateStatus;
             ApplyTemplatePathForTest = applyTemplatePathForTest;
@@ -54,6 +60,8 @@ namespace OpenVisionLab
         public Func<VisionToolPropertyGridPresenter<TProperty>, TView> CreateView { get; }
 
         public Func<Mat, TView, VisionToolResult> ExecutePreview { get; }
+
+        public Func<TView, OpenVisionNativePreviewOperation> CapturePreview { get; }
 
         public Func<TProperty, string, string, VisionPipelineStep> CreateStep { get; }
 
@@ -99,7 +107,8 @@ namespace OpenVisionLab
                 descriptor.ToolName,
                 descriptor.DefaultOutputLayer,
                 descriptor.ExecutePreview,
-                (activeView, inputLayer, outputLayer) => descriptor.CreateStep(descriptor.CreateProperty(), inputLayer, outputLayer)));
+                (activeView, inputLayer, outputLayer) => descriptor.CreateStep(descriptor.CreateProperty(), inputLayer, outputLayer),
+                capturePreview: descriptor.CapturePreview));
         }
     }
 }

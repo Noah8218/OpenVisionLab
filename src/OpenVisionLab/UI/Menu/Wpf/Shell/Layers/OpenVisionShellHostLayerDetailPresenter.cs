@@ -29,19 +29,18 @@ namespace OpenVisionLab
                     layerTitle,
                     OpenVisionLanguageService.T("Shell.LayerDetailNoImage"),
                     OpenVisionLanguageService.T("Shell.LayerDetailPending"),
-                    null);
+                    null, "Shell.LayerDetailPending");
             }
 
             string tackTime = string.IsNullOrWhiteSpace(displayManager.TackTime) ? "-" : displayManager.TackTime;
             string activeLayer = string.IsNullOrWhiteSpace(displayManager.FocusItem)
                 ? displayManager.SelectedItem
                 : displayManager.FocusItem;
-            string stateText = string.Equals(layerTitle, activeLayer, StringComparison.OrdinalIgnoreCase)
-                ? OpenVisionLanguageService.T("Shell.LayerStateDisplay")
-                : "OK";
+            string stateTextKey = string.Equals(layerTitle, activeLayer, StringComparison.OrdinalIgnoreCase) ? "Shell.LayerStateDisplay" : null;
+            string stateText = stateTextKey == null ? "OK" : OpenVisionLanguageService.T(stateTextKey);
             string metaText = string.Format(CultureInfo.CurrentCulture, "{0}x{1} / {2}", image.Width, image.Height, tackTime);
 
-            return new OpenVisionShellHostLayerDetailState(layerTitle, metaText, stateText, image);
+            return new OpenVisionShellHostLayerDetailState(layerTitle, metaText, stateText, image, stateTextKey);
         }
 
         public OpenVisionShellHostLayerActionState BuildActionState(string selectedLayer, ICollection<string> dockedLayerTitles)
@@ -86,11 +85,12 @@ namespace OpenVisionLab
 
     internal sealed class OpenVisionShellHostLayerDetailState
     {
-        public OpenVisionShellHostLayerDetailState(string layerTitle, string metaText, string routeText, Bitmap image)
+        public OpenVisionShellHostLayerDetailState(string layerTitle, string metaText, string routeText, Bitmap image, string routeTextKey = null)
         {
             LayerTitle = layerTitle;
             MetaText = metaText;
             RouteText = routeText;
+            RouteTextKey = routeTextKey;
             Image = image;
         }
 
@@ -99,6 +99,8 @@ namespace OpenVisionLab
         public string MetaText { get; }
 
         public string RouteText { get; }
+
+        public string RouteTextKey { get; }
 
         public Bitmap Image { get; }
 

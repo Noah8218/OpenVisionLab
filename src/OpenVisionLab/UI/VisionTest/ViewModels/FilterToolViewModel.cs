@@ -13,6 +13,7 @@ namespace OpenVisionLab.ViewModels
     internal sealed class FilterToolViewModel : ObservableObject, IFilterToolViewModel
     {
         private readonly string settingsConfigName;
+        private readonly Action<FilterToolSettings> settingsChanged;
         private bool suppressSettingsSave;
         private FilterToolType filterType = FilterToolType.Blur;
         private int kernelWidth = 3;
@@ -28,8 +29,9 @@ namespace OpenVisionLab.ViewModels
         {
         }
 
-        public FilterToolViewModel(string settingsConfigName)
+        public FilterToolViewModel(string settingsConfigName, Action<FilterToolSettings> settingsChanged = null)
         {
+            this.settingsChanged = settingsChanged;
             this.settingsConfigName = string.IsNullOrWhiteSpace(settingsConfigName)
                 ? OpenVisionNativeToolSettingsStore.CreateConfigName("Filter")
                 : settingsConfigName;
@@ -189,7 +191,9 @@ namespace OpenVisionLab.ViewModels
                 return;
             }
 
-            OpenVisionNativeToolSettingsStore.Save(settingsConfigName, CaptureSettings());
+            FilterToolSettings settings = CaptureSettings();
+            if (settingsChanged != null) { settingsChanged(settings); }
+            else { OpenVisionNativeToolSettingsStore.Save(settingsConfigName, settings); }
         }
 
         private static string CreateSummary(FilterToolProperty property)

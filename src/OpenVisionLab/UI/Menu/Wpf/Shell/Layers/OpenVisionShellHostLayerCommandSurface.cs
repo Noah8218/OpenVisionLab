@@ -12,20 +12,29 @@ namespace OpenVisionLab
         private readonly OpenVisionShellHostLayerManagementController managementController;
         private readonly IOpenVisionDockedLayerWorkspaceCommands dockedLayerWorkspace;
         private readonly Func<string> workspaceLayerTitleProvider;
+        private readonly OpenVisionShellHostLayerListPresenter layerListPresenter;
+        private string managerSelectedTitle = string.Empty, managerRenameTitle = string.Empty, managerStatus = string.Empty;
+        private bool managerError, managerBusy;
 
         internal OpenVisionShellHostLayerCommandSurface(
             OpenVisionShellHostLayerSelectionController selectionController,
             OpenVisionShellHostLayerViewerController viewerController,
             OpenVisionShellHostLayerManagementController managementController,
             IOpenVisionDockedLayerWorkspaceCommands dockedLayerWorkspace,
-            Func<string> workspaceLayerTitleProvider)
+            Func<string> workspaceLayerTitleProvider,
+            OpenVisionShellHostLayerListPresenter layerListPresenter)
         {
             this.selectionController = selectionController ?? throw new ArgumentNullException(nameof(selectionController));
             this.viewerController = viewerController ?? throw new ArgumentNullException(nameof(viewerController));
             this.managementController = managementController ?? throw new ArgumentNullException(nameof(managementController));
             this.dockedLayerWorkspace = dockedLayerWorkspace ?? throw new ArgumentNullException(nameof(dockedLayerWorkspace));
             this.workspaceLayerTitleProvider = workspaceLayerTitleProvider ?? throw new ArgumentNullException(nameof(workspaceLayerTitleProvider));
+            this.layerListPresenter = layerListPresenter ?? throw new ArgumentNullException(nameof(layerListPresenter));
 
+            AddManagerImageCommand = new RelayCommand(() => RunManagerAction(() => managementController.PromptAndAddImageLayer()), () => !managerBusy);
+            RenameManagerLayerCommand = new RelayCommand(RenameManagerLayer, () => !managerBusy && managementController.CanDeleteLayer(ManagerSelectedTitle));
+            DeleteManagerLayerCommand = new RelayCommand(DeleteManagerLayer, () => !managerBusy && managementController.CanDeleteLayer(ManagerSelectedTitle));
+            OpenManagerLayerViewerCommand = new RelayCommand(() => viewerController.Open(ManagerSelectedTitle), () => !managerBusy && viewerController.CanOpen(ManagerSelectedTitle));
             HandleSelectedLayerChangedCommand = new RelayCommand<object>(_ => HandleSelectedLayerChanged());
             CreateLayerCommand = new RelayCommand(CreateLayer);
             LoadImageIntoSelectedLayerCommand = new RelayCommand(LoadImageIntoSelectedLayer, CanLoadImageIntoSelectedLayer);
@@ -42,6 +51,20 @@ namespace OpenVisionLab
 
             dockedLayerWorkspace.WorkspaceStateChanged += OnWorkspaceStateChanged;
         }
+
+        public System.Collections.IEnumerable ManagerRows => layerListPresenter.Rows;
+        public string ManagerSelectedTitle
+        {
+            get => managerSelectedTitle;
+            set { if (SetProperty(ref managerSelectedTitle, value ?? string.Empty)) { ManagerRenameTitle = managerSelectedTitle; RefreshCanExecute(); } }
+        }
+        public string ManagerRenameTitle { get => managerRenameTitle; set => SetProperty(ref managerRenameTitle, value ?? string.Empty); }
+        public string ManagerStatus => managerStatus;
+        public bool HasManagerError => managerError;
+        public ICommand AddManagerImageCommand { get; }
+        public ICommand RenameManagerLayerCommand { get; }
+        public ICommand DeleteManagerLayerCommand { get; }
+        public ICommand OpenManagerLayerViewerCommand { get; }
 
         public ICommand HandleSelectedLayerChangedCommand { get; }
 
@@ -119,6 +142,45 @@ namespace OpenVisionLab
         public bool CanDockLayerDocument(string layerTitle)
         {
             return CanDockLayer(layerTitle);
+        }
+
+        internal string AddManagerImageFromPath(string path) => RunManagerAction(() => managementController.AddImageLayer(path));
+
+        private string RunManagerAction(Func<string> add)
+        {
+            if (managerBusy) { return null; }
+            managerBusy = true; RefreshCanExecute();
+            try
+            {
+                string title = add();
+                if (string.IsNullOrWhiteSpace(title)) { SetManagerStatus("Workbench.LayerManager.AddCanceled", false); return null; }
+                ManagerSelectedTitle = title; SetManagerStatus("Workbench.LayerManager.Added", false); return title;
+            }
+            catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException or ArgumentException or System.Runtime.InteropServices.ExternalException)
+            {
+                managerStatus = OpenVisionLanguageService.T("Workbench.LayerManager.AddFailed") + " " + ex.Message;
+                managerError = true; OnPropertyChanged(nameof(ManagerStatus)); OnPropertyChanged(nameof(HasManagerError)); return null;
+            }
+            finally { managerBusy = false; RefreshCanExecute(); }
+        }
+
+        private void SetManagerStatus(string key, bool error)
+        {
+            managerStatus = OpenVisionLanguageService.T(key); managerError = error;
+            OnPropertyChanged(nameof(ManagerStatus)); OnPropertyChanged(nameof(HasManagerError)); RefreshCanExecute();
+        }
+
+        private void RenameManagerLayer()
+        {
+            string title = ManagerRenameTitle.Trim();
+            if (!managementController.RenameLayer(ManagerSelectedTitle, title)) { SetManagerStatus("Workbench.LayerManager.RenameFailed", true); return; }
+            ManagerSelectedTitle = title; SetManagerStatus("Workbench.LayerManager.Renamed", false);
+        }
+
+        private void DeleteManagerLayer()
+        {
+            if (!managementController.DeleteLayer(ManagerSelectedTitle)) { SetManagerStatus("Workbench.LayerManager.Protected", true); return; }
+            ManagerSelectedTitle = string.Empty; SetManagerStatus("Workbench.LayerManager.Deleted", false);
         }
 
         private void HandleSelectedLayerChanged()

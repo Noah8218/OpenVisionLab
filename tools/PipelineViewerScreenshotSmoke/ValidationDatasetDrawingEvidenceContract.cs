@@ -38,7 +38,7 @@ internal static class ValidationDatasetDrawingEvidenceContract
             passed,
             failed);
         Check(
-            "Program no longer owns stored drawing resolution or viewer composition",
+            "Program no longer owns stored drawing resolution or historical-review composition",
             !targetMethod.Contains("OpenVisionRecipeRunEvidence.TryCreate", StringComparison.Ordinal)
                 && !targetMethod.Contains("OpenVisionRecipeRunEvidenceViewerView", StringComparison.Ordinal)
                 && !targetMethod.Contains("OpenVisionFloatingToolWindow", StringComparison.Ordinal)
@@ -47,12 +47,14 @@ internal static class ValidationDatasetDrawingEvidenceContract
             passed,
             failed);
         Check(
-            "Owner contains source verification, selector probing, artifact copy, and workspace guards",
+            "Owner contains source verification, Pipeline Review handoff, return, artifact copy, and workspace guards",
             owner.Contains("OpenVisionRecipeRunEvidence.TryCreate", StringComparison.Ordinal)
                 && owner.Contains("IsStoredSourceVerified", StringComparison.Ordinal)
-                && owner.Contains("cmbStoredDrawing", StringComparison.Ordinal)
                 && owner.Contains("OpenSelectedRecentBatchRunEvidenceCommand", StringComparison.Ordinal)
-                && owner.Contains("Application.Current.Windows", StringComparison.Ordinal)
+                && owner.Contains("IsDockedDocumentWorkspaceVisibleForTest", StringComparison.Ordinal)
+                && owner.Contains("PipelineReviewRunReviewButton", StringComparison.Ordinal)
+                && owner.Contains("PipelineReviewEditSelectedStepButton", StringComparison.Ordinal)
+                && owner.Contains("PipelineReviewReturnToRecipeButton", StringComparison.Ordinal)
                 && owner.Contains("File.Copy", StringComparison.Ordinal)
                 && owner.Contains("LayerDocumentCount", StringComparison.Ordinal)
                 && owner.Contains("drawing_evidence_contract.txt", StringComparison.Ordinal),
@@ -69,26 +71,32 @@ internal static class ValidationDatasetDrawingEvidenceContract
             "Contract projection is a pure owner method",
             owner.Contains("BuildContractLines(", StringComparison.Ordinal)
                 && owner.Contains("StoredSourceVerified=", StringComparison.Ordinal)
-                && owner.Contains("ViewerReady=", StringComparison.Ordinal)
+                && owner.Contains("PipelineReviewReady=", StringComparison.Ordinal)
+                && owner.Contains("RunRecord=", StringComparison.Ordinal)
+                && owner.Contains("SelectedStep=", StringComparison.Ordinal)
                 && owner.Contains("WorkspaceUnchanged=", StringComparison.Ordinal),
             passed,
             failed);
 
         IReadOnlyList<string> lines = ValidationDatasetDrawingEvidence.BuildContractLines(
             "NG sample",
+            "run-123",
+            "02 Inspect",
             drawingCount: 2,
             storedSourceVerified: true,
-            viewerReady: true,
+            pipelineReviewReady: true,
             workspaceUnchanged: true);
         Check(
-            "Stored evidence identity and viewer/workspace invariants are projected together",
+            "Stored run identity, selected Step, Pipeline Review, and workspace invariants are projected together",
             lines.SequenceEqual(
                 new[]
                 {
                     "Sample=NG sample",
+                    "RunRecord=run-123",
+                    "SelectedStep=02 Inspect",
                     "DrawingCount=2",
                     "StoredSourceVerified=True",
-                    "ViewerReady=True",
+                    "PipelineReviewReady=True",
                     "WorkspaceUnchanged=True"
                 },
                 StringComparer.Ordinal),

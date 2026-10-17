@@ -46,20 +46,18 @@ namespace OpenVisionLab.ImageCanvas
 			addRoiArrayView.DataContext = addRoiArrayVm;
 			addRoiArrayView.WindowStartupLocation = WindowStartupLocation.CenterScreen;
 			bool? dialogResult = addRoiArrayView.ShowDialog();
+			if (dialogResult != true || addRoiArrayVm.AcceptedData == null)
+			{
+				return;
+			}
 
 			try
 			{
-				AddRoiArrayData data = new AddRoiArrayData();
-				data.Rows = int.Parse(addRoiArrayVm.Rows);
-				data.Columns = int.Parse(addRoiArrayVm.Columns);
-				data.RowSpacing = float.Parse(addRoiArrayVm.RowSpacing);
-				data.ColumnSpacing = float.Parse(addRoiArrayVm.ColumnSpacing);
-
-				AddRectangleToOverlayArray(imageViewer, data, imageViewer.PreMousePos, imageViewer.PostMousePos, imageViewer.PixelPerMm, callbackRoiAdded);
+				AddRectangleToOverlayArray(imageViewer, addRoiArrayVm.AcceptedData, imageViewer.PreMousePos, imageViewer.PostMousePos, imageViewer.PixelPerMm, callbackRoiAdded);
 			}
 			catch
 			{
-				//MessageBoxManager.ShowWindow("Warning", "Please enter a normal value.", MessageBoxViewModel.EnumMessageBoxType.Warning);
+				// Preserve the existing overlay/callback failure policy; invalid input stays in the dialog.
 			}
 		}
 

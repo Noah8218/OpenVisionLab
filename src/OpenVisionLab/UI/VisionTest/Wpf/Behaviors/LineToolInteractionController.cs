@@ -81,6 +81,19 @@ namespace OpenVisionLab
             return presenter.GetSelectedLineProperty(IsLineBSelected);
         }
 
+        public bool ApplyPreset(VisionToolPreset<LineGaugeProperty> preset)
+        {
+            LineGaugeProperty property = GetSelectedLineProperty();
+            if (preset == null || property == null) { return false; }
+            propertyGridController.CommitPendingEdit();
+            preset.ApplyTo(property);
+            propertyGridController.RefreshAndApplyVisibilityRules();
+            persistProperties();
+            refreshSummary();
+            clearResultReview();
+            return true;
+        }
+
         public LineGaugeProperty CreateSelectedLineProperty()
         {
             return presenter.CreateSelectedLineProperty(IsLineBSelected);

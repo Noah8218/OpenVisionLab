@@ -65,6 +65,7 @@ artifacts/
 # Codex/local smoke output and temporary performance artifacts.
 .codex/
 .codex-temp/
+.proofline/drafts/
 tmp/
 docs/samples/generated/
 

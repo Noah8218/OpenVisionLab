@@ -30,7 +30,7 @@
                 <ResourceDictionary Source="../../Wpf/OpenVisionLabWpfTheme.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-            <Style x:Key="TemplateChromeButtonStyle" TargetType="Button">
+            <Style x:Key="TemplateChromeButtonStyle" TargetType="Button" BasedOn="{StaticResource OpenVision.ControlButtonDarkStyle}">
                 <Setter Property="Width" Value="42" />
                 <Setter Property="Height" Value="42" />
                 <Setter Property="Padding" Value="0" />
@@ -38,27 +38,11 @@
                 <Setter Property="Background" Value="Transparent" />
                 <Setter Property="Foreground" Value="#EAF5F7" />
                 <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                <Setter Property="AutomationProperties.Name" Value="{Binding ToolTip, RelativeSource={RelativeSource Self}}" />
                 <Setter Property="shell:WindowChrome.IsHitTestVisibleInChrome" Value="True" />
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="Button">
-                            <Border x:Name="buttonChrome" Background="{TemplateBinding Background}">
-                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                            </Border>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="buttonChrome" Property="Background" Value="#405057" />
-                                </Trigger>
-                                <Trigger Property="IsPressed" Value="True">
-                                    <Setter TargetName="buttonChrome" Property="Background" Value="#157C86" />
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
             </Style>
 
-            <Style x:Key="TemplateToolButtonStyle" TargetType="Button">
+            <Style x:Key="TemplateToolButtonStyle" TargetType="Button" BasedOn="{StaticResource OpenVision.ControlButtonStyle}">
                 <Setter Property="Height" Value="32" />
                 <Setter Property="Padding" Value="12,0" />
                 <Setter Property="BorderThickness" Value="1" />
@@ -69,44 +53,17 @@
                 <Setter Property="FontSize" Value="12" />
                 <Setter Property="FontWeight" Value="SemiBold" />
                 <Setter Property="Cursor" Value="Hand" />
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="Button">
-                            <Border x:Name="buttonBorder"
-                                    Background="{TemplateBinding Background}"
-                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                    BorderThickness="{TemplateBinding BorderThickness}"
-                                    CornerRadius="4">
-                                <ContentPresenter HorizontalAlignment="Center"
-                                                  VerticalAlignment="Center"
-                                                  Margin="{TemplateBinding Padding}" />
-                            </Border>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="buttonBorder" Property="Background" Value="#E6F1F2" />
-                                    <Setter Property="BorderBrush" Value="{StaticResource OpenVision.AccentBrush}" />
-                                </Trigger>
-                                <Trigger Property="IsPressed" Value="True">
-                                    <Setter TargetName="buttonBorder" Property="Background" Value="#D8ECEE" />
-                                </Trigger>
-                                <Trigger Property="IsEnabled" Value="False">
-                                    <Setter Property="Opacity" Value="0.45" />
-                                    <Setter Property="Cursor" Value="Arrow" />
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
             </Style>
 
-            <Style x:Key="TemplatePrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource TemplateToolButtonStyle}">
+            <Style x:Key="TemplatePrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource OpenVision.ControlPrimaryButtonStyle}">
                 <Setter Property="Height" Value="38" />
                 <Setter Property="Background" Value="{StaticResource OpenVision.AccentBrush}" />
                 <Setter Property="BorderBrush" Value="{StaticResource OpenVision.AccentBrush}" />
                 <Setter Property="Foreground" Value="White" />
             </Style>
 
-            <Style x:Key="TemplateFieldStyle" TargetType="TextBox">
+            <Style x:Key="TemplateFieldStyle" TargetType="TextBox" BasedOn="{StaticResource OpenVision.ControlTextBoxStyle}">
+                <Setter Property="MinHeight" Value="0" />
                 <Setter Property="Height" Value="30" />
                 <Setter Property="MinWidth" Value="64" />
                 <Setter Property="Padding" Value="8,3" />
@@ -301,18 +258,18 @@
                             </Grid>
                             <Grid Grid.Row="4">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="68" />
+                                    <ColumnDefinition Width="56" />
                                     <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="6" />
-                                    <ColumnDefinition Width="44" />
-                                    <ColumnDefinition Width="6" />
-                                    <ColumnDefinition Width="44" />
-                                    <ColumnDefinition Width="6" />
-                                    <ColumnDefinition Width="36" />
+                                    <ColumnDefinition Width="4" />
+                                    <ColumnDefinition Width="30" />
+                                    <ColumnDefinition Width="4" />
+                                    <ColumnDefinition Width="30" />
+                                    <ColumnDefinition Width="4" />
+                                    <ColumnDefinition Width="30" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Text="Rotation"
                                            Style="{StaticResource TemplateLabelStyle}" />
-                                <TextBox x:Name="txtRotation"
+                                <TextBox x:Name="txtRotation" MinWidth="84"
                                          Grid.Column="1"
                                          Style="{StaticResource TemplateFieldStyle}"
                                          IsReadOnly="False"
@@ -432,7 +389,7 @@
                         Click="Ok_Click">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <iconPacks:PackIconMaterial Kind="Check" Width="15" Height="15" Margin="0,0,7,0" />
-                        <TextBlock Text="Register" Foreground="White" />
+                        <TextBlock Text="Register" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                     </StackPanel>
                 </Button>
             </Grid>

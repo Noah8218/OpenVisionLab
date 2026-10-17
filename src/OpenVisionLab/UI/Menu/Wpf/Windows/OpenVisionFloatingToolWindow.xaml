@@ -11,6 +11,7 @@
         WindowStyle="None"
         ResizeMode="CanResize"
         Background="Transparent"
+        FontFamily="{DynamicResource OpenVision.Workbench.FontFamily}"
         SnapsToDevicePixels="True"
         AutomationProperties.AutomationId="OpenVisionFloatingToolWindow">
     <shell:WindowChrome.WindowChrome>
@@ -57,9 +58,9 @@
         </ResourceDictionary>
     </Window.Resources>
 
-    <Border BorderBrush="{StaticResource OpenVision.AccentBrush}"
+    <Border BorderBrush="{DynamicResource OpenVision.Workbench.AccentLineBrush}"
             BorderThickness="1"
-            Background="{StaticResource OpenVision.InspectorSurfaceBrush}">
+            Background="{DynamicResource OpenVision.Workbench.PanelBrush}">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="42" />

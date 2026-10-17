@@ -14,6 +14,7 @@ namespace OpenVisionLab
         private readonly Func<string> selectedLayerTitleProvider;
         private readonly Func<string, Bitmap, string> statusTextProvider;
         private readonly IOpenVisionDockedLayerViewerFactory viewerFactory;
+        internal OpenVisionWorkbenchViewerViewModel MainViewer { get; set; }
 
         public OpenVisionDockedLayerContentSource(
             IDisplayManager displayManager,
@@ -29,15 +30,28 @@ namespace OpenVisionLab
             this.viewerFactory = viewerFactory ?? throw new ArgumentNullException(nameof(viewerFactory));
         }
 
-        public string SelectedDocumentId => selectedLayerTitleProvider() ?? string.Empty;
+        public string SelectedDocumentId => MainViewer?.ActivePaneId ?? selectedLayerTitleProvider() ?? string.Empty;
 
         public List<string> GetDocumentIds()
         {
-            return layerTitleProvider() ?? new List<string>();
+            return MainViewer != null ? new List<string>(MainViewer.DocumentIds) : layerTitleProvider() ?? new List<string>();
         }
 
         public object UpdateDocumentContent(string documentId, object currentContent)
         {
+            OpenVisionWorkbenchViewerPane pane = MainViewer?.FindPane(documentId);
+            if (pane != null)
+            {
+                OpenVisionLayerViewerView paneView = currentContent as OpenVisionLayerViewerView ?? new OpenVisionLayerViewerView();
+                paneView.SetCompactChrome(true);
+                paneView.SetMainPane(pane);
+                MainViewer.ReadImage(pane, image =>
+                {
+                    pane.UpdateImage(image);
+                    paneView.UpdateMainPaneImage(image);
+                });
+                return paneView;
+            }
             using ImageSpaceImageLease lease = displayManager.ImageSpace.AcquireImage(documentId);
             Bitmap image = lease?.Image;
             string statusText = BuildStatusText(documentId, image);

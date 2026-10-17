@@ -1,7 +1,7 @@
 param(
     [string]$Configuration = "Debug",
     [string]$Platform = "Any CPU",
-    [string]$OutputDir = "C:\Users\Public\Documents\ESTsoft\CreatorTemp\openvisionlab_ui_smoke",
+    [string]$OutputDir = $(if (Test-Path -LiteralPath 'D:\') { 'D:\OpenVisionLab-TestData\OpenVisionLab_Dev\ui-smoke' } else { "C:\Users\Public\Documents\ESTsoft\CreatorTemp\openvisionlab_ui_smoke" }),
     [string]$Targets = "wpf_shell_preview,wpf_shell_host_workspace_empty,wpf_shell_host_workspace,wpf_shell_host_workspace_image_load,wpf_shell_host_tool_input_empty,wpf_shell_host_tool_input_image_load_save,wpf_shell_host_workspace_output,wpf_shell_host_bridge,wpf_shell_host_native_tool,wpf_shell_host_threshold_basic_tool,wpf_shell_host_pipeline_review,wpf_shell_host_blob_tool,wpf_shell_host_contour_tool,wpf_shell_host_line_measure_tool,wpf_shell_host_line_intersection_tool,wpf_shell_host_matching_tool,wpf_shell_host_feature_matching_tool,wpf_shell_host_pending_tool,wpf_roi_editor,wpf_image_compare,log_panel_contract_check,localization_catalog_contract_check",
     [string]$Suite = "",
     [int]$TimeoutSeconds = 120,
@@ -10,6 +10,22 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+
+$OutputDir = [System.IO.Path]::GetFullPath($OutputDir)
+if ((Test-Path -LiteralPath 'D:\') -and $env:CI -ne 'true' -and [System.IO.Path]::GetPathRoot($OutputDir) -ne 'D:\') {
+    throw 'UI smoke output must use physical D: storage on this workstation.'
+}
+for ($directory = [System.IO.DirectoryInfo]::new($OutputDir); $null -ne $directory; $directory = $directory.Parent) {
+    if ($directory.Exists -and ($directory.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+        throw 'UI smoke output must use a physical path without directory links.'
+    }
+}
+$env:OPENVISIONLAB_DATA_ROOT = Join-Path $OutputDir 'data'
+$env:OPENVISIONLAB_DATA_ROOT_RESOLVED = $env:OPENVISIONLAB_DATA_ROOT
+$env:OPENVISIONLAB_LOG_ROOT = Join-Path $env:OPENVISIONLAB_DATA_ROOT 'Log'
+$env:TEMP = Join-Path $OutputDir 'temp'
+$env:TMP = $env:TEMP
+[void][System.IO.Directory]::CreateDirectory($env:TEMP)
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $project = Join-Path $repoRoot "tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj"

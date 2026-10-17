@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 
 namespace OpenVisionLab
 {
@@ -12,6 +13,7 @@ namespace OpenVisionLab
         private readonly Action inputAChanged;
         private readonly Action inputBChanged;
         private readonly Action outputChanged;
+        private string lastNotifiedOutputLayer = string.Empty;
         private bool isApplyingLayerList;
         private bool disposed;
 
@@ -33,6 +35,7 @@ namespace OpenVisionLab
             Attach(inputAComboBox);
             Attach(inputBComboBox);
             Attach(outputComboBox);
+            outputComboBox?.AddHandler(TextBoxBase.TextChangedEvent, new TextChangedEventHandler(OutputComboBox_TextChanged));
         }
 
         public string SelectedInputLayer => VisionToolLayerComboHelper.GetLayerText(inputAComboBox);
@@ -89,6 +92,7 @@ namespace OpenVisionLab
             finally
             {
                 isApplyingLayerList = false;
+                lastNotifiedOutputLayer = SelectedOutputLayer;
             }
         }
 
@@ -113,6 +117,7 @@ namespace OpenVisionLab
             finally
             {
                 isApplyingLayerList = false;
+                lastNotifiedOutputLayer = SelectedOutputLayer;
             }
         }
 
@@ -127,6 +132,7 @@ namespace OpenVisionLab
             Detach(inputAComboBox);
             Detach(inputBComboBox);
             Detach(outputComboBox);
+            outputComboBox?.RemoveHandler(TextBoxBase.TextChangedEvent, new TextChangedEventHandler(OutputComboBox_TextChanged));
         }
 
         private void Attach(ComboBox comboBox)
@@ -167,8 +173,28 @@ namespace OpenVisionLab
             }
             else if (ReferenceEquals(sender, outputComboBox))
             {
-                outputChanged?.Invoke();
+                NotifyOutputChanged();
             }
+        }
+
+        private void OutputComboBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (!isApplyingLayerList && outputComboBox.IsEditable)
+            {
+                NotifyOutputChanged();
+            }
+        }
+
+        private void NotifyOutputChanged()
+        {
+            string selectedOutputLayer = SelectedOutputLayer;
+            if (string.Equals(lastNotifiedOutputLayer, selectedOutputLayer, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            lastNotifiedOutputLayer = selectedOutputLayer;
+            outputChanged?.Invoke();
         }
     }
 }

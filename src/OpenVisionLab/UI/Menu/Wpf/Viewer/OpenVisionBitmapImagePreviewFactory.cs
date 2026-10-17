@@ -13,20 +13,23 @@ namespace OpenVisionLab
     {
         private const int MaxPreviewDimension = 1024;
 
-        public static BitmapSource Create(Bitmap image)
+        public static BitmapSource Create(Bitmap image) => Create(image, MaxPreviewDimension);
+
+        public static BitmapSource Create(Bitmap image, int maxDimension)
         {
+            if (maxDimension <= 0) { throw new ArgumentOutOfRangeException(nameof(maxDimension)); }
             if (image == null)
             {
                 return null;
             }
 
             int longest = Math.Max(image.Width, image.Height);
-            if (longest <= MaxPreviewDimension)
+            if (longest <= maxDimension)
             {
                 return CreateBitmapImage(image);
             }
 
-            double scale = MaxPreviewDimension / (double)longest;
+            double scale = maxDimension / (double)longest;
             int width = Math.Max(1, (int)Math.Round(image.Width * scale));
             int height = Math.Max(1, (int)Math.Round(image.Height * scale));
             using Bitmap preview = new Bitmap(width, height);

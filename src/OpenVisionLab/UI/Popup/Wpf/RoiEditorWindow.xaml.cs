@@ -17,7 +17,7 @@ using WpfWindow = System.Windows.Window;
 
 namespace OpenVisionLab
 {
-    public sealed partial class RoiEditorWindow : WpfWindow, IPropertyGridImageEditView
+    public sealed partial class RoiEditorWindow : WpfWindow, IPropertyGridImageEditView, IInlineImageEditPresentation
     {
         private const double HandleSize = 9;
         private const double MinimumRoiSize = 1;
@@ -73,6 +73,29 @@ namespace OpenVisionLab
 
             viewModel.SetRegions((rois ?? new List<CvRect>()).Select(ToImageRect).Select(ClampRect));
             HookLifecycle();
+        }
+
+        FrameworkElement IInlineImageEditPresentation.InlineViewport => viewportCanvas;
+        FrameworkElement IInlineImageEditPresentation.InlinePatternPreview => null;
+        IReadOnlyList<TextBox> IInlineImageEditPresentation.InlineFields => new[] { txtX, txtY, txtWidth, txtHeight };
+        int IInlineImageEditPresentation.InlineRegionCount => viewModel.Regions.Count;
+        bool IInlineImageEditPresentation.IsMultiInline => viewModel.IsMultiRoiMode;
+        bool IInlineImageEditPresentation.IsTemplateInline => viewModel.IsTrainingMode;
+        void IInlineImageEditPresentation.InitializeInline() => OnLoaded(this, null);
+        void IInlineImageEditPresentation.FlushInlineCoordinates() => CommitCoordinateFields();
+        bool IInlineImageEditPresentation.AcceptInline() { CommitCoordinateFields(); CaptureSelectionSnapshot(); return true; }
+        void IInlineImageEditPresentation.WholeInline() => Fit_Click(this, null);
+        void IInlineImageEditPresentation.AddInline() { viewModel.SelectedRegion = null; Center_Click(this, null); }
+        void IInlineImageEditPresentation.DeleteInline() => DeleteSelected_Click(this, null);
+        IPropertyGridImageEditView IInlineImageEditPresentation.CreateLargeInlineEditor()
+        {
+            CommitCoordinateFields(); CaptureSelectionSnapshot();
+            return new RoiEditorWindow(sourceBitmap, selectedRegionsSnapshot.ToList(), viewModel.Mode);
+        }
+        void IInlineImageEditPresentation.AcceptLargeInlineEditor(IPropertyGridImageEditView editor)
+        {
+            viewModel.SetRegions(editor.SelectedRegions.Select(rect => new WpfRect(rect.X, rect.Y, rect.Width, rect.Height)));
+            RenderRegions(); UpdatePatternPreview(); CaptureSelectionSnapshot();
         }
 
         public CvRect SelectedRegion

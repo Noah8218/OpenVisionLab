@@ -75,8 +75,7 @@ PropertyGrid는 준비된 다음 파일을 사용합니다.
 - `dll\System.Windows.Controls.WpfPropertyGrid.xml`
 
 사용자는 `WPG-CUSTOM` DLL/XML을 직접 제작한 것으로 명시했다. 따라서 이
-파일들은 현재 PropertyGrid 런타임 계약과 SHA-256 gate는 유지하되, PL-0005의
-제3자 라이선스/재배포 증거 blocker로 분류하지 않는다. 이 분류는
+파일들은 현재 PropertyGrid 런타임 계약과 SHA-256 검사를 유지한다. 제3자 라이선스 분류와 구별한다. 이 분류는
 `OPENVISIONLAB_EXTERNAL_BINARY_MANIFEST.json`의
 `user-created-owner-declaration` 상태가 소유한다.
 

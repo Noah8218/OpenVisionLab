@@ -39,6 +39,27 @@ if (-not (Test-Path -LiteralPath $noticeFullPath -PathType Leaf)) {
 $manifest = $null
 $sdkManifest = $null
 $noticeText = ""
+    $fontRoot = Join-Path $repoRoot "src\OpenVisionLab\UI\Wpf\Fonts"
+    if (Test-Path -LiteralPath $fontRoot -PathType Container) {
+        $fontLicensePath = Join-Path $fontRoot "LICENSE.txt"
+        $fontFiles = @(Get-ChildItem -LiteralPath $fontRoot -File -Filter "*.ttf")
+        $noticeText = Get-Content -LiteralPath $noticeFullPath -Raw
+        if ($fontFiles.Count -ne 4 -or -not (Test-Path -LiteralPath $fontLicensePath -PathType Leaf)) {
+            $failures.Add("Pretendard requires four static font resources and the upstream LICENSE.txt.") | Out-Null
+        }
+        else {
+            $fontLicense = (Get-Content -LiteralPath $fontLicensePath -Raw).Replace("`r`n", "`n").Trim()
+            $normalizedNotice = $noticeText.Replace("`r`n", "`n")
+            if ($normalizedNotice.IndexOf($fontLicense, [System.StringComparison]::Ordinal) -lt 0 -or
+                $noticeText.IndexOf("Pretendard 1.3.9", [System.StringComparison]::Ordinal) -lt 0) {
+                $failures.Add("NOTICE must contain the bundled Pretendard version and complete upstream copyright/OFL text.") | Out-Null
+            }
+            else {
+                $lines.Add("COVERED | Pretendard 1.3.9 | static Regular/Medium/SemiBold/Bold | OFL 1.1") | Out-Null
+            }
+        }
+    }
+
 if ($failures.Count -eq 0) {
     try {
         $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json

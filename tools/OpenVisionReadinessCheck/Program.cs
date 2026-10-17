@@ -69,6 +69,7 @@ internal static class Program
 
         string application = Read(repoRoot, @"src\OpenVisionLab\App\Bootstrap\OpenVisionLabApplication.cs");
         RequireNotContains(application, "TryRunEmbeddedSmoke", "Application bootstrap does not duplicate embedded smoke dispatch.");
+        RequireContains(application, "Application ready. Version {AppVersion.VERSION}", "Application ready log reads the canonical AppVersion getter.");
 
         string shellHost = Read(repoRoot, @"src\OpenVisionLab\UI\Menu\Wpf\OpenVisionShellHostView.xaml.cs");
         RequireContains(shellHost, "SetDirectRunPending", "Pending state is surfaced by the WPF shell direct-run pending state.");
@@ -82,7 +83,11 @@ internal static class Program
         string recipeController = Read(repoRoot, @"src\OpenVisionLab\UI\Menu\Wpf\Shell\Recipe\OpenVisionShellHostRecipeController.cs");
         RequireContains(recipeController, "public void SwitchRuntimeRecipe", "Recipe selection persistence has a concrete Recipe controller owner.");
         RequireContains(recipeController, "public bool SaveRuntimeRecipeTools", "Recipe tool persistence has a concrete Recipe controller owner.");
-        RequireContains(recipeController, "runtimeContext.Global?.Recipe?.SaveTools()", "Recipe controller preserves the existing tool-save contract.");
+        RequireContains(recipeController, "return RecipeRuntimeStorage.SaveWithRevision(", "Recipe controller returns the canonical whole-recipe save/revision result.");
+        string runtimeStorage = Read(repoRoot, @"src\OpenVisionLab\Core\Recipe\RecipeRuntimeStorage.cs");
+        RequireContains(runtimeStorage, "if (!GetVisionTools(visionToolAccessor).SaveTools(recipeName)) { return false; }", "Whole-recipe save preserves tool failure before Recipe data publication.");
+        RequireContains(runtimeStorage, "data.SavedRevision = previousRevision;", "Whole-recipe save restores the previous revision on publication failure.");
+        RequireContains(runtimeStorage, "data.SavedContentHash = previousHash;", "Whole-recipe save restores the saved-content baseline on publication failure.");
         RequireNotContains(shellHost, "Global.Recipe.SaveTools()", "Shell composition does not call Recipe persistence directly.");
 
         string workspaceImageController = Read(repoRoot, @"src\OpenVisionLab\UI\Menu\Wpf\Shell\Workspace\OpenVisionShellHostWorkspaceImageController.cs");
@@ -452,8 +457,12 @@ internal static class Program
         RequireContains(recipeCommandSurface, "다음: 파이프라인 열기", "Recipe Manager labels the summary primary action as the next step.");
         RequireContains(
             Read(repoRoot, @"src\OpenVisionLab\UI\Menu\Wpf\OpenVisionShellHostView.xaml"),
-            "AutomationProperties.Name=\"{Binding RecipeCommands.OpenPipelineReviewText}\"",
-            "Recipe Manager exposes the summary primary action through its localized accessible name.");
+            "AutomationProperties.Name=\"{Binding [Workbench.Pipeline.Title]}\"",
+            "Workbench exposes the existing main pipeline entry through its localized accessible name.");
+        RequireContains(
+            Read(repoRoot, @"src\OpenVisionLab\UI\Menu\Wpf\OpenVisionShellHostView.xaml"),
+            "DataContext=\"{Binding Workbench.Pipeline, RelativeSource={RelativeSource AncestorType=local:OpenVisionShellHostView}}\"",
+            "The main pipeline panel supplies the localized pipeline owner as its binding context.");
 
         string pipelineReviewReadinessPresenter = Read(repoRoot, @"src\OpenVisionLab\UI\Menu\Wpf\PipelineReview\Presenters\OpenVisionPipelineReviewReadinessPresenter.cs");
         RequireContains(pipelineReviewReadinessPresenter, "OpenVisionPipelineReviewReadinessPresenter", "Pipeline Review readiness presentation has an explicit owner.");
@@ -609,10 +618,9 @@ internal static class Program
         RequireContains(lineSignalFactory, "Signed edge response", "Line signal evidence publishes signed scan-direction response.");
         RequireContains(lineSignalFactory, "SelectDistinctAlternatives", "Line signal evidence collapses adjacent responses into distinct alternatives.");
         RequireContains(lineSignalFactory, "RuntimeCorrespondence", "Line signal evidence retains runtime/drawing correspondence metadata.");
-        RequirePathExists(
-            repoRoot,
-            @"docs\reports\OPENVISIONLAB_LINE_SIGNAL_PROFILE_20260728.md",
-            "CVR-03 Line signal completion report exists.");
+        string stableContracts = Read(repoRoot, @"docs\contracts\openvisionlab\OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md");
+        RequireContains(stableContracts, "independent replay matches the retained runtime first-stable edge", "Public Line signal contract preserves runtime correspondence.");
+        RequireContains(stableContracts, "`wpf_line_signal_profile`", "Public Line signal contract provides the focused verification route.");
 
         string localization = Read(repoRoot, @"src\Libraries\OpenVisionLab.Localization\Resources\LocalizationCatalog.tsv");
         RequireContains(localization, "PipelineSamples.FixGuide", "Sample selection details show recommended fix points.");
@@ -1407,6 +1415,7 @@ internal static class Program
         RequireNotContains(shellController, "OPENVISIONLAB_TUTORIAL.html", "Guide resolver cannot open the legacy moved HTML stub.");
 
         string appProject = Read(repoRoot, @"src\OpenVisionLab\OpenVisionLab.csproj");
+        string productVersion = Regex.Match(appProject, @"<Version>(?<version>[^<]+)</Version>").Groups["version"].Value;
         RequireContains(appProject, @"docs\manual\generated\OpenVisionLab_User_Manual.ko.html", "Application build includes the Korean user manual.");
         RequireContains(appProject, @"docs\manual\generated\OpenVisionLab_User_Manual.en.html", "Application build includes the English user manual.");
         RequireContains(appProject, @"<Link>Guide\OpenVisionLab_User_Manual.ko.html</Link>", "Application output owns the Korean Guide path.");
@@ -1428,6 +1437,12 @@ internal static class Program
         })
         {
             string sourceManualManifest = Read(repoRoot, sourceManifest.Path);
+            using System.Text.Json.JsonDocument sourceManifestDocument = System.Text.Json.JsonDocument.Parse(sourceManualManifest);
+            string sourceApplicationVersion = sourceManifestDocument.RootElement.GetProperty("applicationVersion").GetString() ?? string.Empty;
+            if (!string.Equals(sourceApplicationVersion, productVersion, StringComparison.Ordinal))
+            {
+                Failures.Add($"{sourceManifest.Language} user manual applicationVersion mismatch. Expected={productVersion} Actual={sourceApplicationVersion}");
+            }
             foreach (string toolId in expectedToolIds)
             {
                 RequireContains(sourceManualManifest, $"\"toolId\": \"{toolId}\"", $"{sourceManifest.Language} user manual includes the {toolId} chapter.");
@@ -1475,6 +1490,7 @@ internal static class Program
         foreach (KeyValuePair<string, string> generated in generatedManualPaths)
         {
             string generatedManual = Read(repoRoot, generated.Value);
+            RequireContains(generatedManual, $"OpenVisionLab {productVersion}", $"Generated {generated.Key} manual shows the current product version.");
             RequireContains(generatedManual, "data-openvisionlab-manual-version=\"2026-08-01\"", $"Generated {generated.Key} manual records its version.");
             RequireContains(generatedManual, $"data-openvisionlab-manual-language=\"{generated.Key}\"", $"Generated {generated.Key} manual records its language.");
             RequireContains(generatedManual, $"<html lang=\"{generated.Key}\"", $"Generated {generated.Key} manual declares its HTML language.");
@@ -1504,6 +1520,11 @@ internal static class Program
             File.ReadAllText(generatedGuideManifestPath, Encoding.UTF8)))
         {
             System.Text.Json.JsonElement root = guideManifest.RootElement;
+            string guideApplicationVersion = root.GetProperty("applicationVersion").GetString() ?? string.Empty;
+            if (!string.Equals(guideApplicationVersion, productVersion, StringComparison.Ordinal))
+            {
+                Failures.Add($"Generated Guide applicationVersion mismatch. Expected={productVersion} Actual={guideApplicationVersion}");
+            }
             if (root.GetProperty("schemaVersion").GetInt32() != 2)
             {
                 Failures.Add("Generated Guide manifest schema is not 2.");
@@ -1577,13 +1598,7 @@ internal static class Program
         }
 
         string learnIndex = Read(repoRoot, @"docs\learn\README.md");
-        string commercialGapReview = Read(repoRoot, @"docs\OPENVISIONLAB_COMMERCIAL_GAP_PRIORITY_REVIEW_20260710.md");
         string guidedSetupSpec = Read(repoRoot, @"docs\OPENVISIONLAB_GUIDED_INSPECTION_SETUP_SPEC.md");
-        RequireContains(commercialGapReview, "Non-LLM Guided Inspection Setup", "Commercial gap review prioritizes non-LLM guided setup.");
-        RequireContains(commercialGapReview, "Guided Inspection Setup", "Commercial gap review names the guided setup development track.");
-        RequireContains(commercialGapReview, "Camera acquisition setup", "Commercial gap review keeps camera acquisition out of scope.");
-        RequireContains(commercialGapReview, "Tool Palette Search And Readiness", "Commercial gap review tracks tool discovery/readiness as a later operating gap.");
-        RequireContains(commercialGapReview, "report-first summary baseline", "Commercial gap review records the consolidated result-board baseline.");
         RequireContains(guidedSetupSpec, "Guided Inspection Setup is a recipe authoring helper, not a hardware wizard.", "Guided setup spec keeps the feature inside recipe authoring scope.");
         RequireContains(guidedSetupSpec, "It must not:", "Guided setup spec documents forbidden side effects.");
         RequireContains(guidedSetupSpec, "Run Preview automatically.", "Guided setup spec blocks automatic Preview.");
@@ -2864,10 +2879,10 @@ internal static class Program
             thresholdToolViewSource,
             "UndoThresholdSuggestion",
             "Threshold suggestion apply retains an explicit undo path.");
-        RequirePathExists(
-            repoRoot,
-            @"docs\reports\OPENVISIONLAB_THRESHOLD_TEACHING_SUGGESTION_20260728.md",
-            "CVR-07 Threshold teaching suggestion completion report exists.");
+        string stableContracts = Read(repoRoot, @"docs\contracts\openvisionlab\OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md");
+        RequireContains(stableContracts, "## Threshold Basic Retained-Preview Teaching Suggestion", "Public Threshold suggestion contract exists.");
+        RequireContains(stableContracts, "Only explicit `Use T` may", "Public Threshold suggestion contract preserves explicit apply.");
+        RequireContains(stableContracts, "`cvr07_threshold_suggestion`", "Public Threshold suggestion contract provides the focused verification route.");
         RequireContains(
             pipelineReviewFixturePresenterSource,
             "candidateMeasurements.Add(candidate);",
@@ -2888,10 +2903,9 @@ internal static class Program
             learnScreenshotSmoke,
             "consumerGrid.SelectedIndex = 1",
             "Fixture smoke selects the second ROI consumer without another Run.");
-        RequirePathExists(
-            repoRoot,
-            @"docs\reports\OPENVISIONLAB_CVR08_MULTI_ROI_FIXTURE_20260728.md",
-            "CVR-08 multi-ROI fixture completion report exists.");
+        RequireContains(stableContracts, "### 3C. Fixture And Relative-ROI Designer", "Public multi-ROI fixture contract exists.");
+        RequireContains(stableContracts, "every reachable downstream ROI consumer", "Public multi-ROI fixture contract preserves all reachable consumers.");
+        RequireContains(stableContracts, "`wpf_shell_host_workspace_sample_normalize_fixture_review`", "Public multi-ROI fixture contract provides the focused verification route.");
         RequireContains(
             learnScreenshotSmoke,
             "TemplateMatchingTool",
@@ -3052,15 +3066,7 @@ internal static class Program
         RequirePathMissing(repoRoot, @"src\OpenVisionLab\Properties\Resources.resx", "Stale Properties.Resources.resx remains removed.");
         RequirePathMissing(repoRoot, @"src\OpenVisionLab\Properties\Resources.Designer.cs", "Stale Properties.Resources.Designer.cs remains removed.");
 
-        string completed = Read(repoRoot, @"docs\OPENVISIONLAB_COMPLETED_TRACKER.md");
-        RequireContains(completed, "Image Compare source format display", "Completed tracker records Image Compare source format completion.");
-        RequireContains(completed, "Image Compare last-open directory", "Completed tracker records Image Compare last-open directory completion.");
-        RequireContains(completed, "Priority 1-7 non-UI platform precheck", "Completed tracker records Priority 1-7 precheck completion.");
-
-        string progress = Read(repoRoot, @"docs\OPENVISIONLAB_PROGRESS_TRACKER.md");
-        RequireContains(progress, "Current Snapshot After Priority 1-7 Pass", "Progress tracker separates current 1-7 snapshot.");
-        RequireContains(progress, "Removed From Active Work", "Progress tracker has a removed-from-active section.");
-        Pass("Completed/progress tracker hygiene contract");
+        Pass("Obsolete resource hygiene contract");
     }
 
     private static void RequireLocalHtmlReferencesResolve(

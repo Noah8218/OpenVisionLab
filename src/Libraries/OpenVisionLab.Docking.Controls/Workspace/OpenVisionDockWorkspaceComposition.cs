@@ -78,7 +78,8 @@ namespace OpenVisionLab.Docking.Controls
             IOpenVisionDockDocumentWorkspace workspace = new OpenVisionDockWorkspaceController(
                 options.WorkspaceView.WorkspaceHandle,
                 documentClosedHandler,
-                options.DocumentContentPredicate);
+                options.DocumentContentPredicate,
+                () => options.WorkspaceView.IsPresetLayout);
             OpenVisionDockDocumentController documents = new OpenVisionDockDocumentController(
                 workspace,
                 options.DocumentState,

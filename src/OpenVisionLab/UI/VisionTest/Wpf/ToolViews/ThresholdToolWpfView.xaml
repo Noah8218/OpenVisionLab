@@ -5,14 +5,30 @@
                                                xmlns:local="clr-namespace:OpenVisionLab"
                                                MinWidth="900"
                                                MinHeight="600"
-                                               Background="#EEF2F6">
+                                               Background="{DynamicResource OpenVision.Workbench.PanelBrush}">
     <local:VisionToolSingleInputCustomToolViewBase.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <local:SharedResourceDictionary Source="../Tooling/Presentation/VisionToolWpfTheme.xaml" />
+                <ResourceDictionary Source="../Tooling/Presentation/VisionToolWpfTheme.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-            <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+            <Style x:Key="ThresholdNumberStyle" TargetType="TextBox" BasedOn="{StaticResource OpenVision.ControlTextBoxStyle}">
+                <Style.Resources>
+                    <SolidColorBrush x:Key="OpenVision.ControlFocusBrush" Color="{Binding Color, Source={StaticResource VisionTool.AccentBrush}}" />
+                    <SolidColorBrush x:Key="OpenVision.ControlDisabledBrush" Color="{Binding Color, Source={StaticResource VisionTool.PanelBrush}}" />
+                    <SolidColorBrush x:Key="OpenVision.ControlDisabledTextBrush" Color="{Binding Color, Source={StaticResource VisionTool.DisabledTextBrush}}" />
+                    <SolidColorBrush x:Key="OpenVision.ControlDisabledBorderBrush" Color="{Binding Color, Source={StaticResource VisionTool.FieldBorderBrush}}" />
+                    <SolidColorBrush x:Key="OpenVision.ControlErrorBrush" Color="{Binding Color, Source={StaticResource VisionTool.StatusErrorBrush}}" />
+                </Style.Resources>
+                <Setter Property="Height" Value="29" />
+                <Setter Property="MinHeight" Value="29" />
+                <Setter Property="MinWidth" Value="72" />
+                <Setter Property="Padding" Value="8,3" />
+                <Setter Property="HorizontalContentAlignment" Value="Center" />
+                <Setter Property="Background" Value="{DynamicResource OpenVision.Workbench.RaisedBrush}" />
+                <Setter Property="Foreground" Value="{DynamicResource OpenVision.Workbench.TextBrush}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource OpenVision.Workbench.FieldBorderBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
                 <Setter Property="Width" Value="76" />
                 <Setter Property="HorizontalAlignment" Value="Right" />
             </Style>
@@ -222,7 +238,7 @@
                                                                    Text="Threshold"
                                                                    Style="{StaticResource SectionTitleStyle}"
                                                                    VerticalAlignment="Center" />
-                                                        <TextBox x:Name="txtThreshold"
+                                                        <TextBox x:Name="txtThreshold" Style="{StaticResource ThresholdNumberStyle}"
                                                                  Grid.Column="1"
                                                                  Text="{Binding Threshold, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                                  local:VisionToolTextInputBehavior.Mode="UnsignedInteger" />
@@ -231,7 +247,7 @@
                                                                    Text="Max value"
                                                                    Style="{StaticResource SectionTitleStyle}"
                                                                    VerticalAlignment="Center" />
-                                                        <TextBox x:Name="txtMaxValue"
+                                                        <TextBox x:Name="txtMaxValue" Style="{StaticResource ThresholdNumberStyle}"
                                                                  Grid.Row="2"
                                                                  Grid.Column="1"
                                                                  Text="{Binding MaxValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -302,7 +318,7 @@
                                                             <ColumnDefinition Width="82" />
                                                         </Grid.ColumnDefinitions>
                                                         <TextBlock x:Name="lblRangeMin" Text="Min" Style="{StaticResource SectionTitleStyle}" />
-                                                        <TextBox x:Name="txtRangeMin"
+                                                        <TextBox x:Name="txtRangeMin" Style="{StaticResource ThresholdNumberStyle}"
                                                                  Grid.Column="1"
                                                                  Text="{Binding RangeMin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                                  local:VisionToolTextInputBehavior.Mode="UnsignedInteger" />
@@ -322,7 +338,7 @@
                                                             <ColumnDefinition Width="82" />
                                                         </Grid.ColumnDefinitions>
                                                         <TextBlock x:Name="lblRangeMax" Text="Max" Style="{StaticResource SectionTitleStyle}" />
-                                                        <TextBox x:Name="txtRangeMax"
+                                                        <TextBox x:Name="txtRangeMax" Style="{StaticResource ThresholdNumberStyle}"
                                                                  Grid.Column="1"
                                                                  Text="{Binding RangeMax, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                                  local:VisionToolTextInputBehavior.Mode="UnsignedInteger" />
@@ -393,7 +409,7 @@
                                                                    Text="Max value"
                                                                    Style="{StaticResource SectionTitleStyle}"
                                                                    VerticalAlignment="Center" />
-                                                        <TextBox x:Name="txtAdaptiveMaxValue"
+                                                        <TextBox x:Name="txtAdaptiveMaxValue" Style="{StaticResource ThresholdNumberStyle}"
                                                                  Grid.Column="1"
                                                                  Text="{Binding AdaptiveMaxValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                                  local:VisionToolTextInputBehavior.Mode="UnsignedInteger" />
@@ -407,7 +423,7 @@
                                                                    Text="Weight"
                                                                    Style="{StaticResource SectionTitleStyle}"
                                                                    VerticalAlignment="Center" />
-                                                        <TextBox x:Name="txtWeight"
+                                                        <TextBox x:Name="txtWeight" Style="{StaticResource ThresholdNumberStyle}"
                                                                  Grid.Column="1"
                                                                  Text="{Binding Weight, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                                  local:VisionToolTextInputBehavior.Mode="SignedInteger" />
@@ -429,7 +445,7 @@
                                                                    Text="Block size"
                                                                    Style="{StaticResource SectionTitleStyle}"
                                                                    VerticalAlignment="Center" />
-                                                        <TextBox x:Name="txtBlockSize"
+                                                        <TextBox x:Name="txtBlockSize" Style="{StaticResource ThresholdNumberStyle}"
                                                                  Grid.Column="1"
                                                                  Text="{Binding BlockSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                                  local:VisionToolTextInputBehavior.Mode="UnsignedInteger" />

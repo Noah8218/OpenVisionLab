@@ -58,6 +58,10 @@ namespace OpenVisionLab
         {
             menuPresenter.ApplyLocalization();
             directRunPresenter.ApplyLocalization();
+            if (directRunPresenter.UsesToolRouteText)
+            {
+                RefreshDirectRouteText();
+            }
             ApplyToolRailCompactState(isToolRailCompact);
             refreshLayerActionButtons();
         }

@@ -25,7 +25,8 @@ namespace OpenVisionLab
         internal string CheckForTest => txtCheck.Text ?? string.Empty;
         internal string CoverageForTest => txtCoverage.Text ?? string.Empty;
         internal string ApplicabilityForTest => txtApplicability.Text ?? string.Empty;
-        internal bool IsExpandedForTest => guideExpander.IsExpanded;
+        internal bool IsExpanded => guideExpander.IsExpanded;
+        internal bool IsExpandedForTest => IsExpanded;
 
         internal void ShowPrompt()
         {
@@ -92,8 +93,10 @@ namespace OpenVisionLab
 
         internal void SetCompactMode(bool compact)
         {
-            guideScroll.MaxHeight = compact ? 116D : 184D;
+            guideScroll.MaxHeight = compact ? 116D : double.PositiveInfinity;
         }
+
+        internal void Expand() => guideExpander.IsExpanded = true;
 
         internal void SetExpandedForTest(bool expanded)
         {

@@ -6,6 +6,8 @@ using OpenVisionLab.Core;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
+using System.Windows.Media.Imaging;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
@@ -23,6 +25,13 @@ namespace OpenVisionLab
         private string selectedLayerResultName = "Main";
         private IReadOnlyList<string> layerOptions;
         private bool hasWorkspaceImage;
+        private System.Drawing.Bitmap workspaceInputIdentity;
+        private BitmapSource workspaceInputPreview;
+        private BitmapSource workspaceInputThumbnail;
+        private string workspaceInputName = string.Empty;
+        private string workspaceInputSourcePath = string.Empty;
+        private int workspaceInputWidth;
+        private int workspaceInputHeight;
         private bool arithmeticRequiresInputLayerB;
         private bool hasArithmeticInputLayerB;
         private bool lineScaleNeedsReview = true;
@@ -49,8 +58,39 @@ namespace OpenVisionLab
 
 
         public IReadOnlyList<OpenVisionShellNavGroup> NavigationGroups { get; private set; }
+        public IReadOnlyList<OpenVisionShellNavGroup> WorkbenchToolGroups => OpenVisionShellCommandCatalog.CreateWorkbenchToolGroups(NavigationGroups);
+        public IReadOnlyList<OpenVisionShellNavItem> QuickToolItems => new[] { VISION_MENU.Threshold, VISION_MENU.Filter, VISION_MENU.Blob, VISION_MENU.Matching, VISION_MENU.Line }
+            .Select(menu => NavigationGroups.SelectMany(group => group.Items).FirstOrDefault(item => item.Menu == menu))
+            .Where(item => item != null).ToList();
         public IReadOnlyList<OpenVisionLanguageOption> LanguageOptions { get; }
         public IReadOnlyList<string> LayerOptions => layerOptions;
+        public BitmapSource WorkspaceInputPreview => workspaceInputPreview;
+        public BitmapSource WorkspaceInputThumbnail => workspaceInputThumbnail;
+        public string WorkspaceInputName => workspaceInputName;
+        public string WorkspaceInputSourcePath => workspaceInputSourcePath;
+        public string WorkspaceInputStatusName => HasWorkspaceInputImage ? workspaceInputName : T("Workbench.Viewer.NoImage", "No image");
+        public string WorkspaceInputSizeText => HasWorkspaceInputImage ? $"{workspaceInputWidth}×{workspaceInputHeight}" : string.Empty;
+        public bool HasWorkspaceInputImage => workspaceInputPreview != null;
+        internal void UpdateWorkspaceInputImage(System.Drawing.Bitmap image, string sourcePath = null)
+        {
+            // Identity is borrowed only for comparison; ImageSpace owns its lifetime. The UI keeps a frozen copy.
+            if (ReferenceEquals(workspaceInputIdentity, image)) { return; }
+            BitmapSource preview = image == null ? null : OpenVisionBitmapImagePreviewFactory.Create(image);
+            workspaceInputIdentity = image;
+            workspaceInputPreview = preview;
+            workspaceInputThumbnail = image == null ? null : OpenVisionBitmapImagePreviewFactory.Create(image, 160);
+            workspaceInputSourcePath = sourcePath ?? string.Empty;
+            workspaceInputWidth = image?.Width ?? 0;
+            workspaceInputHeight = image?.Height ?? 0;
+            workspaceInputName = image == null ? string.Empty : string.IsNullOrWhiteSpace(sourcePath) ? "Main" : Path.GetFileName(sourcePath);
+            OnPropertyChanged(nameof(WorkspaceInputThumbnail));
+            OnPropertyChanged(nameof(WorkspaceInputSourcePath));
+            OnPropertyChanged(nameof(WorkspaceInputPreview));
+            OnPropertyChanged(nameof(WorkspaceInputName));
+            OnPropertyChanged(nameof(WorkspaceInputStatusName));
+            OnPropertyChanged(nameof(WorkspaceInputSizeText));
+            OnPropertyChanged(nameof(HasWorkspaceInputImage));
+        }
         public ICommand SelectToolCommand { get; }
         public ICommand SelectLayerResultCommand { get; }
         public ICommand ClearToolSearchCommand { get; }
@@ -72,19 +112,17 @@ namespace OpenVisionLab
             }
         }
         public bool IsToolSearchActive => !string.IsNullOrWhiteSpace(toolSearchText);
-        public string ToolSearchHintText => T("Shell.ToolSearch.Hint", "Search tool, intent, parameter, or result");
+        public string ToolSearchHintText => T("Workbench.Tools.Search", "Search tools (e.g. threshold, blob, count)");
         public string ToolSearchClearToolTipText => T("Shell.ToolSearch.ClearToolTip", "Clear tool search");
         public string ToolSearchLearnToolTipText => T("Shell.ToolSearch.OpenLearnToolTip", "Open this tool's Learn topic");
         public string ToolSearchSamplesToolTipText => T("Shell.ToolSearch.OpenSamplesToolTip", "Open samples for this tool");
         public string ToolSearchGuidedSetupToolTipText => T("Shell.ToolSearch.OpenGuidedSetupToolTip", "Open Guided Setup for this tool");
-        public int VisibleToolCount => NavigationGroups.SelectMany(group => group.Items).Count(item => item.IsVisible);
+        public int VisibleToolCount => NavigationGroups.SelectMany(group => group.Items).Count(item => item.RequiresWorkspaceImage && item.IsVisible);
         public string VisibleToolCommandIds => string.Join(",", NavigationGroups
             .SelectMany(group => group.Items)
-            .Where(item => item.IsVisible)
+            .Where(item => item.RequiresWorkspaceImage && item.IsVisible)
             .Select(item => item.CommandId));
-        public string ToolSearchSummaryText => string.IsNullOrWhiteSpace(toolSearchText)
-            ? TF("Shell.ToolSearch.AllFormat", "All {0} tools", VisibleToolCount)
-            : TF("Shell.ToolSearch.ResultFormat", "{0} tools found", VisibleToolCount);
+        public string ToolSearchSummaryText => VisibleToolCount == 0 ? T("Workbench.Tools.NoMatch", "No results") : string.Empty;
         public string SelectedLayerOption
         {
             get => selectedLayerResultName;
@@ -213,7 +251,12 @@ namespace OpenVisionLab
                 throw new ArgumentNullException(nameof(displayManager));
             }
 
-            ArithmeticToolSettings arithmeticSettings = OpenVisionNativeToolSettingsStore.Load(
+            using (var input = displayManager.ImageSpace?.AcquireImage("Main"))
+            {
+                UpdateWorkspaceInputImage(input?.Image);
+            }
+
+            ArithmeticToolSettings arithmeticSettings = OpenVisionNativeToolSettingsStore.LoadExisting(
                 OpenVisionNativeToolSettingsStore.CreateConfigName("Arithmetic"),
                 new ArithmeticToolSettings());
             bool arithmeticInputLayerBRequired = VisionPipelineArithmeticStep.RequiresInputLayerB(
@@ -272,7 +315,7 @@ namespace OpenVisionLab
         public string LearnText => T("Menu.Learn", "Learn");
         public string LearnToolTipText => T("Menu.Learn.ToolTip", "Open OpenVisionLab Learn.");
         public string GuideText => T("Menu.Guide", "Guide");
-        public string GuideToolTipText => T("Menu.Guide.ToolTip", "Open the OpenVisionLab tutorial.");
+        public string GuideToolTipText => T("Workbench.Menu.Guide", "User manual") + " (F1)";
         public string WorkbenchText => T("Shell.Workbench", "Workbench");
         public string CameraText => T("Shell.Camera", "Camera");
         public string LayerText => T("Main.Layer", "Layer");
@@ -320,6 +363,9 @@ namespace OpenVisionLab
 
         public void Dispose()
         {
+            workspaceInputIdentity = null;
+            workspaceInputPreview = null;
+            workspaceInputName = string.Empty;
             OpenVisionLanguageService.LanguageChanged -= OnLanguageChanged;
         }
 
@@ -342,6 +388,7 @@ namespace OpenVisionLab
             ApplyToolReadiness();
             ApplyToolFilter();
             OnPropertyChanged(nameof(NavigationGroups));
+            OnPropertyChanged(nameof(QuickToolItems));
             RaiseLocalizedTextChanged();
 
             if (selectedMenu.HasValue)
@@ -415,6 +462,7 @@ namespace OpenVisionLab
         {
             foreach (OpenVisionShellNavItem item in NavigationGroups.SelectMany(group => group.Items))
             {
+                item.SetTemplateReady(templateReadyTools.Contains(item.Menu));
                 if (!item.RequiresWorkspaceImage)
                 {
                     continue;
@@ -502,6 +550,7 @@ namespace OpenVisionLab
             OnPropertyChanged(nameof(VisibleToolCount));
             OnPropertyChanged(nameof(VisibleToolCommandIds));
             OnPropertyChanged(nameof(ToolSearchSummaryText));
+            OnPropertyChanged(nameof(WorkbenchToolGroups));
         }
 
         private static void ResolveLineScale(
@@ -565,6 +614,7 @@ namespace OpenVisionLab
 
         private void RaiseLocalizedTextChanged()
         {
+            OnPropertyChanged(nameof(WorkspaceInputStatusName));
             OnPropertyChanged(nameof(SubtitleText));
             OnPropertyChanged(nameof(ImageProcessingText));
             OnPropertyChanged(nameof(AlgorithmText));
@@ -681,10 +731,10 @@ namespace OpenVisionLab
                         WpfTool(VISION_MENU.Arithmetic, PackIconMaterialKind.CalculatorVariant),
                         WpfTool(VISION_MENU.EdgeDetection, PackIconMaterialKind.ImageFilterHdr),
                         WpfTool(VISION_MENU.RotateAndScale, PackIconMaterialKind.Rotate3dVariant),
-                        WpfTool(VISION_MENU.AffineTransform, PackIconMaterialKind.Rotate3dVariant),
+                        WpfTool(VISION_MENU.AffineTransform, PackIconMaterialKind.AxisArrow),
                         WpfTool(VISION_MENU.Histogram, PackIconMaterialKind.ChartHistogram),
                         WpfTool(VISION_MENU.HSV, PackIconMaterialKind.Palette),
-                        WpfTool(VISION_MENU.Mean, PackIconMaterialKind.FunctionVariant)
+                        WpfTool(VISION_MENU.Mean, PackIconMaterialKind.Brightness6)
                     }),
                 new OpenVisionShellNavGroup(
                     T("Menu.Algorithm", "ALGORITHM"),
@@ -694,10 +744,30 @@ namespace OpenVisionLab
                         WpfTool(VISION_MENU.Contour, PackIconMaterialKind.VectorSquare),
                         WpfTool(VISION_MENU.Line, PackIconMaterialKind.VectorLine),
                         WpfTool(VISION_MENU.Matching, PackIconMaterialKind.CrosshairsGps),
-                        WpfTool(VISION_MENU.EdgeBasedMatching, PackIconMaterialKind.CrosshairsGps),
+                        WpfTool(VISION_MENU.EdgeBasedMatching, PackIconMaterialKind.ShapeOutline),
                         WpfTool(VISION_MENU.FeatureMatching, PackIconMaterialKind.ImageSearch),
                         PipelineTool(VISION_MENU.Pipeline, PackIconMaterialKind.ChartTimelineVariant)
                     })
+            };
+        }
+
+        public static IReadOnlyList<OpenVisionShellNavGroup> CreateWorkbenchToolGroups(IReadOnlyList<OpenVisionShellNavGroup> navigationGroups)
+        {
+            Dictionary<VISION_MENU, OpenVisionShellNavItem> tools = navigationGroups.SelectMany(group => group.Items).ToDictionary(item => item.Menu);
+            OpenVisionShellNavGroup Group(string key, params VISION_MENU[] menus)
+            {
+                OpenVisionShellNavGroup group = new OpenVisionShellNavGroup(OpenVisionLanguageService.T(key), menus.Select(menu => tools[menu]).ToList());
+                group.SetVisible(group.Items.Any(item => item.IsVisible));
+                return group;
+            }
+
+            return new[]
+            {
+                Group("Workbench.Tools.GroupPre", VISION_MENU.Threshold, VISION_MENU.Filter, VISION_MENU.Morphology, VISION_MENU.Arithmetic,
+                    VISION_MENU.EdgeDetection, VISION_MENU.HSV, VISION_MENU.Histogram),
+                Group("Workbench.Tools.GroupLocate", VISION_MENU.Matching, VISION_MENU.EdgeBasedMatching, VISION_MENU.FeatureMatching,
+                    VISION_MENU.RotateAndScale, VISION_MENU.AffineTransform),
+                Group("Workbench.Tools.GroupInspect", VISION_MENU.Blob, VISION_MENU.Contour, VISION_MENU.Line, VISION_MENU.Mean)
             };
         }
 
@@ -771,7 +841,7 @@ namespace OpenVisionLab
             switch (menu)
             {
                 case VISION_MENU.Threshold:
-                    return "이진화 임계값 흑백 밝기 grayscale gv binary binarize threshold maxvalue binaryinv";
+                    return "이진화 스레시홀드 임계값 흑백 밝기 grayscale gv binary binarize threshold maxvalue binaryinv";
                 case VISION_MENU.Filter:
                     return "필터 블러 가우시안 미디언 양방향 샤프닝 잡음 blur gaussian median bilateral sharpen noise kernel sigma";
                 case VISION_MENU.Morphology:
@@ -809,7 +879,7 @@ namespace OpenVisionLab
             }
         }
 
-        private static string DisplayName(VISION_MENU menu)
+        internal static string DisplayName(VISION_MENU menu)
         {
             return T("VisionMenu." + menu, menu.ToString());
         }
@@ -849,6 +919,7 @@ namespace OpenVisionLab
 
         public string Title { get; }
         public IReadOnlyList<OpenVisionShellNavItem> Items { get; }
+        public int VisibleItemCount => Items.Count(item => item.IsVisible);
         public bool IsVisible
         {
             get => isVisible;
@@ -872,6 +943,7 @@ namespace OpenVisionLab
         private string toolTip;
         private readonly string searchText;
         private bool isVisible = true;
+        private bool hasTemplate;
 
         private OpenVisionShellNavItem(
             VISION_MENU menu,
@@ -914,6 +986,10 @@ namespace OpenVisionLab
         public bool RequiresWorkspaceImage { get; }
         public bool RequiresTemplate { get; }
         public bool HasGuidedSetup { get; }
+        public string WorkbenchNoticeText => RequiresTemplate && !hasTemplate ? OpenVisionLanguageService.T("Workbench.Tools.NeedTemplate")
+            : Menu == VISION_MENU.Arithmetic ? OpenVisionLanguageService.T("Workbench.Tools.TwoInputs")
+            : Menu == VISION_MENU.HSV || Menu == VISION_MENU.Histogram ? OpenVisionLanguageService.T("Workbench.Tools.NotAddable") : string.Empty;
+        public bool HasWorkbenchNotice => !string.IsNullOrEmpty(WorkbenchNoticeText);
         public bool IsVisible
         {
             get => isVisible;
@@ -966,6 +1042,14 @@ namespace OpenVisionLab
         public void SetVisible(bool value)
         {
             IsVisible = value;
+        }
+
+        public void SetTemplateReady(bool value)
+        {
+            if (hasTemplate == value) { return; }
+            hasTemplate = value;
+            OnPropertyChanged(nameof(WorkbenchNoticeText));
+            OnPropertyChanged(nameof(HasWorkbenchNotice));
         }
 
         public void SetReadiness(string label, Brush brush, string readinessDescription)

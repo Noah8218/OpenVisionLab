@@ -71,7 +71,7 @@ internal static class Program
 
                 manualVersion ??= manifest.ManualVersion;
                 applicationVersion ??= manifest.ApplicationVersion;
-                string html = BuildHtml(manifest, visuals, manualRoot, locale);
+                string html = BuildHtml(manifest, visuals, manualRoot, locale).ReplaceLineEndings("\r\n");
                 string htmlPath = Path.Combine(generatedRoot, locale.OutputFile);
                 WriteAtomic(htmlPath, html);
                 string hash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(htmlPath)));

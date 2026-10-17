@@ -139,10 +139,25 @@ namespace OpenVisionLab
         #endregion
 
         #region Config
+        [XmlIgnore, Browsable(false)]
+        public SystemStateConfig WorkbenchLayoutPreferences { get; private set; } = new SystemStateConfig();
+
+        public bool SaveWorkbenchLayout(SystemStateConfig preferences)
+        {
+            WorkbenchLayoutPreferences = preferences ?? new SystemStateConfig();
+            try { return SaveConfig(); }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                OVLog.Write(LogCategory.System, LogLevel.Warning, nameof(SaveWorkbenchLayout) + ": " + ex.Message);
+                return false;
+            }
+        }
+
         public bool LoadConfig()
         {
             string strPath = RecipeWorkspaceService.GetSystemConfigPath(XmlName);
             SystemStateConfig loaded = SerializeHelper.LoadOrCreateXmlFile(strPath, CreateConfig(), out bool isLoaded);
+            WorkbenchLayoutPreferences = loaded;
             LastRecipe = loaded.LastRecipe;
             LastRecipeUpdateTime = loaded.LastRecipeUpdateTime;
             LastWorkspaceImagePath = loaded.LastWorkspaceImagePath;
@@ -163,7 +178,19 @@ namespace OpenVisionLab
                 LastRecipe = LastRecipe,
                 LastRecipeUpdateTime = LastRecipeUpdateTime,
                 LastWorkspaceImagePath = LastWorkspaceImagePath,
-                LogConfig = LogConfig?.Normalize() ?? new LogConfig().Normalize()
+                LogConfig = LogConfig?.Normalize() ?? new LogConfig().Normalize(),
+                WorkbenchLayoutVersion = WorkbenchLayoutPreferences.WorkbenchLayoutVersion,
+                WorkbenchLeftWidth = WorkbenchLayoutPreferences.WorkbenchLeftWidth,
+                WorkbenchRightWidth = WorkbenchLayoutPreferences.WorkbenchRightWidth,
+                WorkbenchBottomHeight = WorkbenchLayoutPreferences.WorkbenchBottomHeight,
+                WorkbenchLeftCollapsed = WorkbenchLayoutPreferences.WorkbenchLeftCollapsed,
+                WorkbenchRightCollapsed = WorkbenchLayoutPreferences.WorkbenchRightCollapsed,
+                WorkbenchBottomCollapsed = WorkbenchLayoutPreferences.WorkbenchBottomCollapsed,
+                WorkbenchToolsCollapsed = WorkbenchLayoutPreferences.WorkbenchToolsCollapsed,
+                WorkbenchBottomTab = WorkbenchLayoutPreferences.WorkbenchBottomTab,
+                WorkbenchAutoRunEnabled = WorkbenchLayoutPreferences.WorkbenchAutoRunEnabled,
+                WorkbenchRecentRecipeNames = WorkbenchLayoutPreferences.WorkbenchRecentRecipeNames,
+                WorkbenchThemeName = WorkbenchLayoutPreferences.WorkbenchThemeName
             };
         }
         #endregion
@@ -247,6 +274,19 @@ namespace OpenVisionLab
         public string LastRecipeUpdateTime { get; set; } = "";
         public string LastWorkspaceImagePath { get; set; } = "";
         public LogConfig LogConfig { get; set; } = new LogConfig();
+        public int WorkbenchLayoutVersion { get; set; }
+        public double WorkbenchLeftWidth { get; set; }
+        public double WorkbenchRightWidth { get; set; }
+        public double WorkbenchBottomHeight { get; set; }
+        public bool WorkbenchLeftCollapsed { get; set; }
+        public bool WorkbenchRightCollapsed { get; set; }
+        public bool WorkbenchBottomCollapsed { get; set; }
+        public bool WorkbenchToolsCollapsed { get; set; }
+        public int WorkbenchBottomTab { get; set; }
+        public bool WorkbenchAutoRunEnabled { get; set; } = true;
+        public string[] WorkbenchRecentRecipeNames { get; set; } = Array.Empty<string>();
+        public string WorkbenchThemeName { get; set; } = "Dark";
+
         #endregion
     }
 }

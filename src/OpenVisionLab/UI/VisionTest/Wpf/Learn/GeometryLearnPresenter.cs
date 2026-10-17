@@ -57,11 +57,11 @@ namespace OpenVisionLab
                 + OutputWidth.ToString(CultureInfo.InvariantCulture)
                 + "x"
                 + OutputHeight.ToString(CultureInfo.InvariantCulture),
-            _ => "3 / 3 - ROI review: 변환 결과에서 Rect, Template, Edge 방향, Pixel/mm 기준의 새 위치를 확인한 뒤 Preview/Run을 명시적으로 실행합니다."
+            _ => "3 / 3 - ROI review: 변환 결과에서 Rect, Template, Edge 방향, Pixel/mm 기준의 새 위치를 확인한 뒤 Preview/Run 버튼을 누릅니다."
         };
 
         internal string ToolLocationTitle { get; private set; } = "Rotate/Scale: Angle, Scale X/Y | Affine: Source/Destination 3점, Output, Validation Gates";
-        internal string ToolLocationDetail { get; private set; } = "Preview를 명시적으로 실행한 뒤 OutputSize, Affine 2x3 행렬, destination triangle/frame 드로잉, AffineValidPixelRatio를 확인합니다.";
+        internal string ToolLocationDetail { get; private set; } = "Preview 버튼을 누른 뒤 OutputSize, Affine 2x3 행렬, destination triangle/frame 드로잉, AffineValidPixelRatio를 확인합니다.";
 
         internal void UpdateSettings(double angle, double scale)
         {

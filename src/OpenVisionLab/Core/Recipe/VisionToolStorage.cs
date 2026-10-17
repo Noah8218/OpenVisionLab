@@ -25,6 +25,13 @@ namespace OpenVisionLab
             }
         }
 
+        internal static void InitializeWorkspace(string recipeName)
+        {
+            VisionToolRepository repository = new VisionToolRepository();
+            try { LoadInto(repository, recipeName); }
+            finally { DisposeFailedLoadTemplates(repository); }
+        }
+
         private static void LoadInto(VisionToolRepository repository, string recipeName)
         {
             Reset(repository);

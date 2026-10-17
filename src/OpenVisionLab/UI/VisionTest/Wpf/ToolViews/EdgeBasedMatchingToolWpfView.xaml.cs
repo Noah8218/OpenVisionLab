@@ -114,6 +114,8 @@ namespace OpenVisionLab
             toolController.SetResultReview(results, tactTime);
         }
 
+        internal Action<IEnumerable<MatchingResult>, TimeSpan?> CaptureResultReview() => toolController.CaptureResultReview();
+
         public override void SetInputPreview(Bitmap image)
         {
             autoMPointController.SetInputPreview(image);
@@ -149,8 +151,8 @@ namespace OpenVisionLab
             bool compactCollapsedPanel = toolShell.IsDockedInspectorMode
                 && !autoMPointPanel.DetailsExpander.IsExpanded;
             autoMPointPanel.MaxHeight = compactCollapsedPanel ? 40D : double.PositiveInfinity;
-            verificationGuide.Visibility = toolShell.IsDockedInspectorMode
-                || autoMPointPanel.DetailsExpander.IsExpanded
+            verificationGuide.Visibility = toolShell.WorkbenchStepActions.DataContext is OpenVisionWorkbenchToolViewModel
+                || toolShell.IsDockedInspectorMode || autoMPointPanel.DetailsExpander.IsExpanded
                     ? Visibility.Collapsed
                     : Visibility.Visible;
         }

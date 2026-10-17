@@ -1,0 +1,128 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime"
+                    xmlns:wpg="clr-namespace:System.Windows.Controls.WpfPropertyGrid;assembly=WpfPropertyGridBridge">
+    <Color x:Key="OpenVision.Workbench.BackgroundBrush.Color">#EEF1F5</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.BackgroundBrush" Color="{StaticResource OpenVision.Workbench.BackgroundBrush.Color}" />
+    <Color x:Key="OpenVision.Workbench.ChromeBrush.Color">#FFFFFF</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.ChromeBrush" Color="{StaticResource OpenVision.Workbench.ChromeBrush.Color}" />
+    <Color x:Key="OpenVision.Workbench.PanelBrush.Color">#FFFFFF</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.PanelBrush" Color="{StaticResource OpenVision.Workbench.PanelBrush.Color}" />
+    <Color x:Key="OpenVision.Workbench.PanelAltBrush.Color">#F6F8FB</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.PanelAltBrush" Color="{StaticResource OpenVision.Workbench.PanelAltBrush.Color}" />
+    <Color x:Key="OpenVision.Workbench.RaisedBrush.Color">#FFFFFF</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.RaisedBrush" Color="{StaticResource OpenVision.Workbench.RaisedBrush.Color}" />
+    <Color x:Key="OpenVision.Workbench.HoverBrush.Color">#EEF2F7</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.HoverBrush" Color="{StaticResource OpenVision.Workbench.HoverBrush.Color}" />
+    <Color x:Key="OpenVision.Workbench.PressedBrush.Color">#E2E8F0</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.PressedBrush" Color="{StaticResource OpenVision.Workbench.PressedBrush.Color}" />
+    <Color x:Key="OpenVision.Workbench.LineBrush.Color">#E2E6EC</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.LineBrush" Color="{StaticResource OpenVision.Workbench.LineBrush.Color}" />
+    <Color x:Key="OpenVision.Workbench.LineAltBrush.Color">#D6DCE5</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.LineAltBrush" Color="{StaticResource OpenVision.Workbench.LineAltBrush.Color}" />
+    <Color x:Key="OpenVision.Workbench.StrongLineBrush.Color">#C3CBD7</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.StrongLineBrush" Color="{StaticResource OpenVision.Workbench.StrongLineBrush.Color}" />
+    <Color x:Key="OpenVision.Workbench.ScrollBrush.Color">#C3CBD7</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.ScrollBrush" Color="{StaticResource OpenVision.Workbench.ScrollBrush.Color}" />
+    <Color x:Key="OpenVision.Workbench.FieldBorderBrush.Color">#858FA0</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.FieldBorderBrush" Color="{StaticResource OpenVision.Workbench.FieldBorderBrush.Color}" />
+    <Color x:Key="OpenVision.Workbench.TextBrush.Color">#18202B</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.TextBrush" Color="{StaticResource OpenVision.Workbench.TextBrush.Color}" />
+    <Color x:Key="OpenVision.Workbench.SecondaryTextBrush.Color">#4A5566</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.SecondaryTextBrush" Color="{StaticResource OpenVision.Workbench.SecondaryTextBrush.Color}" />
+    <Color x:Key="OpenVision.Workbench.MutedTextBrush.Color">#646F81</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.MutedTextBrush" Color="{StaticResource OpenVision.Workbench.MutedTextBrush.Color}" />
+    <Color x:Key="OpenVision.Workbench.AccentBrush.Color">#0C7F77</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.AccentBrush" Color="{StaticResource OpenVision.Workbench.AccentBrush.Color}" />
+    <Color x:Key="OpenVision.Workbench.AccentHoverBrush.Color">#0A6B64</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.AccentHoverBrush" Color="{StaticResource OpenVision.Workbench.AccentHoverBrush.Color}" />
+    <Color x:Key="OpenVision.Workbench.AccentTextBrush.Color">#FFFFFF</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.AccentTextBrush" Color="{StaticResource OpenVision.Workbench.AccentTextBrush.Color}" />
+    <Color x:Key="OpenVision.Workbench.AccentSoftBrush.Color">#1A0C7F77</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.AccentSoftBrush" Color="{StaticResource OpenVision.Workbench.AccentSoftBrush.Color}" />
+    <Color x:Key="OpenVision.Workbench.AccentOnSoftBrush.Color">#0A6B64</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.AccentOnSoftBrush" Color="{StaticResource OpenVision.Workbench.AccentOnSoftBrush.Color}" />
+    <Color x:Key="OpenVision.Workbench.AccentLineBrush.Color">#730C7F77</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.AccentLineBrush" Color="{StaticResource OpenVision.Workbench.AccentLineBrush.Color}" />
+    <Color x:Key="OpenVision.Workbench.OkBrush.Color">#127A42</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.OkBrush" Color="{StaticResource OpenVision.Workbench.OkBrush.Color}" />
+    <Color x:Key="OpenVision.Workbench.OkSoftBrush.Color">#1A127A42</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.OkSoftBrush" Color="{StaticResource OpenVision.Workbench.OkSoftBrush.Color}" />
+    <Color x:Key="OpenVision.Workbench.NgBrush.Color">#D23535</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.NgBrush" Color="{StaticResource OpenVision.Workbench.NgBrush.Color}" />
+    <Color x:Key="OpenVision.Workbench.NgSoftBrush.Color">#17D23535</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.NgSoftBrush" Color="{StaticResource OpenVision.Workbench.NgSoftBrush.Color}" />
+    <Color x:Key="OpenVision.Workbench.ErrorBrush.Color">#A35507</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.ErrorBrush" Color="{StaticResource OpenVision.Workbench.ErrorBrush.Color}" />
+    <Color x:Key="OpenVision.Workbench.ErrorSoftBrush.Color">#1AA35507</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.ErrorSoftBrush" Color="{StaticResource OpenVision.Workbench.ErrorSoftBrush.Color}" />
+    <Color x:Key="OpenVision.Workbench.StaleBrush.Color">#8A6300</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.StaleBrush" Color="{StaticResource OpenVision.Workbench.StaleBrush.Color}" />
+    <Color x:Key="OpenVision.Workbench.StaleSoftBrush.Color">#1A8A6300</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.StaleSoftBrush" Color="{StaticResource OpenVision.Workbench.StaleSoftBrush.Color}" />
+    <Color x:Key="OpenVision.Workbench.DoneBrush.Color">#2464C9</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.DoneBrush" Color="{StaticResource OpenVision.Workbench.DoneBrush.Color}" />
+    <Color x:Key="OpenVision.Workbench.DoneSoftBrush.Color">#172464C9</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.DoneSoftBrush" Color="{StaticResource OpenVision.Workbench.DoneSoftBrush.Color}" />
+    <Color x:Key="OpenVision.Workbench.SkipBrush.Color">#6B7486</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.SkipBrush" Color="{StaticResource OpenVision.Workbench.SkipBrush.Color}" />
+    <Color x:Key="OpenVision.Workbench.SkipSoftBrush.Color">#1A6B7486</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.SkipSoftBrush" Color="{StaticResource OpenVision.Workbench.SkipSoftBrush.Color}" />
+    <Color x:Key="OpenVision.Workbench.CanvasBrush.Color">#1A1D22</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.CanvasBrush" Color="{StaticResource OpenVision.Workbench.CanvasBrush.Color}" />
+    <Color x:Key="OpenVision.Workbench.CanvasAltBrush.Color">#22262C</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.CanvasAltBrush" Color="{StaticResource OpenVision.Workbench.CanvasAltBrush.Color}" />
+
+    <x:Static x:Key="OpenVision.Workbench.PropertyGridTheme" Member="wpg:PropertyGridThemeVariant.Default" />
+
+    <sys:Double x:Key="OpenVision.Workbench.TitleBarHeight">40</sys:Double>
+    <sys:Double x:Key="OpenVision.Workbench.CommandBarHeight">48</sys:Double>
+    <sys:Double x:Key="OpenVision.Workbench.StatusBarHeight">28</sys:Double>
+    <sys:Double x:Key="OpenVision.Workbench.SplitterThickness">5</sys:Double>
+    <sys:Double x:Key="OpenVision.Workbench.ControlHeight">30</sys:Double>
+    <sys:Double x:Key="OpenVision.Workbench.ControlHeightSmall">26</sys:Double>
+    <sys:Double x:Key="OpenVision.Workbench.FlowPanelWidth">296</sys:Double>
+    <sys:Double x:Key="OpenVision.Workbench.FlowPanelMinWidth">248</sys:Double>
+    <sys:Double x:Key="OpenVision.Workbench.FlowPanelCollapsedWidth">48</sys:Double>
+    <sys:Double x:Key="OpenVision.Workbench.ToolPanelWidth">520</sys:Double>
+    <sys:Double x:Key="OpenVision.Workbench.ToolPanelMinWidth">480</sys:Double>
+    <sys:Double x:Key="OpenVision.Workbench.ToolPanelWideWidth">720</sys:Double>
+    <sys:Double x:Key="OpenVision.Workbench.BottomPanelHeight">256</sys:Double>
+    <sys:Double x:Key="OpenVision.Workbench.BottomPanelMinHeight">200</sys:Double>
+    <sys:Double x:Key="OpenVision.Workbench.BottomPanelCollapsedHeight">36</sys:Double>
+    <sys:Double x:Key="OpenVision.Workbench.ViewerToolbarHeight">40</sys:Double>
+    <sys:Double x:Key="OpenVision.Workbench.PaneHeaderHeight">32</sys:Double>
+    <sys:Double x:Key="OpenVision.Workbench.PropertyGridNameColumn">150</sys:Double>
+    <sys:Double x:Key="OpenVision.Workbench.PropertyGridEditorMin">300</sys:Double>
+    <sys:Double x:Key="OpenVision.Workbench.ThumbnailWidth">136</sys:Double>
+    <sys:Double x:Key="OpenVision.Workbench.ThumbnailImageHeight">84</sys:Double>
+    <sys:Double x:Key="OpenVision.Workbench.FontSizeXS">11</sys:Double>
+    <sys:Double x:Key="OpenVision.Workbench.FontSizeS">12</sys:Double>
+    <sys:Double x:Key="OpenVision.Workbench.FontSizeM">13</sys:Double>
+    <sys:Double x:Key="OpenVision.Workbench.FontSizeL">14</sys:Double>
+    <sys:Double x:Key="OpenVision.Workbench.FontSizeXL">16</sys:Double>
+    <sys:Double x:Key="OpenVision.Workbench.FontSizeXXL">20</sys:Double>
+
+    <CornerRadius x:Key="OpenVision.Workbench.CornerRadiusSmall">4</CornerRadius>
+    <CornerRadius x:Key="OpenVision.Workbench.CornerRadiusMedium">6</CornerRadius>
+    <CornerRadius x:Key="OpenVision.Workbench.CornerRadiusLarge">10</CornerRadius>
+    <FontFamily x:Key="OpenVision.Workbench.FontFamily">/OpenVisionLab;component/UI/Wpf/Fonts/#Pretendard, Segoe UI Variable Text, Segoe UI, Malgun Gothic</FontFamily>
+    <FontFamily x:Key="OpenVision.Workbench.MonospaceFontFamily">Cascadia Mono, D2Coding, Consolas</FontFamily>
+    <SolidColorBrush x:Key="OpenVision.Workbench.CanvasOkBrush" Color="#3FD17F" />
+    <SolidColorBrush x:Key="OpenVision.Workbench.CanvasNgBrush" Color="#FF6161" />
+    <SolidColorBrush x:Key="OpenVision.Workbench.CanvasRoiBrush" Color="#F2CB4E" />
+    <SolidColorBrush x:Key="OpenVision.Workbench.CanvasSelectionBrush" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="OpenVision.Workbench.CanvasRejectedBrush" Color="#8C95A5" />
+    <Color x:Key="OpenVision.Workbench.PaneEmptyBackgroundBrush.Color">#EB161920</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.PaneEmptyBackgroundBrush" Color="{StaticResource OpenVision.Workbench.PaneEmptyBackgroundBrush.Color}" />
+    <Color x:Key="OpenVision.Workbench.PaneEmptyBorderBrush.Color">#2C323C</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.PaneEmptyBorderBrush" Color="{StaticResource OpenVision.Workbench.PaneEmptyBorderBrush.Color}" />
+    <Color x:Key="OpenVision.Workbench.PaneEmptyTitleBrush.Color">#E8EBF1</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.PaneEmptyTitleBrush" Color="{StaticResource OpenVision.Workbench.PaneEmptyTitleBrush.Color}" />
+    <Color x:Key="OpenVision.Workbench.PaneEmptyDetailBrush.Color">#AEB6C3</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.PaneEmptyDetailBrush" Color="{StaticResource OpenVision.Workbench.PaneEmptyDetailBrush.Color}" />
+    <Color x:Key="OpenVision.Workbench.PaneReadoutBackgroundColor">#B8080A0E</Color>
+    <Color x:Key="OpenVision.Workbench.PaneReadoutTextColor">#CFD6E0</Color>
+    <SolidColorBrush x:Key="OpenVision.Workbench.PaneReadoutBackgroundBrush" Color="{StaticResource OpenVision.Workbench.PaneReadoutBackgroundColor}" />
+    <SolidColorBrush x:Key="OpenVision.Workbench.PaneReadoutTextBrush" Color="{StaticResource OpenVision.Workbench.PaneReadoutTextColor}" />
+</ResourceDictionary>

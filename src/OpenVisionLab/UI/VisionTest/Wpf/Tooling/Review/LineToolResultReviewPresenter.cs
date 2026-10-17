@@ -39,6 +39,11 @@ namespace OpenVisionLab
 
         public void Show(IEnumerable<LineGaugeResult> results)
         {
+            Show(results, selectedPurpose(), selectedLineProperty());
+        }
+
+        internal void Show(IEnumerable<LineGaugeResult> results, LineToolPurpose purpose, LineGaugeProperty property)
+        {
             List<LineGaugeResult> lines = results?.Where(item => item != null).ToList()
                 ?? new List<LineGaugeResult>();
             int edgePointCount = lines.Sum(item => item.EdgePointCount);
@@ -60,10 +65,10 @@ namespace OpenVisionLab
                 .ThenByDescending(item => item.FitLine?.Distance() ?? 0)
                 .First();
             double length = best.FitLine?.Distance() ?? 0;
-            switch (selectedPurpose())
+            switch (purpose)
             {
                 case LineToolPurpose.Measure:
-                    ShowMeasureReview(best, length, edgePointCount);
+                    ShowMeasureReview(best, length, edgePointCount, property);
                     break;
                 case LineToolPurpose.Intersection:
                     ShowLineIntersectionReview(lines, edgePointCount);
@@ -178,10 +183,9 @@ namespace OpenVisionLab
                 });
         }
 
-        private void ShowMeasureReview(LineGaugeResult best, double length, int edgePointCount)
+        private void ShowMeasureReview(LineGaugeResult best, double length, int edgePointCount, LineGaugeProperty property)
         {
             double angle = CalculateAngle(best);
-            LineGaugeProperty property = selectedLineProperty();
             double lengthMm = property.PIXELPERMM > 0 ? length * property.PIXELPERMM : 0;
             string measureSummary = VisionToolVerificationText.FormatLineMeasureSummary(length, lengthMm, angle);
             ShowReview(

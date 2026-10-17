@@ -142,18 +142,22 @@ internal static class ContourToolPartialBoundaryContract
             factorySource.Contains("public static OpenVisionNativeToolDocument CreateContour", StringComparison.Ordinal)
                 && factorySource.Contains("VisionToolCompositionService.CreateContourToolViewModel", StringComparison.Ordinal)
                 && factorySource.Contains("presenter => new ContourToolWpfView(presenter)", StringComparison.Ordinal)
-                && factorySource.Contains("OpenVisionNativeToolPreviewExecutor.ExecuteContourPreview", StringComparison.Ordinal)
+                && factorySource.Contains("OpenVisionNativeToolPreviewExecutor.CaptureContourPreview", StringComparison.Ordinal)
                 && factorySource.Contains("VisionToolAreaVerificationCriteriaText.CreateContour", StringComparison.Ordinal),
             results);
         Check(
             "Document builders own generic PropertyGrid and single-input document wiring",
             documentBuilderSource.Contains("public static OpenVisionNativeToolDocument Create<TView, TProperty>", StringComparison.Ordinal)
                 && documentBuilderSource.Contains("CreatePropertyGridView", StringComparison.Ordinal)
+                && documentBuilderSource.Contains("capturePreview: descriptor.CapturePreview", StringComparison.Ordinal)
                 && singleInputBuilderSource.Contains("new OpenVisionNativeToolDocument", StringComparison.Ordinal),
             results);
         Check(
             "Preview executor and overlay own Contour algorithm and result image routing",
-            previewExecutorSource.Contains("ExecuteContourPreview(Mat source, ContourToolWpfView view)", StringComparison.Ordinal)
+            previewExecutorSource.Contains("CaptureContourPreview(ContourToolWpfView view)", StringComparison.Ordinal)
+                && previewExecutorSource.Contains("view.Dispatcher.VerifyAccess()", StringComparison.Ordinal)
+                && previewExecutorSource.Contains("ExecuteContourPreview(Mat source, ContourProperty property, bool teachingPreview, out ContourResult[] review)", StringComparison.Ordinal)
+                && !previewExecutorSource.Contains("ExecuteContourPreview(Mat source, ContourToolWpfView view)", StringComparison.Ordinal)
                 && previewExecutorSource.Contains("new ContourTool()", StringComparison.Ordinal)
                 && overlaySource.Contains("CreateContourResultPreviewImage", StringComparison.Ordinal),
             results);

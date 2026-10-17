@@ -9,7 +9,7 @@
         <Setter Property="Background" Value="{StaticResource VisionTool.PanelBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource VisionTool.HeaderBorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="CornerRadius" Value="6" />
         <Setter Property="Padding" Value="14" />
     </Style>
 
@@ -17,6 +17,38 @@
         <Setter Property="Foreground" Value="{StaticResource VisionTool.SecondaryTextBrush}" />
         <Setter Property="FontSize" Value="12" />
         <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style x:Key="LearnTopicItemStyle" TargetType="ListBoxItem">
+        <Setter Property="Foreground" Value="{StaticResource VisionTool.PrimaryTextBrush}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Padding" Value="6,4" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListBoxItem">
+                    <Border x:Name="topicChrome" Background="{TemplateBinding Background}"
+                            BorderBrush="Transparent" BorderThickness="1" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          TextElement.Foreground="{TemplateBinding Foreground}" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="{StaticResource VisionTool.HoverBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter Property="Background" Value="{StaticResource VisionTool.SelectionBrush}" />
+                            <Setter Property="Foreground" Value="{StaticResource VisionTool.SelectedButtonTextBrush}" />
+                            <Setter Property="FontWeight" Value="SemiBold" />
+                            <Setter TargetName="topicChrome" Property="BorderBrush" Value="{StaticResource VisionTool.AccentBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="topicChrome" Property="BorderBrush" Value="{StaticResource VisionTool.PrimaryTextBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <Style x:Key="LearnAnimationStatusStyle"

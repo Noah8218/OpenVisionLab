@@ -7,6 +7,23 @@ namespace OpenVisionLab
     // Owns persisted Run History lookup and comparison assembly; the Shell keeps binding state and notifications.
     internal sealed class OpenVisionRecipeRunHistoryOrchestrationOwner
     {
+        internal IReadOnlyList<OpenVisionRecipeBatchRunOption> BuildHistoryOptions(string recipeName)
+        {
+            return VisionPipelineBatchRunSummaryStorage.ListRecipe(recipeName).Select(OpenVisionRecipeBatchRunOption.Create)
+                .Where(run => string.Equals(run.RunSummary?.RecipeName, recipeName, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(run.RunSummary?.PipelineName, System.IO.Path.GetFileName(System.IO.Path.GetDirectoryName(System.IO.Path.GetDirectoryName(run.SummaryPath))), StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(run => DateTime.TryParse(run.RunSummary?.StartedAt, out DateTime started) ? started : DateTime.MinValue).ToList();
+        }
+
+        internal IReadOnlyList<OpenVisionRecipeBatchRunOption> BuildRecipeRunOptions(string recipeName, IReadOnlyList<string> pipelineNames)
+        {
+            return pipelineNames.SelectMany(name => VisionPipelineBatchRunSummaryStorage.List(recipeName, name)
+                    .Select(info => OpenVisionRecipeBatchRunOption.Create(info))
+                    .Where(run => string.Equals(run.RunSummary?.RecipeName, recipeName, StringComparison.OrdinalIgnoreCase)
+                        && string.Equals(run.RunSummary?.PipelineName, name, StringComparison.OrdinalIgnoreCase)))
+                .OrderByDescending(run => run.RunSummary?.StartedAt, StringComparer.Ordinal).Take(8).ToList();
+        }
+
         internal OpenVisionRecipeRunHistorySelection BuildRecentRunSelection(
             string recipeName,
             string pipelineName,

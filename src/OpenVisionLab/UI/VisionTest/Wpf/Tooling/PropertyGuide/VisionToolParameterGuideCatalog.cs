@@ -735,6 +735,9 @@ namespace OpenVisionLab
                 return null;
             }
 
+            if (selectedObject is SimplePreprocessToolSettings settings)
+                return ResolveSimplePreprocessSetting(settings, propertyName);
+
             PropertyDescriptor descriptor = GetPropertyDescriptor(selectedObject, propertyName);
             if (descriptor == null)
             {
@@ -816,6 +819,41 @@ namespace OpenVisionLab
             };
         }
 
+        private static VisionToolParameterGuideContent ResolveSimplePreprocessSetting(SimplePreprocessToolSettings settings, string propertyName)
+        {
+            ToolParameterValue parameter = settings.Parameters?.FirstOrDefault(item => item.Key == propertyName);
+            if (parameter == null) return null;
+            string key = propertyName switch
+            {
+                "HueMin" => "SimplePreprocess.HueMin",
+                "HueMax" => "SimplePreprocess.HueMax",
+                "SatMin" => "SimplePreprocess.SaturationMin",
+                "SatMax" => "SimplePreprocess.SaturationMax",
+                "ValMin" => "SimplePreprocess.ValueMin",
+                "ValMax" => "SimplePreprocess.ValueMax",
+                "HistogramType" => "SimplePreprocess.HistogramType",
+                "ClipLimit" => "SimplePreprocess.ClipLimit",
+                "TilesGridSize" => "SimplePreprocess.TileGrid",
+                "Alpha" => "SimplePreprocess.NormalizeAlpha",
+                "Beta" => "SimplePreprocess.NormalizeBeta",
+                _ => string.Empty
+            };
+            if (key.Length == 0) return null;
+            return new VisionToolParameterGuideContent
+            {
+                PropertyName = propertyName,
+                Title = T(key),
+                Identity = propertyName + " = " + parameter.Value,
+                Coverage = T("VisionTool.ParameterGuide.BasicCoverage"),
+                Summary = T("VisionTool.ParameterGuide.FallbackSummary"),
+                Impact = ResolveFallbackImpact(propertyName == "HistogramType" ? typeof(HistogramPreviewType) : typeof(double)),
+                BestWhen = T("VisionTool.ParameterGuide.FallbackBestWhen"),
+                Risk = T("VisionTool.ParameterGuide.FallbackRisk"),
+                CheckAfterPreview = T("VisionTool.ParameterGuide.FallbackCheck"),
+                RelatedPropertyNames = Array.Empty<string>()
+            };
+        }
+
         private static Definition Guide(string keySuffix, params string[] relatedPropertyNames)
         {
             return new Definition(
@@ -888,6 +926,22 @@ namespace OpenVisionLab
             if (!string.Equals(value, typeKey, StringComparison.Ordinal))
             {
                 return value;
+            }
+
+            if (type == typeof(ArithmeticToolSettings) && field == "DisplayName")
+            {
+                string key = descriptor.Name switch
+                {
+                    nameof(ArithmeticToolSettings.SelectedOperation) => "Arithmetic.Operation",
+                    nameof(ArithmeticToolSettings.UseOffsetMode) => "Arithmetic.Mode",
+                    nameof(ArithmeticToolSettings.UseConstantInput) => "Arithmetic.InputBSource",
+                    nameof(ArithmeticToolSettings.UseColorConstant) => "Arithmetic.Color",
+                    nameof(ArithmeticToolSettings.Gray) => "Arithmetic.Gray",
+                    nameof(ArithmeticToolSettings.OffsetX) => "Arithmetic.Offset",
+                    nameof(ArithmeticToolSettings.OffsetY) => "Arithmetic.Offset",
+                    _ => string.Empty
+                };
+                if (key.Length > 0) return T(key);
             }
 
             string sharedKey = "PropertyGrid.Property." + descriptor.Name + "." + field;
@@ -1041,6 +1095,9 @@ namespace OpenVisionLab
 
             return string.Empty;
         }
+
+        internal static string ResolveUnitForSavedParameter(string propertyName) =>
+            string.IsNullOrWhiteSpace(propertyName) ? string.Empty : ResolveUnit(propertyName);
 
         private static string FormatValue(object value)
         {

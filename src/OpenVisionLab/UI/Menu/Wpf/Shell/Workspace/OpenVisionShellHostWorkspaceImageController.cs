@@ -18,6 +18,7 @@ namespace OpenVisionLab
         private readonly Action refreshRows;
         private readonly Action refreshCommandCanExecute;
         private readonly Action refreshDirectRouteText;
+        private readonly Action<Bitmap, string> workspaceInputChanged;
 
         public OpenVisionShellHostWorkspaceImageController(
             ApplicationRuntimeContext runtimeContext,
@@ -26,7 +27,8 @@ namespace OpenVisionLab
             Action setDirectRunPending,
             Action refreshRows,
             Action refreshCommandCanExecute,
-            Action refreshDirectRouteText)
+            Action refreshDirectRouteText,
+            Action<Bitmap, string> workspaceInputChanged = null)
         {
             this.runtimeContext = runtimeContext ?? throw new ArgumentNullException(nameof(runtimeContext));
             this.displayManager = displayManager ?? throw new ArgumentNullException(nameof(displayManager));
@@ -35,6 +37,7 @@ namespace OpenVisionLab
             this.refreshRows = refreshRows ?? throw new ArgumentNullException(nameof(refreshRows));
             this.refreshCommandCanExecute = refreshCommandCanExecute ?? throw new ArgumentNullException(nameof(refreshCommandCanExecute));
             this.refreshDirectRouteText = refreshDirectRouteText ?? throw new ArgumentNullException(nameof(refreshDirectRouteText));
+            this.workspaceInputChanged = workspaceInputChanged;
         }
 
         public void RememberWorkspaceImagePath(string path)
@@ -81,11 +84,19 @@ namespace OpenVisionLab
                 return false;
             }
 
-            ApplyMainLayerImage(image, disposeAfterApply: true);
+            ApplyMainLayerImage(image, disposeAfterApply: true, sourcePath: path);
             return true;
         }
 
-        public void ApplyMainLayerImage(Bitmap image, bool disposeAfterApply)
+        internal Bitmap CaptureMainInput()
+        {
+            using ImageSpaceImageLease input = displayManager.ImageSpace?.AcquireImage("Main");
+            return CloneBitmapForLayer(input?.Image);
+        }
+
+        internal void RestoreMainInput(Bitmap image, string path) => ApplyMainLayerImage(image, disposeAfterApply: false, sourcePath: path);
+
+        public void ApplyMainLayerImage(Bitmap image, bool disposeAfterApply, string sourcePath = null)
         {
             if (image == null)
             {
@@ -95,6 +106,10 @@ namespace OpenVisionLab
             try
             {
                 displayManager.CreateLayerDisplay(ImageSpaceFrame.Borrow(image), "Main", false);
+                using (ImageSpaceImageLease input = displayManager.ImageSpace?.AcquireImage("Main"))
+                {
+                    workspaceInputChanged?.Invoke(input?.Image, sourcePath);
+                }
                 displayManager.SelectedItem = "Main";
                 displayManager.ActivateLayer("Main");
                 OpenVisionNativeToolDocument activeDocument = documentController.ActiveNativeDocument;
@@ -113,6 +128,20 @@ namespace OpenVisionLab
                     image.Dispose();
                 }
             }
+        }
+
+        public void ClearWorkspaceInput()
+        {
+            if (displayManager is not DisplayManagerService service) { return; }
+            service.RemoveLayerDisplay("Main");
+            workspaceInputChanged?.Invoke(null, null);
+            documentController.ActiveNativeDocument?.InvalidatePreviewResultForInputChange();
+            documentController.ActiveNativeDocument?.RefreshLayerState();
+            documentController.RefreshPipelineReviewInputLayerState();
+            setDirectRunPending();
+            refreshRows();
+            refreshCommandCanExecute();
+            refreshDirectRouteText();
         }
 
         public static Bitmap CloneBitmapForLayer(Bitmap image)

@@ -23,6 +23,21 @@
     <SolidColorBrush x:Key="DockedLayer.SubtleTextBrush" Color="#9DB9BE" />
     <SolidColorBrush x:Key="DockedLayer.AccentBrush" Color="#70D7DE" />
 
+    <Style x:Key="DockedLayerKeyboardFocusStyle" TargetType="{x:Type Control}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Control}">
+                    <Rectangle Margin="2"
+                               Stroke="{StaticResource DockedLayer.TextBrush}"
+                               StrokeThickness="1"
+                               StrokeDashArray="1,2"
+                               SnapsToDevicePixels="True"
+                               IsHitTestVisible="False" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style x:Key="DockedLayerCloseButtonStyle" TargetType="{x:Type Button}">
         <Setter Property="Width" Value="22" />
         <Setter Property="Height" Value="22" />
@@ -43,7 +58,7 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="2"
+                            CornerRadius="4"
                             Padding="{TemplateBinding Padding}"
                             SnapsToDevicePixels="True">
                         <ContentPresenter HorizontalAlignment="Center"
@@ -64,7 +79,7 @@
                             <Setter TargetName="buttonChrome" Property="BorderBrush" Value="{StaticResource DockedLayer.AccentBrush}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Opacity" Value="0.38" />
+                            <Setter Property="Foreground" Value="{StaticResource DockedLayer.SubtleTextBrush}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -187,7 +202,7 @@
                     <Setter Property="Background" Value="#05090A" />
                     <Setter Property="BorderThickness" Value="0" />
                     <Setter Property="Cursor" Value="SizeAll" />
-                    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                    <Setter Property="FocusVisualStyle" Value="{StaticResource DockedLayerKeyboardFocusStyle}" />
                     <Setter Property="Margin" Value="0,0,3,0" />
                     <Setter Property="MinHeight" Value="34" />
                     <Setter Property="OverridesDefaultStyle" Value="True" />
@@ -238,11 +253,11 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
-                        <Border Grid.Row="0"
+                        <Border x:Name="PaneFrame" Grid.Row="0"
                                 Grid.RowSpan="3"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}" />
-                        <avalonDockControls:AnchorablePaneTitle Grid.Row="0"
+                        <avalonDockControls:AnchorablePaneTitle x:Name="PaneTitleHost" Grid.Row="0"
                                                                AutomationProperties.AutomationId="DockedLayerPaneHeader"
                                                                Visibility="{Binding Model.ChildrenCount,
                                                                             RelativeSource={RelativeSource TemplatedParent},
@@ -302,6 +317,13 @@
                             </ContentControl>
                         </Border>
                     </Grid>
+                    <ControlTemplate.Triggers>
+                        <DataTrigger Binding="{Binding IsPresetLayout, RelativeSource={RelativeSource AncestorType=local:OpenVisionLayerDockWorkspaceView}}" Value="True">
+                            <Setter TargetName="PaneFrame" Property="BorderThickness" Value="0"/>
+                            <Setter TargetName="PaneTitleHost" Property="Visibility" Value="Collapsed"/>
+                            <Setter TargetName="TabStripHost" Property="Visibility" Value="Collapsed"/>
+                        </DataTrigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -350,7 +372,7 @@
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Cursor" Value="SizeAll" />
         <Setter Property="ToolTip" Value="Drag tab to dock or rearrange." />
-        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource DockedLayerKeyboardFocusStyle}" />
         <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="Template">
             <Setter.Value>
@@ -453,7 +475,7 @@
                                        TextAlignment="Right"
                                        VerticalAlignment="Center">
                                 <TextBlock.Text>
-                                    <MultiBinding StringFormat="{}{0}x{1}">
+                                    <MultiBinding StringFormat="{}{0}×{1}">
                                         <Binding Path="Model.Content.ImagePixelWidth"
                                                  RelativeSource="{RelativeSource TemplatedParent}" />
                                         <Binding Path="Model.Content.ImagePixelHeight"

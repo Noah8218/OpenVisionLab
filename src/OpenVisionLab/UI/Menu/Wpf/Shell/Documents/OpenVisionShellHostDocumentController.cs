@@ -37,7 +37,8 @@ namespace OpenVisionLab
             ActivePipelineReviewDocument != null || cachedPipelineReviewDocument != null;
 
         public bool HasPipelineReviewFor(OpenVisionRecipeContext recipeContext) =>
-            IsSamePipelineContext(ActivePipelineReviewDocument?.RecipeContext, recipeContext)
+            ActivePipelineReviewDocument?.IsHistoricalRunReview != true
+                && IsSamePipelineContext(ActivePipelineReviewDocument?.RecipeContext, recipeContext)
             || IsSamePipelineContext(cachedPipelineReviewDocument?.RecipeContext, recipeContext);
 
         public void RefreshPipelineReviewInputLayerState()
@@ -52,6 +53,11 @@ namespace OpenVisionLab
             if (document == null)
             {
                 throw new ArgumentNullException(nameof(document));
+            }
+
+            if (document.IsHistoricalRunReview)
+            {
+                return false;
             }
 
             if (ActivePipelineReviewDocument != null || cachedPipelineReviewDocument != null)
@@ -76,6 +82,59 @@ namespace OpenVisionLab
             ActivePipelineReviewDocument.LayerStateChanged += layerStateChanged;
         }
 
+        public bool TryActivateHistoricalPipelineReview(OpenVisionPipelineReviewDocument document)
+        {
+            ThrowIfDisposed();
+            if (document == null || !document.IsHistoricalRunReview)
+            {
+                return false;
+            }
+
+            if (ActivePipelineReviewDocument != null)
+            {
+                if (ActivePipelineReviewDocument.IsHistoricalRunReview)
+                {
+                    CloseActivePipelineReviewDocument();
+                }
+                else
+                {
+                    if (cachedPipelineReviewDocument != null)
+                    {
+                        return false;
+                    }
+
+                    cachedPipelineReviewDocument = ActivePipelineReviewDocument;
+                    ActivePipelineReviewDocument = null;
+                    cachedPipelineReviewDocument.LayerStateChanged -= layerStateChanged;
+                }
+            }
+
+            DetachActiveNativeDocument();
+            CloseActivePendingTool();
+            ActivePipelineReviewDocument = document;
+            ActivePipelineReviewDocument.LayerStateChanged += layerStateChanged;
+            return true;
+        }
+
+        public bool ReturnFromHistoricalPipelineReview()
+        {
+            ThrowIfDisposed();
+            if (ActivePipelineReviewDocument?.IsHistoricalRunReview != true)
+            {
+                return false;
+            }
+
+            CloseActivePipelineReviewDocument();
+            if (cachedPipelineReviewDocument != null)
+            {
+                ActivePipelineReviewDocument = cachedPipelineReviewDocument;
+                cachedPipelineReviewDocument = null;
+                ActivePipelineReviewDocument.LayerStateChanged += layerStateChanged;
+            }
+
+            return true;
+        }
+
         public bool TryRestorePipelineReview(
             OpenVisionRecipeContext recipeContext,
             out OpenVisionPipelineReviewDocument document)
@@ -84,13 +143,20 @@ namespace OpenVisionLab
             document = null;
             if (ActivePipelineReviewDocument != null)
             {
-                if (IsSamePipelineContext(ActivePipelineReviewDocument.RecipeContext, recipeContext))
+                if (ActivePipelineReviewDocument.IsHistoricalRunReview)
                 {
-                    document = ActivePipelineReviewDocument;
-                    return true;
+                    CloseActivePipelineReviewDocument();
                 }
+                else
+                {
+                    if (IsSamePipelineContext(ActivePipelineReviewDocument.RecipeContext, recipeContext))
+                    {
+                        document = ActivePipelineReviewDocument;
+                        return true;
+                    }
 
-                CloseActivePipelineReviewDocument();
+                    CloseActivePipelineReviewDocument();
+                }
             }
 
             if (!IsSamePipelineContext(cachedPipelineReviewDocument?.RecipeContext, recipeContext))
@@ -111,7 +177,7 @@ namespace OpenVisionLab
         public bool SuspendPipelineReviewForRecipeReturn()
         {
             ThrowIfDisposed();
-            if (ActivePipelineReviewDocument == null)
+            if (ActivePipelineReviewDocument == null || ActivePipelineReviewDocument.IsHistoricalRunReview)
             {
                 return false;
             }
@@ -214,6 +280,12 @@ namespace OpenVisionLab
                 return;
             }
 
+            if (ActivePipelineReviewDocument.IsHistoricalRunReview)
+            {
+                CloseActivePipelineReviewDocument();
+                return;
+            }
+
             CloseCachedPipelineReviewDocument();
             cachedPipelineReviewDocument = ActivePipelineReviewDocument;
             ActivePipelineReviewDocument = null;
@@ -254,6 +326,7 @@ namespace OpenVisionLab
 
             OpenVisionNativeToolDocument document = ActiveNativeDocument;
             ActiveNativeDocument = null;
+            document.DeactivateWorkbenchEditor();
             document.ClosePreviewViewer();
             document.LayerStateChanged -= layerStateChanged;
         }

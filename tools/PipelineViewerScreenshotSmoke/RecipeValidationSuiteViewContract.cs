@@ -2,9 +2,24 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Windows;
+using System.Windows.Automation;
+using System.Windows.Controls;
+using OpenVisionLab;
 
 internal static class RecipeValidationSuiteViewContract
 {
+    private static readonly string[] BasicLifecycleAutomationIds =
+    {
+        "HostRecipeNameEditor",
+        "HostRecipeManagerCommandStrip",
+        "HostRecipeCreateNamedButton",
+        "HostRecipeDuplicateButton",
+        "HostRecipeRenameButton",
+        "HostRecipeDeleteButton",
+        "HostRecipeEditValidation"
+    };
+
     private static readonly string[] ValidationSuiteAutomationIds =
     {
         "HostRecipeValidationSuitePanel",
@@ -70,17 +85,6 @@ internal static class RecipeValidationSuiteViewContract
             "Recipe",
             "Views",
             "OpenVisionRecipeValidationSuiteView.xaml"));
-        string codeBehindPath = Path.Combine(
-            repositoryRoot,
-            "src",
-            "OpenVisionLab",
-            "UI",
-            "Menu",
-            "Wpf",
-            "Recipe",
-            "Views",
-            "OpenVisionRecipeValidationSuiteView.xaml.cs");
-
         List<string> passed = new List<string>();
         List<string> failed = new List<string>();
         Check(
@@ -105,12 +109,7 @@ internal static class RecipeValidationSuiteViewContract
                 && !view.Contains("DataContext=", StringComparison.Ordinal),
             passed,
             failed);
-        Check(
-            "Extracted view uses compiled XAML without redundant manual code-behind",
-            view.Contains("<UserControl x:Class=\"OpenVisionLab.OpenVisionRecipeValidationSuiteView\"", StringComparison.Ordinal)
-                && !File.Exists(codeBehindPath),
-            passed,
-            failed);
+        CheckInstantiatedViews(passed, failed);
 
         string outputPath = Path.Combine(evidenceDirectory, "recipe_validation_suite_view_contract.txt");
         List<string> report = new List<string>
@@ -118,7 +117,10 @@ internal static class RecipeValidationSuiteViewContract
             "Status: " + (failed.Count == 0 ? "PASS" : "FAIL"),
             "ChecksPassed: " + passed.Count,
             "ChecksFailed: " + failed.Count,
-            "OwnerAutomationIdCount: " + ValidationSuiteAutomationIds.Length
+            "OwnerAutomationIdCount: " + ValidationSuiteAutomationIds.Length,
+            "BasicLifecycleAutomationIdCount: " + BasicLifecycleAutomationIds.Length,
+            "ViewAssembly: " + typeof(OpenVisionRecipeValidationSuiteView).Assembly.Location,
+            "RuntimeBoundary: In-process construction and layout only; no desktop interaction, theme-state, or DPI sweep."
         };
         report.AddRange(passed.Select(item => "PASS: " + item));
         report.AddRange(failed.Select(item => "FAIL: " + item));
@@ -131,6 +133,71 @@ internal static class RecipeValidationSuiteViewContract
 
         Console.WriteLine("RECIPE_VALIDATION_SUITE_VIEW_CONTRACT=PASS|checks=" + passed.Count + "|report=" + outputPath);
         return 0;
+    }
+
+    private static void CheckInstantiatedViews(ICollection<string> passed, ICollection<string> failed)
+    {
+        try
+        {
+            OpenVisionRecipeValidationSuiteView validationView = new OpenVisionRecipeValidationSuiteView();
+            OpenVisionRecipeBasicLifecycleView lifecycleView = new OpenVisionRecipeBasicLifecycleView();
+            Check("Validation Suite constructor initializes compiled XAML content", validationView.Content is Grid, passed, failed);
+            Check("Basic Lifecycle constructor initializes compiled XAML content", lifecycleView.Content is Grid, passed, failed);
+
+            string[] validationIds = EnumerateAutomationIds(validationView).ToArray();
+            string[] lifecycleIds = EnumerateAutomationIds(lifecycleView).ToArray();
+            Check("Instantiated Validation Suite contains every owned AutomationId exactly once",
+                ValidationSuiteAutomationIds.All(id => validationIds.Count(actual => actual == id) == 1), passed, failed);
+            Check("Instantiated Basic Lifecycle contains every owned AutomationId exactly once",
+                BasicLifecycleAutomationIds.All(id => lifecycleIds.Count(actual => actual == id) == 1), passed, failed);
+
+            object inheritedContext = new object();
+            Grid host = new Grid { DataContext = inheritedContext };
+            host.Children.Add(validationView);
+            host.Children.Add(lifecycleView);
+            Check("Both instantiated Views inherit the parent DataContext without a local override",
+                ReferenceEquals(validationView.DataContext, inheritedContext)
+                    && ReferenceEquals(lifecycleView.DataContext, inheritedContext)
+                    && validationView.ReadLocalValue(FrameworkElement.DataContextProperty) == DependencyProperty.UnsetValue
+                    && lifecycleView.ReadLocalValue(FrameworkElement.DataContextProperty) == DependencyProperty.UnsetValue,
+                passed, failed);
+
+            bool headingSeparated = false;
+            if (validationView.Content is Grid root
+                && root.Children.OfType<TextBlock>().SingleOrDefault() is TextBlock heading
+                && root.Children.OfType<Border>().SingleOrDefault() is Border panel)
+            {
+                heading.SetCurrentValue(TextBlock.TextProperty, "검증 세트 / Validation Suite");
+                root.Measure(new Size(900, double.PositiveInfinity));
+                root.Arrange(new Rect(0, 0, 900, root.DesiredSize.Height));
+                double headingBottom = heading.TranslatePoint(new Point(0, heading.ActualHeight), root).Y;
+                double panelTop = panel.TranslatePoint(new Point(0, 0), root).Y;
+                headingSeparated = heading.ActualHeight > 0 && panelTop >= headingBottom;
+            }
+
+            Check("Arranged non-empty Validation Suite heading does not overlap its panel", headingSeparated, passed, failed);
+        }
+        catch (Exception exception)
+        {
+            failed.Add("Recipe View construction/layout threw " + exception.GetType().Name + ": " + exception.Message);
+        }
+    }
+
+    private static IEnumerable<string> EnumerateAutomationIds(DependencyObject root)
+    {
+        string automationId = AutomationProperties.GetAutomationId(root);
+        if (!string.IsNullOrEmpty(automationId))
+        {
+            yield return automationId;
+        }
+
+        foreach (DependencyObject child in LogicalTreeHelper.GetChildren(root).OfType<DependencyObject>())
+        {
+            foreach (string childId in EnumerateAutomationIds(child))
+            {
+                yield return childId;
+            }
+        }
     }
 
     private static void Check(string name, bool condition, ICollection<string> passed, ICollection<string> failed)

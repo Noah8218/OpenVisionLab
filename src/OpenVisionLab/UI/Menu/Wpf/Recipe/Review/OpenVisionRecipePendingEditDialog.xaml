@@ -12,7 +12,8 @@
         Background="Transparent"
         SnapsToDevicePixels="True"
         AutomationProperties.AutomationId="RecipePendingEditDialog"
-        KeyDown="Window_KeyDown">
+        FontFamily="{DynamicResource OpenVision.Workbench.FontFamily}">
+    <Window.InputBindings><KeyBinding Key="Escape" Command="{Binding CancelCommand}"/></Window.InputBindings>
     <shell:WindowChrome.WindowChrome>
         <shell:WindowChrome CaptionHeight="42"
                             ResizeBorderThickness="0"
@@ -22,63 +23,57 @@
     </shell:WindowChrome.WindowChrome>
 
     <Window.Resources>
-        <Style x:Key="PendingEditButtonStyle" TargetType="Button">
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="../../../../Wpf/OpenVisionLabWpfTheme.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        <Style x:Key="PendingEditButtonStyle" TargetType="Button" BasedOn="{StaticResource OpenVision.Workbench.ButtonStyle}">
             <Setter Property="MinWidth" Value="126" />
             <Setter Property="Height" Value="38" />
             <Setter Property="Padding" Value="14,0" />
             <Setter Property="Margin" Value="8,0,0,0" />
-            <Setter Property="Background" Value="#26373D" />
-            <Setter Property="BorderBrush" Value="#55727B" />
+            <Setter Property="Background" Value="{DynamicResource OpenVision.Workbench.PanelAltBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource OpenVision.Workbench.FieldBorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Foreground" Value="#EAF5F7" />
-            <Setter Property="FontFamily" Value="Segoe UI" />
+            <Setter Property="Foreground" Value="{DynamicResource OpenVision.Workbench.TextBrush}" />
+            <Setter Property="FontFamily" Value="{DynamicResource OpenVision.Workbench.FontFamily}" />
             <Setter Property="FontSize" Value="12" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="buttonBorder"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="4">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="buttonBorder" Property="Background" Value="#35505A" />
-                                <Setter TargetName="buttonBorder" Property="BorderBrush" Value="#3DB6C6" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="buttonBorder" Property="Background" Value="#173E47" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
         </Style>
 
         <Style x:Key="PendingEditPrimaryButtonStyle"
-               TargetType="Button"
-               BasedOn="{StaticResource PendingEditButtonStyle}">
-            <Setter Property="Background" Value="#168D9D" />
-            <Setter Property="BorderBrush" Value="#3DD1E0" />
-            <Setter Property="Foreground" Value="White" />
+               TargetType="Button" BasedOn="{StaticResource OpenVision.Workbench.PrimaryButtonStyle}">
+            <Setter Property="MinWidth" Value="126" />
+            <Setter Property="Height" Value="38" />
+            <Setter Property="Padding" Value="14,0" />
+            <Setter Property="Margin" Value="8,0,0,0" />
+            <Setter Property="Background" Value="{DynamicResource OpenVision.Workbench.AccentBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource OpenVision.Workbench.AccentLineBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource OpenVision.Workbench.AccentTextBrush}" />
+            <Style.Triggers><DataTrigger Binding="{Binding ShowDiscard}" Value="False">
+                <Setter Property="Background" Value="{DynamicResource OpenVision.Workbench.NgSoftBrush}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource OpenVision.Workbench.NgBrush}" />
+                <Setter Property="Foreground" Value="{DynamicResource OpenVision.Workbench.NgBrush}" />
+            </DataTrigger></Style.Triggers>
         </Style>
 
         <Style x:Key="PendingEditDangerButtonStyle"
-               TargetType="Button"
-               BasedOn="{StaticResource PendingEditButtonStyle}">
-            <Setter Property="Background" Value="#3D2D2D" />
-            <Setter Property="BorderBrush" Value="#966060" />
-            <Setter Property="Foreground" Value="#FFD9D9" />
+               TargetType="Button" BasedOn="{StaticResource OpenVision.Workbench.DangerButtonStyle}">
+            <Setter Property="MinWidth" Value="126" />
+            <Setter Property="Height" Value="38" />
+            <Setter Property="Padding" Value="14,0" />
+            <Setter Property="Margin" Value="8,0,0,0" />
+            <Setter Property="Background" Value="{DynamicResource OpenVision.Workbench.NgSoftBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource OpenVision.Workbench.NgBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource OpenVision.Workbench.NgBrush}" />
         </Style>
+
+        </ResourceDictionary>
     </Window.Resources>
 
-    <Border Background="#141C20"
-            BorderBrush="#4C6972"
+    <Border Background="{DynamicResource OpenVision.Workbench.PanelBrush}"
+            BorderBrush="{DynamicResource OpenVision.Workbench.LineAltBrush}"
             BorderThickness="1"
             AutomationProperties.AutomationId="RecipePendingEditDialog">
         <Grid>
@@ -88,8 +83,8 @@
             </Grid.RowDefinitions>
 
             <Border Grid.Row="0"
-                    Background="#222D32"
-                    BorderBrush="#3B5058"
+                    Background="{DynamicResource OpenVision.Workbench.ChromeBrush}"
+                    BorderBrush="{DynamicResource OpenVision.Workbench.LineBrush}"
                     BorderThickness="0,0,0,1">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -99,13 +94,17 @@
                     <StackPanel Orientation="Horizontal"
                                 Margin="14,0,0,0"
                                 VerticalAlignment="Center">
-                        <iconPacks:PackIconMaterial Kind="ContentSaveAlertOutline"
-                                                    Width="18"
+                        <iconPacks:PackIconMaterial Width="18"
                                                     Height="18"
                                                     Margin="0,0,8,0"
-                                                    Foreground="#F4C86A" />
+                                                    Foreground="{DynamicResource OpenVision.Workbench.StaleBrush}">
+                            <iconPacks:PackIconMaterial.Style><Style TargetType="iconPacks:PackIconMaterial">
+                                <Setter Property="Kind" Value="ContentSaveAlertOutline" />
+                                <Style.Triggers><DataTrigger Binding="{Binding IsDeleteConfirmation}" Value="True"><Setter Property="Kind" Value="DeleteOutline" /></DataTrigger></Style.Triggers>
+                            </Style></iconPacks:PackIconMaterial.Style>
+                        </iconPacks:PackIconMaterial>
                         <TextBlock Text="{Binding TitleText}"
-                                   Foreground="#F3F8FA"
+                                   Foreground="{DynamicResource OpenVision.Workbench.TextBrush}"
                                    FontSize="13"
                                    FontWeight="SemiBold"
                                    VerticalAlignment="Center" />
@@ -115,12 +114,12 @@
                             Height="42"
                             Background="Transparent"
                             BorderThickness="0"
-                            Foreground="#D6E6EA"
+                            Foreground="{DynamicResource OpenVision.Workbench.TextBrush}"
                             ToolTip="{Binding CancelButtonText}"
                             AutomationProperties.AutomationId="RecipePendingEditCloseButton"
                             AutomationProperties.Name="{Binding CancelButtonText}"
                             shell:WindowChrome.IsHitTestVisibleInChrome="True"
-                            Click="Cancel_Click">
+                            Command="{Binding CancelCommand}">
                         <iconPacks:PackIconMaterial Kind="Close"
                                                     Width="16"
                                                     Height="16" />
@@ -138,7 +137,7 @@
 
                 <TextBlock Grid.Row="0"
                            Text="{Binding HeadingText}"
-                           Foreground="#F4C86A"
+                           Foreground="{DynamicResource OpenVision.Workbench.StaleBrush}"
                            FontSize="18"
                            FontWeight="SemiBold"
                            TextWrapping="Wrap" />
@@ -146,43 +145,57 @@
                 <TextBlock Grid.Row="1"
                            Margin="0,9,0,0"
                            Text="{Binding DetailText}"
-                           Foreground="#B8CDD3"
+                           Foreground="{DynamicResource OpenVision.Workbench.SecondaryTextBrush}"
                            FontSize="12"
                            LineHeight="19"
                            TextWrapping="Wrap" />
 
                 <Border Grid.Row="2"
+                        Visibility="{Binding ShowLegacyContext, Converter={StaticResource OpenVision.Workbench.BooleanToVisibilityConverter}}"
                         Margin="0,16,0,18"
                         Padding="12,10"
-                        Background="#0F171A"
-                        BorderBrush="#31464D"
+                        Background="{DynamicResource OpenVision.Workbench.PanelAltBrush}"
+                        BorderBrush="{DynamicResource OpenVision.Workbench.LineBrush}"
                         BorderThickness="1"
                         CornerRadius="3">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <TextBlock Text="{Binding CurrentContextText}"
-                                   Foreground="#D8E8EC"
-                                   FontSize="11"
-                                   TextTrimming="CharacterEllipsis" />
-                        <TextBlock Grid.Row="1"
-                                   Margin="0,5,0,0"
-                                   Text="{Binding TargetContextText}"
-                                   Foreground="#8FB4BC"
-                                   FontSize="11"
-                                   TextTrimming="CharacterEllipsis" />
-                    </Grid>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  Focusable="True"
+                                  AutomationProperties.AutomationId="RecipePendingEditContextScroll">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="{Binding CurrentContextText}"
+                                       AutomationProperties.AutomationId="RecipePendingEditCurrentContext"
+                                       Foreground="{DynamicResource OpenVision.Workbench.TextBrush}"
+                                       FontSize="11"
+                                       TextWrapping="Wrap" />
+                            <TextBlock Grid.Row="1"
+                                       Margin="0,5,0,0"
+                                       Text="{Binding TargetContextText}"
+                                       AutomationProperties.AutomationId="RecipePendingEditTargetContext"
+                                       Foreground="{DynamicResource OpenVision.Workbench.SecondaryTextBrush}"
+                                       FontSize="11"
+                                       TextWrapping="Wrap" />
+                        </Grid>
+                    </ScrollViewer>
                 </Border>
 
+                <ScrollViewer Grid.Row="2" Margin="0,12,0,12" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                              Visibility="{Binding HasError, Converter={StaticResource OpenVision.Workbench.BooleanToVisibilityConverter}}">
+                    <TextBlock Text="{Binding ErrorText}" TextWrapping="Wrap" Foreground="{DynamicResource OpenVision.Workbench.ErrorBrush}"
+                               AutomationProperties.AutomationId="RecipePendingEditSaveError"/>
+                </ScrollViewer>
                 <StackPanel Grid.Row="3"
                             Orientation="Horizontal"
                             HorizontalAlignment="Right">
-                    <Button Style="{StaticResource PendingEditButtonStyle}"
+                    <Button x:Name="pendingCancelButton" Style="{StaticResource PendingEditButtonStyle}"
                             IsCancel="True"
+                            IsDefault="{Binding IsCancelDefault}"
                             AutomationProperties.AutomationId="RecipePendingEditCancelButton"
-                            Click="Cancel_Click">
+                            Command="{Binding CancelCommand}">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="Close"
                                                         Width="14"
@@ -193,7 +206,8 @@
                     </Button>
                     <Button Style="{StaticResource PendingEditDangerButtonStyle}"
                             AutomationProperties.AutomationId="RecipePendingEditDiscardButton"
-                            Click="Discard_Click">
+                            Visibility="{Binding ShowDiscard, Converter={StaticResource OpenVision.Workbench.BooleanToVisibilityConverter}}"
+                            Command="{Binding DiscardCommand}">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="DeleteSweepOutline"
                                                         Width="15"
@@ -203,14 +217,16 @@
                         </StackPanel>
                     </Button>
                     <Button Style="{StaticResource PendingEditPrimaryButtonStyle}"
-                            IsDefault="True"
+                            IsDefault="{Binding IsApplyDefault}"
                             AutomationProperties.AutomationId="RecipePendingEditApplyButton"
-                            Click="Apply_Click">
+                            Command="{Binding SaveCommand}">
                         <StackPanel Orientation="Horizontal">
-                            <iconPacks:PackIconMaterial Kind="ContentSaveCheckOutline"
-                                                        Width="15"
-                                                        Height="15"
-                                                        Margin="0,0,6,0" />
+                            <iconPacks:PackIconMaterial Width="15" Height="15" Margin="0,0,6,0">
+                                <iconPacks:PackIconMaterial.Style><Style TargetType="iconPacks:PackIconMaterial">
+                                    <Setter Property="Kind" Value="ContentSaveCheckOutline" />
+                                    <Style.Triggers><DataTrigger Binding="{Binding IsDeleteConfirmation}" Value="True"><Setter Property="Kind" Value="DeleteOutline" /></DataTrigger></Style.Triggers>
+                                </Style></iconPacks:PackIconMaterial.Style>
+                            </iconPacks:PackIconMaterial>
                             <TextBlock Text="{Binding ApplyButtonText}" />
                         </StackPanel>
                     </Button>

@@ -17,11 +17,19 @@ namespace OpenVisionLab
     {
         event EventHandler WorkspaceStateChanged;
 
+        IOpenVisionDockedLayerViewer ActiveLayerViewer { get; }
+
+        IOpenVisionDockedLayerViewer FindLayerViewer(string layerTitle);
+
         bool DockLayerDocument(string layerTitle);
 
         bool ActivateLayerDocument(string layerTitle);
 
+        void FitLayerImages();
+
         void ClearDockedLayerDocuments();
+
+        void AttachMainViewer(OpenVisionWorkbenchViewerViewModel viewer);
     }
 
     internal interface IOpenVisionDockedLayerWorkspaceRefresh

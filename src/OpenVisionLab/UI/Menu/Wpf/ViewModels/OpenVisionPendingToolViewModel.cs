@@ -32,7 +32,7 @@ namespace OpenVisionLab
 
         public string StatusText => T("Shell.PendingTool.Status", "Pending");
 
-        public string MessageText => T("Shell.PendingTool.Message", "This tool view is being prepared. It will open here when it is ready.");
+        public string MessageText => T("Shell.PendingTool.Message", "This tool view is being prepared.");
 
         public string RouteText => T("Shell.PendingTool.Route", "Main workspace and layers stay available.");
 

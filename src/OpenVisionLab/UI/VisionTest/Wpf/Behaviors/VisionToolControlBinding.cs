@@ -3,11 +3,28 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace OpenVisionLab
 {
     internal static class VisionToolControlBinding
     {
+        public static bool TryCommitPendingEdits(DependencyObject root)
+        {
+            if (root is UIElement control && (!control.IsVisible || !control.IsEnabled)) { return true; }
+            if (root is System.Windows.Controls.WpfPropertyGrid.PropertyGrid grid) { return grid.TryCommitPendingEdit(); }
+            if (root is TextBox textBox)
+            {
+                UpdateTextSource(textBox);
+                if (Validation.GetHasError(textBox)) { return false; }
+            }
+            for (int index = 0; index < VisualTreeHelper.GetChildrenCount(root); index++)
+            {
+                if (!TryCommitPendingEdits(VisualTreeHelper.GetChild(root, index))) { return false; }
+            }
+            return true;
+        }
+
         // WPF bindings on tool parameter controls must be flushed in one shared way before creating OpenCV properties.
         public static void UpdateTextSource(TextBox textBox)
         {

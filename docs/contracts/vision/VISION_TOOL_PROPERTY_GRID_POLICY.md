@@ -99,4 +99,3 @@ Threshold, Filter, Morphology 같은 전처리성 native WPF 툴은 사용성이
 - 검증: `artifacts\ui_precheck_matching_text_commit_20260626_rerun` OK.
 - 2026-06-26: 사용자가 Matching PropertyGrid UX를 직접 검증 완료했다. 콤보박스, RangeEditor, 일반 숫자 TextBox command-time commit, manual/auto preview 정책, 템플릿/결과 표시 안정화 항목은 새 회귀 증거 또는 명시적 재설계 요청이 없으면 다시 일반 리팩토링 대상으로 건드리지 않는다.
 - 2026-06-26: Matching wide-angle 성능 개선을 위해 coarse-to-fine angle search를 옵션으로 추가했다. 기본 off, `Use angle search` 하위 표시, 명시적 opt-in, manual preview 기본 정책을 유지한다.
-- 검증: `.codex\MatchingAngleBenchmark` 기준 Die Pad 1~4에서 exhaustive `-10..180 / step 0.1` 4258.3~5782.1 ms, coarse step 5/top K 3 옵션 481.7~781.0 ms로 동일 best score/angle 확인. `artifacts\ui_precheck_matching_coarse_angle_20260626_diag` OK.

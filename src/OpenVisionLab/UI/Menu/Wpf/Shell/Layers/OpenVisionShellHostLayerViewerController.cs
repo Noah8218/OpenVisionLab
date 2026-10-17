@@ -2,6 +2,7 @@ using OpenVisionLab.Core;
 using OpenVisionLab.ImageSpace.Core;
 using System;
 using System.Drawing;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Windows;
 
@@ -40,13 +41,19 @@ namespace OpenVisionLab
                 return false;
             }
 
+            using ImageSpaceImageLease lease = displayManager.ImageSpace.AcquireImage(layerTitle);
+            return OpenDisplayImage(layerTitle, lease?.Image, BuildStatus(layerTitle, lease?.Image), true);
+        }
+
+        public bool OpenSnapshot(string name, Bitmap image, IReadOnlyList<OpenVisionMainPaneOverlay> overlays = null) => OpenDisplayImage(name, image, image == null ? string.Empty : $"{image.Width}×{image.Height}", false, overlays);
+
+        private bool OpenDisplayImage(string layerTitle, Bitmap image, string status, bool allowDock, IReadOnlyList<OpenVisionMainPaneOverlay> overlays = null)
+        {
+            if (image == null) { return false; }
             OpenVisionLayerViewerView viewer = new OpenVisionLayerViewerView();
-            viewer.Tag = layerTitle;
-            using (ImageSpaceImageLease lease = displayManager.ImageSpace.AcquireImage(layerTitle))
-            {
-                Bitmap leasedImage = lease?.Image;
-                viewer.SetLayer(layerTitle, leasedImage, BuildStatus(layerTitle, leasedImage));
-            }
+            viewer.Tag = allowDock ? layerTitle : null;
+            viewer.SetLayer(layerTitle, image, status);
+            viewer.SetDisplayOverlays(overlays);
 
             string title = string.Format(
                 CultureInfo.CurrentCulture,
@@ -59,7 +66,8 @@ namespace OpenVisionLab
                 MinWidth = 520,
                 MinHeight = 380,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                ResizeMode = ResizeMode.CanResize
+                ResizeMode = ResizeMode.CanResize,
+                IsDockButtonVisible = allowDock
             };
             window.SetTitleIcon(MahApps.Metro.IconPacks.PackIconMaterialKind.ImageMultipleOutline);
 

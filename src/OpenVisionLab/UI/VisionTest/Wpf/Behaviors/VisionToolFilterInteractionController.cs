@@ -85,6 +85,15 @@ namespace OpenVisionLab
             parameterChangeController.TryHandle(FlushParameterBindings, schedulePreview: true);
         }
 
+        public void RefreshRestoredParameters()
+        {
+            if (presenter.KernelWidth != presenter.KernelHeight) { lockSizeCheckBox.IsChecked = false; }
+            filterTypeComboBox.GetBindingExpression(ComboBox.SelectedItemProperty)?.UpdateTarget();
+            borderTypeComboBox.GetBindingExpression(ComboBox.SelectedItemProperty)?.UpdateTarget();
+            foreach (TextBox textBox in parameterTextBoxes) { textBox.GetBindingExpression(TextBox.TextProperty)?.UpdateTarget(); }
+            RefreshModePanels();
+        }
+
         public void RefreshModePanels()
         {
             // Filter mode controls which parameter group is meaningful; keep that UI policy outside the View event handlers.

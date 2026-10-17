@@ -1,6 +1,9 @@
 using Microsoft.Win32;
 using OpenVisionLab.Core;
 using OpenVisionLab.ImageSpace.Core;
+using OpenVisionLab.Vision2D.Pipeline;
+using System.Collections.Generic;
+using System.Linq;
 using System;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -21,6 +24,8 @@ namespace OpenVisionLab
         private readonly Action refreshDockedLayerViews;
         private readonly Action refreshDirectRouteText;
         private readonly Action<string> rememberImagePath;
+        private readonly Func<VisionPipeline> workingPipelineProvider;
+        private readonly Func<VisionPipelineStep> currentToolStepProvider;
 
         public OpenVisionShellHostLayerManagementController(
             IDisplayManager displayManager,
@@ -30,7 +35,9 @@ namespace OpenVisionLab
             Action refreshRows,
             Action refreshDockedLayerViews,
             Action refreshDirectRouteText,
-            Action<string> rememberImagePath = null)
+            Action<string> rememberImagePath = null,
+            Func<VisionPipeline> workingPipelineProvider = null,
+            Func<VisionPipelineStep> currentToolStepProvider = null)
         {
             this.displayManager = displayManager ?? throw new ArgumentNullException(nameof(displayManager));
             this.documentController = documentController ?? throw new ArgumentNullException(nameof(documentController));
@@ -40,6 +47,8 @@ namespace OpenVisionLab
             this.refreshDockedLayerViews = refreshDockedLayerViews ?? throw new ArgumentNullException(nameof(refreshDockedLayerViews));
             this.refreshDirectRouteText = refreshDirectRouteText ?? throw new ArgumentNullException(nameof(refreshDirectRouteText));
             this.rememberImagePath = rememberImagePath;
+            this.workingPipelineProvider = workingPipelineProvider;
+            this.currentToolStepProvider = currentToolStepProvider;
         }
 
         public string CreateLayer()
@@ -62,23 +71,42 @@ namespace OpenVisionLab
                 return false;
             }
 
+            string path = SelectImagePath(OpenVisionLanguageService.T("Shell.LoadImageIntoLayer"));
+            if (string.IsNullOrWhiteSpace(path) || !LoadImageIntoLayer(layerTitle, path)) { return false; }
+
+            OpenVisionImageDirectoryResolver.RememberImagePath(path);
+            rememberImagePath?.Invoke(path);
+            return true;
+        }
+
+        public string PromptAndAddImageLayer()
+        {
+            string path = SelectImagePath(OpenVisionLanguageService.T("Workbench.LayerManager.AddImage"));
+            string title = AddImageLayer(path);
+            if (!string.IsNullOrWhiteSpace(title)) { OpenVisionImageDirectoryResolver.RememberImagePath(path); rememberImagePath?.Invoke(path); }
+            return title;
+        }
+
+        public string AddImageLayer(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path)) { return null; }
+            using Bitmap image = new Bitmap(path);
+            string title = CreateUniqueLayerTitle("Layer");
+            displayManager.CreateLayerDisplay(ImageSpaceFrame.Borrow(image), title, true);
+            ActivateAndRefresh(title);
+            return title;
+        }
+
+        private string SelectImagePath(string title)
+        {
             OpenFileDialog dialog = new OpenFileDialog
             {
-                Title = OpenVisionLanguageService.T("Shell.LoadImageIntoLayer"),
+                Title = title,
                 Filter = "Image files|*.bmp;*.png;*.jpg;*.jpeg;*.tif;*.tiff|Bitmap (*.bmp)|*.bmp|PNG (*.png)|*.png|JPEG (*.jpg;*.jpeg)|*.jpg;*.jpeg|TIFF (*.tif;*.tiff)|*.tif;*.tiff|All files|*.*",
                 Multiselect = false,
                 InitialDirectory = OpenVisionPreviewImageFileService.ResolveOpenImageDirectory(null)
             };
-
-            if (dialog.ShowDialog(ownerProvider()) != true
-                || !LoadImageIntoLayer(layerTitle, dialog.FileName))
-            {
-                return false;
-            }
-
-            OpenVisionImageDirectoryResolver.RememberImagePath(dialog.FileName);
-            rememberImagePath?.Invoke(dialog.FileName);
-            return true;
+            return dialog.ShowDialog(ownerProvider()) == true ? dialog.FileName : null;
         }
 
         public bool LoadImageIntoLayer(string layerTitle, string path)
@@ -152,7 +180,18 @@ namespace OpenVisionLab
         public bool CanDeleteLayer(string layerTitle)
         {
             return FindLayerIndex(layerTitle) >= 0
-                && !string.Equals(layerTitle, MainLayerTitle, StringComparison.OrdinalIgnoreCase);
+                && !string.Equals(layerTitle, MainLayerTitle, StringComparison.OrdinalIgnoreCase)
+                && !IsCurrentInputLayer(layerTitle);
+        }
+
+        private bool IsCurrentInputLayer(string layerTitle)
+        {
+            bool ReadsLayer(VisionPipelineStep step) => step != null
+                && (string.Equals(step.InputLayer, layerTitle, StringComparison.OrdinalIgnoreCase)
+                    || VisionPipelineArithmeticStep.RequiresInputLayerB(step) && step.Parameters.TryGetValue(VisionPipelineArithmeticStep.ParameterInputLayerB, out string inputB)
+                        && string.Equals(inputB, layerTitle, StringComparison.OrdinalIgnoreCase));
+            return (workingPipelineProvider?.Invoke()?.Steps ?? new List<VisionPipelineStep>()).Any(step => step?.Enabled == true && ReadsLayer(step))
+                || ReadsLayer(currentToolStepProvider?.Invoke());
         }
 
         public bool CanRenameLayer(string oldLayerTitle, string newLayerTitle)

@@ -15,6 +15,7 @@ namespace OpenVisionLab
             ViewModel = viewModel;
             InitializeComponent();
             DataContext = ViewModel;
+            if (ViewModel.IsImageOnly) { Width = 820; Height = 620; MinWidth = 680; MinHeight = 560; }
             ViewModel.SelectionAccepted += OnSelectionAccepted;
             samplePickerTitleBar.TitleText = ViewModel.DialogTitleText;
             samplePickerTitleBar.IconKind = PackIconMaterialKind.ImageMultipleOutline;
@@ -27,12 +28,14 @@ namespace OpenVisionLab
         protected override void OnSourceInitialized(EventArgs e)
         {
             base.OnSourceInitialized(e);
+            if (Owner != null) { SetBinding(OpenVisionWorkbenchThemeBehavior.ThemeNameProperty, new System.Windows.Data.Binding { Source = Owner, Path = new PropertyPath("(0)", OpenVisionWorkbenchThemeBehavior.ThemeNameProperty) }); }
             windowSource = HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);
             windowSource?.AddHook(WindowProc);
         }
 
         protected override void OnClosed(EventArgs e)
         {
+            System.Windows.Data.BindingOperations.ClearBinding(this, OpenVisionWorkbenchThemeBehavior.ThemeNameProperty);
             ViewModel.SelectionAccepted -= OnSelectionAccepted;
             windowSource?.RemoveHook(WindowProc);
             windowSource = null;
@@ -51,9 +54,10 @@ namespace OpenVisionLab
             Window owner,
             IEnumerable<VisionPipelineSampleCatalogItem> samples,
             string preferredLearnPathId,
-            out VisionPipelineSampleCatalogItem sample)
+            out VisionPipelineSampleCatalogItem sample,
+            bool imageOnly = false)
         {
-            OpenVisionWorkspaceSamplePickerViewModel viewModel = new OpenVisionWorkspaceSamplePickerViewModel(samples, preferredLearnPathId);
+            OpenVisionWorkspaceSamplePickerViewModel viewModel = new OpenVisionWorkspaceSamplePickerViewModel(samples, preferredLearnPathId, imageOnly);
             if (!viewModel.HasSamples)
             {
                 sample = null;
@@ -72,6 +76,17 @@ namespace OpenVisionLab
 
             bool accepted = window.ShowDialog() == true && viewModel.CanSelect;
             sample = accepted ? viewModel.SelectedSample : null;
+            return accepted;
+        }
+
+        public static bool TrySelectImages(Window owner, IEnumerable<VisionPipelineSampleCatalogItem> samples, out IReadOnlyList<VisionPipelineSampleCatalogItem> selection, out bool useCatalogLabels)
+        {
+            var viewModel = new OpenVisionWorkspaceSamplePickerViewModel(samples, null, true);
+            var window = new OpenVisionWorkspaceSamplePickerWindow(viewModel);
+            if (owner != null) { window.Owner = owner; }
+            bool accepted = viewModel.HasSamples && window.ShowDialog() == true && viewModel.CanSelect;
+            selection = accepted ? viewModel.SelectedImageSamples : Array.Empty<VisionPipelineSampleCatalogItem>();
+            useCatalogLabels = accepted && viewModel.UseCatalogLabels;
             return accepted;
         }
 

@@ -2,6 +2,7 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:converter="clr-namespace:OpenVisionLab.Logging.Controls.Converter"
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
              MinWidth="280"
              MinHeight="80">
     <UserControl.Resources>
@@ -22,11 +23,47 @@
         <SolidColorBrush x:Key="BadgeBrush" Color="#263348" />
         <SolidColorBrush x:Key="ComboArrowBrush" Color="#AEB9C7" />
         <SolidColorBrush x:Key="ComboHoverBrush" Color="#172332" />
+        <SolidColorBrush x:Key="FieldBorderBrush" Color="#3B4654" />
+        <SolidColorBrush x:Key="DisabledBackgroundBrush" Color="#182130" />
+        <SolidColorBrush x:Key="DisabledBorderBrush" Color="#596779" />
+        <SolidColorBrush x:Key="ButtonHoverBrush" Color="#346C7A" />
+        <SolidColorBrush x:Key="ButtonPressedBrush" Color="#163F49" />
+        <SolidColorBrush x:Key="FocusBorderBrush" Color="#8AD7DA" />
+        <SolidColorBrush x:Key="ButtonDisabledBrush" Color="#252F34" />
+        <SolidColorBrush x:Key="BadgeBorderBrush" Color="#34445C" />
+        <SolidColorBrush x:Key="RowBorderBrush" Color="#1F2A36" />
+        <SolidColorBrush x:Key="SourceTextBrush" Color="#7FD6E7" />
+        <SolidColorBrush x:Key="EmptyBackgroundBrush" Color="#141F2A" />
+        <SolidColorBrush x:Key="EmptyBorderBrush" Color="#3A6572" />
+        <SolidColorBrush x:Key="EmptyIconBackgroundBrush" Color="#20333D" />
+        <SolidColorBrush x:Key="InfoToneBrush" Color="#F5F5F5" />
+        <SolidColorBrush x:Key="WarningToneBrush" Color="#F0E68C" />
+        <SolidColorBrush x:Key="ErrorToneBrush" Color="#CD5C5C" />
+        <SolidColorBrush x:Key="DebugToneBrush" Color="#B0C4DE" />
+        <sys:Double x:Key="FilterLabelDisabledOpacity">0.42</sys:Double>
 
         <Style TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
             <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <Style x:Key="LogToneTextStyle" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+            <Setter Property="Foreground" Value="{DynamicResource InfoToneBrush}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Level, Converter={StaticResource LogToneBrushConverter}, ConverterParameter=Debug}" Value="True"><Setter Property="Foreground" Value="{DynamicResource DebugToneBrush}" /></DataTrigger>
+                <DataTrigger Binding="{Binding Level, Converter={StaticResource LogToneBrushConverter}, ConverterParameter=Warning}" Value="True"><Setter Property="Foreground" Value="{DynamicResource WarningToneBrush}" /></DataTrigger>
+                <DataTrigger Binding="{Binding Level, Converter={StaticResource LogToneBrushConverter}, ConverterParameter=Error}" Value="True"><Setter Property="Foreground" Value="{DynamicResource ErrorToneBrush}" /></DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="LogToneBarStyle" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource InfoToneBrush}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Level, Converter={StaticResource LogToneBrushConverter}, ConverterParameter=Debug}" Value="True"><Setter Property="Background" Value="{DynamicResource DebugToneBrush}" /></DataTrigger>
+                <DataTrigger Binding="{Binding Level, Converter={StaticResource LogToneBrushConverter}, ConverterParameter=Warning}" Value="True"><Setter Property="Background" Value="{DynamicResource WarningToneBrush}" /></DataTrigger>
+                <DataTrigger Binding="{Binding Level, Converter={StaticResource LogToneBrushConverter}, ConverterParameter=Error}" Value="True"><Setter Property="Background" Value="{DynamicResource ErrorToneBrush}" /></DataTrigger>
+            </Style.Triggers>
         </Style>
 
         <Style TargetType="ComboBox">
@@ -34,16 +71,16 @@
             <Setter Property="MinWidth" Value="92" />
             <Setter Property="Margin" Value="5,0,10,0" />
             <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
-            <Setter Property="Background" Value="{StaticResource InputBrush}" />
-            <Setter Property="BorderBrush" Value="#3B4654" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+            <Setter Property="Background" Value="{DynamicResource InputBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource FieldBorderBrush}" />
             <Setter Property="Padding" Value="8,2,28,2" />
             <Setter Property="ToolTip" Value="{Binding FilterComboToolTip}" />
             <Setter Property="ItemContainerStyle">
                 <Setter.Value>
                     <Style TargetType="ComboBoxItem">
-                        <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
-                        <Setter Property="Background" Value="{StaticResource InputBrush}" />
+                        <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+                        <Setter Property="Background" Value="{DynamicResource InputBrush}" />
                         <Setter Property="Padding" Value="8,4" />
                         <Setter Property="Template">
                             <Setter.Value>
@@ -55,10 +92,10 @@
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsHighlighted" Value="True">
-                                            <Setter TargetName="itemChrome" Property="Background" Value="{StaticResource ActionBrush}" />
+                                            <Setter TargetName="itemChrome" Property="Background" Value="{DynamicResource ActionBrush}" />
                                         </Trigger>
                                         <Trigger Property="IsSelected" Value="True">
-                                            <Setter TargetName="itemChrome" Property="Background" Value="{StaticResource BadgeBrush}" />
+                                            <Setter TargetName="itemChrome" Property="Background" Value="{DynamicResource BadgeBrush}" />
                                         </Trigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>
@@ -75,7 +112,7 @@
                                     Background="{TemplateBinding Background}"
                                     BorderBrush="{TemplateBinding BorderBrush}"
                                     BorderThickness="1"
-                                    CornerRadius="2" />
+                                    CornerRadius="6" />
                             <ContentPresenter Margin="{TemplateBinding Padding}"
                                               VerticalAlignment="Center"
                                               HorizontalAlignment="Left"
@@ -92,7 +129,7 @@
                                 <Path Width="8"
                                       Height="5"
                                       Data="M 0 0 L 4 5 L 8 0 Z"
-                                      Fill="{StaticResource ComboArrowBrush}"
+                                      Fill="{DynamicResource ComboArrowBrush}"
                                       Stretch="Fill" />
                             </ToggleButton>
                             <Popup x:Name="PART_Popup"
@@ -104,8 +141,8 @@
                                    PopupAnimation="Fade">
                                 <Border MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}"
                                         MaxHeight="{TemplateBinding MaxDropDownHeight}"
-                                        Background="{StaticResource InputBrush}"
-                                        BorderBrush="{StaticResource LineBrush}"
+                                        Background="{DynamicResource InputBrush}"
+                                        BorderBrush="{DynamicResource LineBrush}"
                                         BorderThickness="1">
                                     <ScrollViewer CanContentScroll="True">
                                         <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained" />
@@ -115,14 +152,14 @@
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="comboChrome" Property="Background" Value="{StaticResource ComboHoverBrush}" />
-                                <Setter TargetName="comboChrome" Property="BorderBrush" Value="{StaticResource ActionBorderBrush}" />
+                                <Setter TargetName="comboChrome" Property="Background" Value="{DynamicResource ComboHoverBrush}" />
+                                <Setter TargetName="comboChrome" Property="BorderBrush" Value="{DynamicResource ActionBorderBrush}" />
                             </Trigger>
                             <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                                <Setter TargetName="comboChrome" Property="BorderBrush" Value="{StaticResource ActionBorderBrush}" />
+                                <Setter TargetName="comboChrome" Property="BorderBrush" Value="{DynamicResource ActionBorderBrush}" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="comboChrome" Property="Opacity" Value="0.45" />
+                                <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -130,16 +167,16 @@
             </Setter>
             <Style.Triggers>
                 <Trigger Property="IsEnabled" Value="False">
-                    <Setter Property="Opacity" Value="0.38" />
-                    <Setter Property="Foreground" Value="{StaticResource MutedTextBrush}" />
-                    <Setter Property="Background" Value="#182130" />
-                    <Setter Property="BorderBrush" Value="#596779" />
+                    <Setter Property="Opacity" Value="1" />
+                    <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
+                    <Setter Property="Background" Value="{DynamicResource DisabledBackgroundBrush}" />
+                    <Setter Property="BorderBrush" Value="{DynamicResource DisabledBorderBrush}" />
                 </Trigger>
             </Style.Triggers>
         </Style>
 
         <Style TargetType="CheckBox">
-            <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
             <Setter Property="Margin" Value="0,0,10,0" />
             <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
@@ -149,24 +186,40 @@
             <Setter Property="Height" Value="25" />
             <Setter Property="Padding" Value="10,1" />
             <Setter Property="Margin" Value="5,0,0,0" />
-            <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
-            <Setter Property="Background" Value="{StaticResource ActionBrush}" />
-            <Setter Property="BorderBrush" Value="{StaticResource ActionBorderBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+            <Setter Property="Background" Value="{DynamicResource ActionBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ActionBorderBrush}" />
             <Setter Property="VerticalAlignment" Value="Center" />
+
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="logButton" CornerRadius="6" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="True" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="logButton" Property="Background" Value="{DynamicResource ButtonHoverBrush}" /></Trigger>
+                            <Trigger Property="IsPressed" Value="True"><Setter TargetName="logButton" Property="Background" Value="{DynamicResource ButtonPressedBrush}" /></Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="logButton" Property="BorderBrush" Value="{DynamicResource FocusBorderBrush}" /></Trigger>
+                            <Trigger Property="IsEnabled" Value="False"><Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" /><Setter TargetName="logButton" Property="Background" Value="{DynamicResource ButtonDisabledBrush}" /></Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <Style TargetType="TextBox">
             <Setter Property="Height" Value="25" />
             <Setter Property="MinWidth" Value="120" />
-            <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
-            <Setter Property="Background" Value="{StaticResource InputBrush}" />
-            <Setter Property="BorderBrush" Value="#3B4654" />
-            <Setter Property="CaretBrush" Value="{StaticResource PrimaryTextBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+            <Setter Property="Background" Value="{DynamicResource InputBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource FieldBorderBrush}" />
+            <Setter Property="CaretBrush" Value="{DynamicResource PrimaryTextBrush}" />
             <Setter Property="Padding" Value="7,2" />
         </Style>
 
         <Style TargetType="ListBox">
-            <Setter Property="Background" Value="{StaticResource ListBrush}" />
+            <Setter Property="Background" Value="{DynamicResource ListBrush}" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="FontFamily" Value="Cascadia Mono, Consolas" />
             <Setter Property="FontSize" Value="11" />
@@ -179,7 +232,7 @@
         <Style TargetType="ListBoxItem">
             <Setter Property="Padding" Value="0" />
             <Setter Property="Margin" Value="0" />
-            <Setter Property="Background" Value="{StaticResource ListBrush}" />
+            <Setter Property="Background" Value="{DynamicResource ListBrush}" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         </Style>
@@ -204,7 +257,7 @@
 
         <Style x:Key="LogMessageTextStyle"
                TargetType="TextBlock"
-               BasedOn="{StaticResource {x:Type TextBlock}}">
+               BasedOn="{StaticResource LogToneTextStyle}">
             <Setter Property="TextWrapping" Value="NoWrap" />
             <Style.Triggers>
                 <DataTrigger Binding="{Binding DataContext.IsCompactLayout, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="False">
@@ -234,29 +287,30 @@
         <Style x:Key="FilterLabelTextStyle"
                TargetType="TextBlock"
                BasedOn="{StaticResource {x:Type TextBlock}}">
-            <Setter Property="Foreground" Value="{StaticResource SecondaryTextBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
             <Setter Property="Margin" Value="0,0,0,0" />
             <Style.Triggers>
                 <DataTrigger Binding="{Binding ShowEntireStream}" Value="True">
-                    <Setter Property="Opacity" Value="0.42" />
+                    <Setter Property="Opacity" Value="{DynamicResource FilterLabelDisabledOpacity}" />
                 </DataTrigger>
             </Style.Triggers>
         </Style>
     </UserControl.Resources>
 
-    <Grid Background="{StaticResource ShellBrush}">
+    <Grid Background="{DynamicResource ShellBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
         <Border Grid.Row="0"
-                Background="{StaticResource PanelBrush}"
-                BorderBrush="{StaticResource LineBrush}"
+                Background="{DynamicResource PanelBrush}"
+                BorderBrush="{DynamicResource LineBrush}"
                 BorderThickness="0,0,0,1"
                 Padding="10,6">
             <Grid>
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
@@ -270,31 +324,31 @@
                             Command="{Binding ToggleDetailCommand}"
                             ToolTip="{Binding ModeToolTip}" />
                     <Border DockPanel.Dock="Right"
-                            Background="{StaticResource BadgeBrush}"
-                            BorderBrush="#34445C"
+                            Background="{DynamicResource BadgeBrush}"
+                            BorderBrush="{DynamicResource BadgeBorderBrush}"
                             BorderThickness="1"
                             MinWidth="54"
                             Height="22"
                             Margin="8,0,0,0"
                             Padding="8,0">
                         <TextBlock Text="{Binding SummaryText}"
-                                   Foreground="{StaticResource SecondaryTextBrush}"
+                                   Foreground="{DynamicResource SecondaryTextBrush}"
                                    FontSize="11"
                                    HorizontalAlignment="Center" />
                     </Border>
                     <TextBlock DockPanel.Dock="Right"
                                Text="{Binding ActiveFilterText}"
-                               Foreground="{StaticResource MutedTextBrush}"
+                               Foreground="{DynamicResource MutedTextBrush}"
                                FontSize="11"
                                Margin="10,0,2,0" />
-                    <TextBlock Text="{Binding HeaderText}"
+                    <TextBlock x:Name="logHeaderText" Text="{Binding HeaderText}"
                                FontSize="13"
                                FontWeight="SemiBold" />
                 </DockPanel>
 
                 <TextBlock Grid.Row="1"
                            Text="{Binding LatestSummaryText}"
-                           Foreground="{StaticResource SecondaryTextBrush}"
+                           Foreground="{DynamicResource SecondaryTextBrush}"
                            FontSize="11"
                            Margin="0,5,0,0"
                            TextTrimming="CharacterEllipsis" />
@@ -308,6 +362,13 @@
                             Content="{Binding ClearText}"
                             Command="{Binding ResetCommand}"
                             ToolTip="{Binding ClearToolTip}" />
+                    <Button x:Name="copyLogButton" DockPanel.Dock="Right"
+                            AutomationProperties.AutomationId="LogPanelCopy"
+                            AutomationProperties.Name="{Binding CopyText}"
+                            MinWidth="58"
+                            Content="{Binding CopyText}"
+                            Command="{Binding CopyCommand}"
+                            ToolTip="{Binding CopyToolTip}" />
                     <Button DockPanel.Dock="Right"
                             MinWidth="58"
                             Content="{Binding FolderText}"
@@ -320,6 +381,22 @@
                     <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                              ToolTip="{Binding SearchToolTip}" />
                 </DockPanel>
+
+                <TextBlock x:Name="copyLogStatus" Grid.Row="4"
+                           AutomationProperties.AutomationId="LogPanelCopyStatus"
+                           AutomationProperties.LiveSetting="Polite"
+                           Text="{Binding CopyStatusText}"
+                           TextWrapping="Wrap" TextTrimming="None"
+                           Foreground="{DynamicResource SecondaryTextBrush}">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                            <Setter Property="Margin" Value="0,5,0,0" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding CopyStatusText}" Value=""><Setter Property="Visibility" Value="Collapsed" /></DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
 
                 <WrapPanel Grid.Row="3"
                            Margin="0,6,0,0"
@@ -346,8 +423,8 @@
                      ItemsSource="{Binding FilteredLogs}">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <Border Background="{StaticResource RowBrush}"
-                                BorderBrush="#1F2A36"
+                        <Border Background="{DynamicResource RowBrush}"
+                                BorderBrush="{DynamicResource RowBorderBrush}"
                                 BorderThickness="0,0,0,1"
                                 ToolTip="{Binding RawText}">
                             <Grid MinHeight="26">
@@ -359,11 +436,11 @@
                                 </Grid.ColumnDefinitions>
 
                                 <Border Grid.Column="0"
-                                        Background="{Binding Level, Converter={StaticResource LogToneBrushConverter}}" />
+                                        Style="{StaticResource LogToneBarStyle}" />
 
                                 <TextBlock Grid.Column="1"
                                            Text="{Binding DisplayTime}"
-                                           Foreground="{StaticResource SecondaryTextBrush}"
+                                           Foreground="{DynamicResource SecondaryTextBrush}"
                                            Margin="8,0,6,0"
                                            FontSize="10.5" />
 
@@ -371,11 +448,11 @@
                                             Orientation="Vertical"
                                             Margin="0,3,7,3">
                                     <TextBlock Text="{Binding Level}"
-                                               Foreground="{Binding Level, Converter={StaticResource LogToneBrushConverter}}"
+                                               Style="{StaticResource LogToneTextStyle}"
                                                FontWeight="SemiBold"
                                                FontSize="10.5" />
                                     <TextBlock Text="{Binding Category}"
-                                               Foreground="{StaticResource MutedTextBrush}"
+                                               Foreground="{DynamicResource MutedTextBrush}"
                                                FontSize="9.5" />
                                 </StackPanel>
 
@@ -383,11 +460,10 @@
                                             Orientation="Vertical"
                                             Margin="0,3,10,3">
                                     <TextBlock Text="{Binding Source}"
-                                               Foreground="#7FD6E7"
+                                               Foreground="{DynamicResource SourceTextBrush}"
                                                FontSize="9.5"
                                                Style="{StaticResource DetailedOnlyTextVisibilityStyle}" />
                                     <TextBlock Text="{Binding Message}"
-                                               Foreground="{Binding Level, Converter={StaticResource LogToneBrushConverter}}"
                                                Style="{StaticResource LogMessageTextStyle}" />
                                 </StackPanel>
                             </Grid>
@@ -396,15 +472,14 @@
                 </ListBox.ItemTemplate>
             </ListBox>
 
-            <Border AutomationProperties.AutomationId="LogPanelEmptyState"
+            <Border x:Name="emptyLogState" AutomationProperties.AutomationId="LogPanelEmptyState"
                     Style="{StaticResource EmptyLogVisibilityStyle}"
-                    HorizontalAlignment="Center"
+                    HorizontalAlignment="Stretch"
                     VerticalAlignment="Center"
-                    Width="520"
-                    MaxWidth="620"
+                    MaxWidth="520"
                     Padding="14,10"
-                    Background="#141F2A"
-                    BorderBrush="#3A6572"
+                    Background="{DynamicResource EmptyBackgroundBrush}"
+                    BorderBrush="{DynamicResource EmptyBorderBrush}"
                     BorderThickness="1">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -415,11 +490,11 @@
                     <Border Grid.Column="0"
                             Width="28"
                             Height="28"
-                            Background="#20333D"
-                            BorderBrush="#4B8DA4"
+                            Background="{DynamicResource EmptyIconBackgroundBrush}"
+                            BorderBrush="{DynamicResource ActionBorderBrush}"
                             BorderThickness="1">
                         <TextBlock Text="i"
-                                   Foreground="#8AD7DA"
+                                   Foreground="{DynamicResource FocusBorderBrush}"
                                    FontWeight="Bold"
                                    FontSize="15"
                                    HorizontalAlignment="Center"
@@ -428,18 +503,18 @@
                     <StackPanel Grid.Column="2">
                         <TextBlock AutomationProperties.AutomationId="LogPanelEmptyTitle"
                                    Text="{Binding EmptyTitleText}"
-                                   Foreground="{StaticResource PrimaryTextBrush}"
+                                   Foreground="{DynamicResource PrimaryTextBrush}"
                                    FontWeight="SemiBold"
                                    FontSize="12.5" />
                         <TextBlock Text="{Binding EmptyDetailText}"
-                                   Foreground="{StaticResource SecondaryTextBrush}"
+                                   Foreground="{DynamicResource SecondaryTextBrush}"
                                    FontSize="11"
                                    TextWrapping="Wrap"
                                    TextTrimming="None"
                                    Margin="0,3,0,0" />
                         <TextBlock AutomationProperties.AutomationId="LogPanelEmptyActionHint"
                                    Text="{Binding EmptyActionHintText}"
-                                   Foreground="{StaticResource MutedTextBrush}"
+                                   Foreground="{DynamicResource MutedTextBrush}"
                                    FontSize="10.5"
                                    TextWrapping="Wrap"
                                    TextTrimming="None"

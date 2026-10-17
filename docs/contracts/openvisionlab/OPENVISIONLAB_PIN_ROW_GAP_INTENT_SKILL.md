@@ -2,9 +2,8 @@
 
 Updated: 2026-07-21 KST
 
-Status: Phase 1 authoring and bounded Phase 2 N-sample evidence complete in Dev; P169 reserves a fresh unused Test split, and P170 freezes target-bearing working Train/Validation manifests. Phase 3 remains pending because the fresh judged GPT first response succeeded directly and produced no genuine correction evidence.
 
-This document defines the first reusable OpenVisionLab inspection-intent skill. It is an in-product Guided Setup/recipe-wizard contract, not a Codex plugin and not a new vision algorithm.
+This document defines the first reusable OpenVisionLab inspection-intent skill. It is an in-product Guided Setup/recipe-wizard contract, not a new vision algorithm.
 
 ## 1. User-Visible Promise
 
@@ -23,7 +22,7 @@ It does not promise arbitrary image-to-recipe discovery. The operator identifies
 | Dark, roughly vertical pins | Supported | This is the current `PinArrayGap` detection contract. |
 | One or more row ROIs | Supported | Every ROI is executed by a separate `PinArrayGap` Step and must contain one row only. |
 | Adjacent edge-to-edge clearance | Supported | The runtime returns every gap between adjacent detected pin runs. |
-| Pixel consistency gate | Supported | `DistancePxRange` is already verified by P148. |
+| Pixel consistency gate | Supported | `DistancePxRange` is the supported pixel range gate. |
 | Center-to-center pitch | `WAIT - unsupported` | No separately verified center metric exists. |
 | Bright pins | `WAIT - unsupported` | The runtime currently detects pixels at or below `DarkThreshold`. |
 | Absolute physical mm | `WAIT - calibration required` | The legacy XML key `PIXELPERMM` is calculated as mm/px; a positive value alone is not calibration evidence. |
@@ -100,7 +99,7 @@ Changing an advanced value makes the generated draft stale. It never runs Previe
 
 The three sets reuse the existing local Validation Set storage. v1 does not add another dataset schema. Their normalized image paths must be pairwise disjoint. The frozen record stores the three set names, sorted image lists or hashes, tolerance, XML hash, and skill version.
 
-An exact visible gap-count gate is optional and off by default. It may be enabled only when representative Good samples prove stable `ResultCount`; P148 Good evidence varied from 12 to 15 gaps.
+An exact visible gap-count gate is optional and off by default. It may be enabled only when representative Good samples prove stable `ResultCount`.
 
 ## 6. Generated XML Contract
 
@@ -178,7 +177,7 @@ The judged recipe uses the same locked measurement parameters and adds an explic
 </VisionPipeline>
 ```
 
-The example values are the P148 synthetic regression values. `6 px` and the two ROIs are not universal defaults and must not be copied to another image size, magnification, or part without Train review.
+These are example regression values. `6 px` and the two ROIs are not universal defaults and must not be copied to another image size, magnification, or part without Train review.
 
 An absolute clearance-band extension is outside v1. When added, it must use separately reviewed nominal and consistency gates; average distance alone is not sufficient.
 
@@ -197,7 +196,7 @@ The skill validator must reject or keep WAIT when any of the following is true:
 - later row Steps omit the branch-input contract;
 - a report calls a no-gate pipeline judged, accepted, or quality-proven.
 
-Generic import validation remains useful for XML/schema/layer checks, but it cannot replace this intent contract. The current generic validator does not require all `PinArrayGap` ROI/detection fields and P151 reported `Intent contract: SKIP`.
+Generic import validation remains useful for XML/schema/layer checks, but it cannot replace this intent contract. The current generic validator does not require all `PinArrayGap` ROI/detection fields and the reference contract reported `Intent contract: SKIP`.
 
 ## 8. Explicit Operator Workflow
 
@@ -249,9 +248,9 @@ The reviewer must inspect, at minimum:
 
 If the rectangles or gap lines do not correspond to the intended physical pins/gaps, the skill remains `Incomplete` even when all numeric rows pass.
 
-## 10. Phase Exit Gates
+## 10. Validation Gates
 
-### Phase 1 - Authoring Contract
+### Authoring Contract
 
 Complete only when:
 
@@ -262,7 +261,7 @@ Complete only when:
 - judged XML has a strict skill-contract pass plus generic validation/import pass;
 - opening or editing Guided Setup does not run Preview/Run, create a layer, or change routing.
 
-### Phase 2 - N-Sample Evidence
+### N-Sample Evidence
 
 Complete only when:
 
@@ -274,21 +273,9 @@ Complete only when:
 - all expected Good and declared `pitch_error` samples in the frozen pilot Test set are correct;
 - no result is claimed for short-pin, bridge, bend, missing-pin, or other excluded defects.
 
-P148 is the regression baseline: two row ROIs, Train/Validation/Test 356/72/72, frozen `DistancePxRange <= 6`, Test Good 36/36 accepted, and Test `pitch_error` 12/12 rejected. It is synthetic evidence already reviewed, not a new blind Phase 3 set and not a universal tolerance.
+The Guided Setup selects existing local Validation Sets and freezes skill version/XML/range/ROI/detection/split identities. Later drift is stale. Opening the explicit-run validation path does not run Preview/Run or change layers/routing. Stored drawings retain every executed row; reviewing stored rows does not rerun.
 
-P168 completes this Phase 2 gate for the bounded adjacent edge-gap intent:
-
-- The exact P148 lists were reused without overlap: Train 356, Validation 72, and Test 72. The source split-list file SHA-256 values are Train `4BD979B72B5AB6E61689C0609C05DB570658B77AC05AE4859D92914ED133F20E`, Validation `80D7B1895491459C909FB1565396EBB5F8DC4A463E7B3EF41DEEA00A9CF8747D`, and Test `F4F483C5FE01B54191D1FD2C1F6DA53D58D27437714D41F110D3F72057D6A3EC`. The product's frozen Local Validation Set identity is a separate canonical hash over path, expected outcome, notes, and each image's SHA-256.
-- The unchanged frozen two-row XML has SHA-256 `9F8F60E615B9F90CA9D010BE0EC43C0C897BDB3BE5BA0333CF810E0DE139A4F2`, row ROIs `0,120,768,130` and `0,330,768,130`, and the same maximum `DistancePxRange <= 6` on both enabled Steps.
-- Current-source replay produced zero image-load/runtime errors. Train accepted expected Good 178/178 and rejected `pitch_error` 38/38; Validation accepted expected Good 36/36 and contains no `pitch_error`; frozen Test accepted expected Good 36/36 and rejected `pitch_error` 12/12.
-- Cross-defect rows remain observations, not supported classifications: Train rejected bend 34/38, missing 35/38, short 2/38, and bridge 0/26; Validation rejected bend 11/12, missing 12/12, and bridge 0/12; Test rejected short 0/12 and bridge 0/12.
-- The Guided Setup now selects three existing local Validation Sets, freezes the skill version/XML/range/ROI/detection/split identities, reports later drift as stale, and opens the existing explicit-run Local Validation path. These setup actions do not run Preview/Run or change layer/routing state.
-- Run Report storage retains every executed `PinArrayGap` row drawing for a sample. The existing viewer can select each stored row and show expected/actual outcome plus row metrics without rerunning the recipe.
-- Full sample/error rows are under `artifacts\p168_pinarraygap_phase2_20260720\current_runner`. Representative current-run drawings are under `artifacts\p168_pinarraygap_phase2_20260720\representative_overlays`, including ordinary Good, boundary Good, nearest and worst `pitch_error` NG, and one explicitly excluded short-pin outlier. Final current-source multi-row stored-drawing workflow evidence is under `artifacts\p168_pinarraygap_phase2_20260720\multistep_current_source_verified`; its `source.png` SHA-256 matches the Run Report and both executed row overlays are retained.
-
-Phase 2 is therefore `Complete` only for dark-pin, pixel, adjacent edge-gap consistency on this frozen pilot. It does not establish center-to-center pitch, calibrated units, or a bend/missing/short/bridge/contamination classifier. The reviewed P148 Test list is not previously unused Phase 3 evidence.
-
-### Phase 3 - Genuine LLM Correction
+### Genuine LLM Correction Validation
 
 Complete only when:
 
@@ -299,15 +286,9 @@ Complete only when:
 - a previously unused Test set is run once after candidate freeze;
 - target defect recall improves without reducing Good recall or execution success below the declared gate.
 
-P151 is direct-success authoring evidence, not a correction loop. P147 is a different broad multi-Step recipe and cannot be used as this skill's correction success. Do not manufacture a failure.
+## 11. Implementation Map
 
-P169 supplies the previously missing held-out prerequisite but not the correction event. A new constrained judged GPT response matched the two-row dark-pin contract, passed strict validation, accepted Train Good 178/178, rejected Train `pitch_error` 38/38, and accepted Validation Good 36/36 with zero load/runtime errors. The native Validation split has no `pitch_error`. Because the first response succeeded directly, no correction was requested and the frozen 72-image Test split was not executed. Preserve that Test until a later judged first response fails naturally; do not repeat equivalent prompts merely to obtain a failure.
-
-P170 prepares the next attempt's target-bearing working evidence without changing P169. Working Train contains Good 178 / `pitch_error` 26; Working Validation contains Good 36 / `pitch_error` 12. The 12 pitch rows are selected deterministically from the already executed native Train by lowest image-content hash and removed from Working Train. Both manifests are path/content-disjoint from each other and from the 48 target rows in the P169 Test manifest. Because all working rows were previously executed, label this `previously observed working Validation`, never blind or unused Validation. It is a pre-Test correction check only; Phase 3 still requires a future natural first-response failure and the frozen Test remains unexecuted.
-
-## 11. Minimal Implementation Map
-
-Implement the contract incrementally, without a new framework:
+Find these responsibilities in the existing owners:
 
 1. Add a separate exact-match template to `OpenVisionRecipeGuidedSetupCatalog` and `OpenVisionRecipeLlmIntent`.
 2. Add a focused `OpenVisionRecipePinArrayGapIntentSkill` builder/parser in the existing `Recipe/IntentSkills` owner; reuse existing ROI parsing without creating a generic abstraction.
@@ -318,26 +299,6 @@ Implement the contract incrementally, without a new framework:
 
 No new algorithm, dataset database, background runner, provider automation, API key flow, or duplicate Recipe Manager dashboard is part of v1.
 
-## 12. Evidence Basis And Honest Limits
+## 12. Applicability
 
-- P151 proves that a real GPT first response can produce a runnable one-row `PinArrayGap` measurement draft. It had no acceptance gate and does not prove a completed product skill.
-- P148 proves two-row synthetic edge-gap range consistency with frozen split evidence and runtime drawings. A single top row detected only part of the labelled pitch defects, so the complete pilot must retain both reviewed rows or use row-specific labels.
-- P168 completes the product-integrated Phase 2 replay and frozen identity/drawing review for that exact P148 contract. It does not convert the P148 Test split into fresh Phase 3 evidence.
-- P169 preserves a new unchanged judged GPT first response, strict-validation report, Train/Validation CSVs, exact runtime drawings, and a frozen non-overlapping Test manifest under `artifacts\p169_pin2_phase3_prerequisite_20260721`. It is direct-success evidence, not Phase 3 completion; Test execution remains intentionally absent.
-- P170 freezes target-bearing, previously observed working Train/Validation manifests under `artifacts\p170_pin2_target_validation_readiness_20260721`. They remove P169's target-free Validation weakness but are not independent held-out evidence and do not authorize Test execution.
-- P147 demonstrates the shape of a useful misclassification/error packet, but its 52.40% broad recipe result is not `PinArrayGap` correction evidence.
-- P167's dedicated strict validator enforces the current ROI, polarity, parameter, unit, and judged-recipe contract; generic XML validation alone remains insufficient.
-
-## 13. Reusable Completion Record
-
-```text
-Status: Complete | Blocked | Incomplete
-Skill/version: Pin row edge-gap consistency / v1
-Scope: dark roughly vertical pins; adjacent edge-to-edge px consistency; <row count> reviewed rows
-Inputs: ROI list, detection parameters, range maximum, Train/Validation/Test set names
-Frozen identity: XML hash, split list/hash, tolerance source, build/runtime identity
-Acceptance criteria: Phase 1 -> pass/fail; Phase 2 -> pass/fail; Phase 3 -> pass/fail
-Verification: commands and explicit runs actually performed
-Evidence: prompt/response, XML, CSV/error table, representative drawings, completion report
-Boundary / next dependency: excluded defects, calibration status, genuine correction prerequisite
-```
+This contract supports dark, roughly vertical pins and adjacent edge-to-edge pixel-gap consistency. It does not turn the measured gap into center-to-center pitch, calibrated units, or a general missing/short/bend/bridge classifier. Keep every reviewed row or use row-specific expected labels. Generic XML validation cannot replace strict ROI/polarity/parameter/unit/judgement checks.

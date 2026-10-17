@@ -359,14 +359,6 @@ namespace OpenVisionLab
 
         public bool IsWorkspaceSampleWorkflowVisibleForTest => _bindings.SampleWorkflowPresenter?.IsVisible == true;
 
-        public bool IsWorkspaceMainActionVisibleForTest => _bindings.MainActionPresenter?.IsVisible == true;
-
-        public string WorkspaceMainActionTitleForTest => _bindings.MainActionPresenter?.Title ?? string.Empty;
-
-        public string WorkspaceMainActionDetailForTest => _bindings.MainActionPresenter?.Detail ?? string.Empty;
-
-        public string WorkspaceMainActionMetaForTest => _bindings.MainActionPresenter?.Meta ?? string.Empty;
-
         public string WorkspaceSampleWorkflowTitleForTest => _bindings.SampleWorkflowPresenter?.Title ?? string.Empty;
 
         public string WorkspaceSampleWorkflowMetaForTest => _bindings.SampleWorkflowPresenter?.Meta ?? string.Empty;
@@ -618,7 +610,6 @@ namespace OpenVisionLab
         internal OpenVisionTcpIntegrationController TcpIntegrationController { get; set; }
         internal OpenVisionShellHostCommandController CommandController { get; set; }
         internal OpenVisionShellHostSampleWorkflowPresenter SampleWorkflowPresenter { get; set; }
-        internal OpenVisionShellHostMainActionPresenter MainActionPresenter { get; set; }
         internal OpenVisionShellHostBusyPresenter BusyPresenter { get; set; }
         internal OpenVisionRecipeContextStore RecipeContextStore { get; set; }
         internal RecipeDialogAdapter RecipeDialogAdapter { get; set; }

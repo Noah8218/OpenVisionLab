@@ -192,6 +192,8 @@ namespace OpenVisionLab
             matchingRuntime.SetResultReview(title, results, tactTime);
         }
 
+        internal Action<IEnumerable<MatchingResult>, TimeSpan?> CaptureResultReview(string title) => matchingRuntime.CaptureResultReview(title);
+
         public void ApplyLocalization()
         {
             // Matching tools use the shared shell but keep template status in the matching-specific runtime.

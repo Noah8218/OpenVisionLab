@@ -377,33 +377,39 @@ namespace OpenVisionLab
         private static Border CreateEmptyOverlay(bool allowLoad, RoutedEventHandler loadRequested)
         {
             StackPanel panel = new StackPanel();
-            panel.Children.Add(new PackIconMaterial
+            PackIconMaterial icon = new PackIconMaterial
             {
                 Name = "icoPreviewEmpty",
                 Kind = PackIconMaterialKind.ImageOffOutline,
                 Width = 24,
                 Height = 24,
-                Foreground = CreateBrush("#157C86"),
                 Margin = new Thickness(0, 0, 0, 8)
-            });
-            panel.Children.Add(new TextBlock
+            };
+            icon.SetResourceReference(Control.ForegroundProperty, "OpenVision.Workbench.AccentBrush");
+            panel.Children.Add(icon);
+            TextBlock title = new TextBlock
             {
                 Name = "txtPreviewEmptyTitle",
                 FontWeight = FontWeights.SemiBold,
                 FontSize = 13,
-                Foreground = CreateBrush("#243040"),
                 TextWrapping = TextWrapping.Wrap,
                 TextTrimming = TextTrimming.None
-            });
-            panel.Children.Add(new TextBlock
+            };
+            title.SetResourceReference(TextBlock.ForegroundProperty, "OpenVision.Workbench.TextBrush");
+            panel.Children.Add(title);
+            if (!allowLoad)
             {
-                Name = "txtPreviewEmptyDetail",
-                Foreground = CreateBrush("#657487"),
-                Margin = new Thickness(0, 5, 0, 0),
-                TextWrapping = TextWrapping.Wrap,
-                TextTrimming = TextTrimming.None,
-                FontSize = 11
-            });
+                TextBlock detail = new TextBlock
+                {
+                    Name = "txtPreviewEmptyDetail",
+                    Margin = new Thickness(0, 5, 0, 0),
+                    TextWrapping = TextWrapping.Wrap,
+                    TextTrimming = TextTrimming.None,
+                    FontSize = 11
+                };
+                detail.SetResourceReference(TextBlock.ForegroundProperty, "OpenVision.Workbench.SecondaryTextBrush");
+                panel.Children.Add(detail);
+            }
 
             if (allowLoad)
             {
@@ -411,52 +417,63 @@ namespace OpenVisionLab
                 {
                     Name = "btnPreviewLoadImage",
                     Height = 28,
+                    MinHeight = 0,
                     MinWidth = 116,
                     HorizontalAlignment = HorizontalAlignment.Left,
                     Margin = new Thickness(0, 12, 0, 0),
                     Padding = new Thickness(9, 0, 9, 0),
-                    Background = Brushes.White,
-                    BorderBrush = CreateBrush("#157C86"),
-                    Foreground = CreateBrush("#157C86"),
                     BorderThickness = new Thickness(1)
                 };
+                loadButton.SetResourceReference(FrameworkElement.StyleProperty, "OpenVision.Workbench.ButtonStyle");
                 loadButton.Click += loadRequested;
                 StackPanel buttonContent = new StackPanel { Orientation = Orientation.Horizontal };
-                buttonContent.Children.Add(new PackIconMaterial
+                PackIconMaterial loadIcon = new PackIconMaterial
                 {
                     Kind = PackIconMaterialKind.ImagePlusOutline,
                     Width = 15,
                     Height = 15,
-                    Margin = new Thickness(0, 0, 6, 0),
-                    Foreground = CreateBrush("#157C86")
-                });
-                buttonContent.Children.Add(new TextBlock
+                    Margin = new Thickness(0, 0, 6, 0)
+                };
+                loadIcon.SetBinding(Control.ForegroundProperty, new System.Windows.Data.Binding(nameof(Control.Foreground)) { Source = loadButton });
+                buttonContent.Children.Add(loadIcon);
+                TextBlock loadText = new TextBlock
                 {
                     Name = "txtPreviewLoadImageButton",
                     FontWeight = FontWeights.SemiBold,
-                    Foreground = CreateBrush("#157C86"),
                     VerticalAlignment = VerticalAlignment.Center,
                     TextTrimming = TextTrimming.None
-                });
+                };
+                loadText.SetBinding(TextBlock.ForegroundProperty, new System.Windows.Data.Binding(nameof(Control.Foreground)) { Source = loadButton });
+                buttonContent.Children.Add(loadText);
                 loadButton.Content = buttonContent;
                 panel.Children.Add(loadButton);
             }
 
-            return new Border
+            Border overlay = new Border
             {
                 Width = 252,
                 Padding = new Thickness(16),
-                Background = CreateBrush("#EEF5F7"),
-                BorderBrush = CreateBrush("#75AEB7"),
                 BorderThickness = new Thickness(1),
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
                 Child = panel
             };
+            overlay.SetResourceReference(Border.BackgroundProperty, "OpenVision.Workbench.PanelBrush");
+            overlay.SetResourceReference(Border.BorderBrushProperty, "OpenVision.Workbench.FieldBorderBrush");
+            return overlay;
         }
 
         private static Border CreateRouteOverlay(bool allowLoad)
         {
+            PackIconMaterial icon = new PackIconMaterial
+            {
+                Kind = PackIconMaterialKind.ImageMultipleOutline,
+                Width = 15,
+                Height = 15,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            icon.SetResourceReference(Control.ForegroundProperty, "OpenVision.Workbench.AccentBrush");
             Border overlay = new Border
             {
                 Name = "bdPreviewRouteOverlay",
@@ -464,22 +481,14 @@ namespace OpenVisionLab
                 Height = 26,
                 Margin = new Thickness(0, 6, 6, 0),
                 Padding = new Thickness(0),
-                Background = CreateBrush("#DDEAF0"),
-                BorderBrush = CreateBrush("#75AEB7"),
                 BorderThickness = new Thickness(1),
                 HorizontalAlignment = HorizontalAlignment.Right,
                 VerticalAlignment = VerticalAlignment.Top,
                 IsHitTestVisible = false,
-                Child = new PackIconMaterial
-                {
-                    Kind = PackIconMaterialKind.ImageMultipleOutline,
-                    Width = 15,
-                    Height = 15,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    Foreground = CreateBrush("#157C86")
-                }
+                Child = icon
             };
+            overlay.SetResourceReference(Border.BackgroundProperty, "OpenVision.Workbench.PanelAltBrush");
+            overlay.SetResourceReference(Border.BorderBrushProperty, "OpenVision.Workbench.FieldBorderBrush");
             AutomationProperties.SetAutomationId(overlay, allowLoad ? "VisionToolInputRoutePreviewHint" : "VisionToolOutputRoutePreviewHint");
             return overlay;
         }
@@ -616,7 +625,7 @@ namespace OpenVisionLab
                 }
                 else if (child is TextBlock detailBlock && string.Equals(detailBlock.Name, "txtPreviewEmptyDetail", StringComparison.Ordinal))
                 {
-                    detailBlock.Text = OpenVisionLanguageService.T(allowLoad ? "ToolView.NoInputImageDetail" : "ToolView.NoOutputImageDetail");
+                    detailBlock.Text = OpenVisionLanguageService.T("ToolView.NoOutputImageDetail");
                 }
                 else if (child is Button button && button.Content is StackPanel buttonPanel)
                 {

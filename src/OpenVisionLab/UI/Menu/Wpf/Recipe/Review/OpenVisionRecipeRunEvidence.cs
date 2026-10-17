@@ -1,3 +1,6 @@
+using OpenVisionLab.Core;
+using OpenVisionLab.Vision2D.Pipeline;
+using OpenVisionLab.Vision2D.Tool;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -10,6 +13,8 @@ namespace OpenVisionLab
     {
         internal OpenVisionRecipeRunEvidenceDrawing(
             VisionPipelineStepRunReport step,
+            string parameterSummaryText,
+            string runLogText,
             string drawingImagePath)
         {
             Index = step?.Index ?? 0;
@@ -19,6 +24,10 @@ namespace OpenVisionLab
             AcceptanceEvaluated = step?.AcceptanceEvaluated == true;
             AcceptancePassed = step?.AcceptancePassed == true;
             AcceptanceMessage = step?.AcceptanceMessage ?? string.Empty;
+            InputLayer = step?.InputLayer ?? string.Empty;
+            OutputLayer = step?.OutputLayer ?? string.Empty;
+            ParameterSummaryText = parameterSummaryText ?? string.Empty;
+            RunLogText = runLogText ?? string.Empty;
             DrawingImagePath = drawingImagePath ?? string.Empty;
             MetricSummaryText = BuildMetricSummary(step?.Metrics);
         }
@@ -36,6 +45,14 @@ namespace OpenVisionLab
         public bool AcceptancePassed { get; }
 
         public string AcceptanceMessage { get; }
+
+        public string InputLayer { get; }
+
+        public string OutputLayer { get; }
+
+        public string ParameterSummaryText { get; }
+
+        public string RunLogText { get; }
 
         public string DrawingImagePath { get; }
 
@@ -83,6 +100,10 @@ namespace OpenVisionLab
             bool success,
             bool isStoredSourceVerified,
             string sourceProvenanceText,
+            string recipeName,
+            string pipelineName,
+            string runStartedAt,
+            string runRecordId,
             IReadOnlyList<OpenVisionRecipeRunEvidenceDrawing> drawings,
             OpenVisionRecipeRunEvidenceDrawing defaultDrawing)
         {
@@ -94,6 +115,10 @@ namespace OpenVisionLab
             Success = success;
             IsStoredSourceVerified = isStoredSourceVerified;
             SourceProvenanceText = sourceProvenanceText ?? string.Empty;
+            RecipeName = recipeName ?? string.Empty;
+            PipelineName = pipelineName ?? string.Empty;
+            RunStartedAt = runStartedAt ?? string.Empty;
+            RunRecordId = runRecordId ?? string.Empty;
             Drawings = drawings ?? Array.Empty<OpenVisionRecipeRunEvidenceDrawing>();
             DefaultDrawing = defaultDrawing;
         }
@@ -115,6 +140,14 @@ namespace OpenVisionLab
         public bool IsStoredSourceVerified { get; }
 
         public string SourceProvenanceText { get; }
+
+        public string RecipeName { get; }
+
+        public string PipelineName { get; }
+
+        public string RunStartedAt { get; }
+
+        public string RunRecordId { get; }
 
         public IReadOnlyList<OpenVisionRecipeRunEvidenceDrawing> Drawings { get; }
 
@@ -152,6 +185,9 @@ namespace OpenVisionLab
 
             lines.Add(OpenVisionRecipeText.Local("원본 근거: ", "Source evidence: ")
                 + (string.IsNullOrWhiteSpace(SourceProvenanceText) ? "-" : SourceProvenanceText));
+            lines.Add(OpenVisionRecipeText.Local("실행 기록: ", "Run record: ")
+                + (string.IsNullOrWhiteSpace(RunRecordId) ? "-" : RunRecordId)
+                + (string.IsNullOrWhiteSpace(RunStartedAt) ? string.Empty : " | " + RunStartedAt));
             lines.Add(OpenVisionRecipeText.Local(
                 "원본과 저장된 검출 드로잉을 읽기 전용으로 비교합니다. Preview 또는 Run을 다시 실행하지 않습니다.",
                 "Read-only comparison of the original and persisted detection drawing. Preview and Run are not rerun."));
@@ -160,6 +196,16 @@ namespace OpenVisionLab
 
         public static bool TryCreate(
             OpenVisionRecipeBatchSampleResultOption selectedSample,
+            out OpenVisionRecipeRunEvidence evidence,
+            out string reason)
+        {
+            return TryCreate(selectedSample, string.Empty, string.Empty, out evidence, out reason);
+        }
+
+        public static bool TryCreate(
+            OpenVisionRecipeBatchSampleResultOption selectedSample,
+            string fallbackRecipeName,
+            string fallbackPipelineName,
             out OpenVisionRecipeRunEvidence evidence,
             out string reason)
         {
@@ -238,7 +284,11 @@ namespace OpenVisionLab
                         ResolveReportImagePath(reportDirectory, step.ResultImageFile))
                 })
                 .Where(item => !string.IsNullOrWhiteSpace(item.DrawingPath))
-                .Select(item => new OpenVisionRecipeRunEvidenceDrawing(item.Step, item.DrawingPath))
+                .Select(item => new OpenVisionRecipeRunEvidenceDrawing(
+                    item.Step,
+                    FormatParameters(item.Step.Parameters),
+                    FormatRunLog(item.Step),
+                    item.DrawingPath))
                 .ToList();
             if (drawings.Count == 0)
             {
@@ -265,9 +315,32 @@ namespace OpenVisionLab
                 selectedSample.Success,
                 isStoredSourceVerified,
                 sourceProvenanceText,
+                string.IsNullOrWhiteSpace(report.RecipeName) ? fallbackRecipeName : report.RecipeName,
+                string.IsNullOrWhiteSpace(report.PipelineName) ? fallbackPipelineName : report.PipelineName,
+                report.StartedAt,
+                Path.GetFileName(reportDirectory),
                 drawings.AsReadOnly(),
                 defaultDrawing);
             return true;
+        }
+
+        private static string FormatParameters(IEnumerable<VisionPipelineParameter> parameters)
+        {
+            string text = string.Join(
+                Environment.NewLine,
+                (parameters ?? Enumerable.Empty<VisionPipelineParameter>())
+                    .Where(parameter => parameter != null && !string.IsNullOrWhiteSpace(parameter.Key))
+                    .Select(parameter => parameter.Key.Trim() + " = " + (parameter.Value ?? string.Empty)));
+            return string.IsNullOrWhiteSpace(text) ? "-" : text;
+        }
+
+        private static string FormatRunLog(VisionPipelineStepRunReport step)
+        {
+            return string.Join(
+                Environment.NewLine,
+                new[] { step?.Message, step?.ErrorName, step?.DiagnosticHint, step?.SuggestedFix }
+                    .Where(value => !string.IsNullOrWhiteSpace(value))
+                    .Select(value => value.Trim()));
         }
 
         private static OpenVisionRecipeRunEvidenceDrawing ResolveDefaultDrawing(

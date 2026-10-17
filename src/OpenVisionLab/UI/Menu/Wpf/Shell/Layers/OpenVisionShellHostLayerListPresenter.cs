@@ -1,4 +1,6 @@
 using OpenVisionLab.Core;
+using OpenVisionLab.Mvvm;
+using OpenVisionLab.ImageSpace.Core;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -55,7 +57,9 @@ namespace OpenVisionLab
                 layerTitles.Add(title);
                 string displayIndex = string.Format(CultureInfo.CurrentCulture, "{0:00}", index + 1);
                 string state = isActive ? displayText : "OK";
-                Rows.Add(new OpenVisionShellHostLayerTabItem(displayIndex, title, state, isActive));
+                using ImageSpaceImageLease lease = displayManager.ImageSpace.AcquireImage(title);
+                string size = lease?.Image == null ? null : lease.Image.Width.ToString(CultureInfo.InvariantCulture) + "×" + lease.Image.Height.ToString(CultureInfo.InvariantCulture);
+                Rows.Add(new OpenVisionShellHostLayerTabItem(displayIndex, title, state, isActive, size));
             }
 
             int selectedIndex = activeIndex >= 0 ? activeIndex : displayManager.LayerCount - 1;
@@ -63,6 +67,11 @@ namespace OpenVisionLab
                 ? titleAtIndex
                 : null;
             return new LayerListRefreshResult(selectedIndex, selectedTitle);
+        }
+
+        public void ApplyLocalization()
+        {
+            foreach (OpenVisionShellHostLayerTabItem row in Rows) { row.ApplyLocalization(); }
         }
 
         public void ApplySelection(int selectedIndex, Action<int> setSelectedIndex)
@@ -111,26 +120,44 @@ namespace OpenVisionLab
         public string SelectedLayerTitle { get; }
     }
 
-    internal sealed class OpenVisionShellHostLayerTabItem
+    internal sealed class OpenVisionShellHostLayerTabItem : ObservableObject
     {
-        public OpenVisionShellHostLayerTabItem(string displayIndex, string title, string statusText, bool isActive)
+        private string statusText;
+        private readonly string sizeText;
+
+        public OpenVisionShellHostLayerTabItem(string displayIndex, string title, string statusText, bool isActive, string sizeText = null)
         {
             DisplayIndex = string.IsNullOrWhiteSpace(displayIndex) ? "--" : displayIndex;
             Title = string.IsNullOrWhiteSpace(title) ? "-" : title;
-            StatusText = string.IsNullOrWhiteSpace(statusText) ? "-" : statusText;
+            this.statusText = string.IsNullOrWhiteSpace(statusText) ? "-" : statusText;
             IsActive = isActive;
+            this.sizeText = sizeText;
         }
+
+        public string OriginText => OpenVisionLanguageService.T("Workbench.LayerManager.UnknownOrigin");
+
+        public string SizeText => sizeText ?? OpenVisionLanguageService.T("Workbench.LayerManager.NotStored");
 
         public string DisplayIndex { get; }
 
         public string Title { get; }
 
-        public string StatusText { get; }
+        public string StatusText => statusText;
 
         public bool IsActive { get; }
 
         public string DisplayText => string.Format(CultureInfo.CurrentCulture, "{0}  {1}  {2}", DisplayIndex, Title, StatusText);
 
         public string ToolTip => DisplayText;
+
+        public void ApplyLocalization()
+        {
+            OnPropertyChanged(nameof(OriginText)); OnPropertyChanged(nameof(SizeText));
+            if (SetProperty(ref statusText, IsActive ? OpenVisionLanguageService.T("Shell.LayerStateDisplay") : "OK", nameof(StatusText)))
+            {
+                OnPropertyChanged(nameof(DisplayText));
+                OnPropertyChanged(nameof(ToolTip));
+            }
+        }
     }
 }

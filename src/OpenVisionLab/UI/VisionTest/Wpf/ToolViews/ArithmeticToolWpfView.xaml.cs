@@ -8,6 +8,7 @@ namespace OpenVisionLab
         private readonly VisionToolParameterChangeController parameterChangeController;
         private readonly ArithmeticToolPreviewController previewController;
         private readonly ArithmeticToolTextPresenter textPresenter;
+        private readonly VisionToolCustomParameterGuideBinder parameterGuideBinder;
         private ArithmeticToolInteractionController interactionController;
         private bool suppressEvents;
 
@@ -76,6 +77,23 @@ namespace OpenVisionLab
                 txtOffsetY);
             ApplyLocalization();
             parameterChangeController.RefreshProgrammatic(interactionController.RefreshMode);
+            parameterGuideBinder = VisionToolCustomParameterGuideBinder.Attach(toolShell, () => CaptureSettings(),
+                new Dictionary<System.Windows.FrameworkElement, string>
+                {
+                    [cbArithmeticType] = nameof(ArithmeticToolSettings.SelectedOperation),
+                    [rdoModeOperation] = nameof(ArithmeticToolSettings.UseOffsetMode),
+                    [rdoModeOffset] = nameof(ArithmeticToolSettings.UseOffsetMode),
+                    [rdoSourceImage] = nameof(ArithmeticToolSettings.UseConstantInput),
+                    [rdoContrast] = nameof(ArithmeticToolSettings.UseConstantInput),
+                    [rdoGray] = nameof(ArithmeticToolSettings.UseColorConstant),
+                    [rdoColor] = nameof(ArithmeticToolSettings.UseColorConstant),
+                    [txtGray] = nameof(ArithmeticToolSettings.Gray),
+                    [txtB] = nameof(ArithmeticToolSettings.B),
+                    [txtG] = nameof(ArithmeticToolSettings.G),
+                    [txtR] = nameof(ArithmeticToolSettings.R),
+                    [txtOffsetX] = nameof(ArithmeticToolSettings.OffsetX),
+                    [txtOffsetY] = nameof(ArithmeticToolSettings.OffsetY)
+                });
         }
 
         public event EventHandler ParameterChanged = delegate { };
@@ -87,6 +105,7 @@ namespace OpenVisionLab
 
         protected override void DisposeToolResources()
         {
+            parameterGuideBinder?.Dispose();
             interactionController?.Detach();
             previewController?.Dispose();
         }

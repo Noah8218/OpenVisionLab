@@ -179,11 +179,11 @@ namespace OpenVisionLab
             }
         }
 
-        private static string FormatDetailedStepDiff(VisionPipelineStep activeStep, VisionPipelineStep draftStep)
+        internal static string FormatDetailedStepDiff(VisionPipelineStep activeStep, VisionPipelineStep draftStep, bool showUnchanged = false)
         {
             if (activeStep == null || draftStep == null)
             {
-                return string.Empty;
+                return showUnchanged ? FormatStepDiff(activeStep, draftStep) : string.Empty;
             }
 
             List<string> parts = new List<string>();
@@ -199,7 +199,7 @@ namespace OpenVisionLab
                 parts.Add(parameterDiff);
             }
 
-            return string.Join("; ", parts);
+            return showUnchanged && parts.Count == 0 ? FormatStepDiff(activeStep, draftStep) : string.Join("; ", parts);
         }
 
         private static string FormatParameterDiff(IDictionary<string, string> activeParameters, IDictionary<string, string> draftParameters)

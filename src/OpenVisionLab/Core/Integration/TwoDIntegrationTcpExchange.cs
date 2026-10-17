@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
@@ -22,6 +23,7 @@ public sealed class TwoDIntegrationTcpExchange : IAsyncDisposable
     private readonly byte[] _sharedKey;
     private readonly TcpIntegrationOptions _options;
     private readonly TcpIntegrationServer _server;
+    private readonly ConcurrentDictionary<Guid, CancellationTokenSource> _activeRunCancellations = new();
     private bool _disposed;
 
     public TwoDIntegrationTcpExchange(
@@ -48,6 +50,7 @@ public sealed class TwoDIntegrationTcpExchange : IAsyncDisposable
                 port,
                 _sharedKey,
                 _options);
+            _server.CancellationRequested += HandleCancellationRequestedAsync;
         }
         catch
         {
@@ -194,10 +197,26 @@ public sealed class TwoDIntegrationTcpExchange : IAsyncDisposable
         CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-        return TwoDIntegrationExchange.RunAcceptedHandoffAsync(
-            LocalExchangeRoot,
+        return RunAcceptedHandoffWithCancellationAsync(
             transactionId,
+            runtimeBuildManifestPath: null,
             stepTimeoutMilliseconds,
+            preInspectionDelayMilliseconds: 0,
+            cancellationToken);
+    }
+
+    internal Task<IntegrationResultV2> RunAcceptedHandoffAsync(
+        Guid transactionId,
+        int stepTimeoutMilliseconds,
+        int preInspectionDelayMilliseconds,
+        CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+        return RunAcceptedHandoffWithCancellationAsync(
+            transactionId,
+            runtimeBuildManifestPath: null,
+            stepTimeoutMilliseconds,
+            preInspectionDelayMilliseconds,
             cancellationToken);
     }
 
@@ -208,11 +227,11 @@ public sealed class TwoDIntegrationTcpExchange : IAsyncDisposable
         CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-        return TwoDIntegrationExchange.RunAcceptedHandoffAsync(
-            LocalExchangeRoot,
+        return RunAcceptedHandoffWithCancellationAsync(
             transactionId,
             runtimeBuildManifestPath,
             stepTimeoutMilliseconds,
+            preInspectionDelayMilliseconds: 0,
             cancellationToken);
     }
 
@@ -247,4 +266,185 @@ public sealed class TwoDIntegrationTcpExchange : IAsyncDisposable
 
     private void ThrowIfDisposed() =>
         ObjectDisposedException.ThrowIf(_disposed, this);
+
+    private async Task<IntegrationResultV2> RunAcceptedHandoffWithCancellationAsync(
+        Guid transactionId,
+        string? runtimeBuildManifestPath,
+        int stepTimeoutMilliseconds,
+        int preInspectionDelayMilliseconds,
+        CancellationToken cancellationToken)
+    {
+        if (preInspectionDelayMilliseconds is < 0 or > 30000)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(preInspectionDelayMilliseconds),
+                "The pre-inspection delay must be between 0 and 30000 milliseconds.");
+        }
+
+        using var runCancellation = CancellationTokenSource.CreateLinkedTokenSource(
+            cancellationToken);
+        if (!_activeRunCancellations.TryAdd(transactionId, runCancellation))
+        {
+            throw new IntegrationContractException(
+                IntegrationErrorCode.InvalidState,
+                "The 2D transaction already has an active inspection.");
+        }
+
+        try
+        {
+            if (preInspectionDelayMilliseconds > 0)
+            {
+                try
+                {
+                    await Task.Delay(
+                            preInspectionDelayMilliseconds,
+                            runCancellation.Token)
+                        .ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    // Continue into the existing consumer-owned execution path
+                    // so it publishes the typed Cancelled Result.
+                }
+            }
+
+            return runtimeBuildManifestPath is null
+                ? await TwoDIntegrationExchange.RunAcceptedHandoffAsync(
+                        LocalExchangeRoot,
+                        transactionId,
+                        stepTimeoutMilliseconds,
+                        runCancellation.Token)
+                    .ConfigureAwait(false)
+                : await TwoDIntegrationExchange.RunAcceptedHandoffAsync(
+                        LocalExchangeRoot,
+                        transactionId,
+                        runtimeBuildManifestPath,
+                        stepTimeoutMilliseconds,
+                        runCancellation.Token)
+                    .ConfigureAwait(false);
+        }
+        finally
+        {
+            _activeRunCancellations.TryRemove(
+                new KeyValuePair<Guid, CancellationTokenSource>(
+                    transactionId,
+                    runCancellation));
+        }
+    }
+
+    private Task<TcpIntegrationCancellationReceipt> HandleCancellationRequestedAsync(
+        IntegrationCancelRequestV2 request,
+        CancellationToken cancellationToken)
+    {
+        ThrowIfDisposed();
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (!string.Equals(
+                request.Requester.ApplicationId,
+                IntegrationApplicationIds.MachineStudio,
+                StringComparison.Ordinal))
+        {
+            return Task.FromResult(CreateCancellationReceipt(
+                request,
+                TcpIntegrationCancellationStatus.Rejected,
+                idempotent: false));
+        }
+
+        IntegrationHandoffV2 handoff;
+        try
+        {
+            handoff = TwoDIntegrationExchange.ReadHandoffEnvelope(
+                LocalExchangeRoot,
+                request.TransactionId);
+        }
+        catch (Exception exception) when (
+            exception is FileNotFoundException
+                or DirectoryNotFoundException
+                or IntegrationContractException)
+        {
+            return Task.FromResult(CreateCancellationReceipt(
+                request,
+                TcpIntegrationCancellationStatus.NotFound,
+                idempotent: true));
+        }
+
+        if (handoff.MessageId != request.HandoffMessageId)
+        {
+            return Task.FromResult(CreateCancellationReceipt(
+                request,
+                TcpIntegrationCancellationStatus.Rejected,
+                idempotent: false));
+        }
+
+        var resultPath = Path.Combine(
+            LocalExchangeRoot,
+            IntegrationTransactionLayout.TransactionsDirectoryName,
+            request.TransactionId.ToString("D"),
+            IntegrationTransactionLayout.ResultFileName);
+        if (File.Exists(resultPath))
+        {
+            try
+            {
+                var result = TwoDIntegrationExchange.ReadResult(
+                    LocalExchangeRoot,
+                    request.TransactionId);
+                var status = result.Status switch
+                {
+                    IntegrationResultStatus.Completed =>
+                        TcpIntegrationCancellationStatus.AlreadyCompleted,
+                    IntegrationResultStatus.Failed =>
+                        TcpIntegrationCancellationStatus.AlreadyFailed,
+                    IntegrationResultStatus.Cancelled =>
+                        TcpIntegrationCancellationStatus.AlreadyCancelled,
+                    _ => TcpIntegrationCancellationStatus.Rejected
+                };
+                return Task.FromResult(CreateCancellationReceipt(
+                    request,
+                    status,
+                    idempotent: true));
+            }
+            catch (IntegrationContractException)
+            {
+                return Task.FromResult(CreateCancellationReceipt(
+                    request,
+                    TcpIntegrationCancellationStatus.Rejected,
+                    idempotent: false));
+            }
+        }
+
+        if (!_activeRunCancellations.TryGetValue(
+                request.TransactionId,
+                out var runCancellation))
+        {
+            return Task.FromResult(CreateCancellationReceipt(
+                request,
+                TcpIntegrationCancellationStatus.NotFound,
+                idempotent: true));
+        }
+
+        if (runCancellation.IsCancellationRequested)
+        {
+            return Task.FromResult(CreateCancellationReceipt(
+                request,
+                TcpIntegrationCancellationStatus.AlreadyCancelled,
+                idempotent: true));
+        }
+
+        runCancellation.Cancel();
+        return Task.FromResult(CreateCancellationReceipt(
+            request,
+            TcpIntegrationCancellationStatus.Accepted,
+            idempotent: false));
+    }
+
+    private static TcpIntegrationCancellationReceipt CreateCancellationReceipt(
+        IntegrationCancelRequestV2 request,
+        TcpIntegrationCancellationStatus status,
+        bool idempotent) =>
+        new(
+            request.RequestId,
+            request.TransactionId,
+            status,
+            idempotent,
+            IntegrationApplicationIds.TwoDStudio);
 }

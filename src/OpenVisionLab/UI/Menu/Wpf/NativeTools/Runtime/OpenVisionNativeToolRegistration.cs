@@ -9,7 +9,7 @@ namespace OpenVisionLab
     {
         public OpenVisionNativeToolRegistration(
             VISION_MENU menu,
-            Func<IDisplayManager, OpenVisionNativeToolDocument> createDocument,
+            Func<IDisplayManager, bool, OpenVisionNativeToolDocument> createDocument,
             Size preferredWindowSize,
             string viewTypeName,
             bool warmHostedLayout)
@@ -23,7 +23,7 @@ namespace OpenVisionLab
 
         public VISION_MENU Menu { get; }
 
-        public Func<IDisplayManager, OpenVisionNativeToolDocument> CreateDocument { get; }
+        public Func<IDisplayManager, bool, OpenVisionNativeToolDocument> CreateDocument { get; }
 
         public Size PreferredWindowSize { get; }
 

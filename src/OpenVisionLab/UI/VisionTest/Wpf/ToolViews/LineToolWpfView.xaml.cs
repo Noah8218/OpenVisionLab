@@ -86,10 +86,11 @@ namespace OpenVisionLab
                 rdoLineB,
                 txtPurposeHint,
                 btnEditSelectedRoi,
+                txtEditSelectedRoiCaption,
                 toolController.SetSummaryText);
             presetPresenter = toolController.AttachPresetPresenter(
                 VisionToolPresetCatalog.GetLinePresets(),
-                ApplyPreset);
+                previewController.ApplyPreset);
             reviewController = new LineToolReviewController(
                 toolController,
                 interactionController,
@@ -178,6 +179,17 @@ namespace OpenVisionLab
             ClearResultReview();
         }
 
+        internal void RefreshRestoredParameters(string purpose)
+        {
+            previewController.CancelAutoPreview();
+            interactionController.SetPurposeForTest(purpose);
+            propertyGridController.RefreshAndApplyVisibilityRules();
+            previewController.UpdateInputRoiOverlay();
+            UpdateSummary();
+            ClearResultReview();
+            previewController.CancelAutoPreview();
+        }
+
         public void SetLineSettingForTest(string setting)
         {
             interactionController.SetLineSettingForTest(setting);
@@ -246,6 +258,9 @@ namespace OpenVisionLab
             reviewController.ShowLineResult(results);
         }
 
+        internal Action<IEnumerable<LineGaugeResult>, VisionToolResult> CaptureResultReview(LineToolPurpose purpose, string lineName, LineGaugeProperty property)
+            => reviewController.CaptureResultReview(purpose, lineName, property);
+
         public void SetDistanceResultReview(VisionToolResult result)
         {
             reviewController.ShowDistanceResult(result);
@@ -289,7 +304,7 @@ namespace OpenVisionLab
         internal void ClearSignalEvidence()
         {
             signalInspector.ClearEvidence();
-            btnOpenSignalInspector.Visibility = Visibility.Hidden;
+            btnOpenSignalInspector.Visibility = Visibility.Collapsed;
             lineSignalInspectorOverlay.Visibility = Visibility.Collapsed;
             HideSignalEvidenceCue();
         }
@@ -356,28 +371,6 @@ namespace OpenVisionLab
                 presenter.PersistProperties();
                 UpdateSummary();
             }
-        }
-
-        private void ApplyPreset(VisionToolPreset<LineGaugeProperty> preset)
-        {
-            if (preset == null)
-            {
-                return;
-            }
-
-            LineGaugeProperty property = interactionController.GetSelectedLineProperty();
-            if (property == null)
-            {
-                return;
-            }
-
-            previewController.CancelAutoPreview();
-            preset.ApplyTo(property);
-            presenter.PersistProperties();
-            propertyGridController.RefreshAndApplyVisibilityRules();
-            UpdateSummary();
-            previewController.UpdateInputRoiOverlay();
-            ClearResultReview();
         }
 
         public override void ClearResultReview()

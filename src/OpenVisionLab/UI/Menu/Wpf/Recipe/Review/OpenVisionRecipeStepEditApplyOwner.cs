@@ -24,7 +24,8 @@ namespace OpenVisionLab
             string pipelineName,
             VisionPipeline pipeline,
             VisionPipelineStep step,
-            object editObject)
+            object editObject,
+            bool applyProperty = true)
         {
             string pipelinePath = RecipeWorkspaceService.GetVisionPipelinePath(recipeName, pipelineName);
             if (!VisionPipelineStorage.TryLoadFromFile(
@@ -39,7 +40,7 @@ namespace OpenVisionLab
                     + originalLoadMessage);
             }
 
-            if (!VisionPipelineStepPropertyMapper.ApplyProperty(step, editObject))
+            if (applyProperty && !VisionPipelineStepPropertyMapper.ApplyProperty(step, editObject))
             {
                 return OpenVisionRecipeStepEditApplyResult.Failure(
                     OpenVisionRecipeText.Local(

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
+using System.Windows.Data;
 
 namespace OpenVisionLab
 {
@@ -40,25 +41,18 @@ namespace OpenVisionLab
             {
                 Owner = ownerWindowProvider()
             };
-            dialog.ShowDialog();
-            return dialog.Decision;
+            if (dialog.Owner != null) { dialog.SetBinding(OpenVisionWorkbenchThemeBehavior.ThemeNameProperty, new Binding { Source = dialog.Owner, Path = new PropertyPath("(0)", OpenVisionWorkbenchThemeBehavior.ThemeNameProperty) }); }
+            try { dialog.ShowDialog(); return dialog.Decision; }
+            finally { BindingOperations.ClearBinding(dialog, OpenVisionWorkbenchThemeBehavior.ThemeNameProperty); }
         }
 
         internal bool ConfirmDeleteRecipe(string recipeName)
         {
-            string message = string.Format(
-                System.Globalization.CultureInfo.CurrentCulture,
-                OpenVisionLanguageService.CurrentLanguage == OpenVisionLanguage.Korean
-                    ? "레시피 '{0}'을(를) 삭제하시겠습니까?"
-                    : "Delete recipe '{0}'?",
-                recipeName);
-            MessageBoxResult result = MessageBox.Show(
-                ownerWindowProvider(),
-                message,
-                OpenVisionLanguageService.CurrentLanguage == OpenVisionLanguage.Korean ? "레시피 삭제" : "Delete recipe",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Warning);
-            return result == MessageBoxResult.Yes;
+            return DecidePendingEdit(new OpenVisionRecipePendingEditRequest
+            {
+                IsRecipeDelete = true,
+                RecipeName = recipeName
+            }) == OpenVisionRecipePendingEditDecision.ApplyAndContinue;
         }
 
         internal bool ConfirmQualifiedSnapshotLifecycle(
@@ -145,6 +139,15 @@ namespace OpenVisionLab
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Warning);
             return result == MessageBoxResult.Yes;
+        }
+
+        internal bool ConfirmDeleteStep(string stepName)
+        {
+            return DecidePendingEdit(new OpenVisionRecipePendingEditRequest
+            {
+                IsStepDelete = true,
+                StepName = stepName
+            }) == OpenVisionRecipePendingEditDecision.ApplyAndContinue;
         }
 
         internal string SelectImportPipelineXmlPath()

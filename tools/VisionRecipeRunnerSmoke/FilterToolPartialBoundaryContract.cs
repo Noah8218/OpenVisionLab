@@ -143,14 +143,20 @@ internal static class FilterToolPartialBoundaryContract
             results);
         Check(
             "Composition, factory, document builder, and pipeline builder own creation, persistence, preview, and routing",
-            compositionSource.Contains("CreateFilterToolViewModel()", StringComparison.Ordinal)
+            compositionSource.Contains("public static IFilterToolViewModel CreateFilterToolViewModel(", StringComparison.Ordinal)
+                && factorySource.Contains("VisionToolCompositionService.CreateFilterToolViewModel(", StringComparison.Ordinal)
                 && compositionSource.Contains("OpenVisionNativeToolSettingsStore.Load", StringComparison.Ordinal)
                 && factorySource.Contains("public static OpenVisionNativeToolDocument CreateFilter", StringComparison.Ordinal)
                 && factorySource.Contains("new FilterToolPresenter", StringComparison.Ordinal)
                 && factorySource.Contains("new FilterToolWpfView(viewPresenter)", StringComparison.Ordinal)
                 && factorySource.Contains("new FilterTool()", StringComparison.Ordinal)
                 && factorySource.Contains("VisionPipelineStepBuilder.FromFilterProperty", StringComparison.Ordinal)
-                && documentBuilderSource.Contains("ExecutePropertyTool", StringComparison.Ordinal)
+                && documentBuilderSource.Contains("view => CapturePropertyTool(view, createProperty, createTool)", StringComparison.Ordinal)
+                && documentBuilderSource.Contains("view.Dispatcher.VerifyAccess();", StringComparison.Ordinal)
+                && documentBuilderSource.Contains("TProperty property = createProperty(view);", StringComparison.Ordinal)
+                && documentBuilderSource.Contains("source => ExecutePropertyTool(source, property, createTool)", StringComparison.Ordinal)
+                && documentBuilderSource.Contains("ExecutePropertyTool(Mat source, TProperty property, Func<TProperty, IVisionTool> createTool)", StringComparison.Ordinal)
+                && documentBuilderSource.Contains("capturePreview: descriptor.CapturePreview", StringComparison.Ordinal)
                 && documentBuilderSource.Contains("OpenVisionNativeSingleInputToolDocumentBuilder.Create", StringComparison.Ordinal)
                 && pipelineSource.Contains("FromFilterProperty", StringComparison.Ordinal),
             results);

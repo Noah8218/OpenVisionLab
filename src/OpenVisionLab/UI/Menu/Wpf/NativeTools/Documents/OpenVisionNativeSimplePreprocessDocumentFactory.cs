@@ -1,6 +1,4 @@
 using OpenVisionLab.Vision2D.Pipeline;
-using OpenVisionLab.Vision2D.Tool;
-using OpenCvSharp;
 using OpenVisionLab.Core;
 using System;
 
@@ -9,77 +7,79 @@ namespace OpenVisionLab
     internal static class OpenVisionNativeSimplePreprocessDocumentFactory
     {
         // Builds SimplePreprocess-based native documents; UI rules, preview execution, and properties live in separate helpers.
-        internal static OpenVisionNativeToolDocument CreateEdgeDetectionDocument(IDisplayManager displayManager)
+        internal static OpenVisionNativeToolDocument CreateEdgeDetectionDocument(IDisplayManager displayManager, bool forWorkbench = false)
         {
             return CreateSimplePreprocessDocument(
                 displayManager,
                 CreateDescriptor(
                     "EdgeDetection",
                     OpenVisionNativeSimplePreprocessViewConfigurator.ConfigureEdgeDetectionView,
-                    OpenVisionNativeSimplePreprocessPreviewExecutor.ExecuteEdgeDetectionPreview,
+                    OpenVisionNativeSimplePreprocessPreviewExecutor.CaptureEdgeDetectionPreview,
                     (view, inputLayer, outputLayer) => VisionPipelineStepBuilder.FromEdgeDetectionProperty(
                         OpenVisionNativeSimplePreprocessPropertyFactory.CreateEdgeDetectionProperty(view),
                         "EdgeDetection",
                         inputLayer,
-                        outputLayer)));
+                        outputLayer)), forWorkbench);
         }
 
-        internal static OpenVisionNativeToolDocument CreateRotateScaleDocument(IDisplayManager displayManager)
+        internal static OpenVisionNativeToolDocument CreateRotateScaleDocument(IDisplayManager displayManager, bool forWorkbench = false)
         {
             return CreateSimplePreprocessDocument(
                 displayManager,
                 CreateDescriptor(
                     "RotateScale",
                     OpenVisionNativeSimplePreprocessViewConfigurator.ConfigureRotateScaleView,
-                    OpenVisionNativeSimplePreprocessPreviewExecutor.ExecuteRotateScalePreview,
+                    OpenVisionNativeSimplePreprocessPreviewExecutor.CaptureRotateScalePreview,
                     (view, inputLayer, outputLayer) => VisionPipelineStepBuilder.FromRotateScaleProperty(
                         OpenVisionNativeSimplePreprocessPropertyFactory.CreateRotateScaleProperty(view),
                         "RotateScale",
                         inputLayer,
-                        outputLayer)));
+                        outputLayer)), forWorkbench);
         }
 
-        internal static OpenVisionNativeToolDocument CreateMeanDocument(IDisplayManager displayManager)
+        internal static OpenVisionNativeToolDocument CreateMeanDocument(IDisplayManager displayManager, bool forWorkbench = false)
         {
-            return CreateSimplePreprocessDocument(
+            OpenVisionNativeToolDocument document = null;
+            document = CreateSimplePreprocessDocument(
                 displayManager,
                 CreateDescriptor(
                     "Mean",
                     OpenVisionNativeSimplePreprocessViewConfigurator.ConfigureMeanView,
-                    OpenVisionNativeSimplePreprocessPreviewExecutor.ExecuteMeanPreview,
+                    view => OpenVisionNativeSimplePreprocessPreviewExecutor.CaptureMeanPreview(view, document?.WorkbenchParameterStep),
                     (view, inputLayer, outputLayer) => VisionPipelineStepBuilder.FromProperty(
-                        OpenVisionNativeSimplePreprocessPropertyFactory.CreateMeanProperty(view),
+                        OpenVisionNativeSimplePreprocessPropertyFactory.CreateMeanProperty(view, document?.WorkbenchParameterStep),
                         inputLayer,
-                        outputLayer)));
+                        outputLayer)), forWorkbench);
+            return document;
         }
 
-        internal static OpenVisionNativeToolDocument CreateHsvDocument(IDisplayManager displayManager)
+        internal static OpenVisionNativeToolDocument CreateHsvDocument(IDisplayManager displayManager, bool forWorkbench = false)
         {
             return CreateSimplePreprocessDocument(
                 displayManager,
                 CreateDescriptor(
                     "HSV",
                     OpenVisionNativeSimplePreprocessViewConfigurator.ConfigureHsvView,
-                    OpenVisionNativeSimplePreprocessPreviewExecutor.ExecuteHsvPreview,
+                    OpenVisionNativeSimplePreprocessPreviewExecutor.CaptureHsvPreview,
                     null,
-                    normalizeSingleChannelInput: false));
+                    normalizeSingleChannelInput: false), forWorkbench);
         }
 
-        internal static OpenVisionNativeToolDocument CreateHistogramDocument(IDisplayManager displayManager)
+        internal static OpenVisionNativeToolDocument CreateHistogramDocument(IDisplayManager displayManager, bool forWorkbench = false)
         {
             return CreateSimplePreprocessDocument(
                 displayManager,
                 CreateDescriptor(
                     "Histogram",
                     OpenVisionNativeSimplePreprocessViewConfigurator.ConfigureHistogramView,
-                    OpenVisionNativeSimplePreprocessPreviewExecutor.ExecuteHistogramPreview,
-                    null));
+                    OpenVisionNativeSimplePreprocessPreviewExecutor.CaptureHistogramPreview,
+                    null), forWorkbench);
         }
 
         private static OpenVisionNativeSimplePreprocessToolDescriptor CreateDescriptor(
             string toolName,
             Action<SimplePreprocessToolWpfView> configureView,
-            Func<Mat, SimplePreprocessToolWpfView, VisionToolResult> executePreview,
+            Func<SimplePreprocessToolWpfView, OpenVisionNativePreviewOperation> capturePreview,
             Func<SimplePreprocessToolWpfView, string, string, VisionPipelineStep> createStep,
             bool normalizeSingleChannelInput = true)
         {
@@ -88,14 +88,14 @@ namespace OpenVisionLab
                 toolName,
                 toolName + "_Preview",
                 configureView,
-                executePreview,
+                capturePreview,
                 createStep,
                 normalizeSingleChannelInput);
         }
 
         private static OpenVisionNativeToolDocument CreateSimplePreprocessDocument(
             IDisplayManager displayManager,
-            OpenVisionNativeSimplePreprocessToolDescriptor descriptor)
+            OpenVisionNativeSimplePreprocessToolDescriptor descriptor, bool forWorkbench)
         {
             if (descriptor == null)
             {
@@ -106,22 +106,29 @@ namespace OpenVisionLab
             SimplePreprocessToolWpfView view = new SimplePreprocessToolWpfView();
             descriptor.ConfigureView(view);
             string settingsConfigName = OpenVisionNativeToolSettingsStore.CreateConfigName(descriptor.ToolName);
-            view.Parameters.ApplySettings(OpenVisionNativeToolSettingsStore.Load(settingsConfigName, new SimplePreprocessToolSettings()));
-            view.ParameterChanged += (sender, e) =>
-                OpenVisionNativeToolSettingsStore.Save(settingsConfigName, view.Parameters.CaptureSettings());
+            SimplePreprocessToolSettings defaults = view.Parameters.CaptureSettings();
+            view.Parameters.ApplySettings(forWorkbench ? OpenVisionNativeToolSettingsStore.LoadExisting(settingsConfigName, defaults)
+                : OpenVisionNativeToolSettingsStore.Load(settingsConfigName, defaults));
 
             Func<string, string, VisionPipelineStep> stepFactory = descriptor.CreateStep == null
                 ? null
                 : (inputLayer, outputLayer) => descriptor.CreateStep(view, inputLayer, outputLayer);
 
-            return OpenVisionNativeSingleInputToolDocumentBuilder.Create(
+            OpenVisionNativeToolDocument document = OpenVisionNativeSingleInputToolDocumentBuilder.Create(
                 displayManager,
                 view,
                 descriptor.ToolName,
                 descriptor.DefaultOutputLayer,
-                descriptor.ExecutePreview,
+                null,
                 stepFactory == null ? null : (activeView, inputLayer, outputLayer) => stepFactory(inputLayer, outputLayer),
-                descriptor.NormalizeSingleChannelInput);
+                descriptor.NormalizeSingleChannelInput,
+                descriptor.CapturePreview);
+            view.ParameterChanged += (sender, e) => document.RecordParameterChange(() => OpenVisionNativeToolSettingsStore.Save(settingsConfigName, view.Parameters.CaptureSettings()));
+            document.ConfigureParameterState(forWorkbench, () => view.Parameters.CaptureSettings(),
+                snapshot => view.Parameters.ApplySettings((SimplePreprocessToolSettings)snapshot),
+                context => OpenVisionNativeToolSettingsStore.LoadExisting(settingsConfigName, defaults, context.Name),
+                step => view.Parameters.ApplySettings(VisionPipelineStepPropertyMapper.CreateSimplePreprocessSettings(step, defaults)), createDefaults: () => defaults);
+            return document;
         }
 
     }

@@ -859,6 +859,29 @@ namespace OpenVisionLab
 
         public int ReviewQueueCount => SampleResults.Count(result => result?.IsInReviewQueue == true);
 
+        private static string HistoryUnknown => OpenVisionRecipeText.Local("미기록", "Not recorded");
+        public string HistoryStarted => DateTime.TryParse(RunSummary?.StartedAt, out DateTime started) ? started.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.CurrentCulture) : HistoryUnknown;
+        public string HistoryPipeline => RunSummary?.PipelineName ?? HistoryUnknown;
+        public string HistorySource => OpenVisionRecipeText.Local("저장 버전 · 저장본/작업본 구분 미기록", "Revision · source kind not recorded");
+        public string HistorySnapshot => string.IsNullOrWhiteSpace(RunSummary?.ExecutionProvenance?.OriginalPipelineSha256)
+            ? OpenVisionRecipeText.Local("과거 설정 SHA 미기록", "Historical snapshot SHA not recorded")
+            : "SHA " + RunSummary.ExecutionProvenance.OriginalPipelineSha256;
+        public int HistoryCount => RunSummary?.InputSampleCount > 0 ? RunSummary.InputSampleCount : RunSummary?.TotalCount ?? 0;
+        private bool HasHistoryOutcomes => RunSummary?.Results?.Count > 0 && RunSummary.Results.All(result =>
+            VisionPipelineBatchOutcomeContract.HasExplicitOutcome(result)
+            && (string.Equals(result.ExecutionState, VisionPipelineBatchOutcomeContract.ErrorState, StringComparison.Ordinal)
+                || VisionPipelineBatchOutcomeContract.TryResolveActualSuccess(result, out _)));
+        public string HistoryOk => HasHistoryOutcomes ? RunSummary.Results.Count(result => VisionPipelineBatchOutcomeContract.TryResolveActualSuccess(result, out bool ok) && ok).ToString(CultureInfo.InvariantCulture) : HistoryUnknown;
+        public string HistoryNg => HasHistoryOutcomes ? RunSummary.Results.Count(result => VisionPipelineBatchOutcomeContract.TryResolveActualSuccess(result, out bool ok) && !ok).ToString(CultureInfo.InvariantCulture) : HistoryUnknown;
+        public string HistoryError => HasHistoryOutcomes ? ExecutionErrorCount.ToString(CultureInfo.InvariantCulture) : HistoryUnknown;
+        public string HistoryMatch => HasHistoryOutcomes && IsJudgmentSuite ? JudgmentCorrectCount.ToString(CultureInfo.InvariantCulture) + "/" + SampleResults.Count(result => result.HasExpectedOutcome).ToString(CultureInfo.InvariantCulture) : HistoryUnknown;
+        public string HistoryFalseAccept => HasHistoryOutcomes && IsJudgmentSuite ? FalseAcceptCount.ToString(CultureInfo.InvariantCulture) : HistoryUnknown;
+        public string HistoryFalseReject => HasHistoryOutcomes && IsJudgmentSuite ? FalseRejectCount.ToString(CultureInfo.InvariantCulture) : HistoryUnknown;
+        public string HistoryAverage => Statistics.TimingCount > 0 ? Statistics.AverageMilliseconds.ToString("0.00", CultureInfo.CurrentCulture) + " ms" : HistoryUnknown;
+        public string HistoryP95 => Statistics.TimingCount > 0 ? Statistics.P95Milliseconds.ToString("0.00", CultureInfo.CurrentCulture) + " ms" : HistoryUnknown;
+        public string HistoryCoverage => OpenVisionRecipeText.Local("기록된 결과 ", "Recorded results ") + (RunSummary?.Results?.Count ?? 0) + "/" + HistoryCount
+            + OpenVisionRecipeText.Local(" · 시간 ", " · Timing ") + Statistics.TimingCount + "/" + (RunSummary?.Results?.Count ?? 0);
+
         public string ReviewQueuePolicy => RunSummary?.ReviewQueuePolicy ?? string.Empty;
 
         public string ReviewQueueSha256 => RunSummary?.ReviewQueueSha256 ?? string.Empty;

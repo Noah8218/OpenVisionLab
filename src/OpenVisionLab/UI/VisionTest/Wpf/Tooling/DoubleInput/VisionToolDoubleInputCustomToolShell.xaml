@@ -11,29 +11,54 @@
             <ResourceDictionary.MergedDictionaries>
                 <local:SharedResourceDictionary Source="../Presentation/VisionToolWpfTheme.xaml" />
             </ResourceDictionary.MergedDictionaries>
+            <ContextMenu x:Key="WorkbenchToolAddMenu" x:Shared="False"
+                         Background="{DynamicResource OpenVision.Workbench.RaisedBrush}" Foreground="{DynamicResource OpenVision.Workbench.TextBrush}"
+                         AutomationProperties.AutomationId="WorkbenchToolAddMenu">
+                <ContextMenu.Resources><Style TargetType="MenuItem" BasedOn="{StaticResource OpenVision.Workbench.MenuItemStyle}" /></ContextMenu.Resources>
+                <MenuItem Header="{Binding AddAfterText}" Command="{Binding AddAfterCommand}" InputGestureText="Ctrl+Enter" />
+                <MenuItem Header="{Binding [Workbench.Tool.AddBefore]}" Command="{Binding AddBeforeCommand}" />
+                <MenuItem Header="{Binding [Workbench.Tool.AddEnd]}" Command="{Binding AddEndCommand}" />
+            </ContextMenu>
+            <DataTemplate x:Key="VisionTool.LayerNameTemplate">
+                <TextBlock x:Name="layerNameText"
+                           Text="{Binding}"
+                           TextWrapping="Wrap"
+                           TextTrimming="None"
+                           FontWeight="Normal"
+                           Margin="0,4" />
+            </DataTemplate>
+            <Style x:Key="VisionTool.InputLayerComboBoxStyle" TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+                <Setter Property="MinWidth" Value="0" />
+                <Setter Property="MinHeight" Value="32" />
+                <Setter Property="Height" Value="Auto" />
+                <Setter Property="ItemTemplate" Value="{StaticResource VisionTool.LayerNameTemplate}" />
+                <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+            </Style>
+            <Style x:Key="VisionTool.OutputLayerComboBoxStyle" TargetType="ComboBox" BasedOn="{StaticResource VisionTool.LayerComboBoxStyle}">
+                <Setter Property="MinWidth" Value="0" />
+                <Setter Property="ItemTemplate" Value="{StaticResource VisionTool.LayerNameTemplate}" />
+                <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+            </Style>
         </ResourceDictionary>
     </UserControl.Resources>
 
     <Grid x:Name="shellRoot"
           Background="{StaticResource VisionTool.SurfaceBrush}"
           Margin="14">
+        <Grid.RowDefinitions>
+            <RowDefinition x:Name="routeRow" Height="0" />
+            <RowDefinition x:Name="routeGapRow" Height="0" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition x:Name="previewColumn" Width="390" />
             <ColumnDefinition x:Name="flowColumn" Width="16" />
             <ColumnDefinition x:Name="parameterColumn" Width="*" />
         </Grid.ColumnDefinitions>
-        <Grid.RowDefinitions>
-            <RowDefinition x:Name="rowInputA" Height="*" />
-            <RowDefinition x:Name="rowInputBGap" Height="8" />
-            <RowDefinition x:Name="rowInputB" Height="*" />
-            <RowDefinition x:Name="rowOutputGap" Height="8" />
-            <RowDefinition x:Name="rowOutput" Height="*" />
-        </Grid.RowDefinitions>
-
         <Grid x:Name="flowRail"
-              Grid.Row="0"
-              Grid.RowSpan="5"
               Grid.Column="1"
+              Grid.RowSpan="2"
               IsHitTestVisible="False">
             <Rectangle Width="2"
                        Margin="0,24"
@@ -73,139 +98,158 @@
                      Fill="{StaticResource VisionTool.FlowNodeBrush}" />
         </Grid>
 
-        <GroupBox x:Name="gbInputA"
-                  Grid.Row="0"
-                  Grid.Column="0"
-                  Header="Input A"
-                  Padding="8"
-                  AutomationProperties.AutomationId="gbInputA">
-            <Grid>
+        <ScrollViewer x:Name="previewScrollViewer" Grid.RowSpan="2"
+                      Grid.Column="0"
+                      HorizontalScrollBarVisibility="Disabled"
+                      VerticalScrollBarVisibility="Auto"
+                      Focusable="False">
+            <Grid x:Name="routeGrid" MinHeight="{Binding ActualHeight, ElementName=previewScrollViewer}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition x:Name="routeInputGapColumn" Width="0" />
+                    <ColumnDefinition x:Name="routeInputBColumn" Width="0" />
+                </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="8" />
-                    <RowDefinition Height="32" />
+                    <RowDefinition x:Name="rowInputA" Height="*" />
+                    <RowDefinition x:Name="rowInputBGap" Height="8" />
+                    <RowDefinition x:Name="rowInputB" Height="*" />
+                    <RowDefinition x:Name="rowOutputGap" Height="8" />
+                    <RowDefinition x:Name="rowOutput" Height="*" />
                 </Grid.RowDefinitions>
-                <Border x:Name="bdInputAPreview"
-                        Grid.Row="0"
-                        AutomationProperties.AutomationId="VisionToolInputAPreviewFrame"
-                        Style="{StaticResource VisionTool.PreviewFrameStyle}">
-                    <local:VisionToolInlinePreviewSlot x:Name="imgInputA"
-                                                       AutomationProperties.AutomationId="VisionToolInputAPreviewSlot" />
-                </Border>
-                <Grid Grid.Row="2">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="8" />
-                        <ColumnDefinition Width="36" />
-                    </Grid.ColumnDefinitions>
-                    <ComboBox x:Name="cbInputA" Grid.Column="0" />
-                    <Button x:Name="btnLoadInputAImage"
-                            Grid.Column="2"
-                            Style="{StaticResource VisionTool.IconButtonStyle}"
-                            ToolTip="Load input A image">
-                        <iconPacks:PackIconMaterial Kind="ImagePlusOutline"
-                                                    Width="19"
-                                                    Height="19"
-                                                    HorizontalAlignment="Center"
-                                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
-                    </Button>
-                </Grid>
-            </Grid>
-        </GroupBox>
+                <GroupBox x:Name="gbInputA"
+                          Grid.Row="0"
+                          Header="Input A"
+                          Padding="8"
+                          AutomationProperties.AutomationId="gbInputA">
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition x:Name="inputALoadGapColumn" Width="0" /><ColumnDefinition x:Name="inputALoadColumn" Width="0" /></Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition x:Name="inputAPreviewRow" Height="*" />
+                            <RowDefinition x:Name="inputAPreviewGapRow" Height="8" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Border x:Name="bdInputAPreview"
+                                Grid.Row="0"
+                                MinHeight="64"
+                                AutomationProperties.AutomationId="VisionToolInputAPreviewFrame"
+                                Style="{StaticResource VisionTool.PreviewFrameStyle}">
+                            <local:VisionToolInlinePreviewSlot x:Name="imgInputA"
+                                                               AutomationProperties.AutomationId="VisionToolInputAPreviewSlot" />
+                        </Border>
+                        <ComboBox x:Name="cbInputA" Grid.Row="2" Style="{StaticResource VisionTool.InputLayerComboBoxStyle}" />
+                        <Button x:Name="btnLoadInputAImage"
+                                Grid.Row="0"
+                                Width="32"
+                                Height="32"
+                                Margin="4"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Top"
+                                Style="{StaticResource VisionTool.IconButtonStyle}"
+                                ToolTip="Load input A image">
+                            <iconPacks:PackIconMaterial Kind="ImagePlusOutline"
+                                                        Width="19"
+                                                        Height="19"
+                                                        HorizontalAlignment="Center"
+                                                        Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                        </Button>
+                    </Grid>
+                </GroupBox>
 
-        <GroupBox x:Name="gbInputB"
-                  Grid.Row="2"
-                  Grid.Column="0"
-                  Header="Input B"
-                  Padding="8"
-                  AutomationProperties.AutomationId="gbInputB">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="8" />
-                    <RowDefinition Height="32" />
-                </Grid.RowDefinitions>
-                <Border x:Name="bdInputBPreview"
-                        Grid.Row="0"
-                        AutomationProperties.AutomationId="VisionToolInputBPreviewFrame"
-                        Style="{StaticResource VisionTool.PreviewFrameStyle}">
-                    <local:VisionToolInlinePreviewSlot x:Name="imgInputB"
-                                                       AutomationProperties.AutomationId="VisionToolInputBPreviewSlot" />
-                </Border>
-                <Grid Grid.Row="2">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="8" />
-                        <ColumnDefinition Width="36" />
-                    </Grid.ColumnDefinitions>
-                    <ComboBox x:Name="cbInputB" Grid.Column="0" />
-                    <Button x:Name="btnLoadInputBImage"
-                            Grid.Column="2"
-                            Style="{StaticResource VisionTool.IconButtonStyle}"
-                            ToolTip="Load input B image">
-                        <iconPacks:PackIconMaterial Kind="ImagePlusOutline"
-                                                    Width="19"
-                                                    Height="19"
-                                                    HorizontalAlignment="Center"
-                                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
-                    </Button>
-                </Grid>
-            </Grid>
-        </GroupBox>
+                <GroupBox x:Name="gbInputB"
+                          Grid.Row="2"
+                          Header="Input B"
+                          Padding="8"
+                          AutomationProperties.AutomationId="gbInputB">
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition x:Name="inputBLoadGapColumn" Width="0" /><ColumnDefinition x:Name="inputBLoadColumn" Width="0" /></Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition x:Name="inputBPreviewRow" Height="*" />
+                            <RowDefinition x:Name="inputBPreviewGapRow" Height="8" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Border x:Name="bdInputBPreview"
+                                Grid.Row="0"
+                                MinHeight="64"
+                                AutomationProperties.AutomationId="VisionToolInputBPreviewFrame"
+                                Style="{StaticResource VisionTool.PreviewFrameStyle}">
+                            <local:VisionToolInlinePreviewSlot x:Name="imgInputB"
+                                                               AutomationProperties.AutomationId="VisionToolInputBPreviewSlot" />
+                        </Border>
+                        <ComboBox x:Name="cbInputB" Grid.Row="2" Style="{StaticResource VisionTool.InputLayerComboBoxStyle}" />
+                        <Button x:Name="btnLoadInputBImage"
+                                Grid.Row="0"
+                                Width="32"
+                                Height="32"
+                                Margin="4"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Top"
+                                Style="{StaticResource VisionTool.IconButtonStyle}"
+                                ToolTip="Load input B image">
+                            <iconPacks:PackIconMaterial Kind="ImagePlusOutline"
+                                                        Width="19"
+                                                        Height="19"
+                                                        HorizontalAlignment="Center"
+                                                        Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                        </Button>
+                    </Grid>
+                </GroupBox>
 
-        <GroupBox x:Name="gbOutputLayer"
-                  Grid.Row="4"
-                  Grid.Column="0"
-                  Header="결과 쓰기 레이어"
-                  Padding="8"
-                  AutomationProperties.AutomationId="gbOutputLayer">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="8" />
-                    <RowDefinition Height="32" />
-                </Grid.RowDefinitions>
-                <Border x:Name="bdOutputPreview"
-                        Grid.Row="0"
-                        AutomationProperties.AutomationId="VisionToolOutputPreviewFrame"
-                        Style="{StaticResource VisionTool.PreviewFrameStyle}">
-                    <local:VisionToolInlinePreviewSlot x:Name="imgOutputPreview"
-                                                       AutomationProperties.AutomationId="VisionToolOutputPreviewSlot" />
-                </Border>
-                <Grid Grid.Row="2">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="8" />
-                        <ColumnDefinition Width="36" />
-                    </Grid.ColumnDefinitions>
-                    <ComboBox x:Name="cbOutputLayer" Grid.Column="0" />
-                    <Button x:Name="btnCreateOutputLayer"
-                            Grid.Column="2"
-                            Style="{StaticResource VisionTool.IconButtonStyle}"
-                            ToolTip="Create new output layer">
-                        <iconPacks:PackIconMaterial Kind="ImagePlusOutline"
-                                                    Width="19"
-                                                    Height="19"
-                                                    HorizontalAlignment="Center"
-                                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
-                    </Button>
-                </Grid>
+                <GroupBox x:Name="gbOutputLayer"
+                          Grid.Row="4"
+                          Header="결과 쓰기 레이어"
+                          Padding="8"
+                          AutomationProperties.AutomationId="gbOutputLayer">
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition x:Name="outputLoadGapColumn" Width="0" /><ColumnDefinition x:Name="outputLoadColumn" Width="0" /></Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition x:Name="outputPreviewRow" Height="*" />
+                            <RowDefinition x:Name="outputPreviewGapRow" Height="8" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Border x:Name="bdOutputPreview"
+                                Grid.Row="0"
+                                MinHeight="64"
+                                AutomationProperties.AutomationId="VisionToolOutputPreviewFrame"
+                                Style="{StaticResource VisionTool.PreviewFrameStyle}">
+                            <local:VisionToolInlinePreviewSlot x:Name="imgOutputPreview"
+                                                               AutomationProperties.AutomationId="VisionToolOutputPreviewSlot" />
+                        </Border>
+                        <ComboBox x:Name="cbOutputLayer" Grid.Row="2" Style="{StaticResource VisionTool.OutputLayerComboBoxStyle}" />
+                        <TextBlock x:Name="txtOutputLayerName"
+                                   Grid.Row="3"
+                                   Text="{Binding Text, ElementName=cbOutputLayer}"
+                                   TextWrapping="Wrap"
+                                   TextTrimming="None"
+                                   FontWeight="Normal"
+                                   Margin="0,4,0,0"
+                                   AutomationProperties.Name="{Binding Text, ElementName=cbOutputLayer}" />
+                        <Button x:Name="btnCreateOutputLayer"
+                                Grid.Row="0"
+                                Width="32"
+                                Height="32"
+                                Margin="4"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Top"
+                                Style="{StaticResource VisionTool.IconButtonStyle}"
+                                ToolTip="Create new output layer">
+                            <iconPacks:PackIconMaterial Kind="ImagePlusOutline"
+                                                        Width="19"
+                                                        Height="19"
+                                                        HorizontalAlignment="Center"
+                                                        Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                        </Button>
+                    </Grid>
+                </GroupBox>
             </Grid>
-        </GroupBox>
+        </ScrollViewer>
 
         <Grid x:Name="parameterPanel"
-              Grid.Row="0"
-              Grid.RowSpan="5"
               Grid.Column="2">
             <Grid.RowDefinitions>
                 <RowDefinition x:Name="titleRow" Height="Auto" />
                 <RowDefinition x:Name="titleGapRow" Height="14" />
                 <RowDefinition x:Name="parameterContentRow" Height="*" />
-                <RowDefinition x:Name="summaryGapRow" Height="12" />
-                <RowDefinition x:Name="summaryRow" Height="Auto" />
-                <RowDefinition x:Name="statusRow" Height="Auto" />
-                <RowDefinition x:Name="actionGapRow" Height="14" />
-                <RowDefinition x:Name="actionRow" Height="Auto" />
             </Grid.RowDefinitions>
 
             <Border Grid.Row="0"
@@ -230,6 +274,7 @@
                                Grid.Column="2"
                                FontSize="14"
                                FontWeight="SemiBold" />
+                    <StackPanel Grid.Column="4" Orientation="Horizontal">
                     <Button x:Name="btnLearnTopic"
                             Grid.Column="4"
                             MinWidth="104"
@@ -253,6 +298,14 @@
                                        Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                         </StackPanel>
                     </Button>
+                    <Button x:Name="btnParameterGuide" Width="28" Height="28" Margin="4,0,0,0" Padding="0"
+                            Click="ParameterGuideButton_Click" Style="{StaticResource VisionTool.IconButtonStyle}"
+                            Visibility="{Binding ParameterGuideVisibility, RelativeSource={RelativeSource AncestorType=local:VisionToolDoubleInputCustomToolShell}}"
+                            AutomationProperties.AutomationId="VisionToolParameterGuideButton">
+                        <iconPacks:PackIconMaterial Kind="HelpCircleOutline" Width="14" Height="14"
+                                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+                    </Button>
+                    </StackPanel>
                 </Grid>
             </Border>
 
@@ -261,9 +314,21 @@
                               Content="{Binding ParameterContent, RelativeSource={RelativeSource AncestorType=local:VisionToolDoubleInputCustomToolShell}}"
                               HorizontalAlignment="Stretch"
                               VerticalAlignment="Stretch" />
+        </Grid>
 
+        <Grid x:Name="footerPanel" Grid.Row="1" Grid.Column="2">
+            <Grid.RowDefinitions>
+                <RowDefinition x:Name="summaryGapRow" Height="12" />
+                <RowDefinition x:Name="summaryRow" Height="Auto" />
+                <RowDefinition x:Name="statusRow" Height="Auto" />
+                <RowDefinition x:Name="actionGapRow" Height="14" />
+                <RowDefinition x:Name="actionRow" Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="1">
+            <ContentControl x:Name="workbenchResultHost" ContentTemplate="{StaticResource VisionTool.WorkbenchResultTemplate}"
+                            Visibility="Collapsed" AutomationProperties.AutomationId="WorkbenchToolResult" />
             <Border x:Name="bdSummary"
-                    Grid.Row="4"
                     Background="{StaticResource VisionTool.HeaderBrush}"
                     BorderBrush="{StaticResource VisionTool.HeaderBorderBrush}"
                     BorderThickness="1"
@@ -273,17 +338,22 @@
                            TextTrimming="CharacterEllipsis" />
             </Border>
 
+            </StackPanel>
+
             <Border x:Name="bdStatus"
-                    Grid.Row="5"
+                    Grid.Row="2"
                     Background="{StaticResource VisionTool.PanelBrush}"
-                    BorderBrush="{StaticResource VisionTool.HeaderBorderBrush}"
                     BorderThickness="1"
                     Margin="0,8,0,0"
                     Padding="8,4">
                 <Border.Style>
                     <Style TargetType="{x:Type Border}">
                         <Setter Property="Visibility" Value="Visible" />
+                        <Setter Property="BorderBrush" Value="{StaticResource VisionTool.HeaderBorderBrush}" />
                         <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsKeyboardFocusWithin, ElementName=statusScrollViewer}" Value="True">
+                                <Setter Property="BorderBrush" Value="{StaticResource VisionTool.AccentBrush}" />
+                            </DataTrigger>
                             <DataTrigger Binding="{Binding Text, ElementName=txtStatus}" Value="">
                                 <Setter Property="Visibility" Value="Collapsed" />
                             </DataTrigger>
@@ -293,13 +363,26 @@
                         </Style.Triggers>
                     </Style>
                 </Border.Style>
-                <TextBlock x:Name="txtStatus"
-                           Foreground="{StaticResource VisionTool.SecondaryTextBrush}"
-                           MinHeight="14"
-                           TextTrimming="CharacterEllipsis" />
+                <ScrollViewer x:Name="statusScrollViewer" MaxHeight="56" KeyboardNavigation.IsTabStop="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <TextBlock x:Name="txtStatus"
+                               Foreground="{StaticResource VisionTool.SecondaryTextBrush}"
+                               MinHeight="14"
+                               TextWrapping="Wrap"
+                               TextTrimming="None"
+                               AutomationProperties.HelpText="{Binding Text, RelativeSource={RelativeSource Self}}" />
+                </ScrollViewer>
             </Border>
 
-            <Grid Grid.Row="7">
+            <Grid x:Name="actionPanel" Grid.Row="4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="4" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="4" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="0" />
+                    <ColumnDefinition Width="0" />
+                </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
                     <RowDefinition x:Name="rowAddPipelineAction" Height="40" />
                     <RowDefinition x:Name="rowRunPreviewGap" Height="8" />
@@ -307,16 +390,25 @@
                     <RowDefinition x:Name="rowRunOffsetGap" Height="0" />
                     <RowDefinition x:Name="rowRunOffsetAction" Height="0" />
                 </Grid.RowDefinitions>
-                <Button x:Name="btnAddPipeline"
+                <Button x:Name="btnWorkbenchDefaults" Grid.Column="0" Visibility="Collapsed" Height="34" Padding="8,2"
+                        Command="{Binding RestoreDefaultsCommand}" Style="{StaticResource OpenVision.Workbench.ButtonStyle}"
+                        IsVisibleChanged="WorkbenchStepActions_IsVisibleChanged" FontSize="12"
+                        AutomationProperties.AutomationId="WorkbenchToolDefaultsButton" AutomationProperties.Name="{Binding [Workbench.Tool.Defaults]}">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <iconPacks:PackIconMaterial Kind="Restore" Width="14" Height="14" Margin="0,0,5,0" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                        <TextBlock Text="{Binding [Workbench.Tool.Defaults]}" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                    </StackPanel>
+                </Button>
+                <Button x:Name="btnAddPipeline" Grid.ColumnSpan="5"
                         Grid.Row="0"
-                        AutomationProperties.AutomationId="VisionToolAddPipelineButton"
+                        Click="AddPipelineButton_Click" AutomationProperties.AutomationId="VisionToolAddPipelineButton"
                         AutomationProperties.Name="{Binding Text, ElementName=txtAddPipelineText}">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <iconPacks:PackIconMaterial Kind="PlaylistPlus" Width="16" Height="16" Margin="0,0,7,0" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                         <TextBlock x:Name="txtAddPipelineText" Text="Add Pipeline" FontWeight="SemiBold" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                     </StackPanel>
                 </Button>
-                <Button x:Name="btnRunPreview"
+                <Button x:Name="btnRunPreview" Grid.ColumnSpan="5"
                         AutomationProperties.AutomationId="VisionToolRunPreviewButton"
                         AutomationProperties.Name="{Binding Text, ElementName=txtRunPreviewText}"
                         Grid.Row="2"
@@ -324,16 +416,42 @@
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <iconPacks:PackIconMaterial Kind="Play" Width="16" Height="16" Margin="0,0,7,0" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                         <TextBlock x:Name="txtRunPreviewText" Text="Run Preview" FontWeight="SemiBold" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                        <TextBlock x:Name="txtWorkbenchRunShortcut" Text="F8" Visibility="Collapsed" FontSize="10.5" Margin="6,0,0,0" VerticalAlignment="Center" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                     </StackPanel>
                 </Button>
-                <Button x:Name="btnRunOffset"
+                <Button x:Name="btnRunOffset" Grid.ColumnSpan="5"
                         Grid.Row="4"
                         Style="{StaticResource VisionTool.PrimaryActionButtonStyle}">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <iconPacks:PackIconMaterial Kind="ArrowRight" Width="16" Height="16" Margin="0,0,7,0" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                         <TextBlock x:Name="txtRunOffsetText" Text="Run Offset" FontWeight="SemiBold" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                        <TextBlock x:Name="txtWorkbenchRunOffsetShortcut" Text="F8" Visibility="Collapsed" FontSize="10.5" Margin="6,0,0,0" VerticalAlignment="Center" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                     </StackPanel>
                 </Button>
+                <Grid x:Name="workbenchStepActions" Grid.Row="0" Grid.ColumnSpan="5" Visibility="Collapsed"
+                      IsVisibleChanged="WorkbenchStepActions_IsVisibleChanged">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="4" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Button x:Name="btnWorkbenchRevert" Grid.Column="0" Command="{Binding RevertCommand}" Height="34" Padding="8,2"
+                            Style="{StaticResource OpenVision.Workbench.ButtonStyle}"
+                            AutomationProperties.AutomationId="WorkbenchToolRevertButton" AutomationProperties.Name="{Binding [Workbench.Tool.Revert]}">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <iconPacks:PackIconMaterial Kind="Restore" Width="16" Height="16" Margin="0,0,6,0" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                            <TextBlock Text="{Binding [Workbench.Tool.Revert]}" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="btnWorkbenchRunTo" Grid.Column="2" Command="{Binding RunToCommand}" Height="34" Padding="8,2"
+                            Style="{StaticResource OpenVision.Workbench.ButtonStyle}"
+                            AutomationProperties.AutomationId="WorkbenchToolRunToButton" AutomationProperties.Name="{Binding [Workbench.Tool.RunTo]}">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <iconPacks:PackIconMaterial Kind="SkipNext" Width="16" Height="16" Margin="0,0,6,0" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                            <TextBlock Text="{Binding [Workbench.Tool.RunTo]}" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
             </Grid>
         </Grid>
     </Grid>

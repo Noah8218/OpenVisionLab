@@ -196,8 +196,11 @@ namespace System.Windows.Controls.WpfPropertyGrid
         private readonly Border searchEmptyOverlay;
         private readonly TextBlock searchEmptyMessage;
         private readonly HashSet<string> registeredPropertyEditors = new HashSet<string>();
+        private readonly ConditionalWeakTable<DependencyObject, Dictionary<DependencyProperty, object>> darkThemeOriginalValues = new ConditionalWeakTable<DependencyObject, Dictionary<DependencyProperty, object>>();
+        private readonly ConditionalWeakTable<Control, Style> appliedDarkStyles = new ConditionalWeakTable<Control, Style>();
         private bool suppressSelectedObjectsChanged;
         private bool suppressPropertyValueChanged;
+        private bool suppressRangeEditorChanges;
         private static readonly object originalResourceLock = new object();
         private static bool originalResourcesRegistered;
         private static readonly object browsabilityLock = new object();
@@ -214,8 +217,15 @@ namespace System.Windows.Controls.WpfPropertyGrid
                 new PropertyMetadata(null));
         private static readonly Lazy<ControlTemplate> SharedComboBoxTemplate =
             new Lazy<ControlTemplate>(() => CreateComboBoxTemplateCore(darkTheme: false));
+        private static readonly Lazy<ControlTemplate> SharedDarkComboBoxTemplate =
+            new Lazy<ControlTemplate>(() => CreateComboBoxTemplateCore(darkTheme: true));
         private static readonly Lazy<Style> SharedComboBoxItemStyle =
             new Lazy<Style>(() => CreateComboBoxItemStyleCore(compactDensity: false, darkTheme: false));
+        private static readonly ControlTemplate DarkSliderFilledTrackTemplate = CreateDarkSliderTrackButtonTemplate(BrushFromRgb(46, 196, 182));
+        private static readonly ControlTemplate DarkSliderEmptyTrackTemplate = CreateDarkSliderTrackButtonTemplate(BrushFromRgb(102, 113, 127));
+        private static readonly ControlTemplate DarkSliderThumbTemplate = CreateDarkSliderThumbTemplate();
+        private static readonly ControlTemplate DarkCheckBoxTemplate = CreateDarkCheckBoxTemplate();
+        private static readonly ControlTemplate DarkDialogButtonTemplate = CreateDarkDialogButtonTemplate();
         public static readonly DependencyProperty IsCompactDensityProperty =
             DependencyProperty.Register(
                 nameof(IsCompactDensity),
@@ -230,16 +240,26 @@ namespace System.Windows.Controls.WpfPropertyGrid
                 new PropertyMetadata(PropertyGridThemeVariant.Default, OnThemeVariantChanged));
         private bool languageChangedSubscribed;
         private bool normalizeScheduled;
+        private ScrollViewer horizontalViewport;
+        private double editorColumnMinimum = 160D;
+        private int normalizationSession;
+        private readonly ConditionalWeakTable<TextBlock, object[]> originalNameLayout = new ConditionalWeakTable<TextBlock, object[]>();
         private bool searchFeedbackUpdateScheduled;
         private bool metadataCacheClearPending;
         private string selectedPropertyName = string.Empty;
+        private TextBox focusedRangeEditorTextBox;
+        private string focusedRangeEditorOriginalText;
 
         public PropertyGrid()
         {
             EnsureOriginalWpfResources();
             innerPropertyGrid = new WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyGrid();
+            innerPropertyGrid.SetBinding(Control.FontFamilyProperty, new Binding(nameof(FontFamily)) { Source = this });
             propertyValueChangeSubscription = new PropertyGridPropertyValueChangeSubscription(
-                (property, oldValue, newValue) => RaisePropertyValueChanged(property, oldValue, newValue));
+                (property, oldValue, newValue) =>
+                {
+                    if (!object.Equals(oldValue, newValue)) RaisePropertyValueChanged(property, oldValue, newValue);
+                });
             ApplyBridgeDensity();
 
             Grid contentHost = new Grid();
@@ -288,13 +308,37 @@ namespace System.Windows.Controls.WpfPropertyGrid
                 new KeyboardFocusChangedEventHandler(InnerPropertyGrid_GotKeyboardFocus),
                 true);
 
+            innerPropertyGrid.PreviewKeyDown += InnerPropertyGrid_PreviewKeyDown;
+
             SubscribeLanguageChanged();
             Loaded += (sender, e) =>
             {
                 SubscribeLanguageChanged();
+                normalizationSession++;
+                normalizeScheduled = false;
+                if (childParameterPredicate != null)
+                {
+                    for (DependencyObject parent = GetParent(this); parent != null; parent = GetParent(parent))
+                    {
+                        if (parent is not ScrollViewer viewport || viewport.HorizontalScrollBarVisibility == ScrollBarVisibility.Disabled) continue;
+                        if (horizontalViewport != null) horizontalViewport.SizeChanged -= HorizontalViewport_SizeChanged;
+                        horizontalViewport = viewport;
+                        horizontalViewport.SizeChanged += HorizontalViewport_SizeChanged;
+                        break;
+                    }
+                }
                 NormalizeInnerEditorControls();
             };
-            Unloaded += (sender, e) => UnsubscribeLanguageChanged();
+            Unloaded += (sender, e) =>
+            {
+                UnsubscribeLanguageChanged();
+                normalizationSession++;
+                normalizeScheduled = false;
+                if (horizontalViewport != null) horizontalViewport.SizeChanged -= HorizontalViewport_SizeChanged;
+                horizontalViewport = null;
+                RestoreToolFormLayout();
+            };
+            SizeChanged += (sender, e) => { if (IsLoaded && childParameterPredicate != null && horizontalViewport == null && e.WidthChanged) ScheduleNormalizeInnerEditorControls(); };
         }
 
         public bool IsCompactDensity
@@ -339,8 +383,8 @@ namespace System.Windows.Controls.WpfPropertyGrid
             bool darkTheme = ThemeVariant == PropertyGridThemeVariant.Dark;
             ApplyBridgeVisualStyle(innerPropertyGrid.Resources, compactDensity, darkTheme);
             ApplyBridgeSurfaceStyle(innerPropertyGrid, compactDensity, darkTheme);
-            innerPropertyGrid.ItemsBackground = darkTheme ? BrushFromRgb(14, 32, 38) : BrushFromRgb(255, 255, 255);
-            innerPropertyGrid.ItemsForeground = darkTheme ? BrushFromRgb(215, 239, 242) : BrushFromRgb(39, 54, 74);
+            innerPropertyGrid.ItemsBackground = darkTheme ? BrushFromRgb(20, 23, 29) : BrushFromRgb(255, 255, 255);
+            innerPropertyGrid.ItemsForeground = darkTheme ? BrushFromRgb(232, 235, 241) : BrushFromRgb(39, 54, 74);
             innerPropertyGrid.InvalidateMeasure();
             innerPropertyGrid.InvalidateArrange();
             ScheduleNormalizeInnerEditorControls();
@@ -354,9 +398,9 @@ namespace System.Windows.Controls.WpfPropertyGrid
             }
 
             bool darkTheme = ThemeVariant == PropertyGridThemeVariant.Dark;
-            searchEmptyOverlay.Background = darkTheme ? BrushFromRgb(16, 36, 42) : BrushFromRgb(245, 250, 252);
-            searchEmptyOverlay.BorderBrush = darkTheme ? BrushFromRgb(76, 135, 144) : BrushFromRgb(190, 211, 225);
-            searchEmptyMessage.Foreground = darkTheme ? BrushFromRgb(168, 203, 209) : BrushFromRgb(66, 91, 112);
+            searchEmptyOverlay.Background = darkTheme ? BrushFromRgb(27, 31, 39) : BrushFromRgb(245, 250, 252);
+            searchEmptyOverlay.BorderBrush = darkTheme ? BrushFromRgb(102, 113, 127) : BrushFromRgb(190, 211, 225);
+            searchEmptyMessage.Foreground = darkTheme ? BrushFromRgb(174, 182, 195) : BrushFromRgb(66, 91, 112);
         }
 
         private static void EnsureOriginalWpfResources()
@@ -526,9 +570,9 @@ namespace System.Windows.Controls.WpfPropertyGrid
                 return;
             }
 
-            control.Background = darkTheme ? BrushFromRgb(11, 21, 25) : BrushFromRgb(238, 244, 250);
-            control.Foreground = darkTheme ? BrushFromRgb(215, 239, 242) : BrushFromRgb(39, 54, 74);
-            control.BorderBrush = darkTheme ? BrushFromRgb(56, 83, 92) : BrushFromRgb(194, 210, 226);
+            control.Background = darkTheme ? BrushFromRgb(22, 25, 32) : BrushFromRgb(238, 244, 250);
+            control.Foreground = darkTheme ? BrushFromRgb(232, 235, 241) : BrushFromRgb(39, 54, 74);
+            control.BorderBrush = darkTheme ? BrushFromRgb(38, 43, 52) : BrushFromRgb(194, 210, 226);
             control.BorderThickness = new Thickness(1);
             control.Padding = new Thickness(compactDensity ? 1D : 2D);
         }
@@ -536,25 +580,85 @@ namespace System.Windows.Controls.WpfPropertyGrid
         private static Style CreateTextBoxStyle(bool compactDensity, bool darkTheme)
         {
             Style style = new Style(typeof(TextBox));
-            style.Setters.Add(new Setter(Control.FontFamilyProperty, new FontFamily("Segoe UI")));
             style.Setters.Add(new Setter(Control.FontSizeProperty, 12D));
-            style.Setters.Add(new Setter(Control.ForegroundProperty, darkTheme ? BrushFromRgb(215, 239, 242) : BrushFromRgb(22, 64, 103)));
-            style.Setters.Add(new Setter(Control.BackgroundProperty, darkTheme ? BrushFromRgb(14, 32, 38) : BrushFromRgb(250, 252, 253)));
-            style.Setters.Add(new Setter(Control.BorderBrushProperty, darkTheme ? BrushFromRgb(76, 135, 144) : BrushFromRgb(175, 197, 221)));
+            style.Setters.Add(new Setter(Control.ForegroundProperty, darkTheme ? BrushFromRgb(232, 235, 241) : BrushFromRgb(22, 64, 103)));
+            style.Setters.Add(new Setter(Control.BackgroundProperty, darkTheme ? BrushFromRgb(20, 23, 29) : BrushFromRgb(250, 252, 253)));
+            style.Setters.Add(new Setter(Control.BorderBrushProperty, darkTheme ? BrushFromRgb(88, 101, 119) : BrushFromRgb(175, 197, 221)));
             style.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
             style.Setters.Add(new Setter(Control.PaddingProperty, compactDensity ? new Thickness(6, 2, 6, 2) : new Thickness(8, 3, 8, 3)));
             style.Setters.Add(new Setter(FrameworkElement.MarginProperty, compactDensity ? new Thickness(0, 1, 0, 1) : new Thickness(0, 2, 0, 2)));
             return style;
         }
 
+
+        private void ApplyDarkControlStateStyle(Control control)
+        {
+            if (appliedDarkStyles.TryGetValue(control, out Style applied) && ReferenceEquals(control.Style, applied)) return;
+            Dictionary<DependencyProperty, object> originals = darkThemeOriginalValues.GetOrCreateValue(control);
+            BindingBase binding = BindingOperations.GetBindingBase(control, FrameworkElement.StyleProperty);
+            originals[FrameworkElement.StyleProperty] = binding != null ? (object)binding
+                : control.ReadLocalValue(FrameworkElement.StyleProperty) == DependencyProperty.UnsetValue ? DependencyProperty.UnsetValue : control.Style;
+            Style style = control is TextBox ? CreateDarkTextBoxStyle(control.Style) : CreateDarkControlStateStyle(control);
+            control.SetCurrentValue(FrameworkElement.StyleProperty, style);
+            appliedDarkStyles.Remove(control);
+            appliedDarkStyles.Add(control, style);
+        }
+
+        private static Style CreateDarkControlStateStyle(Control control)
+        {
+            Style style = new Style(control.Style?.TargetType ?? control.GetType(), control.Style);
+            style.Setters.Add(new Setter(Control.ForegroundProperty, BrushFromRgb(232, 235, 241)));
+            style.Setters.Add(new Setter(UIElement.OpacityProperty, 1D));
+            if (control is ToggleButton && control.Name == "ExpanderToggleButton")
+            {
+                FrameworkElementFactory cue = new FrameworkElementFactory(typeof(Border));
+                cue.SetValue(Border.BorderBrushProperty, BrushFromRgb(46, 196, 182));
+                cue.SetValue(Border.BorderThicknessProperty, new Thickness(1));
+                cue.SetValue(Border.CornerRadiusProperty, new CornerRadius(3));
+                cue.SetValue(UIElement.IsHitTestVisibleProperty, false);
+                Style focusVisual = new Style(typeof(Control));
+                focusVisual.Setters.Add(new Setter(Control.TemplateProperty, new ControlTemplate(typeof(Control)) { VisualTree = cue }));
+                style.Setters.Add(new Setter(Control.FocusVisualStyleProperty, focusVisual));
+            }
+            Trigger disabled = new Trigger { Property = UIElement.IsEnabledProperty, Value = false };
+            disabled.Setters.Add(new Setter(Control.ForegroundProperty, BrushFromRgb(133, 142, 160)));
+            disabled.Setters.Add(new Setter(UIElement.OpacityProperty, 1D));
+            style.Triggers.Add(disabled);
+            return style;
+        }
+
+        private static Style CreateDarkTextBoxStyle(Style basedOn)
+        {
+            Style style = new Style(basedOn?.TargetType ?? typeof(TextBox), basedOn);
+            style.Setters.Add(new Setter(Control.ForegroundProperty, BrushFromRgb(232, 235, 241)));
+            style.Setters.Add(new Setter(Control.BackgroundProperty, BrushFromRgb(14, 17, 21)));
+            style.Setters.Add(new Setter(Control.BorderBrushProperty, BrushFromRgb(88, 101, 119)));
+            Trigger focus = new Trigger { Property = UIElement.IsKeyboardFocusedProperty, Value = true };
+            focus.Setters.Add(new Setter(Control.BorderBrushProperty, BrushFromRgb(46, 196, 182)));
+            style.Triggers.Add(focus);
+            Trigger readOnly = new Trigger { Property = TextBox.IsReadOnlyProperty, Value = true };
+            readOnly.Setters.Add(new Setter(Control.BackgroundProperty, BrushFromRgb(26, 30, 37)));
+            readOnly.Setters.Add(new Setter(Control.ForegroundProperty, BrushFromRgb(133, 142, 160)));
+            style.Triggers.Add(readOnly);
+            Trigger disabled = new Trigger { Property = UIElement.IsEnabledProperty, Value = false };
+            disabled.Setters.Add(new Setter(Control.ForegroundProperty, BrushFromRgb(133, 142, 160)));
+            disabled.Setters.Add(new Setter(Control.BackgroundProperty, BrushFromRgb(26, 30, 37)));
+            disabled.Setters.Add(new Setter(Control.BorderBrushProperty, BrushFromRgb(88, 101, 119)));
+            disabled.Setters.Add(new Setter(UIElement.OpacityProperty, 1D));
+            style.Triggers.Add(disabled);
+            Trigger error = new Trigger { Property = Validation.HasErrorProperty, Value = true };
+            error.Setters.Add(new Setter(Control.BorderBrushProperty, BrushFromRgb(255, 108, 122)));
+            style.Triggers.Add(error);
+            return style;
+        }
+
         private static Style CreateComboBoxStyle(bool compactDensity, bool darkTheme)
         {
             Style style = new Style(typeof(ComboBox));
-            style.Setters.Add(new Setter(Control.FontFamilyProperty, new FontFamily("Segoe UI")));
             style.Setters.Add(new Setter(Control.FontSizeProperty, 12D));
-            style.Setters.Add(new Setter(Control.ForegroundProperty, darkTheme ? BrushFromRgb(215, 239, 242) : BrushFromRgb(22, 64, 103)));
-            style.Setters.Add(new Setter(Control.BackgroundProperty, darkTheme ? BrushFromRgb(14, 32, 38) : BrushFromRgb(250, 252, 253)));
-            style.Setters.Add(new Setter(Control.BorderBrushProperty, darkTheme ? BrushFromRgb(76, 135, 144) : BrushFromRgb(175, 197, 221)));
+            style.Setters.Add(new Setter(Control.ForegroundProperty, darkTheme ? BrushFromRgb(232, 235, 241) : BrushFromRgb(22, 64, 103)));
+            style.Setters.Add(new Setter(Control.BackgroundProperty, darkTheme ? BrushFromRgb(20, 23, 29) : BrushFromRgb(250, 252, 253)));
+            style.Setters.Add(new Setter(Control.BorderBrushProperty, darkTheme ? BrushFromRgb(102, 113, 127) : BrushFromRgb(175, 197, 221)));
             style.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
             style.Setters.Add(new Setter(Control.PaddingProperty, compactDensity ? new Thickness(6, 2, 6, 2) : new Thickness(8, 3, 8, 3)));
             style.Setters.Add(new Setter(FrameworkElement.MarginProperty, compactDensity ? new Thickness(0, 1, 0, 1) : new Thickness(0, 2, 0, 2)));
@@ -569,17 +673,17 @@ namespace System.Windows.Controls.WpfPropertyGrid
 
         private static ControlTemplate CreateComboBoxTemplate(bool darkTheme)
         {
-            return darkTheme ? CreateComboBoxTemplateCore(darkTheme: true) : SharedComboBoxTemplate.Value;
+            return darkTheme ? SharedDarkComboBoxTemplate.Value : SharedComboBoxTemplate.Value;
         }
 
         private static ControlTemplate CreateComboBoxTemplateCore(bool darkTheme)
         {
-            SolidColorBrush backgroundBrush = darkTheme ? BrushFromRgb(14, 32, 38) : BrushFromRgb(250, 252, 253);
-            SolidColorBrush hoverBrush = darkTheme ? BrushFromRgb(24, 57, 67) : BrushFromRgb(242, 248, 252);
-            SolidColorBrush borderBrush = darkTheme ? BrushFromRgb(76, 135, 144) : BrushFromRgb(175, 197, 221);
-            SolidColorBrush focusBrush = darkTheme ? BrushFromRgb(37, 183, 194) : BrushFromRgb(47, 111, 171);
-            SolidColorBrush textBrush = darkTheme ? BrushFromRgb(215, 239, 242) : BrushFromRgb(22, 64, 103);
-            SolidColorBrush popupBrush = darkTheme ? BrushFromRgb(16, 36, 42) : BrushFromRgb(255, 255, 255);
+            SolidColorBrush backgroundBrush = darkTheme ? BrushFromRgb(20, 23, 29) : BrushFromRgb(250, 252, 253);
+            SolidColorBrush hoverBrush = darkTheme ? BrushFromRgb(42, 48, 59) : BrushFromRgb(242, 248, 252);
+            SolidColorBrush borderBrush = darkTheme ? BrushFromRgb(102, 113, 127) : BrushFromRgb(175, 197, 221);
+            SolidColorBrush focusBrush = darkTheme ? BrushFromRgb(46, 196, 182) : BrushFromRgb(47, 111, 171);
+            SolidColorBrush textBrush = darkTheme ? BrushFromRgb(232, 235, 241) : BrushFromRgb(22, 64, 103);
+            SolidColorBrush popupBrush = darkTheme ? BrushFromRgb(27, 31, 39) : BrushFromRgb(255, 255, 255);
 
             FrameworkElementFactory root = new FrameworkElementFactory(typeof(Grid));
             root.SetValue(UIElement.SnapsToDevicePixelsProperty, true);
@@ -606,7 +710,8 @@ namespace System.Windows.Controls.WpfPropertyGrid
             selectionText.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
             selectionText.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Stretch);
             selectionText.SetValue(UIElement.IsHitTestVisibleProperty, false);
-            selectionText.SetValue(TextBlock.ForegroundProperty, textBrush);
+            if (darkTheme) selectionText.SetBinding(TextBlock.ForegroundProperty, new Binding("Foreground") { RelativeSource = RelativeSource.TemplatedParent });
+            else selectionText.SetValue(TextBlock.ForegroundProperty, textBrush);
             selectionText.SetValue(TextBlock.TextTrimmingProperty, TextTrimming.CharacterEllipsis);
             selectionText.SetValue(TextBlock.TextWrappingProperty, TextWrapping.NoWrap);
             selectionText.SetBinding(TextBlock.TextProperty, new Binding("SelectionBoxItem") { RelativeSource = RelativeSource.TemplatedParent });
@@ -618,7 +723,8 @@ namespace System.Windows.Controls.WpfPropertyGrid
             arrow.SetValue(FrameworkElement.HeightProperty, 5D);
             arrow.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Center);
             arrow.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
-            arrow.SetValue(System.Windows.Shapes.Path.FillProperty, textBrush);
+            if (darkTheme) arrow.SetBinding(System.Windows.Shapes.Path.FillProperty, new Binding("Foreground") { RelativeSource = RelativeSource.TemplatedParent });
+            else arrow.SetValue(System.Windows.Shapes.Path.FillProperty, textBrush);
             arrow.SetValue(System.Windows.Shapes.Path.DataProperty, Geometry.Parse("M 0 0 L 4 5 L 8 0 Z"));
             contentGrid.AppendChild(arrow);
 
@@ -680,7 +786,13 @@ namespace System.Windows.Controls.WpfPropertyGrid
             template.Triggers.Add(openTrigger);
 
             Trigger disabledTrigger = new Trigger { Property = UIElement.IsEnabledProperty, Value = false };
-            disabledTrigger.Setters.Add(new Setter(UIElement.OpacityProperty, 0.55D, "ComboChrome"));
+            if (darkTheme)
+            {
+                disabledTrigger.Setters.Add(new Setter(Border.BackgroundProperty, BrushFromRgb(26, 30, 37), "ComboChrome"));
+                disabledTrigger.Setters.Add(new Setter(Border.BorderBrushProperty, BrushFromRgb(102, 113, 127), "ComboChrome"));
+                disabledTrigger.Setters.Add(new Setter(Control.ForegroundProperty, BrushFromRgb(133, 142, 160)));
+            }
+            else disabledTrigger.Setters.Add(new Setter(UIElement.OpacityProperty, 0.55D, "ComboChrome"));
             template.Triggers.Add(disabledTrigger);
 
             return template;
@@ -696,24 +808,51 @@ namespace System.Windows.Controls.WpfPropertyGrid
         private static Style CreateComboBoxItemStyleCore(bool compactDensity, bool darkTheme)
         {
             Style style = new Style(typeof(ComboBoxItem));
-            style.Setters.Add(new Setter(Control.FontFamilyProperty, new FontFamily("Segoe UI")));
             style.Setters.Add(new Setter(Control.FontSizeProperty, 12D));
-            style.Setters.Add(new Setter(Control.ForegroundProperty, darkTheme ? BrushFromRgb(215, 239, 242) : BrushFromRgb(22, 64, 103)));
-            style.Setters.Add(new Setter(Control.BackgroundProperty, darkTheme ? BrushFromRgb(16, 36, 42) : BrushFromRgb(250, 252, 253)));
+            style.Setters.Add(new Setter(Control.ForegroundProperty, darkTheme ? BrushFromRgb(232, 235, 241) : BrushFromRgb(22, 64, 103)));
+            style.Setters.Add(new Setter(Control.BackgroundProperty, darkTheme ? BrushFromRgb(27, 31, 39) : BrushFromRgb(250, 252, 253)));
             style.Setters.Add(new Setter(Control.PaddingProperty, compactDensity ? new Thickness(8, 4, 8, 4) : new Thickness(9, 6, 9, 6)));
             style.Setters.Add(new Setter(FrameworkElement.HeightProperty, compactDensity ? 28D : 32D));
             style.Setters.Add(new Setter(FrameworkElement.MinHeightProperty, compactDensity ? 28D : 32D));
             style.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Stretch));
             style.Setters.Add(new Setter(Control.VerticalContentAlignmentProperty, VerticalAlignment.Center));
+            if (darkTheme) style.Setters.Add(new Setter(Control.TemplateProperty, CreateDarkComboBoxItemTemplate()));
             return style;
+        }
+
+        private static ControlTemplate CreateDarkComboBoxItemTemplate()
+        {
+            FrameworkElementFactory chrome = new FrameworkElementFactory(typeof(Border), "ItemChrome");
+            chrome.SetBinding(Border.BackgroundProperty, new Binding("Background") { RelativeSource = RelativeSource.TemplatedParent });
+            chrome.SetValue(Border.BorderBrushProperty, Brushes.Transparent);
+            chrome.SetValue(Border.BorderThicknessProperty, new Thickness(1));
+            FrameworkElementFactory content = new FrameworkElementFactory(typeof(ContentPresenter));
+            content.SetValue(ContentPresenter.ContentSourceProperty, "Content");
+            content.SetValue(ContentPresenter.RecognizesAccessKeyProperty, true);
+            content.SetBinding(FrameworkElement.MarginProperty, new Binding("Padding") { RelativeSource = RelativeSource.TemplatedParent });
+            content.SetBinding(FrameworkElement.HorizontalAlignmentProperty, new Binding("HorizontalContentAlignment") { RelativeSource = RelativeSource.TemplatedParent });
+            content.SetBinding(FrameworkElement.VerticalAlignmentProperty, new Binding("VerticalContentAlignment") { RelativeSource = RelativeSource.TemplatedParent });
+            chrome.AppendChild(content);
+            ControlTemplate template = new ControlTemplate(typeof(ComboBoxItem)) { VisualTree = chrome };
+            foreach (DependencyProperty state in new[] { ComboBoxItem.IsHighlightedProperty, Selector.IsSelectedProperty })
+            {
+                Trigger highlight = new Trigger { Property = state, Value = true };
+                highlight.Setters.Add(new Setter(Border.BackgroundProperty, BrushFromRgb(30, 54, 59), "ItemChrome"));
+                highlight.Setters.Add(new Setter(Border.BorderBrushProperty, BrushFromRgb(46, 196, 182), "ItemChrome"));
+                template.Triggers.Add(highlight);
+            }
+            Trigger disabled = new Trigger { Property = UIElement.IsEnabledProperty, Value = false };
+            disabled.Setters.Add(new Setter(Control.ForegroundProperty, BrushFromRgb(133, 142, 160)));
+            disabled.Setters.Add(new Setter(Border.BackgroundProperty, BrushFromRgb(26, 30, 37), "ItemChrome"));
+            template.Triggers.Add(disabled);
+            return template;
         }
 
         private static Style CreateCheckBoxStyle(bool compactDensity, bool darkTheme)
         {
             Style style = new Style(typeof(CheckBox));
-            style.Setters.Add(new Setter(Control.FontFamilyProperty, new FontFamily("Segoe UI")));
             style.Setters.Add(new Setter(Control.FontSizeProperty, 12D));
-            style.Setters.Add(new Setter(Control.ForegroundProperty, darkTheme ? BrushFromRgb(215, 239, 242) : BrushFromRgb(22, 64, 103)));
+            style.Setters.Add(new Setter(Control.ForegroundProperty, darkTheme ? BrushFromRgb(232, 235, 241) : BrushFromRgb(22, 64, 103)));
             style.Setters.Add(new Setter(FrameworkElement.MarginProperty, compactDensity ? new Thickness(0, 2, 0, 2) : new Thickness(0, 4, 0, 4)));
             return style;
         }
@@ -721,11 +860,141 @@ namespace System.Windows.Controls.WpfPropertyGrid
         private static Style CreateSliderStyle(bool compactDensity, bool darkTheme)
         {
             Style style = new Style(typeof(Slider));
-            style.Setters.Add(new Setter(Control.ForegroundProperty, darkTheme ? BrushFromRgb(37, 183, 194) : BrushFromRgb(47, 111, 171)));
-            style.Setters.Add(new Setter(Control.BackgroundProperty, darkTheme ? BrushFromRgb(56, 83, 92) : BrushFromRgb(218, 230, 241)));
+            style.Setters.Add(new Setter(Control.ForegroundProperty, darkTheme ? BrushFromRgb(46, 196, 182) : BrushFromRgb(47, 111, 171)));
+            style.Setters.Add(new Setter(Control.BackgroundProperty, darkTheme ? BrushFromRgb(38, 43, 52) : BrushFromRgb(218, 230, 241)));
             style.Setters.Add(new Setter(FrameworkElement.MarginProperty, compactDensity ? new Thickness(0, 3, 6, 3) : new Thickness(0, 6, 8, 6)));
             style.Setters.Add(new Setter(FrameworkElement.MinHeightProperty, compactDensity ? 28D : 34D));
             return style;
+        }
+
+
+        private static ControlTemplate CreateDarkCheckBoxTemplate()
+        {
+            FrameworkElementFactory panel = new FrameworkElementFactory(typeof(DockPanel));
+            FrameworkElementFactory chrome = new FrameworkElementFactory(typeof(Border), "CheckChrome");
+            chrome.SetValue(DockPanel.DockProperty, Dock.Left);
+            chrome.SetValue(FrameworkElement.WidthProperty, 13D);
+            chrome.SetValue(FrameworkElement.HeightProperty, 13D);
+            chrome.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+            chrome.SetValue(Border.CornerRadiusProperty, new CornerRadius(2));
+            chrome.SetValue(Border.BorderThicknessProperty, new Thickness(1));
+            chrome.SetValue(Border.BackgroundProperty, BrushFromRgb(14, 17, 21));
+            chrome.SetValue(Border.BorderBrushProperty, BrushFromRgb(102, 113, 127));
+            FrameworkElementFactory mark = new FrameworkElementFactory(typeof(System.Windows.Shapes.Path), "CheckMark");
+            mark.SetValue(FrameworkElement.WidthProperty, 8D);
+            mark.SetValue(FrameworkElement.HeightProperty, 6D);
+            mark.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+            mark.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+            mark.SetValue(System.Windows.Shapes.Path.DataProperty, Geometry.Parse("M 0 3 L 3 6 L 8 0"));
+            mark.SetValue(System.Windows.Shapes.Path.StrokeProperty, BrushFromRgb(10, 26, 24));
+            mark.SetValue(System.Windows.Shapes.Path.StrokeThicknessProperty, 1.6D);
+            mark.SetValue(UIElement.VisibilityProperty, Visibility.Collapsed);
+            chrome.AppendChild(mark);
+            panel.AppendChild(chrome);
+            FrameworkElementFactory content = new FrameworkElementFactory(typeof(ContentPresenter), "CheckContent");
+            content.SetValue(ContentPresenter.ContentSourceProperty, "Content");
+            content.SetValue(FrameworkElement.MarginProperty, new Thickness(4, 0, 0, 0));
+            content.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+            panel.AppendChild(content);
+            ControlTemplate template = new ControlTemplate(typeof(CheckBox)) { VisualTree = panel };
+            Trigger noContent = new Trigger { Property = ContentControl.HasContentProperty, Value = false };
+            noContent.Setters.Add(new Setter(UIElement.VisibilityProperty, Visibility.Collapsed, "CheckContent"));
+            template.Triggers.Add(noContent);
+            Trigger hover = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
+            hover.Setters.Add(new Setter(Border.BorderBrushProperty, BrushFromRgb(46, 196, 182), "CheckChrome"));
+            template.Triggers.Add(hover);
+            Trigger focus = new Trigger { Property = UIElement.IsKeyboardFocusedProperty, Value = true };
+            focus.Setters.Add(new Setter(Border.BorderBrushProperty, BrushFromRgb(46, 196, 182), "CheckChrome"));
+            template.Triggers.Add(focus);
+            Trigger check = new Trigger { Property = ToggleButton.IsCheckedProperty, Value = true };
+            check.Setters.Add(new Setter(Border.BackgroundProperty, BrushFromRgb(46, 196, 182), "CheckChrome"));
+            check.Setters.Add(new Setter(UIElement.VisibilityProperty, Visibility.Visible, "CheckMark"));
+            template.Triggers.Add(check);
+            Trigger indeterminate = new Trigger { Property = ToggleButton.IsCheckedProperty, Value = null };
+            indeterminate.Setters.Add(new Setter(System.Windows.Shapes.Path.DataProperty, Geometry.Parse("M 0 3 L 8 3"), "CheckMark"));
+            indeterminate.Setters.Add(new Setter(System.Windows.Shapes.Path.StrokeProperty, BrushFromRgb(232, 235, 241), "CheckMark"));
+            indeterminate.Setters.Add(new Setter(UIElement.VisibilityProperty, Visibility.Visible, "CheckMark"));
+            template.Triggers.Add(indeterminate);
+            Trigger disabled = new Trigger { Property = UIElement.IsEnabledProperty, Value = false };
+            disabled.Setters.Add(new Setter(Border.BackgroundProperty, BrushFromRgb(26, 30, 37), "CheckChrome"));
+            disabled.Setters.Add(new Setter(Border.BorderBrushProperty, BrushFromRgb(102, 113, 127), "CheckChrome"));
+            disabled.Setters.Add(new Setter(System.Windows.Shapes.Path.StrokeProperty, BrushFromRgb(133, 142, 160), "CheckMark"));
+            template.Triggers.Add(disabled);
+            return template;
+        }
+
+        private static ControlTemplate CreateDarkDialogButtonTemplate()
+        {
+            FrameworkElementFactory chrome = new FrameworkElementFactory(typeof(Border), "DialogChrome");
+            chrome.SetValue(Border.CornerRadiusProperty, new CornerRadius(3));
+            chrome.SetValue(Border.BorderThicknessProperty, new Thickness(1));
+            chrome.SetBinding(Border.BackgroundProperty, new Binding("Background") { RelativeSource = RelativeSource.TemplatedParent });
+            chrome.SetBinding(Border.BorderBrushProperty, new Binding("BorderBrush") { RelativeSource = RelativeSource.TemplatedParent });
+            FrameworkElementFactory content = new FrameworkElementFactory(typeof(ContentPresenter));
+            content.SetValue(ContentPresenter.ContentSourceProperty, "Content");
+            content.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+            content.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+            chrome.AppendChild(content);
+            ControlTemplate template = new ControlTemplate(typeof(Button)) { VisualTree = chrome };
+            Trigger hover = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
+            hover.Setters.Add(new Setter(Border.BackgroundProperty, BrushFromRgb(37, 42, 52), "DialogChrome"));
+            hover.Setters.Add(new Setter(Border.BorderBrushProperty, BrushFromRgb(46, 196, 182), "DialogChrome"));
+            template.Triggers.Add(hover);
+            Trigger pressed = new Trigger { Property = ButtonBase.IsPressedProperty, Value = true };
+            pressed.Setters.Add(new Setter(Border.BackgroundProperty, BrushFromRgb(42, 48, 59), "DialogChrome"));
+            pressed.Setters.Add(new Setter(Border.BorderBrushProperty, BrushFromRgb(46, 196, 182), "DialogChrome"));
+            template.Triggers.Add(pressed);
+            Trigger focus = new Trigger { Property = UIElement.IsKeyboardFocusedProperty, Value = true };
+            focus.Setters.Add(new Setter(Border.BorderBrushProperty, BrushFromRgb(46, 196, 182), "DialogChrome"));
+            template.Triggers.Add(focus);
+            Trigger disabled = new Trigger { Property = UIElement.IsEnabledProperty, Value = false };
+            disabled.Setters.Add(new Setter(Control.ForegroundProperty, BrushFromRgb(133, 142, 160)));
+            disabled.Setters.Add(new Setter(Border.BackgroundProperty, BrushFromRgb(26, 30, 37), "DialogChrome"));
+            template.Triggers.Add(disabled);
+            return template;
+        }
+
+        private static ControlTemplate CreateDarkSliderTrackButtonTemplate(Brush background)
+        {
+            FrameworkElementFactory line = new FrameworkElementFactory(typeof(Border), "TrackLine");
+            line.SetValue(FrameworkElement.HeightProperty, 4D);
+            line.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+            line.SetValue(Border.CornerRadiusProperty, new CornerRadius(2));
+            line.SetValue(Border.BackgroundProperty, background);
+            ControlTemplate template = new ControlTemplate(typeof(RepeatButton)) { VisualTree = line };
+            Trigger hover = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
+            hover.Setters.Add(new Setter(Border.BackgroundProperty, BrushFromRgb(34, 168, 155), "TrackLine"));
+            template.Triggers.Add(hover);
+            Trigger pressed = new Trigger { Property = ButtonBase.IsPressedProperty, Value = true };
+            pressed.Setters.Add(new Setter(Border.BackgroundProperty, BrushFromRgb(46, 196, 182), "TrackLine"));
+            template.Triggers.Add(pressed);
+            Trigger disabled = new Trigger { Property = UIElement.IsEnabledProperty, Value = false };
+            disabled.Setters.Add(new Setter(Border.BackgroundProperty, BrushFromRgb(102, 113, 127), "TrackLine"));
+            template.Triggers.Add(disabled);
+            return template;
+        }
+
+        private static ControlTemplate CreateDarkSliderThumbTemplate()
+        {
+            FrameworkElementFactory chrome = new FrameworkElementFactory(typeof(Border), "ThumbChrome");
+            chrome.SetValue(FrameworkElement.WidthProperty, 12D);
+            chrome.SetValue(FrameworkElement.HeightProperty, 18D);
+            chrome.SetValue(Border.CornerRadiusProperty, new CornerRadius(4));
+            chrome.SetValue(Border.BorderThicknessProperty, new Thickness(1));
+            chrome.SetValue(Border.BackgroundProperty, BrushFromRgb(46, 196, 182));
+            chrome.SetValue(Border.BorderBrushProperty, BrushFromRgb(102, 113, 127));
+            ControlTemplate template = new ControlTemplate(typeof(Thumb)) { VisualTree = chrome };
+            Trigger hover = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
+            hover.Setters.Add(new Setter(Border.BackgroundProperty, BrushFromRgb(34, 168, 155), "ThumbChrome"));
+            template.Triggers.Add(hover);
+            Trigger dragging = new Trigger { Property = Thumb.IsDraggingProperty, Value = true };
+            dragging.Setters.Add(new Setter(Border.BackgroundProperty, BrushFromRgb(46, 196, 182), "ThumbChrome"));
+            template.Triggers.Add(dragging);
+            Trigger disabled = new Trigger { Property = UIElement.IsEnabledProperty, Value = false };
+            disabled.Setters.Add(new Setter(Border.BackgroundProperty, BrushFromRgb(26, 30, 37), "ThumbChrome"));
+            disabled.Setters.Add(new Setter(Border.BorderBrushProperty, BrushFromRgb(102, 113, 127), "ThumbChrome"));
+            template.Triggers.Add(disabled);
+            return template;
         }
 
         private static IEnumerable<T> FindVisualChildren<T>(DependencyObject parent)
@@ -750,6 +1019,19 @@ namespace System.Windows.Controls.WpfPropertyGrid
                     yield return descendant;
                 }
             }
+        }
+
+        private static T FindVisualParent<T>(DependencyObject child) where T : DependencyObject
+        {
+            for (DependencyObject parent = GetParent(child); parent != null; parent = GetParent(parent))
+            {
+                if (parent is T match)
+                {
+                    return match;
+                }
+            }
+
+            return null;
         }
 
         private static SolidColorBrush BrushFromRgb(byte red, byte green, byte blue)
@@ -806,10 +1088,12 @@ namespace System.Windows.Controls.WpfPropertyGrid
         public void ApplyDisplayOptions(PropertyGridDisplayOptions options)
         {
             options = options ?? new PropertyGridDisplayOptions();
+            if (childParameterPredicate != null && options.ChildParameterPredicate == null) RestoreToolFormLayout();
             childParameterPredicate = options.ChildParameterPredicate;
 
             TrySetInnerProperty("PropertyNameColumnWidth", new GridLength(Math.Max(80, options.PropertyNameColumnWidth)));
-            TrySetInnerProperty("EditorColumnMinWidth", Math.Max(80, options.EditorColumnMinWidth));
+            editorColumnMinimum = Math.Max(80, options.EditorColumnMinWidth);
+            TrySetInnerProperty("EditorColumnMinWidth", editorColumnMinimum);
             TrySetInnerProperty("PropertyFilterVisibility", options.ShowSearchBox ? Visibility.Visible : Visibility.Collapsed);
 
             innerPropertyGrid.InvalidateMeasure();
@@ -862,6 +1146,30 @@ namespace System.Windows.Controls.WpfPropertyGrid
         }
 
         public bool IsSearchEmptyMessageVisibleForTest => searchEmptyOverlay?.Visibility == Visibility.Visible;
+
+        public bool TryCommitPendingEdit()
+        {
+            if (Dispatcher != null && !Dispatcher.CheckAccess()) { return Dispatcher.Invoke(TryCommitPendingEdit); }
+            if (innerPropertyGrid == null) { return true; }
+            TextBox[] editors = FindVisualChildren<TextBox>(innerPropertyGrid).Where(item => IsCommitCandidate(item) && !IsPropertyGridSearchTextBox(item)).ToArray();
+            // Validate before any source write: the vendor converter can otherwise retain an old value silently.
+            foreach (TextBox editor in editors)
+            {
+                BindingExpression binding = editor.GetBindingExpression(TextBox.TextProperty);
+                PropertyDescriptor descriptor = GetPropertyDescriptor(ReadObjectProperty(editor.DataContext, "ParentProperty"))
+                    ?? (binding?.ResolvedSource == null ? null : TypeDescriptor.GetProperties(binding.ResolvedSource)[binding.ResolvedSourcePropertyName ?? string.Empty]);
+                TypeCode type = Type.GetTypeCode(Nullable.GetUnderlyingType(descriptor?.PropertyType ?? typeof(object)) ?? descriptor?.PropertyType ?? typeof(object));
+                if (type is not (TypeCode.Byte or TypeCode.Decimal or TypeCode.Double or TypeCode.Int16 or TypeCode.Int32 or TypeCode.Int64 or TypeCode.SByte or TypeCode.Single or TypeCode.UInt16 or TypeCode.UInt32 or TypeCode.UInt64)) { continue; }
+                try { descriptor.Converter.ConvertFromString(null, CultureInfo.CurrentCulture, editor.Text); }
+                catch (Exception error) when (error is FormatException or NotSupportedException or ArgumentException or OverflowException)
+                {
+                    if (binding != null) { Validation.MarkInvalid(binding, new ValidationError(new ExceptionValidationRule(), binding, error.GetBaseException().Message, error)); }
+                    return false;
+                }
+            }
+            CommitPendingEdit();
+            return editors.All(editor => !Validation.GetHasError(editor));
+        }
 
         public bool CommitPendingEdit()
         {
@@ -932,6 +1240,17 @@ namespace System.Windows.Controls.WpfPropertyGrid
             RaiseSelectedPropertyChangedFromSource(e?.OriginalSource as DependencyObject);
         }
 
+        private void InnerPropertyGrid_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Handled || e.Key != Key.Tab || Keyboard.FocusedElement is not UIElement focused) { return; }
+            // The vendor Tab lookup assumes its own row template. Keep the instance editor
+            // template and use WPF traversal; an outer validation handler may block the key first.
+            e.Handled = true;
+            FocusNavigationDirection direction = (Keyboard.Modifiers & ModifierKeys.Shift) != 0
+                ? FocusNavigationDirection.Previous : FocusNavigationDirection.Next;
+            if (!focused.MoveFocus(new TraversalRequest(direction))) { MoveFocus(new TraversalRequest(direction)); }
+        }
+
         private void InnerPropertyGrid_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
         {
             RaiseSelectedPropertyChangedFromSource(e?.NewFocus as DependencyObject);
@@ -990,6 +1309,7 @@ namespace System.Windows.Controls.WpfPropertyGrid
             }
 
             selectedPropertyName = propertyName;
+            if (ThemeVariant == PropertyGridThemeVariant.Dark) ScheduleNormalizeInnerEditorControls();
             SelectedPropertyChanged?.Invoke(
                 this,
                 new PropertyGridSelectedPropertyChangedEventArgs(propertyName));
@@ -1029,9 +1349,11 @@ namespace System.Windows.Controls.WpfPropertyGrid
             }
 
             normalizeScheduled = true;
+            int session = normalizationSession;
             Dispatcher.BeginInvoke(
                 (Action)(() =>
                 {
+                    if (session != normalizationSession || (childParameterPredicate != null && normalizationSession > 0 && !IsLoaded)) return;
                     normalizeScheduled = false;
                     NormalizeInnerEditorControls();
                 }),
@@ -1169,9 +1491,14 @@ namespace System.Windows.Controls.WpfPropertyGrid
                 return;
             }
 
+            // Regenerated vendor rows must exist before their theme values are applied.
+            innerPropertyGrid.ApplyTemplate();
+            innerPropertyGrid.UpdateLayout();
+
             bool compactDensity = IsCompactDensity;
             bool darkTheme = ThemeVariant == PropertyGridThemeVariant.Dark;
             Style comboItemStyle = CreateComboBoxItemStyle(compactDensity, darkTheme);
+            double requiredRangeWidth = 0D;
             List<FrameworkElement> editorElements = new List<FrameworkElement>();
             foreach (FrameworkElement element in FindVisualChildren<FrameworkElement>(innerPropertyGrid))
             {
@@ -1180,6 +1507,7 @@ namespace System.Windows.Controls.WpfPropertyGrid
 
             foreach (FrameworkElement element in editorElements)
             {
+                if (!darkTheme) RestoreDefaultThemeValues(element);
                 if (element is TextBox textBox && IsPropertyGridSearchTextBox(textBox))
                 {
                     NormalizeSearchTextBox(textBox, compactDensity);
@@ -1191,8 +1519,38 @@ namespace System.Windows.Controls.WpfPropertyGrid
                     ApplyDarkEditorStyle(editorTextBox);
                 }
 
+                if (element is Expander complexEditor && complexEditor.Header is TextBlock complexHeader
+                    && (complexHeader.Text == "Details" || complexHeader.Text == "상세"))
+                {
+                    complexHeader.Text = OpenVisionLanguageService.T("VisionTest.Details");
+                    complexEditor.Expanded -= ComplexEditor_Expanded;
+                    if (darkTheme) complexEditor.Expanded += ComplexEditor_Expanded;
+                    if (darkTheme)
+                    {
+                        ApplyDarkControlStateStyle(complexEditor);
+                        ToggleButton headerToggle = FindVisualChildren<ToggleButton>(complexEditor).FirstOrDefault(item => item.Name == "ExpanderToggleButton");
+                        if (headerToggle != null)
+                        {
+                            ApplyDarkControlStateStyle(headerToggle);
+                            SetDarkThemeBinding(headerToggle, Control.ForegroundProperty, new Binding(nameof(Control.Foreground)) { Source = complexEditor });
+                            SetDarkThemeBinding(complexHeader, TextBlock.ForegroundProperty, new Binding(nameof(Control.Foreground)) { Source = complexEditor });
+                            foreach (TextBlock icon in FindVisualChildren<TextBlock>(headerToggle).Where(item => item.FontFamily.Source.Contains("#FluentSystemIcons")))
+                                SetDarkThemeBinding(icon, TextBlock.ForegroundProperty, new Binding(nameof(Control.Foreground)) { Source = complexEditor });
+                        }
+                    }
+                }
+
+                if (darkTheme && element is Control sliderEditor && element.GetType().Name == "SliderEditorBase")
+                    ApplyDarkControlStateStyle(sliderEditor);
+
+                if (darkTheme && element is CheckBox checkBox)
+                {
+                    SetDarkThemeValue(checkBox, Control.TemplateProperty, DarkCheckBoxTemplate);
+                }
+
                 if (element is ComboBox comboBox)
                 {
+                    if (darkTheme) SetDarkThemeValue(comboBox, Control.ForegroundProperty, BrushFromRgb(232, 235, 241));
                     // The WPG enum editor can retain editable chrome from the legacy bridge;
                     // keep it as a pure selector so the selected text is rendered once.
                     comboBox.IsEditable = false;
@@ -1204,21 +1562,79 @@ namespace System.Windows.Controls.WpfPropertyGrid
                     comboBox.MaxDropDownHeight = Math.Max(comboBox.MaxDropDownHeight, 260D);
                     comboBox.ItemContainerStyle = comboItemStyle;
                     comboBox.ApplyTemplate();
+                    if (darkTheme)
+                    {
+                        ApplyDarkControlStateStyle(comboBox);
+                        SetDarkThemeValue(comboBox, Control.ForegroundProperty, BrushFromRgb(232, 235, 241));
+                    }
 
                     comboBox.PreviewMouseLeftButtonDown -= ComboBox_PreviewMouseLeftButtonDown;
                     comboBox.PreviewMouseLeftButtonDown += ComboBox_PreviewMouseLeftButtonDown;
                 }
 
+                if (darkTheme && element is Border searchIconBorder
+                    && string.Equals(searchIconBorder.Name, "PART_SearchIconBorder", StringComparison.Ordinal))
+                {
+                    SetDarkThemeValue(searchIconBorder, Border.BackgroundProperty, BrushFromRgb(26, 30, 37));
+                    SetDarkThemeValue(searchIconBorder, Border.BorderBrushProperty, BrushFromRgb(102, 113, 127));
+                }
+
+                if (darkTheme
+                    && (element.GetType().Name == "ThresholdEditorBase"
+                        || element.GetType().Name == "MetricRangeEditorBase"))
+                {
+                    if (element is Panel editorPanel)
+                    {
+                        SetDarkThemeValue(editorPanel, Panel.BackgroundProperty, BrushFromRgb(20, 23, 29));
+                    }
+                    else if (element is Control editorControl)
+                    {
+                        SetDarkThemeValue(editorControl, Control.BackgroundProperty, BrushFromRgb(20, 23, 29));
+                        SetDarkThemeValue(editorControl, Control.ForegroundProperty, BrushFromRgb(232, 235, 241));
+                    }
+
+                    foreach (TextBlock label in FindVisualChildren<TextBlock>(element))
+                    {
+                        SetDarkThemeValue(label, TextBlock.ForegroundProperty, BrushFromRgb(174, 182, 195));
+                    }
+                }
+
+                if (darkTheme && element is Border scrollBarBorder
+                    && string.Equals(scrollBarBorder.Name, "PART_Border", StringComparison.Ordinal)
+                    && FindVisualParent<ScrollBar>(scrollBarBorder) != null)
+                {
+                    SetDarkThemeValue(scrollBarBorder, Border.BackgroundProperty, BrushFromRgb(26, 30, 37));
+                    SetDarkThemeValue(scrollBarBorder, Border.BorderBrushProperty, BrushFromRgb(38, 43, 52));
+                }
+
+                if (darkTheme && element is RepeatButton sliderTrackButton
+                    && FindVisualParent<Track>(sliderTrackButton) is Track sliderTrack
+                    && FindVisualParent<Slider>(sliderTrack) != null)
+                {
+                    bool filled = ReferenceEquals(sliderTrack.DecreaseRepeatButton, sliderTrackButton);
+                    SetDarkThemeValue(sliderTrackButton, Control.BackgroundProperty, filled ? BrushFromRgb(46, 196, 182) : BrushFromRgb(102, 113, 127));
+                    SetDarkThemeValue(sliderTrackButton, Control.TemplateProperty, filled ? DarkSliderFilledTrackTemplate : DarkSliderEmptyTrackTemplate);
+                }
+
+                if (darkTheme && element is Thumb sliderThumb
+                    && FindVisualParent<Slider>(sliderThumb) != null)
+                {
+                    SetDarkThemeValue(sliderThumb, Control.BackgroundProperty, BrushFromRgb(46, 196, 182));
+                    SetDarkThemeValue(sliderThumb, Control.BorderBrushProperty, BrushFromRgb(102, 113, 127));
+                    SetDarkThemeValue(sliderThumb, Control.TemplateProperty, DarkSliderThumbTemplate);
+                }
+
                 NormalizeThemeSurface(element, darkTheme);
-                NormalizeRangeEditorLayout(element);
+                requiredRangeWidth = Math.Max(requiredRangeWidth, NormalizeRangeEditorLayout(element));
                 NormalizeChildParameterRow(element);
 
                 if (element is Slider slider)
                 {
                     if (darkTheme)
                     {
-                        slider.Foreground = BrushFromRgb(37, 183, 194);
-                        slider.Background = BrushFromRgb(56, 83, 92);
+                        SetDarkThemeValue(slider, Control.ForegroundProperty, BrushFromRgb(46, 196, 182));
+                        SetDarkThemeValue(slider, Control.BackgroundProperty, BrushFromRgb(38, 43, 52));
+                        SetDarkThemeValue(slider, UIElement.OpacityProperty, 1D);
                     }
 
                     if (FindRangeEditorElement(slider) != null)
@@ -1240,9 +1656,11 @@ namespace System.Windows.Controls.WpfPropertyGrid
                 {
                     if (darkTheme)
                     {
-                        button.Foreground = BrushFromRgb(215, 239, 242);
-                        button.Background = BrushFromRgb(20, 49, 58);
-                        button.BorderBrush = BrushFromRgb(76, 135, 144);
+                        ApplyDarkControlStateStyle(button);
+                        SetDarkThemeValue(button, Control.ForegroundProperty, BrushFromRgb(232, 235, 241));
+                        SetDarkThemeValue(button, Control.BackgroundProperty, BrushFromRgb(26, 30, 37));
+                        SetDarkThemeValue(button, Control.BorderBrushProperty, BrushFromRgb(102, 113, 127));
+                        SetDarkThemeValue(button, Control.TemplateProperty, DarkDialogButtonTemplate);
                     }
 
                     object dialogPropertyValue = ResolveDialogPropertyValue(button);
@@ -1279,33 +1697,84 @@ namespace System.Windows.Controls.WpfPropertyGrid
                 }
             }
 
+            innerPropertyGrid.MinWidth = requiredRangeWidth;
             ScheduleSearchFeedbackUpdate();
         }
 
-        private static void NormalizeThemeSurface(FrameworkElement element, bool darkTheme)
+
+        private void ComplexEditor_Expanded(object sender, RoutedEventArgs e) => ScheduleNormalizeInnerEditorControls();
+
+        private void SetDarkThemeValue(DependencyObject element, DependencyProperty property, object value)
         {
+            Dictionary<DependencyProperty, object> originals = darkThemeOriginalValues.GetOrCreateValue(element);
+            if (!originals.ContainsKey(property))
+                originals[property] = element.ReadLocalValue(property) == DependencyProperty.UnsetValue ? DependencyProperty.UnsetValue : element.GetValue(property);
+            element.SetCurrentValue(property, value);
+        }
+
+        private void SetDarkThemeBinding(DependencyObject element, DependencyProperty property, BindingBase binding)
+        {
+            Dictionary<DependencyProperty, object> originals = darkThemeOriginalValues.GetOrCreateValue(element);
+            if (!originals.ContainsKey(property))
+            {
+                BindingBase originalBinding = BindingOperations.GetBindingBase(element, property);
+                originals[property] = originalBinding != null ? (object)originalBinding
+                    : element.ReadLocalValue(property) == DependencyProperty.UnsetValue ? DependencyProperty.UnsetValue : element.GetValue(property);
+            }
+            BindingOperations.SetBinding(element, property, binding);
+        }
+
+        private void RestoreDefaultThemeValues(DependencyObject element)
+        {
+            if (!darkThemeOriginalValues.TryGetValue(element, out Dictionary<DependencyProperty, object> originals)) return;
+            foreach (KeyValuePair<DependencyProperty, object> original in originals)
+            {
+                if (original.Value is BindingBase binding) BindingOperations.SetBinding(element, original.Key, binding);
+                else if (original.Value == DependencyProperty.UnsetValue) element.ClearValue(original.Key);
+                else element.SetCurrentValue(original.Key, original.Value);
+            }
+            darkThemeOriginalValues.Remove(element);
+            if (element is Control control) appliedDarkStyles.Remove(control);
+        }
+
+        private void NormalizeThemeSurface(FrameworkElement element, bool darkTheme)
+        {
+            if (darkTheme && element is Border gridChrome && ReferenceEquals(gridChrome.TemplatedParent, innerPropertyGrid))
+            {
+                SetDarkThemeBinding(gridChrome, Border.BorderBrushProperty, new Binding(nameof(Control.BorderBrush)) { Source = innerPropertyGrid });
+                return;
+            }
+
             if (!darkTheme || !(element is Border rowBorder)
                 || !string.Equals(rowBorder.Name, "RowBorder", StringComparison.Ordinal))
             {
                 return;
             }
 
-            rowBorder.Background = BrushFromRgb(14, 32, 38);
-            rowBorder.BorderBrush = BrushFromRgb(56, 83, 92);
+            bool selected = string.Equals(ResolveSelectedPropertyName(rowBorder.DataContext), selectedPropertyName, StringComparison.Ordinal);
+            rowBorder.Background = BrushFromRgb(20, 23, 29);
+            SetDarkThemeValue(rowBorder, Border.BorderBrushProperty, BrushFromRgb(38, 43, 52));
             foreach (Border border in FindVisualChildren<Border>(rowBorder))
             {
+                if (FindVisualParent<Slider>(border) != null || FindVisualParent<TextBox>(border) != null
+                    || FindVisualParent<ComboBox>(border) != null || FindVisualParent<CheckBox>(border) != null
+                    || FindVisualParent<Button>(border) != null)
+                {
+                    continue;
+                }
+
                 if (string.Equals(border.Name, "NameCell", StringComparison.Ordinal))
                 {
-                    border.Background = BrushFromRgb(20, 49, 58);
-                    border.BorderBrush = BrushFromRgb(56, 83, 92);
+                    SetDarkThemeBinding(border, Border.BackgroundProperty, new Binding { Source = selected ? BrushFromRgb(30, 54, 59) : BrushFromRgb(26, 30, 37) });
+                    SetDarkThemeValue(border, Border.BorderBrushProperty, BrushFromRgb(38, 43, 52));
                 }
                 else if (Grid.GetColumn(border) == 1)
                 {
-                    border.Background = BrushFromRgb(14, 32, 38);
+                    SetDarkThemeValue(border, Border.BackgroundProperty, BrushFromRgb(20, 23, 29));
                 }
                 else if (!string.Equals(border.Name, "RowAccent", StringComparison.Ordinal))
                 {
-                    border.Background = BrushFromRgb(14, 32, 38);
+                    SetDarkThemeValue(border, Border.BackgroundProperty, BrushFromRgb(20, 23, 29));
                 }
             }
 
@@ -1314,18 +1783,27 @@ namespace System.Windows.Controls.WpfPropertyGrid
                 string typeName = textBlock.GetType().FullName ?? string.Empty;
                 if (typeName.EndsWith(".Design.PropertyNameTextBlock", StringComparison.Ordinal))
                 {
-                    textBlock.Foreground = BrushFromRgb(168, 203, 209);
+                    SetDarkThemeBinding(textBlock, TextBlock.ForegroundProperty, new Binding { Source = selected ? BrushFromRgb(232, 235, 241) : BrushFromRgb(174, 182, 195) });
                 }
             }
         }
 
-        private static void ApplyDarkEditorStyle(TextBox textBox)
+        private void ApplyDarkEditorStyle(TextBox textBox)
         {
-            textBox.Foreground = BrushFromRgb(215, 239, 242);
-            textBox.Background = BrushFromRgb(14, 32, 38);
-            textBox.BorderBrush = BrushFromRgb(76, 135, 144);
-            textBox.CaretBrush = BrushFromRgb(215, 239, 242);
-            textBox.SelectionBrush = BrushFromRgb(37, 183, 194);
+            ApplyDarkControlStateStyle(textBox);
+            SetDarkThemeValue(textBox, Control.ForegroundProperty, BrushFromRgb(232, 235, 241));
+            SetDarkThemeValue(textBox, Control.BackgroundProperty, BrushFromRgb(14, 17, 21));
+            SetDarkThemeValue(textBox, Control.BorderBrushProperty, BrushFromRgb(88, 101, 119));
+            SetDarkThemeValue(textBox, TextBox.CaretBrushProperty, BrushFromRgb(232, 235, 241));
+            SetDarkThemeValue(textBox, TextBox.SelectionBrushProperty, BrushFromRgb(46, 196, 182));
+            textBox.ApplyTemplate();
+            foreach (Border chrome in FindVisualChildren<Border>(textBox))
+            {
+                if (!string.Equals(chrome.Name, "border", StringComparison.Ordinal)) continue;
+                SetDarkThemeBinding(chrome, Border.BackgroundProperty, new Binding("Background") { Source = textBox });
+                SetDarkThemeBinding(chrome, Border.BorderBrushProperty, new Binding("BorderBrush") { Source = textBox });
+                SetDarkThemeBinding(chrome, UIElement.OpacityProperty, new Binding { Source = 1D });
+            }
         }
 
         private void NormalizeSearchTextBox(TextBox searchTextBox, bool compactDensity)
@@ -1385,6 +1863,8 @@ namespace System.Windows.Controls.WpfPropertyGrid
 
             TextBox searchTextBox = FindPropertySearchTextBox();
             string searchText = searchTextBox?.Text ?? string.Empty;
+            WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyFilter filter = new WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyFilter(searchText);
+            foreach (WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyItem property in innerPropertyGrid.Properties) property.ApplyFilter(filter);
             if (string.IsNullOrWhiteSpace(searchText))
             {
                 searchEmptyOverlay.Visibility = Visibility.Collapsed;
@@ -1405,35 +1885,19 @@ namespace System.Windows.Controls.WpfPropertyGrid
             }
 
             Type selectedType = selectedObject.GetType();
-            foreach (PropertyDescriptor descriptor in TypeDescriptor.GetProperties(selectedObject))
+            foreach (WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyItem property in innerPropertyGrid.Properties)
             {
-                if (descriptor == null
-                    || !descriptor.IsBrowsable
-                    || IsPropertyHidden(selectedType, descriptor.Name)
-                    || IsRangeCompanionPropertyName(descriptor.Name))
+                if (property.PropertyDescriptor?.IsBrowsable != true
+                    || IsPropertyHidden(selectedType, property.Name)
+                    || IsRangeCompanionPropertyName(property.Name))
                 {
                     continue;
                 }
 
-                string displayName = PropertyGridLocalization.TranslateProperty(selectedType, descriptor, "DisplayName", descriptor.DisplayName);
-                string description = PropertyGridLocalization.TranslateProperty(selectedType, descriptor, "Description", descriptor.Description);
-                string category = PropertyGridLocalization.TranslateCategory(descriptor.Category);
-                if (TextMatchesSearch(descriptor.Name, searchText)
-                    || TextMatchesSearch(displayName, searchText)
-                    || TextMatchesSearch(description, searchText)
-                    || TextMatchesSearch(category, searchText))
-                {
-                    return true;
-                }
+                if (property.MatchesFilter) return true;
             }
 
             return false;
-        }
-
-        private static bool TextMatchesSearch(string text, string searchText)
-        {
-            return !string.IsNullOrWhiteSpace(text)
-                && text.IndexOf(searchText ?? string.Empty, StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private static string SearchLabelText()
@@ -1457,7 +1921,7 @@ namespace System.Windows.Controls.WpfPropertyGrid
             string format = OpenVisionLanguageService.T("PropertyGrid.Search.NoResults");
             if (string.IsNullOrWhiteSpace(format) || string.Equals(format, "PropertyGrid.Search.NoResults", StringComparison.Ordinal))
             {
-                format = "No properties match '{0}'. Press Esc to clear the search.";
+                format = "No match for \u2018{0}\u2019 (Esc: clear)";
             }
 
             try
@@ -1616,6 +2080,65 @@ namespace System.Windows.Controls.WpfPropertyGrid
         }
 
 
+        private void HorizontalViewport_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (e.WidthChanged) ScheduleNormalizeInnerEditorControls();
+        }
+
+        private void RestoreToolFormLayout()
+        {
+            if (childParameterPredicate == null) return;
+            foreach (Border row in FindVisualChildren<Border>(innerPropertyGrid).Where(item => item.Name == "RowBorder")) NormalizePropertyRowLayout(row, restore: true);
+            innerPropertyGrid.ClearValue(MinWidthProperty);
+        }
+
+        private void NormalizePropertyRowLayout(Border rowBorder, bool restore = false)
+        {
+            if (childParameterPredicate == null || rowBorder.Child is not Grid row || row.ColumnDefinitions.Count != 2) return;
+            TextBlock name = row.Children.OfType<TextBlock>().FirstOrDefault(item => (item.GetType().FullName ?? string.Empty).EndsWith(".Design.PropertyNameTextBlock", StringComparison.Ordinal));
+            Border editor = row.Children.OfType<Border>().FirstOrDefault(item => item.Name != "NameCell" && item.Name != "RowAccent");
+            if (name == null || editor == null) return;
+            if (restore)
+            {
+                if (originalNameLayout.TryGetValue(name, out object[] values))
+                {
+                    if (values[0] == DependencyProperty.UnsetValue) name.ClearValue(TextBlock.TextWrappingProperty); else name.SetValue(TextBlock.TextWrappingProperty, values[0]);
+                    if (values[1] == DependencyProperty.UnsetValue) name.ClearValue(TextBlock.TextTrimmingProperty); else name.SetValue(TextBlock.TextTrimmingProperty, values[1]);
+                    originalNameLayout.Remove(name);
+                }
+            }
+            else
+            {
+                originalNameLayout.GetValue(name, item => new object[] { item.ReadLocalValue(TextBlock.TextWrappingProperty), item.ReadLocalValue(TextBlock.TextTrimmingProperty) });
+                name.SetCurrentValue(TextBlock.TextWrappingProperty, TextWrapping.Wrap);
+                name.SetCurrentValue(TextBlock.TextTrimmingProperty, TextTrimming.None);
+            }
+            double available = restore ? double.PositiveInfinity : horizontalViewport?.ViewportWidth ?? ActualWidth;
+            if (!restore && (available <= 0D || row.ActualWidth <= 0D)) return;
+            FrameworkElement content = horizontalViewport?.Content as FrameworkElement;
+            double chrome = Math.Max(0D, (content?.ActualWidth ?? ActualWidth) - row.ActualWidth);
+            double nameWidth = row.ColumnDefinitions[0].Width.IsAbsolute ? row.ColumnDefinitions[0].Width.Value : row.ColumnDefinitions[0].ActualWidth;
+            Grid range = FindVisualChildren<Grid>(editor).FirstOrDefault(item => item.GetType().FullName == "System.Windows.Controls.WpfPropertyGrid.Controls.RangeEditorBase");
+            bool stacked = Grid.GetRow(editor) == 1 && Grid.GetColumnSpan(editor) == 2 && row.RowDefinitions.Count == 2;
+            bool narrow = range != null && available + 0.5D < nameWidth + Math.Max(390D, range.MinWidth) + editor.Padding.Left + editor.Padding.Right + chrome;
+            if (row.RowDefinitions.Count != 0 && !stacked) return;
+            if (narrow && !stacked)
+            {
+                row.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                row.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            }
+            foreach (UIElement child in row.Children)
+            {
+                bool isEditor = ReferenceEquals(child, editor);
+                Grid.SetRow(child, narrow && isEditor ? 1 : 0);
+                Grid.SetColumn(child, narrow ? 0 : isEditor ? 1 : 0);
+                Grid.SetColumnSpan(child, narrow ? 2 : 1);
+            }
+            if (!narrow && stacked) row.RowDefinitions.Clear();
+            row.ColumnDefinitions[1].MinWidth = narrow ? 0D : Math.Min(editorColumnMinimum, Math.Max(120D, available - nameWidth - chrome));
+            row.UpdateLayout();
+        }
+
         private void NormalizeChildParameterRow(FrameworkElement element)
         {
             if (!(element is Border rowBorder)
@@ -1624,6 +2147,7 @@ namespace System.Windows.Controls.WpfPropertyGrid
                 return;
             }
 
+            NormalizePropertyRowLayout(rowBorder);
             string propertyName = ResolvePropertyName(rowBorder.DataContext);
             ApplyCompatibilityReadOnlyPresentation(rowBorder, propertyName);
             if (IsRangeCompanionPropertyName(propertyName))
@@ -1644,19 +2168,19 @@ namespace System.Windows.Controls.WpfPropertyGrid
             // Conditional rows are children of a switch/selector above them. Give them a quiet inset treatment
             // so operators can read the generated PropertyGrid hierarchy without changing the model-driven flow.
             bool darkTheme = ThemeVariant == PropertyGridThemeVariant.Dark;
-            rowBorder.Background = darkTheme ? BrushFromRgb(16, 36, 42) : BrushFromRgb(250, 253, 255);
-            rowBorder.BorderBrush = darkTheme ? BrushFromRgb(56, 83, 92) : BrushFromRgb(210, 226, 239);
+            rowBorder.Background = darkTheme ? BrushFromRgb(27, 31, 39) : BrushFromRgb(250, 253, 255);
+            rowBorder.BorderBrush = darkTheme ? BrushFromRgb(38, 43, 52) : BrushFromRgb(210, 226, 239);
 
             foreach (Border border in FindVisualChildren<Border>(rowBorder))
             {
                 if (string.Equals(border.Name, "RowAccent", StringComparison.Ordinal))
                 {
                     border.Width = 4D;
-                    border.Background = darkTheme ? BrushFromRgb(37, 183, 194) : BrushFromRgb(93, 154, 205);
+                    border.Background = darkTheme ? BrushFromRgb(46, 196, 182) : BrushFromRgb(93, 154, 205);
                 }
                 else if (string.Equals(border.Name, "NameCell", StringComparison.Ordinal))
                 {
-                    border.Background = darkTheme ? BrushFromRgb(20, 49, 58) : BrushFromRgb(229, 239, 247);
+                    if (!darkTheme) border.Background = BrushFromRgb(229, 239, 247);
                 }
             }
 
@@ -1673,7 +2197,7 @@ namespace System.Windows.Controls.WpfPropertyGrid
                     textBlock.Margin.Top,
                     textBlock.Margin.Right,
                     textBlock.Margin.Bottom);
-                textBlock.Foreground = darkTheme ? BrushFromRgb(168, 203, 209) : BrushFromRgb(66, 91, 112);
+                if (!darkTheme) textBlock.Foreground = BrushFromRgb(66, 91, 112);
             }
         }
 
@@ -1756,7 +2280,7 @@ namespace System.Windows.Controls.WpfPropertyGrid
             PropertyDescriptor descriptor = ReadObjectProperty(dataContext, "PropertyDescriptor") as PropertyDescriptor;
             return descriptor?.Name ?? string.Empty;
         }
-        private void NormalizeRangeEditorLayout(FrameworkElement element)
+        private double NormalizeRangeEditorLayout(FrameworkElement element)
         {
             if (!(element is Grid grid)
                 || grid.ColumnDefinitions.Count < 5
@@ -1765,17 +2289,19 @@ namespace System.Windows.Controls.WpfPropertyGrid
                     "System.Windows.Controls.WpfPropertyGrid.Controls.RangeEditorBase",
                     StringComparison.Ordinal))
             {
-                return;
+                return 0D;
             }
 
             // Range editors carry label, lower bound, slider, upper bound, and value columns.
             // Keep those columns explicit so long values such as 1000000 do not clip into the slider.
             grid.MinWidth = Math.Max(grid.MinWidth, 390D);
+            grid.IsVisibleChanged -= RangeEditor_IsVisibleChanged;
+            grid.IsVisibleChanged += RangeEditor_IsVisibleChanged;
             grid.MinHeight = Math.Max(grid.MinHeight, 72D);
             bool darkTheme = ThemeVariant == PropertyGridThemeVariant.Dark;
             if (darkTheme)
             {
-                grid.Background = BrushFromRgb(14, 32, 38);
+                SetDarkThemeValue(grid, Panel.BackgroundProperty, BrushFromRgb(20, 23, 29));
             }
             grid.VerticalAlignment = VerticalAlignment.Stretch;
             grid.Margin = new Thickness(
@@ -1799,9 +2325,11 @@ namespace System.Windows.Controls.WpfPropertyGrid
 
             foreach (TextBlock textBlock in FindVisualChildren<TextBlock>(grid))
             {
+                if (ReferenceEquals(VisualTreeHelper.GetParent(textBlock), grid) && Grid.GetColumn(textBlock) == 0 && Grid.GetRow(textBlock) is 0 or 1)
+                    textBlock.SetCurrentValue(TextBlock.TextProperty, OpenVisionLanguageService.T(Grid.GetRow(textBlock) == 0 ? "PropertyGrid.Range.Lower" : "PropertyGrid.Range.Upper"));
                 if (darkTheme)
                 {
-                    textBlock.Foreground = BrushFromRgb(168, 203, 209);
+                    SetDarkThemeValue(textBlock, TextBlock.ForegroundProperty, BrushFromRgb(174, 182, 195));
                 }
                 textBlock.TextTrimming = TextTrimming.None;
                 textBlock.TextWrapping = TextWrapping.NoWrap;
@@ -1820,6 +2348,8 @@ namespace System.Windows.Controls.WpfPropertyGrid
                 }
                 textBox.MinWidth = Math.Max(textBox.MinWidth, 78D);
                 textBox.HorizontalContentAlignment = HorizontalAlignment.Center;
+                textBox.GotKeyboardFocus -= RangeEditorTextBox_GotKeyboardFocus;
+                textBox.GotKeyboardFocus += RangeEditorTextBox_GotKeyboardFocus;
                 textBox.LostKeyboardFocus -= RangeEditorTextBox_LostKeyboardFocus;
                 textBox.LostKeyboardFocus += RangeEditorTextBox_LostKeyboardFocus;
                 textBox.KeyDown -= RangeEditorTextBox_KeyDown;
@@ -1827,12 +2357,20 @@ namespace System.Windows.Controls.WpfPropertyGrid
                 textBox.TextChanged -= RangeEditorTextBox_TextChanged;
             }
 
+            // The value column must include the existing endpoint margins as well as its numeric minimum.
+            double valueColumnWidth = FindRangeEditorValueTextBoxes(grid).Select(textBox => textBox.MinWidth + textBox.Margin.Left + textBox.Margin.Right).DefaultIfEmpty(84D).Max();
+            grid.ColumnDefinitions[4].Width = new GridLength(Math.Max(84D, valueColumnWidth));
+            grid.MinWidth = Math.Max(grid.MinWidth, grid.ColumnDefinitions.Take(5).Sum(column => column.Width.IsAbsolute ? column.Width.Value : column.MinWidth));
+            FrameworkElement presenter = FindVisualParent<WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.Design.PropertyEditorContentPresenter>(grid);
+            // Carry the current row's width through the vendor presenter, name column and chrome.
+            // Visibility changes also schedule normalization, including a collapsed host's reveal.
+
             foreach (Slider slider in FindVisualChildren<Slider>(grid))
             {
                 if (darkTheme)
                 {
-                    slider.Foreground = BrushFromRgb(37, 183, 194);
-                    slider.Background = BrushFromRgb(56, 83, 92);
+                    SetDarkThemeValue(slider, Control.ForegroundProperty, BrushFromRgb(46, 196, 182));
+                    SetDarkThemeValue(slider, Control.BackgroundProperty, BrushFromRgb(38, 43, 52));
                 }
                 slider.MinHeight = Math.Max(slider.MinHeight, 20D);
                 slider.Margin = new Thickness(slider.Margin.Left, 0D, slider.Margin.Right, 0D);
@@ -1849,11 +2387,38 @@ namespace System.Windows.Controls.WpfPropertyGrid
                     checkBox.IsHitTestVisible = false;
                 }
             }
+            Border rowBorder = presenter == null ? null : FindVisualParent<Border>(presenter);
+            while (rowBorder != null && rowBorder.Name != "RowBorder") rowBorder = FindVisualParent<Border>(rowBorder);
+            if (rowBorder != null) NormalizePropertyRowLayout(rowBorder);
+            return grid.IsVisible && presenter != null && innerPropertyGrid.ActualWidth > 0D
+                ? grid.MinWidth + grid.Margin.Left + grid.Margin.Right + Math.Max(0D, innerPropertyGrid.ActualWidth - presenter.ActualWidth)
+                : 0D;
+        }
+
+        private void RangeEditor_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e) => ScheduleNormalizeInnerEditorControls();
+
+        private void RangeEditorTextBox_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+        {
+            focusedRangeEditorTextBox = e.OriginalSource as TextBox;
+            focusedRangeEditorOriginalText = focusedRangeEditorTextBox?.Text;
         }
 
         private void RangeEditorTextBox_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
         {
-            ScheduleRangeEditorPropertyChanged(e.OriginalSource as DependencyObject ?? sender as DependencyObject);
+            if (!ReferenceEquals(e.OriginalSource, focusedRangeEditorTextBox))
+            {
+                return;
+            }
+
+            TextBox editor = focusedRangeEditorTextBox;
+            bool changed = !string.Equals(focusedRangeEditorOriginalText, editor.Text, StringComparison.Ordinal)
+                && TryParseRangeEditorNumber(editor.Text, out _);
+            focusedRangeEditorTextBox = null;
+            focusedRangeEditorOriginalText = null;
+            if (changed)
+            {
+                ScheduleRangeEditorPropertyChanged(editor);
+            }
         }
 
         private void BindRangeEditorEndpoints(FrameworkElement rangeEditor)
@@ -1881,10 +2446,25 @@ namespace System.Windows.Controls.WpfPropertyGrid
             // WPG's stock RangeEditor stores Min/Max in private endpoint controls. Once the
             // companion Max row is hidden by the bridge, bind those endpoints directly to the
             // model so the operator can still adjust both values from the single range row.
-            BindRangeEditorEndpoint(ReadPrivateField<Slider>(rangeEditor, "_minSlider"), RangeBase.ValueProperty, selectedObject, rangeEditorAttribute.MinPropertyName);
-            BindRangeEditorEndpoint(ReadPrivateField<Slider>(rangeEditor, "_maxSlider"), RangeBase.ValueProperty, selectedObject, rangeEditorAttribute.MaxPropertyName);
-            BindRangeEditorEndpoint(ReadPrivateField<TextBox>(rangeEditor, "_minBox"), TextBox.TextProperty, selectedObject, rangeEditorAttribute.MinPropertyName);
-            BindRangeEditorEndpoint(ReadPrivateField<TextBox>(rangeEditor, "_maxBox"), TextBox.TextProperty, selectedObject, rangeEditorAttribute.MaxPropertyName);
+            bool previous = suppressRangeEditorChanges;
+            FieldInfo stockUpdating = rangeEditor.GetType().GetField("_updating", BindingFlags.Instance | BindingFlags.NonPublic);
+            bool previousStockUpdating = stockUpdating?.GetValue(rangeEditor) is bool updating && updating;
+            suppressRangeEditorChanges = true;
+            try
+            {
+                // The stock callback refreshes the hidden companion from the range limit.
+                // Initial binding must update the controls without writing that default back.
+                stockUpdating?.SetValue(rangeEditor, true);
+                BindRangeEditorEndpoint(ReadPrivateField<Slider>(rangeEditor, "_minSlider"), RangeBase.ValueProperty, selectedObject, rangeEditorAttribute.MinPropertyName);
+                BindRangeEditorEndpoint(ReadPrivateField<Slider>(rangeEditor, "_maxSlider"), RangeBase.ValueProperty, selectedObject, rangeEditorAttribute.MaxPropertyName);
+                BindRangeEditorEndpoint(ReadPrivateField<TextBox>(rangeEditor, "_minBox"), TextBox.TextProperty, selectedObject, rangeEditorAttribute.MinPropertyName);
+                BindRangeEditorEndpoint(ReadPrivateField<TextBox>(rangeEditor, "_maxBox"), TextBox.TextProperty, selectedObject, rangeEditorAttribute.MaxPropertyName);
+            }
+            finally
+            {
+                stockUpdating?.SetValue(rangeEditor, previousStockUpdating);
+                suppressRangeEditorChanges = previous;
+            }
         }
 
         private static void BindRangeEditorEndpoint(FrameworkElement element, DependencyProperty property, object source, string path)
@@ -1894,6 +2474,13 @@ namespace System.Windows.Controls.WpfPropertyGrid
                 return;
             }
 
+            UpdateSourceTrigger updateTrigger = property == TextBox.TextProperty ? UpdateSourceTrigger.LostFocus : UpdateSourceTrigger.PropertyChanged;
+            Binding current = BindingOperations.GetBinding(element, property);
+            // Repeated theme/layout normalization must preserve an uncommitted endpoint edit.
+            if (current != null && ReferenceEquals(current.Source, source) && string.Equals(current.Path?.Path, path, StringComparison.Ordinal)
+                && current.Mode == BindingMode.TwoWay && current.UpdateSourceTrigger == updateTrigger && current.Converter == null)
+                return;
+
             BindingOperations.SetBinding(
                 element,
                 property,
@@ -1901,17 +2488,18 @@ namespace System.Windows.Controls.WpfPropertyGrid
                 {
                     Source = source,
                     Mode = BindingMode.TwoWay,
-                    UpdateSourceTrigger = property == TextBox.TextProperty
-                        ? UpdateSourceTrigger.LostFocus
-                        : UpdateSourceTrigger.PropertyChanged
+                    UpdateSourceTrigger = updateTrigger
                 });
         }
 
         private void RangeEditorTextBox_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Enter)
+            if (e.Key == Key.Enter && ReferenceEquals(e.OriginalSource, focusedRangeEditorTextBox)
+                && !string.Equals(focusedRangeEditorOriginalText, focusedRangeEditorTextBox.Text, StringComparison.Ordinal)
+                && TryParseRangeEditorNumber(focusedRangeEditorTextBox.Text, out _))
             {
-                ScheduleRangeEditorPropertyChanged(e.OriginalSource as DependencyObject ?? sender as DependencyObject);
+                ScheduleRangeEditorPropertyChanged(focusedRangeEditorTextBox);
+                focusedRangeEditorOriginalText = focusedRangeEditorTextBox.Text;
             }
         }
 
@@ -1930,6 +2518,7 @@ namespace System.Windows.Controls.WpfPropertyGrid
 
         private void ScheduleRangeEditorPropertyChanged(DependencyObject source)
         {
+            if (suppressRangeEditorChanges) { return; }
             FrameworkElement rangeEditor = FindRangeEditorElement(source);
             if (rangeEditor == null)
             {
@@ -1949,6 +2538,14 @@ namespace System.Windows.Controls.WpfPropertyGrid
 
         private void RaiseRangeEditorPropertyChanged(FrameworkElement rangeEditor, DependencyObject source)
         {
+            TextBox minBox = ReadPrivateField<TextBox>(rangeEditor, "_minBox");
+            // Reload can blur an editor from the previous SelectedObject after the new one is active.
+            if (minBox == null || SelectedObject == null
+                || !ReferenceEquals(BindingOperations.GetBinding(minBox, TextBox.TextProperty)?.Source, SelectedObject))
+            {
+                return;
+            }
+
             object propertyValue = ReadObjectProperty(rangeEditor, "PropertyValue");
             object parentProperty = ReadObjectProperty(propertyValue, "ParentProperty");
             WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyItem propertyItem =
@@ -2558,7 +3155,8 @@ namespace System.Windows.Controls.WpfPropertyGrid
             object sender,
             WpfPropertyGridOriginal::System.Windows.Controls.WpfPropertyGrid.PropertyValueChangedEventArgs e)
         {
-            RaisePropertyValueChanged(e.Property, null, null);
+            // Template initialization can convert the selected color name back to the same value.
+            if (!object.Equals(e.OldValue, PropertyGridPropertyValueChangeSubscription.ReadPropertyItemValue(e.Property))) RaisePropertyValueChanged(e.Property, null, null);
         }
 
         private void OnLanguageChanged(object sender, EventArgs e)
@@ -3099,7 +3697,7 @@ namespace System.Windows.Controls.WpfPropertyGrid
 
         private void RaisePropertyValueChanged(IPropertyGridProperty property, object oldValue, object newValue)
         {
-            if (suppressPropertyValueChanged)
+            if (suppressPropertyValueChanged || suppressRangeEditorChanges)
             {
                 return;
             }

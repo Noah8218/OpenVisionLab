@@ -11,8 +11,9 @@ namespace OpenVisionLab
         private const double SidecarHeight = 330D;
         private const double SidecarGap = 8D;
 
-        private readonly VisionToolSingleInputPropertyToolShell shell;
+        private readonly FrameworkElement shell;
         private readonly VisionToolParameterGuideView guideView;
+        private readonly Func<bool> isDocked;
         private OpenVisionFloatingToolWindow sidecar;
         private Window sidecarOwner;
         private bool available;
@@ -20,17 +21,20 @@ namespace OpenVisionLab
         private bool closingSidecar;
 
         public VisionToolParameterGuideSidecarController(
-            VisionToolSingleInputPropertyToolShell shell,
-            VisionToolParameterGuideView guideView)
+            FrameworkElement shell,
+            VisionToolParameterGuideView guideView,
+            Func<bool> isDocked)
         {
             this.shell = shell ?? throw new ArgumentNullException(nameof(shell));
             this.guideView = guideView ?? throw new ArgumentNullException(nameof(guideView));
+            this.isDocked = isDocked ?? throw new ArgumentNullException(nameof(isDocked));
             shell.Loaded += Shell_Loaded;
             shell.Unloaded += Shell_Unloaded;
             guideView.ContentPresented += GuideView_ContentPresented;
         }
 
         public bool IsVisible => sidecar?.IsVisible == true;
+        public void RefreshTitle() => sidecar?.SetTitle(OpenVisionLanguageService.T("VisionTool.ParameterGuide.Header"));
 
         public void SetAvailable(bool value)
         {
@@ -62,7 +66,7 @@ namespace OpenVisionLab
 
         public void OnLayoutModeChanged()
         {
-            if (shell.IsDockedInspectorMode && sidecar?.IsVisible == true)
+            if (isDocked() && sidecar?.IsVisible == true)
             {
                 dismissedByOperator = true;
                 sidecar.Hide();
@@ -71,7 +75,7 @@ namespace OpenVisionLab
 
         private void GuideView_ContentPresented(object sender, EventArgs e)
         {
-            if (!available || dismissedByOperator || shell.IsDockedInspectorMode)
+            if (!available || dismissedByOperator || isDocked())
             {
                 return;
             }
@@ -86,6 +90,9 @@ namespace OpenVisionLab
             {
                 return;
             }
+
+            guideView.Expand();
+            guideView.SetCompactMode(false);
 
             if (sidecar == null || !ReferenceEquals(sidecarOwner, owner))
             {
@@ -164,7 +171,7 @@ namespace OpenVisionLab
             if (guideView.IsExpandedForTest
                 && available
                 && !dismissedByOperator
-                && !shell.IsDockedInspectorMode)
+                && !isDocked())
             {
                 ShowSidecar();
             }

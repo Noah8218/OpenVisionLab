@@ -8,14 +8,37 @@
         Height="840"
         MinWidth="1100"
         MinHeight="680"
+        Background="{DynamicResource VisionTool.SurfaceBrush}"
+        Foreground="{DynamicResource VisionTool.PrimaryTextBrush}"
+        FontFamily="{DynamicResource OpenVision.Workbench.FontFamily}"
         WindowStartupLocation="CenterOwner"
         AutomationProperties.AutomationId="VisionToolNImageVerificationWindow">
+    <Window.InputBindings><KeyBinding Key="F5" Modifiers="Shift" Command="{Binding MainStopCommand}"/></Window.InputBindings>
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <local:SharedResourceDictionary Source="../../../../VisionTest/Wpf/Tooling/Presentation/VisionToolWpfTheme.xaml" />
             </ResourceDictionary.MergedDictionaries>
+            <SolidColorBrush x:Key="VisionTool.SurfaceBrush" Color="{DynamicResource OpenVision.Workbench.PanelBrush.Color}" />
+            <SolidColorBrush x:Key="VisionTool.PanelBrush" Color="{DynamicResource OpenVision.Workbench.PanelAltBrush.Color}" />
+            <SolidColorBrush x:Key="VisionTool.HeaderBrush" Color="{DynamicResource OpenVision.Workbench.RaisedBrush.Color}" />
+            <SolidColorBrush x:Key="VisionTool.HeaderBorderBrush" Color="{DynamicResource OpenVision.Workbench.FieldBorderBrush.Color}" />
+            <SolidColorBrush x:Key="VisionTool.PrimaryTextBrush" Color="{DynamicResource OpenVision.Workbench.TextBrush.Color}" />
+            <SolidColorBrush x:Key="VisionTool.SecondaryTextBrush" Color="{DynamicResource OpenVision.Workbench.SecondaryTextBrush.Color}" />
+            <SolidColorBrush x:Key="VisionTool.LineBrush" Color="{DynamicResource OpenVision.Workbench.LineBrush.Color}" />
+            <SolidColorBrush x:Key="VisionTool.SelectionBrush" Color="{DynamicResource OpenVision.Workbench.AccentSoftBrush.Color}" />
+            <SolidColorBrush x:Key="VisionTool.AccentBrush" Color="{DynamicResource OpenVision.Workbench.AccentBrush.Color}" />
+            <SolidColorBrush x:Key="OpenVision.PanelBrush" Color="{DynamicResource OpenVision.Workbench.PanelBrush.Color}" />
+            <SolidColorBrush x:Key="OpenVision.TextBrush" Color="{DynamicResource OpenVision.Workbench.TextBrush.Color}" />
+            <SolidColorBrush x:Key="OpenVision.LineBrush" Color="{DynamicResource OpenVision.Workbench.LineBrush.Color}" />
+            <SolidColorBrush x:Key="OpenVision.BandBrush" Color="{DynamicResource OpenVision.Workbench.RaisedBrush.Color}" />
+            <SolidColorBrush x:Key="OpenVision.AccentSoftBrush" Color="{DynamicResource OpenVision.Workbench.AccentSoftBrush.Color}" />
+            <SolidColorBrush x:Key="OpenVision.AccentBrush" Color="{DynamicResource OpenVision.Workbench.AccentBrush.Color}" />
+            <Style x:Key="NImageCellTextStyle" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=DataGridCell}}" />
+            </Style>
             <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+            <Style TargetType="DataGrid" BasedOn="{StaticResource OpenVision.ResultGridStyle}" />
         </ResourceDictionary>
     </Window.Resources>
 
@@ -111,7 +134,7 @@
                         AutomationProperties.Name="{Binding AddFilesText}">
                     <StackPanel Orientation="Horizontal">
                         <iconPacks:PackIconMaterial Kind="FileImagePlusOutline" Width="16" Height="16" Margin="0,0,6,0" />
-                        <TextBlock Text="{Binding AddFilesText}" />
+                        <TextBlock Text="{Binding AddFilesText}" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                     </StackPanel>
                 </Button>
                 <Button Grid.Column="2"
@@ -123,7 +146,7 @@
                         AutomationProperties.Name="{Binding AddFolderText}">
                     <StackPanel Orientation="Horizontal">
                         <iconPacks:PackIconMaterial Kind="FolderImage" Width="16" Height="16" Margin="0,0,6,0" />
-                        <TextBlock Text="{Binding AddFolderText}" />
+                        <TextBlock Text="{Binding AddFolderText}" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                     </StackPanel>
                 </Button>
                 <Button Grid.Column="4"
@@ -135,7 +158,7 @@
                         AutomationProperties.Name="{Binding ClearImagesText}">
                     <StackPanel Orientation="Horizontal">
                         <iconPacks:PackIconMaterial Kind="DeleteSweepOutline" Width="16" Height="16" Margin="0,0,6,0" />
-                        <TextBlock Text="{Binding ClearImagesText}" />
+                        <TextBlock Text="{Binding ClearImagesText}" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                     </StackPanel>
                 </Button>
                 <Button Grid.Column="6"
@@ -147,7 +170,7 @@
                         AutomationProperties.Name="{Binding RunText}">
                     <StackPanel Orientation="Horizontal">
                         <iconPacks:PackIconMaterial Kind="Play" Width="16" Height="16" Margin="0,0,6,0" />
-                        <TextBlock Text="{Binding RunText}" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding RunText}" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" FontWeight="SemiBold" />
                     </StackPanel>
                 </Button>
                 <Button Grid.Column="8"
@@ -158,7 +181,7 @@
                         AutomationProperties.Name="{Binding StopText}">
                     <StackPanel Orientation="Horizontal">
                         <iconPacks:PackIconMaterial Kind="Stop" Width="16" Height="16" Margin="0,0,6,0" />
-                        <TextBlock Text="{Binding StopText}" />
+                        <TextBlock Text="{Binding StopText}" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                     </StackPanel>
                 </Button>
                 <Button Grid.Column="10"
@@ -170,7 +193,7 @@
                         AutomationProperties.Name="{Binding ExportHtmlText}">
                     <StackPanel Orientation="Horizontal">
                         <iconPacks:PackIconMaterial Kind="FileExportOutline" Width="16" Height="16" Margin="0,0,6,0" />
-                        <TextBlock Text="{Binding ExportHtmlText}" />
+                        <TextBlock Text="{Binding ExportHtmlText}" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                     </StackPanel>
                 </Button>
                 <Button Grid.Column="12"
@@ -184,7 +207,7 @@
                         AutomationProperties.Name="{Binding PromoteLocatorValidationText}">
                     <StackPanel Orientation="Horizontal">
                         <iconPacks:PackIconMaterial Kind="DatabaseExportOutline" Width="16" Height="16" Margin="0,0,6,0" />
-                        <TextBlock Text="{Binding PromoteLocatorValidationText}" />
+                        <TextBlock Text="{Binding PromoteLocatorValidationText}" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                     </StackPanel>
                 </Button>
             </Grid>
@@ -227,8 +250,12 @@
                               AutomationProperties.AutomationId="VisionToolNImageVerificationResults">
                         <DataGrid.RowStyle>
                             <Style TargetType="DataGridRow">
+                                <Setter Property="Background" Value="{StaticResource VisionTool.SurfaceBrush}" />
                                 <Setter Property="Foreground" Value="{StaticResource VisionTool.PrimaryTextBrush}" />
                                 <Style.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="Background" Value="{StaticResource VisionTool.SelectionBrush}" />
+                                    </Trigger>
                                     <DataTrigger Binding="{Binding Status}" Value="OK">
                                         <Setter Property="Foreground" Value="{StaticResource VisionTool.StatusSuccessBrush}" />
                                         <Setter Property="FontWeight" Value="SemiBold" />
@@ -248,18 +275,18 @@
                             </Style>
                         </DataGrid.RowStyle>
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="#" Binding="{Binding Index}" Width="48" />
-                            <DataGridTextColumn Binding="{Binding FileName}" Width="1.4*">
+                            <DataGridTextColumn ElementStyle="{StaticResource NImageCellTextStyle}" Header="#" Binding="{Binding Index}" Width="48" />
+                            <DataGridTextColumn ElementStyle="{StaticResource NImageCellTextStyle}" Binding="{Binding FileName}" Width="1.4*">
                                 <DataGridTextColumn.Header><TextBlock Text="{Binding DataContext.FileHeaderText, RelativeSource={RelativeSource AncestorType=DataGrid}}" /></DataGridTextColumn.Header>
                             </DataGridTextColumn>
-                            <DataGridTextColumn Binding="{Binding Status}" Width="78">
+                            <DataGridTextColumn ElementStyle="{StaticResource NImageCellTextStyle}" Binding="{Binding Status}" Width="78">
                                 <DataGridTextColumn.Header><TextBlock Text="{Binding DataContext.StatusHeaderText, RelativeSource={RelativeSource AncestorType=DataGrid}}" /></DataGridTextColumn.Header>
                             </DataGridTextColumn>
-                            <DataGridTextColumn Binding="{Binding MetricText}" Width="1.5*">
+                            <DataGridTextColumn ElementStyle="{StaticResource NImageCellTextStyle}" Binding="{Binding MetricText}" Width="1.5*">
                                 <DataGridTextColumn.Header><TextBlock Text="{Binding DataContext.MetricHeaderText, RelativeSource={RelativeSource AncestorType=DataGrid}}" /></DataGridTextColumn.Header>
                             </DataGridTextColumn>
-                            <DataGridTextColumn Header="ms" Binding="{Binding TotalMilliseconds, StringFormat=0.###}" Width="72" />
-                            <DataGridTextColumn Binding="{Binding ReviewDetailText}" Width="1.5*">
+                            <DataGridTextColumn ElementStyle="{StaticResource NImageCellTextStyle}" Header="ms" Binding="{Binding TotalMilliseconds, StringFormat=0.###}" Width="72" />
+                            <DataGridTextColumn ElementStyle="{StaticResource NImageCellTextStyle}" Binding="{Binding ReviewDetailText}" Width="1.5*">
                                 <DataGridTextColumn.Header><TextBlock Text="{Binding DataContext.ReviewReasonHeaderText, RelativeSource={RelativeSource AncestorType=DataGrid}}" /></DataGridTextColumn.Header>
                             </DataGridTextColumn>
                         </DataGrid.Columns>

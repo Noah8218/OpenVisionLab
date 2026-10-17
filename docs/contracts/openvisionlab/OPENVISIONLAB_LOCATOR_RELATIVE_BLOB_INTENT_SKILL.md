@@ -2,7 +2,6 @@
 
 상태: **구현된 계약/초안 생성기 + 증거 패킷 검증기 (pilot)**
 Skill ID: `locator-relative-blob-v1`
-범위 재개: 2026-08-27, 사용자가 LLM maintenance mode를 명시적으로 다시 열고 구현을 승인함
 
 ## 1. 목적
 
@@ -206,7 +205,7 @@ operator 입력을 자동으로 승인하지 않으며, Recipe promotion이
 - `src/OpenVisionLab/UI/Menu/Wpf/OpenVisionShellHostRecipeCommandSurface*.cs`
 - `src/OpenVisionLab/UI/Menu/Wpf/OpenVisionShellHostView.xaml`
 
-## 9. 파일럿 한계와 다음 승인 조건
+## 9. 적용 범위와 결과 검토
 
 현재 public Matching -> NormalizeImage -> Threshold -> fixed reference-ROI Blob 경로는 Good/미검출 Bad 두 샘플의 bounded teaching pilot로만 사용할 수 있다. 이것은 최종 일반성이나 현장 qualification을 의미하지 않는다.
 
@@ -219,80 +218,9 @@ operator 입력을 자동으로 승인하지 않으며, Recipe promotion이
 - evidence packet JSON
 - 원래 실행과 packet 컴파일 후 explicit replay의 outcome/metrics 요약
 
-다음 단계에는 사용자가 별도로 지정한 frozen corpus와 held-out split이 필요하다. 각 샘플의 source/XML/packet/overlay/hash/metrics를 묶고, Good 한 건·경계/shifted 한 건·실패 한 건의 현재-run drawing을 보존해야 한다. held-out 결과가 고정되기 전에는 skill을 `QUALIFIED` 또는 자동 판단기로 승격하지 않는다.
+N-image 검증에서는 frozen corpus와 held-out split을 구분하고 source/XML/packet/overlay/hash/metrics를 함께 확인한다. 후보 두 개 미만의 packet은 validation/export에서 거부하며 `MissingSecondCandidate`로 기록한다. 과거 v1 packet을 v1.1의 관찰된 margin 증거로 자동 변환하지 않는다.
 
-### 9.1 외부 샘플 corpus intake (2026-08-27 pilot)
-
-`E:\라벨테스트`는 33개 dataset family, 153,988개 파일, 98,619개 raster image로
-구성되어 있다. 현재 skill에 직접 연결한 범위는 그중
-`EasyMatch_Die_Pad_500(1)\EasyMatch_Die_Pad_500`의 `source_file=Die Pad 1.bmp`
-122행(train 82 / val 27 / test 13, role label OK 62 / NG 60)뿐이다. 이 subset은
-README가 밝히는 synthetic labeling/tool/pipeline compatibility test이므로 실제
-불량 판정 성능의 근거가 아니다.
-
-재현 명령은 다음과 같다.
-
-```text
-dotnet "tools\\LocatorRelativeBlobSkillSmoke\\bin\\Any CPU\\Debug\\net8.0-windows7.0\\LocatorRelativeBlobSkillSmoke.dll" `
-  --locator-relative-blob-corpus-pilot <native-batch-evidence> <new-D-drive-output>
-```
-
-intake는 native batch의 source hash/overlay를 먼저 확인한 뒤 각 행에 대해 현재
-5-Step pipeline을 실행하고, `NUM_MATCH=2` locator 결과가 명시적 gate를 통과한
-경우에만 current overlay와 source/template/overlay hash를 가진 packet을 만든다.
-그 packet을 reload/compile하고, LLM 없이 생성된 XML을 다시 explicit replay하여
-outcome을 비교한다. `RoleLabelOnly`는 CSV/manifest에만 보존하며 Blob
-`ResultCount`나 runtime success로 OK/NG 의미를 대신하지 않는다.
-
-기존 2026-08-27 pilot 결과는 122행 중 120 packet/replay 수용, 2행(locator 후보
-없음) reject, 오류 0건이었다. 수용된 120행의 Blob `ResultCount`는 0~4로 분포하므로
-이 결과는 고정 ROI와 replay 경계를 확인한 historical pilot evidence이지 결함 분류
-gate가 아니다. 또한 수용된 행은 모두 보존 후보가 1개였고, 당시 metric 정의에서
-second candidate가 없으면 `ScoreMargin`은 best-score와 0의 차이로 계산되었다.
-따라서 당시 packet은 “두 번째 후보와의 실제 경쟁 margin이 관찰된” 증거와 동일하지
-않다. 현재 계약은 이 경계를 반영해 후보 2개 미만의 packet을 validation/export에서
-거부하고, corpus intake는 `MissingSecondCandidate` 상태로 별도 기록한다.
-
-2026-08-29 계약 스모크는 v1.1 2개 후보 packet의 save/load/compile과 1개 후보로
-축약한 packet의 fail-closed validation을 확인했다. 기존 v1 2026-08-27 artifact는
-자동 변환하지 않고 historical evidence로 보존되며, 현재 validator의 관찰된 margin
-증거로 재사용하지 않는다.
-
-같은 날짜의 bounded native probe는 기존 public synthetic source에 두 번째
-template instance를 추가해 실제 Matching 결과에 후보 2개(score `100`, `82.205`)와
-`ScoreMargin=17.795`를 만들었고, v1.1 packet export/load/compile/replay까지 통과했다.
-이 probe는 native provenance 경계를 검증하지만, 외부 corpus qualification이나
-operator 승인된 Train/Validation/Held-out subset을 의미하지 않는다.
-
-같은 날짜에 기존 P227 `Die Array / Die1.tif` 후보를 현재 native Matching의
-외부 provenance diagnostic으로 재실행했다. 보존된 `die_array_003_ok.jpg`와
-96x96 template에 `NUM_MATCH=2`를 적용한 결과 후보 2개(score `100` at
-`192,176`, `96.276` at `56,464`)와 실제 `ScoreMargin=3.724`가 관찰되었다.
-현재 margin 요구치 `10`을 통과하지 못해 `acceptance=false`로 fail closed 되었고,
-반복 격자 후보라는 이전 시각 검토 경계 때문에 v1.1 packet은 의도적으로
-export하지 않았다. 같은 runtime result를 실제
-`OpenVisionRecipeLocatorRelativeBlobEvidenceExporter.TryExport`에 전달한
-결과도 `false`와 `The runtime locator did not pass its explicit success and
-ambiguity gates.`를 반환했고, packet/ exporter overlay path를 반환하지 않았으며
-`evidence.packet.json`을 생성하지 않았다. `candidate-provenance.json`,
-`probe-summary.txt`, current native overlay는
-`D:\OpenVisionLab-TestData\OpenVisionLab_Dev\locator-relative-blob-external-die-array-provenance-20260829-r2`
-에 보존한다. 이는 실제 두 번째 후보 보존과 ambiguity 차단 및 exporter
-fail-closed 경계를 확인하는 negative evidence이며, locator 승인·margin
-완화·qualification을 의미하지 않는다.
-
-상세 intake manifest와 현재-run overlay는 다음에 보존한다.
-
-- `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\locator-relative-blob-corpus-inventory-20260827\inventory.json`
-- `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\locator-relative-blob-corpus-pilot-20260827-die-pad1-final\summary.json`
-- `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\locator-relative-blob-corpus-pilot-20260827-die-pad1-final\intake.csv`
-- `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\locator-relative-blob-corpus-pilot-20260827-die-pad1-final\corpus-freeze-manifest.tsv`
-
-이 intake는 pilot 범위만 완료하며 `PilotOnly=true`, `Qualification=false`를
-유지한다. 다른 dataset family, multi-ROI/mask, per-image ROI, physical ground
-truth, Recipe/Run History 자동 연결은 사용자 승인과 별도 계약 없이는 열지 않는다.
-
-### 9.2 native 후보 ambiguity gate diagnostic (2026-08-29)
+### 9.1 native 후보 ambiguity gate diagnostic### 9.2 native 후보 ambiguity gate diagnostic (2026-08-29)
 
 실제 외부 후보를 한 개에 하드코딩하지 않고 재현하려면 다음 명시적 진단
 모드를 사용한다.
@@ -300,7 +228,7 @@ truth, Recipe/Run History 자동 연결은 사용자 승인과 별도 계약 없
 ```text
 dotnet "<built-smoke-dll>" \
   --locator-relative-blob-external-native-candidate \
-  <source> <template> <inspection-roi> <reference-pose> <new-D-drive-output>
+  <source> <template> <inspection-roi> <reference-pose> <isolated-output>
 ```
 
 이 모드는 `REVIEW_ONLY`이며 입력된 source/template를 evidence 폴더에 복사하고,
@@ -310,25 +238,3 @@ full-source search ROI와 고정된 locator gate를 적용한다. `NUM_MATCH=2`�
 보존한다. 두 후보와 margin `10`을 모두 통과한 경우에만 실제 v1.1 exporter를
 호출하고 packet reload/compile/replay를 확인한다. 이 모드의 `PASS`는 진단
 실행 완료를 뜻하며, operator 승인이나 qualification을 뜻하지 않는다.
-
-2026-08-29 P227에 이미 기록된 13개 `SUGGESTED` 후보를 같은 조건으로
-실행했다. IC Frame4만 canonical row에서 두 후보(`100`, `83.999`)와
-`ScoreMargin=16.001`을 통과했다. 고정 IC Frame4 pilot 8행에서는 5행이
-두 후보와 margin gate를 통과하고 packet/replay까지 일치했으며, 1행은
-second candidate 미보존, 2행은 no-result였다. 다만 고정된
-`Blob(ROI=368,368,96,96, Area=700..1300)`는 gate 통과 행에서도
-`ResultCount=0`이어서 전체 locator-relative Blob graph 성공은 아니다.
-
-현재 source/template/overlay 및 row별 provenance는 다음 report와 D-drive
-evidence에 보존한다.
-
-- `docs/reports/OPENVISIONLAB_LLM_LOCATOR_RELATIVE_BLOB_NATIVE_CANDIDATE_GATE_20260829.md`
-- `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\locator-relative-blob-external-native-candidates-20260829`
-- `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\locator-relative-blob-external-native-ic-frame4-pilot-20260829-r2`
-
-IC Frame4의 top candidate는 현재 visual spot review에서 우측 하단 pin row와
-대각 corner가 template과 대응하지만, second candidate는 반복 pin segment만
-포함한다. 이는 `REVIEW_ONLY`의 시각 검토 기록이며 operator 승인으로
-대체하지 않는다. 따라서 `Qualification=false`를 유지하고, 승인 이후에만
-frozen Train/Validation/Held-out 범위와 downstream inspection ROI를 별도로
-확정한다.

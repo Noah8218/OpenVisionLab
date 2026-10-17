@@ -60,6 +60,7 @@ namespace OpenVisionLab
         {
             this.owner = owner ?? throw new ArgumentNullException(nameof(owner));
             this.presenter = presenter ?? throw new ArgumentNullException(nameof(presenter));
+            presenter.ParametersRestored += OnParametersRestored;
             this.titleLocalizationKey = titleLocalizationKey ?? string.Empty;
             Stopwatch phaseStopwatch = Stopwatch.StartNew();
             VisionToolSingleInputPropertyToolShell shell = owner.FindName("toolShell") as VisionToolSingleInputPropertyToolShell;
@@ -293,6 +294,16 @@ namespace OpenVisionLab
             propertyGridController.RefreshSelectedObject();
         }
 
+        private void OnParametersRestored(object sender, EventArgs e)
+        {
+            CancelAutoPreview();
+            propertyGridController.RefreshAndApplyVisibilityRules();
+            UpdateSummary();
+            RefreshInputRoiOverlay();
+            ClearResultReview();
+            CancelAutoPreview();
+        }
+
         public void UpdateSummary()
         {
             summaryText.Text = presenter.Summary;
@@ -324,6 +335,7 @@ namespace OpenVisionLab
 
         public void Dispose()
         {
+            presenter.ParametersRestored -= OnParametersRestored;
             presetPresenter?.Dispose();
             autoPreviewScheduler?.Dispose();
             inputRuntime.Dispose();
@@ -342,12 +354,17 @@ namespace OpenVisionLab
                 return false;
             }
 
-            preset.ApplyTo(property);
-            presenter.PersistSelectedObject();
-            propertyGridController.RefreshAndApplyVisibilityRules();
-            UpdateSummary();
-            RefreshInputRoiOverlay();
-            ClearResultReview();
+            CancelAutoPreview();
+            try
+            {
+                preset.ApplyTo(property);
+                presenter.PersistSelectedObject();
+                propertyGridController.RefreshAndApplyVisibilityRules();
+                UpdateSummary();
+                RefreshInputRoiOverlay();
+                ClearResultReview();
+            }
+            finally { CancelAutoPreview(); }
             return true;
         }
 

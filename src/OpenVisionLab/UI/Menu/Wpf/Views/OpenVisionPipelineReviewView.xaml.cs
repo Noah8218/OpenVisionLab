@@ -41,6 +41,7 @@ namespace OpenVisionLab
         private bool suppressScaleCalibrationSelection;
         private bool suppressFixtureConsumerSelection;
         private bool hasScaleCalibrationRecord;
+        private OpenVisionRecipeRunEvidence historicalRunEvidence;
         private readonly OpenVisionPipelineReviewLayoutController layoutController;
         private readonly OpenVisionPipelineReviewImageResourceOwner imageResources =
             new OpenVisionPipelineReviewImageResourceOwner();
@@ -300,6 +301,11 @@ namespace OpenVisionLab
             btnFixtureRun.ToolTip = T("PipelineReview.FixtureDesigner.RunToolTip", "Run the pipeline explicitly and refresh fixture evidence");
             layoutController.UpdateReviewDetailsToggleVisuals();
             layoutController.UpdateStepFlowToggleVisuals();
+            if (historicalRunEvidence != null)
+            {
+                ViewModel.SetHistoricalRunContext(historicalRunEvidence);
+                ApplyHistoricalRunReadOnlyPresentation();
+            }
         }
 
         private static string T(string key, string fallbackText)
@@ -988,6 +994,77 @@ namespace OpenVisionLab
         public void SetResultSummary(string summary, string details)
         {
             ViewModel.SetResultSummary(summary, details);
+        }
+
+        internal void SetHistoricalRunEvidence(
+            OpenVisionRecipeRunEvidence evidence,
+            Bitmap sourceImage,
+            Bitmap drawingImage)
+        {
+            historicalRunEvidence = evidence ?? throw new ArgumentNullException(nameof(evidence));
+            OpenVisionRecipeRunEvidenceDrawing drawing = evidence.DefaultDrawing
+                ?? throw new InvalidOperationException("The saved run has no selected Step drawing.");
+            if (sourceImage == null || drawingImage == null)
+            {
+                throw new InvalidOperationException("The saved run source or drawing image is unavailable.");
+            }
+
+            ViewModel.SetHistoricalRunContext(evidence);
+            SetSelectedStep(
+                drawing.StepText,
+                drawing.ToolType,
+                drawing.StepStatus,
+                T("PipelineReview.StoredSource", "Stored source") + " | " + evidence.SampleName,
+                sourceImage,
+                T("PipelineReview.StoredDrawing", "Stored drawing") + " | " + drawing.StepName,
+                drawingImage,
+                drawing.InputLayer + " -> " + drawing.OutputLayer,
+                drawing.ParameterSummaryText + Environment.NewLine
+                    + T("PipelineReview.Metrics", "Metrics") + ": " + drawing.MetricSummaryText,
+                evidence.BuildStatusText(drawing) + Environment.NewLine + drawing.RunLogText);
+            SetResultSummary(
+                evidence.ExpectedText + " → " + evidence.ActualStatus + " | " + evidence.JudgmentText,
+                evidence.BuildStatusText(drawing));
+            SetValidation(
+                T("PipelineReview.StoredResult", "Stored result · read only"),
+                evidence.StatusText);
+            ApplyHistoricalRunReadOnlyPresentation();
+            ViewModel.SetHistoricalRunContext(evidence);
+        }
+
+        private void ApplyHistoricalRunReadOnlyPresentation()
+        {
+            btnReviewGuideToggle.IsChecked = false;
+            btnReviewGuideToggle.Visibility = Visibility.Collapsed;
+            btnStepFlowToggle.IsChecked = false;
+            btnStepFlowToggle.Visibility = Visibility.Collapsed;
+            stepFlowPanel.Visibility = Visibility.Collapsed;
+            stepFlowColumn.Width = new GridLength(0D);
+            btnReviewDetailsToggle.IsChecked = true;
+            layoutController.OnReviewDetailsToggleChanged();
+            btnReviewDetailsToggle.Visibility = Visibility.Collapsed;
+            reviewDetailTabs.SelectedItem = stepDetailsTab;
+            reviewDetailTabs.Visibility = Visibility.Visible;
+            fixtureDesignerTab.Visibility = Visibility.Collapsed;
+            objectInspectorTab.Visibility = Visibility.Collapsed;
+            instanceInspectorTab.Visibility = Visibility.Collapsed;
+            matcherDiagnosticTab.Visibility = Visibility.Collapsed;
+            geometryReviewTab.Visibility = Visibility.Collapsed;
+            circleEvidenceTab.Visibility = Visibility.Collapsed;
+            scaleCalibrationTab.Visibility = Visibility.Collapsed;
+            btnPreviousStep.Visibility = Visibility.Collapsed;
+            btnNextStep.Visibility = Visibility.Collapsed;
+            btnFirstIssueStep.Visibility = Visibility.Collapsed;
+            btnOpenSelectedToolLearn.Visibility = Visibility.Collapsed;
+            btnEditSelectedStep.Visibility = Visibility.Collapsed;
+            btnRunReview.IsEnabled = false;
+            btnUseSelectedMatchingPose.IsEnabled = false;
+            btnLegacyUseSelectedMatchingPose.IsEnabled = false;
+            btnFixtureProducerEdit.IsEnabled = false;
+            btnFixtureMeasurementEdit.IsEnabled = false;
+            btnFixtureRun.IsEnabled = false;
+            btnCalculateScaleCalibration.IsEnabled = false;
+            btnApplyScaleCalibration.IsEnabled = false;
         }
 
         public void SetRunReviewBusy(bool isBusy)

@@ -16,7 +16,8 @@ namespace OpenVisionLab
             string defaultOutputLayer,
             Func<Mat, TView, VisionToolResult> executePreview,
             Func<TView, string, string, VisionPipelineStep> createStep,
-            bool normalizeSingleChannelInput = true)
+            bool normalizeSingleChannelInput = true,
+            Func<TView, OpenVisionNativePreviewOperation> capturePreview = null)
             where TView : FrameworkElement, ISingleInputVisionToolWpfView
         {
             if (view == null)
@@ -24,7 +25,7 @@ namespace OpenVisionLab
                 throw new ArgumentNullException(nameof(view));
             }
 
-            if (executePreview == null)
+            if (executePreview == null && capturePreview == null)
             {
                 throw new ArgumentNullException(nameof(executePreview));
             }
@@ -40,9 +41,10 @@ namespace OpenVisionLab
                 view,
                 toolName,
                 defaultOutputLayer,
-                source => executePreview(source, view),
+                executePreview == null ? null : source => executePreview(source, view),
                 stepFactory,
-                normalizeSingleChannelInput);
+                normalizeSingleChannelInput,
+                capturePreview == null ? null : () => capturePreview(view));
         }
     }
 }

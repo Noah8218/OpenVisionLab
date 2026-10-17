@@ -14,6 +14,7 @@ namespace OpenVisionLab
     // Owns explicit Run Review execution state and review-only result images.
     internal sealed class OpenVisionPipelineReviewExecutionController : IDisposable
     {
+        internal const int DefaultStepTimeoutMilliseconds = 60000;
         private readonly struct ExecutionStamp
         {
             public ExecutionStamp(long runId, long inputRevision, long recipeRevision, CancellationToken cancellationToken)
@@ -35,6 +36,8 @@ namespace OpenVisionLab
 
         private readonly IDisplayManager displayManager;
         private readonly Action<Action> invokeOnUi;
+        private readonly bool captureMainOutputSnapshots;
+        private readonly Dictionary<int, Bitmap> mainStepImages = new Dictionary<int, Bitmap>();
         private readonly Dictionary<int, VisionPipelineStepResultSummary> stepResultSummaries = new Dictionary<int, VisionPipelineStepResultSummary>();
         private readonly Dictionary<int, Bitmap> reviewStepImages = new Dictionary<int, Bitmap>();
         private readonly Dictionary<int, string> reviewStepOutputLayers = new Dictionary<int, string>();
@@ -55,10 +58,12 @@ namespace OpenVisionLab
 
         public OpenVisionPipelineReviewExecutionController(
             IDisplayManager displayManager,
-            Action<Action> invokeOnUi)
+            Action<Action> invokeOnUi,
+            bool captureMainOutputSnapshots = false)
         {
             this.displayManager = displayManager ?? throw new ArgumentNullException(nameof(displayManager));
             this.invokeOnUi = invokeOnUi ?? throw new ArgumentNullException(nameof(invokeOnUi));
+            this.captureMainOutputSnapshots = captureMainOutputSnapshots;
         }
 
         public event EventHandler<OpenVisionPipelineReviewStepUpdatedEventArgs> StepUpdated = delegate { };
@@ -139,6 +144,11 @@ namespace OpenVisionLab
             }
         }
 
+        internal int GetCurrentStepIndex(VisionPipelineStep step)
+        {
+            lock (executionSync) { return ResolveStepIndex(step); }
+        }
+
         public IReadOnlyList<VisionPipelineGeometryFeatureResult> GetCurrentGeometryFeatures()
         {
             lock (executionSync)
@@ -199,6 +209,19 @@ namespace OpenVisionLab
                 }
 
                 return CloneCachedOutputSnapshot(stepIndex);
+            }
+        }
+
+        internal bool TryAcquireMainOutputSnapshot(int stepIndex, string layerName, VisionPipelineStepResultSummary expectedSummary, out Bitmap snapshot)
+        {
+            snapshot = null;
+            lock (executionSync)
+            {
+                if (disposed || !captureMainOutputSnapshots || expectedSummary == null || !stepResultSummaries.TryGetValue(stepIndex, out VisionPipelineStepResultSummary current)
+                    || !ReferenceEquals(current, expectedSummary) || !string.Equals(current.OutputLayer, layerName, StringComparison.OrdinalIgnoreCase)) { return false; }
+                if (current.HasResultImage && reviewStepOutputLayers.TryGetValue(stepIndex, out string cachedLayer)
+                    && string.Equals(cachedLayer, layerName, StringComparison.OrdinalIgnoreCase) && mainStepImages.TryGetValue(stepIndex, out Bitmap image)) { snapshot = new Bitmap(image); }
+                return true;
             }
         }
 
@@ -596,11 +619,11 @@ namespace OpenVisionLab
             }
 
             using Bitmap resultImage = BitmapImageConverter.ToBitmap(stepResult.ToolResult.ResultImage);
-            Bitmap reviewImage = VisionPipelineRunReportImageRenderer.Render(
-                resultImage,
-                stepResult,
-                stepIndex + 1);
-            ReplaceReviewStepImage(stepIndex, outputLayer, reviewImage, onlyIfMissing);
+            Bitmap mainImage = captureMainOutputSnapshots ? new Bitmap(resultImage) : null;
+            Bitmap reviewImage;
+            try { reviewImage = VisionPipelineRunReportImageRenderer.Render(resultImage, stepResult, stepIndex + 1); }
+            catch { mainImage?.Dispose(); throw; }
+            ReplaceReviewStepImage(stepIndex, outputLayer, reviewImage, mainImage, onlyIfMissing);
         }
 
         private static int GetStepIndex(VisionPipelineStep step, VisionPipeline pipeline)
@@ -618,16 +641,20 @@ namespace OpenVisionLab
             int stepIndex,
             string layerName,
             Bitmap image,
+            Bitmap mainImage,
             bool onlyIfMissing = false)
         {
             if (stepIndex < 0 || string.IsNullOrWhiteSpace(layerName) || image == null)
             {
                 image?.Dispose();
+                mainImage?.Dispose();
                 return;
             }
 
             lock (executionSync)
             {
+                if (mainStepImages.TryGetValue(stepIndex, out Bitmap previousMain)) { previousMain.Dispose(); }
+                if (mainImage != null) { mainStepImages[stepIndex] = mainImage; }
                 if (onlyIfMissing && reviewStepImages.ContainsKey(stepIndex))
                 {
                     image.Dispose();
@@ -672,6 +699,8 @@ namespace OpenVisionLab
                     image?.Dispose();
                 }
 
+                foreach (Bitmap image in mainStepImages.Values) { image.Dispose(); }
+                mainStepImages.Clear();
                 reviewStepImages.Clear();
                 reviewStepOutputLayers.Clear();
                 sourcePipeline = null;

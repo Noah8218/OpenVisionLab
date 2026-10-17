@@ -49,6 +49,8 @@ namespace OpenVisionLab
                     return OpenVisionRecipeText.Local(
                         "삭제에 실패했습니다.",
                         "Delete failed.");
+                case OpenVisionRecipeWorkspaceLifecycleOperation.Create:
+                    return OpenVisionRecipeText.Local("레시피 생성에 실패했습니다.", "Recipe creation failed.");
                 default:
                     return string.Empty;
             }

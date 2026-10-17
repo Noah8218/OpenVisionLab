@@ -17,15 +17,21 @@ namespace OpenVisionLab.Contracts
 
     internal sealed class VisionToolTemplateStatus
     {
-        public VisionToolTemplateStatus(string text, bool isReady)
+        public VisionToolTemplateStatus(string text, bool isReady, string path = "", int width = 0, int height = 0)
         {
             Text = text ?? string.Empty;
             IsReady = isReady;
+            Path = path ?? string.Empty;
+            Width = width;
+            Height = height;
         }
 
         public string Text { get; }
 
         public bool IsReady { get; }
+        public string Path { get; }
+        public int Width { get; }
+        public int Height { get; }
     }
 
     internal interface IVisionToolLayerSelectionViewModel
@@ -43,6 +49,9 @@ namespace OpenVisionLab.Contracts
 
     internal interface IThresholdToolViewModel
     {
+        ThresholdToolSettings CaptureSettings();
+        void ApplySettings(ThresholdToolSettings settings);
+
         ThresholdToolMode Mode { get; set; }
 
         double Threshold { get; set; }
@@ -74,6 +83,9 @@ namespace OpenVisionLab.Contracts
 
     internal interface IFilterToolViewModel
     {
+        FilterToolSettings CaptureSettings();
+        void ApplySettings(FilterToolSettings settings);
+
         FilterToolType FilterType { get; set; }
 
         int KernelWidth { get; set; }
@@ -103,6 +115,9 @@ namespace OpenVisionLab.Contracts
 
     internal interface IMorphologyToolViewModel
     {
+        MorphologyToolSettings CaptureSettings();
+        void ApplySettings(MorphologyToolSettings settings);
+
         MorphTypes Operator { get; set; }
 
         MorphShapes Shape { get; set; }
@@ -129,6 +144,8 @@ namespace OpenVisionLab.Contracts
         : IPropertyGridToolViewModel<TProperty>
     {
         VisionToolTemplateStatus TemplateStatus { get; }
+
+        bool ApplyTemplatePath(string path);
 
         void ApplyTemplatePathForTest(string path);
 

@@ -1,3 +1,4 @@
+using OpenVisionLab.Mvvm.Behaviors;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -62,6 +63,7 @@ namespace OpenVisionLab
                 Name = "cb" + key,
                 ItemsSource = values?.ToList() ?? new List<object>()
             };
+            ComboBoxInteractionBehavior.SetOpenOnFieldClick(comboBox, true);
             comboBox.SelectionChanged += Parameter_Changed;
             Border row = CreateParameterRow(key, label, comboBox, labelLocalizationKey);
             parameterPanel.Children.Add(row);

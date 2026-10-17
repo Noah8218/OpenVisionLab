@@ -6,9 +6,23 @@
             BorderThickness="0"
             Padding="0">
         <Expander x:Name="detailsExpander"
+                  Background="{DynamicResource VisionTool.HeaderBrush}"
+                  Foreground="{DynamicResource VisionTool.PrimaryTextBrush}"
+                  BorderBrush="{DynamicResource VisionTool.FieldBorderBrush}"
                   IsExpanded="False"
                   HorizontalContentAlignment="Stretch"
                   AutomationProperties.AutomationId="AutoMPointDetailsExpander">
+            <Expander.Resources>
+                <SolidColorBrush x:Key="ExpanderContentBackground" Color="{DynamicResource OpenVision.Workbench.PanelAltBrush.Color}" />
+                <SolidColorBrush x:Key="ExpanderHeaderBorderPointerOverBrush" Color="{DynamicResource OpenVision.Workbench.AccentBrush.Color}" />
+                <SolidColorBrush x:Key="ExpanderHeaderDisabledForeground" Color="{DynamicResource OpenVision.Workbench.MutedTextBrush.Color}" />
+                <SolidColorBrush x:Key="ExpanderHeaderDisabledBorderBrush" Color="{DynamicResource OpenVision.Workbench.FieldBorderBrush.Color}" />
+                <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}" Color="{DynamicResource OpenVision.Workbench.RaisedBrush.Color}" />
+                <SolidColorBrush x:Key="{x:Static SystemColors.ControlLightBrushKey}" Color="{DynamicResource OpenVision.Workbench.RaisedBrush.Color}" />
+                <SolidColorBrush x:Key="{x:Static SystemColors.ControlDarkBrushKey}" Color="{DynamicResource OpenVision.Workbench.FieldBorderBrush.Color}" />
+                <SolidColorBrush x:Key="{x:Static SystemColors.ControlTextBrushKey}" Color="{DynamicResource OpenVision.Workbench.TextBrush.Color}" />
+                <SolidColorBrush x:Key="{x:Static SystemColors.GrayTextBrushKey}" Color="{DynamicResource OpenVision.Workbench.MutedTextBrush.Color}" />
+            </Expander.Resources>
             <Expander.Header>
                 <StackPanel Orientation="Horizontal">
                     <iconPacks:PackIconMaterial Kind="ImageSearch"
@@ -61,6 +75,7 @@
                                                             Margin="0,0,5,0"
                                                             Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                                 <TextBlock x:Name="representativeImagesText"
+                                           Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                            VerticalAlignment="Center"
                                            Text="Representative images" />
                             </StackPanel>
@@ -92,6 +107,7 @@
                                                             Margin="0,0,5,0"
                                                             Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                                 <TextBlock x:Name="analyzeText"
+                                           Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                            VerticalAlignment="Center"
                                            Text="Analyze candidates" />
                             </StackPanel>
@@ -115,6 +131,7 @@
                                                             Margin="0,0,5,0"
                                                             Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                                 <TextBlock x:Name="usePatternText"
+                                           Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                            VerticalAlignment="Center"
                                            Text="Use this pattern" />
                             </StackPanel>
@@ -134,6 +151,7 @@
                                                         Margin="0,0,5,0"
                                                         Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                             <TextBlock x:Name="reportText"
+                                       Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                        VerticalAlignment="Center"
                                        Text="Save N-image report" />
                         </StackPanel>

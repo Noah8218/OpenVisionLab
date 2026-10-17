@@ -13,11 +13,11 @@ namespace OpenVisionLab
     internal static class OpenVisionNativePropertyGridToolFactory
     {
         // PropertyGrid tools stay model-driven: edit the property model and let the grid bridge create the UI.
-        public static OpenVisionNativeToolDocument CreateBlob(IDisplayManager displayManager)
+        public static OpenVisionNativeToolDocument CreateBlob(IDisplayManager displayManager, bool forWorkbench = false)
         {
             BlobProperty property = OpenVisionToolOpenProfiler.Measure(
                 "CreateBlobProperty",
-                () => OpenVisionNativeToolPropertySessionStore.GetRepositoryProperty(
+                () => forWorkbench ? OpenVisionNativeToolPropertySessionStore.LoadExisting("Blob_1", new BlobProperty("Blob_1")) : OpenVisionNativeToolPropertySessionStore.GetRepositoryProperty(
                     "Blob_1",
                     repository => repository.Blobs,
                     () => new BlobProperty("Blob_1")));
@@ -28,15 +28,16 @@ namespace OpenVisionLab
                 property,
                 item => VisionToolCompositionService.CreateBlobToolViewModel(item),
                 presenter => new BlobToolWpfView(presenter),
-                OpenVisionNativeToolPreviewExecutor.ExecuteBlobPreview,
-                VisionToolAreaVerificationCriteriaText.CreateBlob);
+                null,
+                VisionToolAreaVerificationCriteriaText.CreateBlob,
+                OpenVisionNativeToolPreviewExecutor.CaptureBlobPreview, forWorkbench);
         }
 
-        public static OpenVisionNativeToolDocument CreateContour(IDisplayManager displayManager)
+        public static OpenVisionNativeToolDocument CreateContour(IDisplayManager displayManager, bool forWorkbench = false)
         {
             ContourProperty property = OpenVisionToolOpenProfiler.Measure(
                 "CreateContourProperty",
-                () => OpenVisionNativeToolPropertySessionStore.GetRepositoryProperty(
+                () => forWorkbench ? OpenVisionNativeToolPropertySessionStore.LoadExisting("Contour_1", new ContourProperty("Contour_1")) : OpenVisionNativeToolPropertySessionStore.GetRepositoryProperty(
                     "Contour_1",
                     repository => repository.Contours,
                     () => new ContourProperty("Contour_1")));
@@ -47,15 +48,16 @@ namespace OpenVisionLab
                 property,
                 item => VisionToolCompositionService.CreateContourToolViewModel(item),
                 presenter => new ContourToolWpfView(presenter),
-                OpenVisionNativeToolPreviewExecutor.ExecuteContourPreview,
-                VisionToolAreaVerificationCriteriaText.CreateContour);
+                null,
+                VisionToolAreaVerificationCriteriaText.CreateContour,
+                OpenVisionNativeToolPreviewExecutor.CaptureContourPreview, forWorkbench);
         }
 
-        public static OpenVisionNativeToolDocument CreateAffineTransform(IDisplayManager displayManager)
+        public static OpenVisionNativeToolDocument CreateAffineTransform(IDisplayManager displayManager, bool forWorkbench = false)
         {
             AffineTransformProperty property = OpenVisionToolOpenProfiler.Measure(
                 "CreateAffineTransformProperty",
-                () => OpenVisionNativeToolPropertySessionStore.GetOrLoad(
+                () => forWorkbench ? OpenVisionNativeToolPropertySessionStore.LoadExisting("AffineTransform_1", new AffineTransformProperty("AffineTransform_1")) : OpenVisionNativeToolPropertySessionStore.GetOrLoad(
                     "AffineTransform_1",
                     () => new AffineTransformProperty("AffineTransform_1")));
             return CreatePropertyGridDocument(
@@ -65,14 +67,15 @@ namespace OpenVisionLab
                 property,
                 item => VisionToolCompositionService.CreateAffineTransformToolViewModel(item),
                 presenter => new AffineTransformToolWpfView(presenter),
-                OpenVisionNativeToolPreviewExecutor.ExecuteAffineTransformPreview);
+                null,
+                capturePreview: OpenVisionNativeToolPreviewExecutor.CaptureAffineTransformPreview, forWorkbench: forWorkbench);
         }
 
-        public static OpenVisionNativeToolDocument CreateMatching(IDisplayManager displayManager)
+        public static OpenVisionNativeToolDocument CreateMatching(IDisplayManager displayManager, bool forWorkbench = false)
         {
             MatchingProperty property = OpenVisionToolOpenProfiler.Measure(
                 "CreateMatchingProperty",
-                () => OpenVisionNativeToolPropertySessionStore.GetRepositoryProperty(
+                () => forWorkbench ? LoadNativeProperty(new MatchingProperty("Matching_1")) : OpenVisionNativeToolPropertySessionStore.GetRepositoryProperty(
                     "Matching_1",
                     repository => repository.Matchings,
                     () => new MatchingProperty("Matching_1")));
@@ -83,14 +86,14 @@ namespace OpenVisionLab
                 property,
                 item => VisionToolCompositionService.CreateMatchingToolViewModel(item),
                 presenter => new MatchingToolWpfView(presenter),
-                OpenVisionNativeToolPreviewExecutor.ExecuteMatchingPreview);
+                OpenVisionNativeToolPreviewExecutor.CaptureMatchingPreview, forWorkbench, () => property.ImageTemplate);
         }
 
-        public static OpenVisionNativeToolDocument CreateEdgeBasedMatching(IDisplayManager displayManager)
+        public static OpenVisionNativeToolDocument CreateEdgeBasedMatching(IDisplayManager displayManager, bool forWorkbench = false)
         {
             EdgeBasedMatchingProperty property = OpenVisionToolOpenProfiler.Measure(
                 "CreateEdgeBasedMatchingProperty",
-                () => OpenVisionNativeToolPropertySessionStore.GetRepositoryProperty(
+                () => forWorkbench ? LoadNativeProperty(new EdgeBasedMatchingProperty("EdgeBasedMatching_1")) : OpenVisionNativeToolPropertySessionStore.GetRepositoryProperty(
                     "EdgeBasedMatching_1",
                     repository => repository.EdgeBasedMatchings,
                     () => new EdgeBasedMatchingProperty("EdgeBasedMatching_1")));
@@ -101,14 +104,14 @@ namespace OpenVisionLab
                 property,
                 item => VisionToolCompositionService.CreateEdgeBasedMatchingToolViewModel(item),
                 presenter => new EdgeBasedMatchingToolWpfView(presenter),
-                OpenVisionNativeToolPreviewExecutor.ExecuteEdgeBasedMatchingPreview);
+                OpenVisionNativeToolPreviewExecutor.CaptureEdgeBasedMatchingPreview, forWorkbench, () => property.ImageTemplate);
         }
 
-        public static OpenVisionNativeToolDocument CreateFeatureMatching(IDisplayManager displayManager)
+        public static OpenVisionNativeToolDocument CreateFeatureMatching(IDisplayManager displayManager, bool forWorkbench = false)
         {
             FeatureMatchingProperty property = OpenVisionToolOpenProfiler.Measure(
                 "CreateFeatureMatchingProperty",
-                () => OpenVisionNativeToolPropertySessionStore.GetRepositoryProperty(
+                () => forWorkbench ? LoadNativeProperty(new FeatureMatchingProperty("Feature_1")) : OpenVisionNativeToolPropertySessionStore.GetRepositoryProperty(
                     "Feature_1",
                     repository => repository.Features,
                     () => new FeatureMatchingProperty("Feature_1")));
@@ -119,7 +122,7 @@ namespace OpenVisionLab
                 property,
                 item => VisionToolCompositionService.CreateFeatureMatchingToolViewModel(item),
                 presenter => new FeatureMatchingToolWpfView(presenter),
-                OpenVisionNativeToolPreviewExecutor.ExecuteFeatureMatchingPreview);
+                OpenVisionNativeToolPreviewExecutor.CaptureFeatureMatchingPreview, forWorkbench, () => property.ImageTemplate);
         }
 
         private static OpenVisionNativeToolDocument CreatePropertyGridDocument<TView, TProperty>(
@@ -130,12 +133,16 @@ namespace OpenVisionLab
             Func<TProperty, IPropertyGridToolViewModel<TProperty>> createViewModel,
             Func<VisionToolPropertyGridPresenter<TProperty>, TView> createView,
             Func<Mat, TView, VisionToolResult> executePreview,
-            Func<TProperty, string> createDisplaySummary = null)
+            Func<TProperty, string> createDisplaySummary = null,
+            Func<TView, OpenVisionNativePreviewOperation> capturePreview = null,
+            bool forWorkbench = false)
             where TView : FrameworkElement, ISingleInputVisionToolWpfView
             where TProperty : OpenCvPropertyBase
         {
             IPropertyGridToolViewModel<TProperty> viewModel = OpenVisionToolOpenProfiler.Measure("CreatePropertyGridViewModel", () => createViewModel(property));
-            OpenVisionNativeToolDocument document = OpenVisionToolOpenProfiler.Measure(
+            VisionToolPropertyGridPresenter<TProperty> activePresenter = null;
+            OpenVisionNativeToolDocument document = null;
+            document = OpenVisionToolOpenProfiler.Measure(
                 "CreatePropertyGridDocument",
                 () => OpenVisionNativePropertyGridToolDocumentBuilder.Create(
                 displayManager,
@@ -145,9 +152,11 @@ namespace OpenVisionLab
                     property,
                     viewModel.CreateProperty,
                     () => createDisplaySummary == null ? viewModel.Summary : createDisplaySummary(property),
-                    createView,
+                    presenter => { activePresenter = presenter; return createView(presenter); },
                     executePreview,
-                    persistSelectedObject: () => OpenVisionNativeToolPropertySessionStore.Save(toolName, property))));
+                    persistSelectedObject: () => document?.RecordParameterChange(() => OpenVisionNativeToolPropertySessionStore.Save(toolName, property)),
+                    capturePreview: capturePreview)));
+            ConfigureParameterState(document, property, forWorkbench, () => activePresenter.NotifyParametersRestored());
             return ApplyLoadFailureStatus(document, property.NAME);
         }
 
@@ -158,12 +167,15 @@ namespace OpenVisionLab
             TProperty property,
             Func<TProperty, ITemplateBackedPropertyGridToolViewModel<TProperty>> createViewModel,
             Func<VisionToolPropertyGridPresenter<TProperty>, TView> createView,
-            Func<Mat, TView, VisionToolResult> executePreview)
+            Func<TView, OpenVisionNativePreviewOperation> capturePreview,
+            bool forWorkbench, Func<Mat> getTemplateImage)
             where TView : FrameworkElement, ISingleInputVisionToolWpfView
             where TProperty : OpenCvPropertyBase
         {
             ITemplateBackedPropertyGridToolViewModel<TProperty> viewModel = OpenVisionToolOpenProfiler.Measure("CreatePropertyGridViewModel", () => createViewModel(property));
-            OpenVisionNativeToolDocument document = OpenVisionToolOpenProfiler.Measure(
+            VisionToolPropertyGridPresenter<TProperty> activePresenter = null;
+            OpenVisionNativeToolDocument document = null;
+            document = OpenVisionToolOpenProfiler.Measure(
                 "CreatePropertyGridDocument",
                 () => OpenVisionNativePropertyGridToolDocumentBuilder.Create(
                 displayManager,
@@ -173,13 +185,75 @@ namespace OpenVisionLab
                     property,
                     viewModel.CreateProperty,
                     () => viewModel.Summary,
-                    createView,
-                    executePreview,
+                    presenter => { activePresenter = presenter; return createView(presenter); },
+                    null,
                     getTemplateStatus: () => viewModel.TemplateStatus,
                     applyTemplatePathForTest: viewModel.ApplyTemplatePathForTest,
                     reloadTemplateIfPatternChanged: viewModel.ReloadTemplateIfPatternChanged,
-                    persistSelectedObject: () => OpenVisionNativeToolPropertySessionStore.Save(toolName, property))));
+                    persistSelectedObject: () => document?.RecordParameterChange(() => OpenVisionNativeToolPropertySessionStore.Save(toolName, property)),
+                    capturePreview: capturePreview)));
+            ConfigureParameterState(document, property, forWorkbench, () => activePresenter.NotifyParametersRestored(), viewModel);
+            Mat thumbnailSource = null;
+            System.Windows.Media.ImageSource thumbnail = null;
+            document.ConfigureTemplateState(() => viewModel.TemplateStatus, () =>
+            {
+                Mat image = getTemplateImage();
+                if (ReferenceEquals(image, thumbnailSource)) { return thumbnail; }
+                thumbnailSource = image;
+                if (image == null || image.Empty()) { thumbnail = null; }
+                else
+                {
+                    using System.Drawing.Bitmap bitmap = OpenVisionLab.Common.BitmapImageConverter.ToBitmap(image);
+                    thumbnail = OpenVisionBitmapImagePreviewFactory.Create(bitmap);
+                }
+                return thumbnail;
+            }, path =>
+            {
+                if (!viewModel.ApplyTemplatePath(path)) { return false; }
+                activePresenter.NotifyParametersRestored();
+                return true;
+            });
             return ApplyLoadFailureStatus(document, property.NAME);
+        }
+
+        private static void ConfigureParameterState<TProperty>(OpenVisionNativeToolDocument document, TProperty property, bool forWorkbench, Action refreshPresentation,
+            ITemplateBackedPropertyGridToolViewModel<TProperty> template = null) where TProperty : OpenCvPropertyBase
+        {
+            TProperty defaultProperty = (TProperty)Activator.CreateInstance(typeof(TProperty), property.NAME);
+            byte[] defaults;
+            try { defaults = VisionPipelineStepPropertyMapper.CaptureNativeParameters(defaultProperty); }
+            finally { VisionPipelineStepPropertyMapper.ReleaseNativeParameterResources(defaultProperty); }
+            void Refresh()
+            {
+                template?.ReloadTemplateIfPatternChanged("PATTERN_PATH");
+                refreshPresentation();
+            }
+            document.ConfigureParameterState(forWorkbench,
+                () => VisionPipelineStepPropertyMapper.CaptureNativeParameters(property),
+                snapshot => { VisionPipelineStepPropertyMapper.RestoreNativeParameters((byte[])snapshot, property); Refresh(); },
+                context =>
+                {
+                    VisionPipelineStepPropertyMapper.RestoreNativeParameters(defaults, property);
+                    TProperty loaded = OpenVisionNativeToolPropertySessionStore.LoadExisting(property.NAME, property, context.Name);
+                    try { return VisionPipelineStepPropertyMapper.CaptureNativeParameters(loaded); }
+                    finally { if (!ReferenceEquals(loaded, property)) { VisionPipelineStepPropertyMapper.ReleaseNativeParameterResources(loaded); } }
+                },
+                step =>
+                {
+                    object source = VisionPipelineStepPropertyMapper.CreateProperty(step);
+                    try { VisionPipelineStepPropertyMapper.ApplyNativeParameters(source, property); Refresh(); }
+                    finally { VisionPipelineStepPropertyMapper.ReleaseNativeParameterResources(source); }
+                },
+                () => template == null || template.TemplateStatus.IsReady,
+                createDefaults: () => (byte[])defaults.Clone(),
+                autoPreviewOptedIn: property is MatchingProperty matching ? () => matching.AUTO_PREVIEW : null);
+        }
+
+        private static TProperty LoadNativeProperty<TProperty>(TProperty defaults) where TProperty : OpenCvPropertyBase
+        {
+            TProperty loaded = OpenVisionNativeToolPropertySessionStore.LoadExisting(defaults.NAME, defaults);
+            if (!ReferenceEquals(loaded, defaults)) { VisionPipelineStepPropertyMapper.ReleaseNativeParameterResources(defaults); }
+            return loaded;
         }
 
         internal static OpenVisionNativeToolDocument ApplyLoadFailureStatus(

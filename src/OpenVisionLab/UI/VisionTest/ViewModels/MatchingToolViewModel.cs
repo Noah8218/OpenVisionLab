@@ -59,6 +59,18 @@ namespace OpenVisionLab.ViewModels
             VisionToolPropertySummaryViewModel.DisableImagePreprocessDefaults(property, includeCanny: true);
         }
 
+        public bool ApplyTemplatePath(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path)) { return false; }
+            using OpenCvSharp.Mat image = OpenCvSharp.Cv2.ImRead(path);
+            if (image.Empty()) { return false; }
+            OpenCvSharp.Mat template = image.Clone();
+            property.ImageTemplate?.Dispose();
+            property.ImageTemplate = template;
+            property.PATTERN_PATH = path;
+            return true;
+        }
+
         public void ApplyTemplatePathForTest(string path)
         {
             property.PATTERN_PATH = path ?? string.Empty;

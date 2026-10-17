@@ -5,14 +5,27 @@
              HorizontalContentAlignment="Stretch"
              VerticalContentAlignment="Stretch">
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="ShellHost.BooleanToVisibilityConverter" />
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="../../../../Wpf/OpenVisionLabWpfTheme.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="ShellHost.BooleanToVisibilityConverter" />
+            <Style TargetType="Button" BasedOn="{StaticResource OpenVision.ControlButtonDarkStyle}" />
+            <Style TargetType="TextBox" BasedOn="{StaticResource OpenVision.ControlTextBoxDarkStyle}" />
+            <Style TargetType="ComboBox" BasedOn="{StaticResource OpenVision.ControlComboBoxDarkStyle}" />
+        </ResourceDictionary>
     </UserControl.Resources>
     <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
         <TextBlock Text="{Binding RecipeCommands.ValidationSuiteText}"
             Foreground="#A8CBD1"
             FontSize="11"
             FontWeight="SemiBold" />
-        <Border Margin="0,4,0,10"
+        <Border Grid.Row="1"
+            Margin="0,4,0,10"
             Padding="8,6"
             AutomationProperties.AutomationId="HostRecipeValidationSuitePanel"
             Background="#102329"
@@ -38,7 +51,7 @@
                     FontSize="10"
                     FontWeight="SemiBold" />
                 <ComboBox Grid.Column="1"
-                    Height="24"
+                    Height="32"
                     Margin="8,0,0,0"
                     AutomationProperties.AutomationId="HostRecipeValidationSuiteScopeCombo"
                     AutomationProperties.Name="{Binding RecipeCommands.ValidationSuiteScopeLabelText}"
@@ -49,17 +62,19 @@
                     Margin="8,0,0,0"
                     Orientation="Horizontal">
                     <Button MinWidth="104"
-                        Height="24"
+                        Height="32"
+                        Style="{StaticResource OpenVision.ControlPrimaryButtonDarkStyle}"
                         AutomationProperties.AutomationId="HostRecipeRunValidationSuiteButton"
                         Command="{Binding RecipeCommands.RunValidationSuiteCommand}">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                             <iconPacks:PackIconMaterial Kind="PlayCircleOutline" Width="12" Height="12" Margin="0,1,4,0" />
-                            <TextBlock Text="{Binding RecipeCommands.RunValidationSuiteText}" FontSize="10" />
+                            <TextBlock Text="{Binding RecipeCommands.RunValidationSuiteText}" FontSize="10" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                         </StackPanel>
                     </Button>
                     <Button MinWidth="76"
-                        Height="24"
+                        Height="32"
                         Margin="6,0,0,0"
+                        Style="{StaticResource OpenVision.ControlDangerButtonDarkStyle}"
                         AutomationProperties.AutomationId="HostRecipeStopValidationSuiteButton"
                         AutomationProperties.Name="{Binding RecipeCommands.StopValidationSuiteText}"
                         ToolTip="현재 이미지 완료 후 중지하고 부분 결과를 저장합니다."
@@ -67,7 +82,7 @@
                         Command="{Binding RecipeCommands.StopValidationSuiteCommand}">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                             <iconPacks:PackIconMaterial Kind="StopCircleOutline" Width="12" Height="12" Margin="0,1,4,0" />
-                            <TextBlock Text="{Binding RecipeCommands.StopValidationSuiteText}" FontSize="10" />
+                            <TextBlock Text="{Binding RecipeCommands.StopValidationSuiteText}" FontSize="10" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                         </StackPanel>
                     </Button>
                 </StackPanel>
@@ -79,7 +94,7 @@
                     Foreground="#95D6B8"
                     FontSize="10"
                     VerticalAlignment="Center"
-                    TextTrimming="CharacterEllipsis" />
+                    TextWrapping="Wrap" />
                 <Border Grid.Row="1"
                     Grid.ColumnSpan="4"
                     Margin="0,7,0,0"
@@ -179,7 +194,7 @@
                         FontSize="10"
                         FontWeight="SemiBold" />
                     <ComboBox Grid.Column="1"
-                        Height="24"
+                        Height="32"
                         Margin="8,0,0,0"
                         AutomationProperties.AutomationId="HostRecipeValidationSetCombo"
                         AutomationProperties.Name="{Binding RecipeCommands.ValidationSetSelectionLabelText}"
@@ -194,31 +209,31 @@
                         FontSize="10"
                         FontWeight="SemiBold" />
                     <TextBox Grid.Column="3"
-                        Height="24"
+                        Height="32"
                         Margin="8,0,0,0"
                         Padding="5,2"
                         AutomationProperties.AutomationId="HostRecipeNewValidationSetNameTextBox"
                         Text="{Binding RecipeCommands.NewValidationSetName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                     <Button Grid.Column="4"
                         MinWidth="68"
-                        Height="24"
+                        Height="32"
                         Margin="8,0,0,0"
                         AutomationProperties.AutomationId="HostRecipeCreateValidationSetButton"
                         Command="{Binding RecipeCommands.CreateValidationSetCommand}">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="Plus" Width="12" Height="12" Margin="0,1,4,0" />
-                            <TextBlock Text="{Binding RecipeCommands.CreateValidationSetText}" FontSize="10" />
+                            <TextBlock Text="{Binding RecipeCommands.CreateValidationSetText}" FontSize="10" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                         </StackPanel>
                     </Button>
                     <Button Grid.Column="5"
                         MinWidth="78"
-                        Height="24"
+                        Height="32"
                         Margin="6,0,0,0"
                         AutomationProperties.AutomationId="HostRecipeDeleteValidationSetButton"
                         Command="{Binding RecipeCommands.DeleteValidationSetCommand}">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="DeleteOutline" Width="12" Height="12" Margin="0,1,4,0" />
-                            <TextBlock Text="{Binding RecipeCommands.DeleteValidationSetText}" FontSize="10" />
+                            <TextBlock Text="{Binding RecipeCommands.DeleteValidationSetText}" FontSize="10" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                         </StackPanel>
                     </Button>
                     <TextBlock Grid.Row="1"
@@ -230,7 +245,7 @@
                     <TextBox Grid.Row="1"
                         Grid.Column="1"
                         Grid.ColumnSpan="2"
-                        Height="24"
+                        Height="32"
                         Margin="8,5,0,0"
                         Padding="5,2"
                         AutomationProperties.AutomationId="HostRecipeValidationSetNotesTextBox"
@@ -238,40 +253,40 @@
                     <Button Grid.Row="1"
                         Grid.Column="3"
                         MinWidth="112"
-                        Height="24"
+                        Height="32"
                         Margin="8,5,0,0"
                         AutomationProperties.AutomationId="HostRecipeAddValidationSetOkImagesButton"
                         Command="{Binding RecipeCommands.AddValidationSetOkImagesCommand}">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="ImagePlus" Width="12" Height="12" Margin="0,1,4,0" />
-                            <TextBlock Text="{Binding RecipeCommands.AddValidationSetOkImagesText}" FontSize="10" />
+                            <TextBlock Text="{Binding RecipeCommands.AddValidationSetOkImagesText}" FontSize="10" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                         </StackPanel>
                     </Button>
                     <Button Grid.Row="1"
                         Grid.Column="4"
                         Grid.ColumnSpan="2"
                         MinWidth="112"
-                        Height="24"
+                        Height="32"
                         Margin="6,5,0,0"
                         HorizontalAlignment="Left"
                         AutomationProperties.AutomationId="HostRecipeAddValidationSetNgImagesButton"
                         Command="{Binding RecipeCommands.AddValidationSetNgImagesCommand}">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="ImagePlus" Width="12" Height="12" Margin="0,1,4,0" />
-                            <TextBlock Text="{Binding RecipeCommands.AddValidationSetNgImagesText}" FontSize="10" />
+                            <TextBlock Text="{Binding RecipeCommands.AddValidationSetNgImagesText}" FontSize="10" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                         </StackPanel>
                     </Button>
                     <Button Grid.Row="1"
                         Grid.Column="6"
                         MinWidth="94"
-                        Height="24"
+                        Height="32"
                         Margin="6,5,0,0"
                         HorizontalAlignment="Left"
                         AutomationProperties.AutomationId="HostRecipeRemoveValidationSetImageButton"
                         Command="{Binding RecipeCommands.RemoveValidationSetImageCommand}">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="MinusCircleOutline" Width="12" Height="12" Margin="0,1,4,0" />
-                            <TextBlock Text="{Binding RecipeCommands.RemoveValidationSetImageText}" FontSize="10" />
+                            <TextBlock Text="{Binding RecipeCommands.RemoveValidationSetImageText}" FontSize="10" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                         </StackPanel>
                     </Button>
                     <TextBlock Grid.Row="2"
@@ -283,7 +298,7 @@
                     <Button Grid.Row="2"
                         Grid.Column="1"
                         MinWidth="112"
-                        Height="24"
+                        Height="32"
                         Margin="8,5,0,0"
                         HorizontalAlignment="Left"
                         ToolTip="{Binding RecipeCommands.AddValidationSetFolderToolTipText}"
@@ -291,13 +306,13 @@
                         Command="{Binding RecipeCommands.AddValidationSetOkFolderCommand}">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="FolderOutline" Width="12" Height="12" Margin="0,1,4,0" />
-                            <TextBlock Text="{Binding RecipeCommands.AddValidationSetOkFolderText}" FontSize="10" />
+                            <TextBlock Text="{Binding RecipeCommands.AddValidationSetOkFolderText}" FontSize="10" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                         </StackPanel>
                     </Button>
                     <Button Grid.Row="2"
                         Grid.Column="3"
                         MinWidth="112"
-                        Height="24"
+                        Height="32"
                         Margin="8,5,0,0"
                         HorizontalAlignment="Left"
                         ToolTip="{Binding RecipeCommands.AddValidationSetFolderToolTipText}"
@@ -305,14 +320,14 @@
                         Command="{Binding RecipeCommands.AddValidationSetNgFolderCommand}">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="FolderOutline" Width="12" Height="12" Margin="0,1,4,0" />
-                            <TextBlock Text="{Binding RecipeCommands.AddValidationSetNgFolderText}" FontSize="10" />
+                            <TextBlock Text="{Binding RecipeCommands.AddValidationSetNgFolderText}" FontSize="10" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                         </StackPanel>
                     </Button>
                     <Button Grid.Row="2"
                         Grid.Column="4"
                         Grid.ColumnSpan="2"
                         MinWidth="118"
-                        Height="24"
+                        Height="32"
                         Margin="6,5,0,0"
                         HorizontalAlignment="Left"
                         ToolTip="{Binding RecipeCommands.RepairValidationSetImagePathToolTipText}"
@@ -320,7 +335,7 @@
                         Command="{Binding RecipeCommands.RepairValidationSetImagePathCommand}">
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconMaterial Kind="FolderOpenOutline" Width="12" Height="12" Margin="0,1,4,0" />
-                            <TextBlock Text="{Binding RecipeCommands.RepairValidationSetImagePathText}" FontSize="10" />
+                            <TextBlock Text="{Binding RecipeCommands.RepairValidationSetImagePathText}" FontSize="10" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                         </StackPanel>
                     </Button>
                     <Grid Grid.Row="3"
@@ -345,7 +360,7 @@
                             FontSize="10"
                             FontWeight="SemiBold" />
                         <TextBox Grid.Column="1"
-                            Height="24"
+                            Height="32"
                             Margin="8,0,0,0"
                             Padding="5,2"
                             AutomationProperties.AutomationId="HostRecipeValidationVariantIdTextBox"
@@ -358,7 +373,7 @@
                             FontSize="10"
                             FontWeight="SemiBold" />
                         <TextBox Grid.Column="3"
-                            Height="24"
+                            Height="32"
                             Margin="8,0,0,0"
                             Padding="5,2"
                             AutomationProperties.AutomationId="HostRecipeValidationMetricNameTextBox"
@@ -370,7 +385,7 @@
                             Foreground="#A8CBD1"
                             FontSize="10" />
                         <TextBox Grid.Column="5"
-                            Height="24"
+                            Height="32"
                             Margin="5,0,0,0"
                             Padding="5,2"
                             AutomationProperties.AutomationId="HostRecipeValidationMetricMinimumTextBox"
@@ -382,13 +397,13 @@
                             Foreground="#A8CBD1"
                             FontSize="10" />
                         <TextBox Grid.Column="7"
-                            Height="24"
+                            Height="32"
                             Margin="5,0,0,0"
                             Padding="5,2"
                             AutomationProperties.AutomationId="HostRecipeValidationMetricMaximumTextBox"
                             Text="{Binding RecipeCommands.ValidationSetPendingMetricMaximum, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                         <Button Grid.Column="8"
-                            Height="24"
+                            Height="32"
                             MinWidth="88"
                             Margin="8,0,0,0"
                             AutomationProperties.AutomationId="HostRecipeApplyValidationVariantButton"
@@ -396,7 +411,7 @@
                             Content="{Binding RecipeCommands.ApplyValidationSetVariantContractText}"
                             FontSize="10" />
                         <Button Grid.Column="9"
-                            Height="24"
+                            Height="32"
                             MinWidth="58"
                             Margin="6,0,0,0"
                             AutomationProperties.AutomationId="HostRecipeResetValidationVariantButton"

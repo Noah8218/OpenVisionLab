@@ -32,6 +32,8 @@ namespace OpenVisionLab
         }
 
         public object SelectedObject { get; }
+        internal event EventHandler ParametersRestored = delegate { };
+        internal void NotifyParametersRestored() => ParametersRestored(this, EventArgs.Empty);
 
         public string Summary => getSummary() ?? string.Empty;
 

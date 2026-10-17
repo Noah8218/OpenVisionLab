@@ -35,6 +35,11 @@ using System.Xml;
 using System.Xml.Serialization;
 using Bitmap = System.Drawing.Bitmap;
 
+if (args.Length == 2 && string.Equals(args[0], "--pipeline-step-edit-contract", StringComparison.OrdinalIgnoreCase))
+{
+    return PipelineStepEditContract.Run(args[1]);
+}
+
 if (args.Length == 6
     && string.Equals(args[0], "--integration-2d", StringComparison.OrdinalIgnoreCase))
 {
@@ -1050,6 +1055,7 @@ if (args.Length < 2)
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --recipe-persistence-execution-gate-contract <evidenceDirectory>");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --pipeline-xml-schema-compatibility-contract <evidenceDirectory>");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --pipeline-xml-roundtrip-compatibility-contract <evidenceDirectory>");
+    Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --pipeline-step-edit-contract <evidenceDirectory>");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --recipe-multi-file-save-recovery-contract <evidenceDirectory>");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --pipeline-failure-lifetime-contract <evidenceDirectory>");
     Console.Error.WriteLine("   or: VisionRecipeRunnerSmoke --pipeline-cancellation-result-contract <evidenceDirectory>");
@@ -2916,6 +2922,88 @@ static int RunStepEditApplyOwnerContract(string? requestedEvidenceDirectory)
             "The Step Edit apply owner accepted an unsupported edit object.");
         Require(ReadMinArea() == 10, "The unsupported edit object changed the persisted pipeline.");
         observations.Add("unsupported property: mapping rejection left the persisted Pipeline unchanged");
+
+        VisionPipeline matchingPipeline = new VisionPipeline { Name = pipelineName };
+        VisionPipelineStep matchingStep = new VisionPipelineStep
+        {
+            Name = "01 Synthetic Die Pad Match",
+            ToolType = "Matching",
+            InputLayer = "Main",
+            OutputLayer = "Matching_Preview"
+        };
+        matchingStep.Parameters["Name"] = "Public_Matching_DiePad";
+        matchingStep.Parameters["SCORE_MIN"] = "0.6";
+        matchingPipeline.Steps.Add(matchingStep);
+        VisionPipelineStorage.Save(recipeName, matchingPipeline);
+
+        loaded = LoadBaseline();
+        Require(loaded.Succeeded && loaded.EditObject is MatchingProperty,
+            "The distinct-name Matching Step could not load into the PropertyGrid model.");
+        OpenVisionRecipeStepEditApplyResult matchingNoChange = new OpenVisionRecipeStepEditApplyOwner().Apply(
+            recipeName, pipelineName, loaded.Pipeline, loaded.Step, loaded.EditObject);
+        VisionPipeline matchingSaved = VisionPipelineStorage.Load(recipeName, pipelineName);
+        Require(matchingNoChange.Succeeded
+            && string.Equals(matchingSaved.Steps[0].Name, "01 Synthetic Die Pad Match", StringComparison.Ordinal)
+            && string.Equals(matchingSaved.Steps[0].Parameters["Name"], "Public_Matching_DiePad", StringComparison.Ordinal),
+            "Applying unchanged Matching parameters replaced the saved Step name with the Tool name.");
+        observations.Add("distinct Step/Tool names: unchanged Matching apply preserved both saved identities");
+
+        loaded = LoadBaseline();
+        ((MatchingProperty)loaded.EditObject).SCORE_MIN = 0.7;
+        OpenVisionRecipeStepEditApplyResult matchingEdit = new OpenVisionRecipeStepEditApplyOwner().Apply(
+            recipeName, pipelineName, loaded.Pipeline, loaded.Step, loaded.EditObject);
+        matchingSaved = VisionPipelineStorage.Load(recipeName, pipelineName);
+        Require(matchingEdit.Succeeded
+            && string.Equals(matchingSaved.Steps[0].Name, "01 Synthetic Die Pad Match", StringComparison.Ordinal)
+            && string.Equals(matchingSaved.Steps[0].Parameters["Name"], "Public_Matching_DiePad", StringComparison.Ordinal)
+            && string.Equals(matchingSaved.Steps[0].Parameters["SCORE_MIN"], "0.7", StringComparison.Ordinal),
+            "Editing Matching SCORE_MIN changed a Step/Tool identity or lost the numeric value.");
+        observations.Add("distinct Step/Tool names: SCORE_MIN edit preserved identities and persisted 0.7");
+
+        loaded = LoadBaseline();
+        ((MatchingProperty)loaded.EditObject).NAME = "Renamed Matching Tool";
+        OpenVisionRecipeStepEditApplyResult matchingRename = new OpenVisionRecipeStepEditApplyOwner().Apply(
+            recipeName, pipelineName, loaded.Pipeline, loaded.Step, loaded.EditObject);
+        matchingSaved = VisionPipelineStorage.Load(recipeName, pipelineName);
+        Require(matchingRename.Succeeded
+            && string.Equals(matchingSaved.Steps[0].Name, "Renamed Matching Tool", StringComparison.Ordinal)
+            && string.Equals(matchingSaved.Steps[0].Parameters["Name"], "Renamed Matching Tool", StringComparison.Ordinal),
+            "Explicit Matching Name edit did not retain its existing rename behavior.");
+        observations.Add("explicit Tool Name edit: saved Step and Tool names changed together");
+
+        loaded = LoadBaseline();
+        ((MatchingProperty)loaded.EditObject).SCORE_MIN = 0.8;
+        OpenVisionRecipeStepEditApplyOwner matchingFailureOwner = new OpenVisionRecipeStepEditApplyOwner(
+            savePipeline: (_, __) => throw new InvalidOperationException("Forced Matching save failure."));
+        OpenVisionRecipeStepEditApplyResult matchingFailure = matchingFailureOwner.Apply(
+            recipeName, pipelineName, loaded.Pipeline, loaded.Step, loaded.EditObject);
+        matchingSaved = VisionPipelineStorage.Load(recipeName, pipelineName);
+        Require(!matchingFailure.Succeeded
+            && string.Equals(matchingSaved.Steps[0].Name, "Renamed Matching Tool", StringComparison.Ordinal)
+            && string.Equals(matchingSaved.Steps[0].Parameters["SCORE_MIN"], "0.7", StringComparison.Ordinal),
+            "Matching save failure did not restore the previous Step identity and score.");
+        loaded = LoadBaseline();
+        ((MatchingProperty)loaded.EditObject).SCORE_MIN = 0.8;
+        OpenVisionRecipeStepEditApplyResult matchingRetry = new OpenVisionRecipeStepEditApplyOwner().Apply(
+            recipeName, pipelineName, loaded.Pipeline, loaded.Step, loaded.EditObject);
+        matchingSaved = VisionPipelineStorage.Load(recipeName, pipelineName);
+        Require(matchingRetry.Succeeded
+            && string.Equals(matchingSaved.Steps[0].Name, "Renamed Matching Tool", StringComparison.Ordinal)
+            && string.Equals(matchingSaved.Steps[0].Parameters["SCORE_MIN"], "0.8", StringComparison.Ordinal),
+            "Matching save retry did not retain the Step identity and updated score.");
+        observations.Add("Matching save failure/retry: previous Step identity and score restored, retry persisted 0.8");
+
+        foreach (string toolType in new[] { "Blob", "Contour", "Mean", "EdgeBasedMatching", "FeatureMatching" })
+        {
+            VisionPipelineStep distinctStep = new VisionPipelineStep { Name = "Visible " + toolType, ToolType = toolType };
+            distinctStep.Parameters["Name"] = "Tool " + toolType;
+            object editObject = VisionPipelineStepPropertyMapper.CreateProperty(distinctStep);
+            Require(editObject != null && VisionPipelineStepPropertyMapper.ApplyProperty(distinctStep, editObject)
+                && string.Equals(distinctStep.Name, "Visible " + toolType, StringComparison.Ordinal)
+                && string.Equals(distinctStep.Parameters["Name"], "Tool " + toolType, StringComparison.Ordinal),
+                toolType + " mapping changed a distinct Step name during unchanged apply.");
+        }
+        observations.Add("shared OpenCV mapper: Blob, Contour, Mean, EdgeBasedMatching, and FeatureMatching kept distinct Step/Tool names");
     }
     catch (Exception exception)
     {
@@ -3263,9 +3351,9 @@ static int RunRecipeWorkspaceLifecycleProjectionContract(string? requestedEviden
             OpenVisionRecipeWorkspaceLifecycleOperation.Create,
             OpenVisionRecipeWorkspaceResult.Failure());
         Require(!createFailure.Succeeded, "Create failure projection was marked succeeded.");
-        Require(string.IsNullOrEmpty(createFailure.StatusText),
-            "Create failure changed the existing silent failure behavior.");
-        observations.Add("create failure: silent failure behavior preserved");
+        Require(HasStatus(createFailure, "Recipe creation failed.", "레시피 생성에 실패했습니다."),
+            "S01 create failure must remain visible while preserving the editable name and working context.");
+        observations.Add("create failure: localized failure status replaces silent failure; S01 workbench contract checks retained draft and context");
     }
     catch (Exception exception)
     {
@@ -4235,6 +4323,8 @@ static int RunPipelineReviewGuideResultProjectionContract(string? requestedEvide
                 AcceptancePassed = false,
                 AcceptanceMessage = string.Empty
             },
+            string.Empty,
+            string.Empty,
             "synthetic.png");
         Require(
             HasText(notEvaluatedDrawing.AcceptanceText, "Not evaluated: no acceptance criteria", "미평가: 적용 기준 없음"),
@@ -4247,6 +4337,8 @@ static int RunPipelineReviewGuideResultProjectionContract(string? requestedEvide
                 AcceptancePassed = true,
                 AcceptanceMessage = "Score within range"
             },
+            string.Empty,
+            string.Empty,
             "synthetic.png");
         Require(passDrawing.AcceptanceText.StartsWith("PASS:", StringComparison.Ordinal), "Persisted acceptance PASS evidence changed.");
 
@@ -7122,6 +7214,8 @@ static async Task<int> RunToolNImageVerificationContractAsync(string? evidenceDi
         () => VisionPipelineStepBuilder.FromProperty(
                     new BlobProperty("Blob")
                     {
+                        USE_ROI = true,
+                        CvROI = new Rect(0, 0, 320, 220),
                         USE_THRESHOLD = false,
                         USE_ADAPTIVE_THRESHOLD = false,
                         USE_BITWISENOT = false,
@@ -7157,6 +7251,8 @@ static async Task<int> RunToolNImageVerificationContractAsync(string? evidenceDi
         () => VisionPipelineStepBuilder.FromProperty(
                     new MatchingProperty("Matching")
                     {
+                        USE_ROI = true,
+                        CvROI = new Rect(0, 0, 320, 220),
                         PATTERN_PATH = matchingTemplatePath,
                         SCORE_MIN = 0.75,
                         NUM_MATCH = 1,
@@ -7169,6 +7265,8 @@ static async Task<int> RunToolNImageVerificationContractAsync(string? evidenceDi
         () => VisionPipelineStepBuilder.FromProperty(
                     new EdgeBasedMatchingProperty("EdgeBasedMatching")
                     {
+                        USE_ROI = true,
+                        CvROI = new Rect(0, 0, 320, 220),
                         PATTERN_PATH = matchingTemplatePath,
                         SCORE_MIN = 0.7,
                         NUM_MATCH = 1,

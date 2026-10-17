@@ -21,8 +21,8 @@
         <StackPanel x:Name="lineToolContentHost"
                     Visibility="Collapsed">
             <Border x:Name="purposeContentHost"
-                    Background="{StaticResource VisionTool.PanelBrush}"
-                    BorderBrush="{StaticResource VisionTool.HeaderBorderBrush}"
+                    Background="{DynamicResource OpenVision.Workbench.PanelAltBrush}"
+                    BorderBrush="{DynamicResource OpenVision.Workbench.FieldBorderBrush}"
                     BorderThickness="1"
                     Padding="6,4">
                 <Grid>
@@ -31,10 +31,10 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                    <StackPanel Grid.Row="0" Orientation="Horizontal">
+                    <WrapPanel Grid.Row="0" Orientation="Horizontal">
                         <TextBlock x:Name="txtPurposeLabel"
                                    Text="Purpose"
-                                   Width="48"
+                                   Width="64"
                                    Margin="0,0,6,0"
                                    VerticalAlignment="Center"
                                    Style="{StaticResource SectionTitleStyle}" />
@@ -61,7 +61,7 @@
                                 Padding="8,0"
                                 Click="OpenSignalInspector_Click"
                                 Content="Review signal"
-                                Visibility="Hidden"
+                                Visibility="Collapsed"
                                 ToolTip="Review the representative scan intensity and edge response"
                                 AutomationProperties.AutomationId="LineSignalInspectorOpenButton" />
                         <Border x:Name="signalEvidenceCue"
@@ -82,11 +82,11 @@
                                        Text="Signal updated"
                                        TextTrimming="None" />
                         </Border>
-                    </StackPanel>
+                    </WrapPanel>
                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,4,0,0">
                         <TextBlock x:Name="txtLineSelectorLabel"
                                    Text="Setting"
-                                   Width="46"
+                                   Width="64"
                                    Margin="0,0,6,0"
                                    VerticalAlignment="Center"
                                    Style="{StaticResource SectionTitleStyle}" />
@@ -102,25 +102,36 @@
                                      AutomationProperties.AutomationId="LineToolSettingB"
                                      Style="{StaticResource VisionTool.SegmentedRadioButtonStyle}" />
                         <Button x:Name="btnEditSelectedRoi"
-                                Width="30"
-                                Height="28"
-                                Padding="0"
+                                Width="Auto"
+                                Height="30"
+                                MinHeight="30"
+                                Padding="8,0"
                                 Margin="4,0,0,0"
                                 Style="{StaticResource VisionTool.IconButtonStyle}"
+                                AutomationProperties.AutomationId="LineToolEditSelectedRoi"
                                 ToolTip="Edit selected line ROI">
-                            <iconPacks:PackIconMaterial Kind="CropFree"
-                                                        Width="17"
-                                                        Height="17"
-                                                        HorizontalAlignment="Center"
-                                                        Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                            <StackPanel Orientation="Horizontal">
+                                <iconPacks:PackIconMaterial Kind="CropFree"
+                                                            Width="17"
+                                                            Height="17"
+                                                            Margin="0,0,6,0"
+                                                            VerticalAlignment="Center"
+                                                            Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                                <TextBlock x:Name="txtEditSelectedRoiCaption"
+                                           VerticalAlignment="Center"
+                                           Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                            </StackPanel>
                         </Button>
                     </StackPanel>
                     <TextBlock x:Name="txtPurposeHint"
                                Grid.Row="2"
-                               Margin="0"
-                               Foreground="{StaticResource VisionTool.SecondaryTextBrush}"
-                               Visibility="Collapsed"
-                               TextTrimming="CharacterEllipsis" />
+                               Margin="0,6,0,0"
+                               FontSize="11.5"
+                               LineHeight="17.25"
+                               LineStackingStrategy="BlockLineHeight"
+                               Foreground="{DynamicResource OpenVision.Workbench.SecondaryTextBrush}"
+                               AutomationProperties.AutomationId="LineToolPurposeNote"
+                               TextWrapping="Wrap" />
                 </Grid>
             </Border>
         </StackPanel>

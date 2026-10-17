@@ -50,7 +50,7 @@ namespace OpenVisionLab
 
         private void ApplyLocalization()
         {
-            TitleText.Text = OpenVisionLanguageService.T("VisionTool.AutoMPoint.Title");
+            if (TitleText.GetBindingExpression(TextBlock.TextProperty) == null) { TitleText.Text = OpenVisionLanguageService.T("VisionTool.AutoMPoint.Title"); }
             SuggestedText.Text = OpenVisionLanguageService.T("VisionTool.AutoMPoint.Suggested");
             AnalyzeText.Text = OpenVisionLanguageService.T("VisionTool.AutoMPoint.Analyze");
             RepresentativeImagesText.Text =

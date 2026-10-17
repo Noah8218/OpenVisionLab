@@ -142,18 +142,22 @@ internal static class BlobToolPartialBoundaryContract
             factorySource.Contains("public static OpenVisionNativeToolDocument CreateBlob", StringComparison.Ordinal)
                 && factorySource.Contains("VisionToolCompositionService.CreateBlobToolViewModel", StringComparison.Ordinal)
                 && factorySource.Contains("presenter => new BlobToolWpfView(presenter)", StringComparison.Ordinal)
-                && factorySource.Contains("OpenVisionNativeToolPreviewExecutor.ExecuteBlobPreview", StringComparison.Ordinal)
+                && factorySource.Contains("OpenVisionNativeToolPreviewExecutor.CaptureBlobPreview", StringComparison.Ordinal)
                 && factorySource.Contains("VisionToolAreaVerificationCriteriaText.CreateBlob", StringComparison.Ordinal),
             results);
         Check(
             "Document builders own generic PropertyGrid and single-input document wiring",
             documentBuilderSource.Contains("public static OpenVisionNativeToolDocument Create<TView, TProperty>", StringComparison.Ordinal)
                 && documentBuilderSource.Contains("CreatePropertyGridView", StringComparison.Ordinal)
+                && documentBuilderSource.Contains("capturePreview: descriptor.CapturePreview", StringComparison.Ordinal)
                 && singleInputBuilderSource.Contains("new OpenVisionNativeToolDocument", StringComparison.Ordinal),
             results);
         Check(
             "Preview executor and overlay own Blob algorithm and result image routing",
-            previewExecutorSource.Contains("ExecuteBlobPreview(Mat source, BlobToolWpfView view)", StringComparison.Ordinal)
+            previewExecutorSource.Contains("CaptureBlobPreview(BlobToolWpfView view)", StringComparison.Ordinal)
+                && previewExecutorSource.Contains("view.Dispatcher.VerifyAccess()", StringComparison.Ordinal)
+                && previewExecutorSource.Contains("ExecuteBlobPreview(Mat source, BlobProperty property, bool teachingPreview, out BlobResult[] review)", StringComparison.Ordinal)
+                && !previewExecutorSource.Contains("ExecuteBlobPreview(Mat source, BlobToolWpfView view)", StringComparison.Ordinal)
                 && previewExecutorSource.Contains("new BlobTool()", StringComparison.Ordinal)
                 && overlaySource.Contains("CreateBlobResultPreviewImage", StringComparison.Ordinal),
             results);

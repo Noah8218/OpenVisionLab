@@ -25,6 +25,8 @@ namespace OpenVisionLab
             this.propertyValueChanged = propertyValueChanged;
 
             Grid = OpenVisionToolOpenProfiler.Measure("NewWpgPropertyGrid", () => new WpgPropertyGrid());
+            Grid.SetResourceReference(Control.FontFamilyProperty, "OpenVision.Workbench.FontFamily");
+            Grid.SetResourceReference(WpgPropertyGrid.ThemeVariantProperty, "OpenVision.Workbench.PropertyGridTheme");
             Grid.IsCompactDensity = IsHostedInDockedSingleInputShell(host);
             Binder = OpenVisionToolOpenProfiler.Measure("NewPropertyGridBinder", () => new PropertyGridEventBinder(null));
 
@@ -51,7 +53,13 @@ namespace OpenVisionLab
                     selectedObject,
                     Grid.FocusProperty);
                 parameterGuideLanguageController =
-                    VisionToolLanguageChangeController.Attach(parameterGuidePresenter.Refresh);
+                    VisionToolLanguageChangeController.Attach(() =>
+                    {
+                        bool expanded = shell.ParameterGuide.IsExpanded;
+                        shell.ApplyParameterGuideLocalization();
+                        parameterGuidePresenter.Refresh();
+                        if (expanded) shell.ParameterGuide.Expand();
+                    });
             }
 
             ScheduleInitialSelectedObject(selectedObject);

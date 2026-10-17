@@ -143,6 +143,7 @@ namespace OpenVisionLab
                 "SimplePreprocess.ValueRange",
                 "SimplePreprocess.ValueMin",
                 "SimplePreprocess.ValueMax");
+            view.AttachParameterGuide(() => view.Parameters.CaptureSettings(), "HueMin", "HueMax", "SatMin", "SatMax", "ValMin", "ValMax");
             view.ParameterChanged += (sender, e) => UpdateHsvSummary(view);
             UpdateHsvSummary(view);
         }
@@ -162,6 +163,7 @@ namespace OpenVisionLab
             view.Parameters.AddNumber("TilesGridSize", "Tile Grid", 3, 1, 99, false, false, "SimplePreprocess.TileGrid");
             view.Parameters.AddNumber("Alpha", "Normalize Alpha", 0, 0, 255, false, false, "SimplePreprocess.NormalizeAlpha");
             view.Parameters.AddNumber("Beta", "Normalize Beta", 100, 0, 255, false, false, "SimplePreprocess.NormalizeBeta");
+            view.AttachParameterGuide(() => view.Parameters.CaptureSettings(), "HistogramType", "ClipLimit", "TilesGridSize", "Alpha", "Beta");
             view.ParameterChanged += (sender, e) =>
             {
                 UpdateHistogramParameterVisibility(view);

@@ -15,18 +15,21 @@ namespace OpenVisionLab
         private readonly OpenVisionLayerDockWorkspaceView workspaceView;
         private readonly OpenVisionShellHostDockedLayerOrchestrator orchestrator;
         private readonly Action<string> activateLayer;
+        private readonly OpenVisionDockedLayerContentSource contentSource;
         private bool pointerLayerSelectionPending;
 
         internal OpenVisionDockedLayerWorkspaceRuntime(
             OpenVisionLayerDockWorkspaceView workspaceView,
             OpenVisionDockedLayerWorkspaceViewModel viewModel,
             OpenVisionShellHostDockedLayerOrchestrator orchestrator,
-            Action<string> activateLayer)
+            Action<string> activateLayer,
+            OpenVisionDockedLayerContentSource contentSource)
         {
             this.workspaceView = workspaceView ?? throw new ArgumentNullException(nameof(workspaceView));
             ViewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
             this.orchestrator = orchestrator ?? throw new ArgumentNullException(nameof(orchestrator));
             this.activateLayer = activateLayer ?? throw new ArgumentNullException(nameof(activateLayer));
+            this.contentSource = contentSource ?? throw new ArgumentNullException(nameof(contentSource));
             this.orchestrator.WorkspaceStateChanged += OnOrchestratorWorkspaceStateChanged;
             this.workspaceView.ActiveDocumentChanged += OnActiveDocumentChanged;
             this.workspaceView.PreviewMouseDown += OnWorkspacePreviewMouseDown;
@@ -39,6 +42,8 @@ namespace OpenVisionLab
         public ICollection<string> LayerTitles => ViewModel.LayerTitles;
 
         public bool HasLayers => ViewModel.HasLayers;
+
+        public IOpenVisionDockedLayerViewer ActiveLayerViewer => string.IsNullOrWhiteSpace(workspaceView.ActiveDocumentId) ? null : orchestrator.FindViewer(workspaceView.ActiveDocumentId);
 
         public bool IsWorkspaceVisible => workspaceView.Visibility == Visibility.Visible;
 
@@ -62,10 +67,39 @@ namespace OpenVisionLab
             return orchestrator.ActivateLayer(layerTitle);
         }
 
+        public void FitLayerImages()
+        {
+            foreach (string layerTitle in LayerTitles)
+            {
+                orchestrator.FindViewer(layerTitle)?.FitImageToView();
+            }
+        }
+
         public void SyncLayerDocuments(IReadOnlyList<string> layerTitles)
         {
-            orchestrator.SyncLayers(layerTitles);
+            orchestrator.SyncLayers(contentSource.MainViewer?.DocumentIds ?? layerTitles);
         }
+
+        public void AttachMainViewer(OpenVisionWorkbenchViewerViewModel viewer)
+        {
+            contentSource.MainViewer = viewer ?? throw new ArgumentNullException(nameof(viewer));
+            workspaceView.IsPresetLayout = true;
+            viewer.LayoutChanged += OnMainLayoutChanged;
+            viewer.SourcesChanged += OnMainSourcesChanged;
+            OnMainLayoutChanged(viewer, EventArgs.Empty);
+        }
+
+        private void OnMainLayoutChanged(object sender, EventArgs e)
+        {
+            OpenVisionWorkbenchViewerViewModel viewer = contentSource.MainViewer;
+            if (viewer == null) { return; }
+            orchestrator.SyncLayers(viewer.DocumentIds);
+            if (viewer.Layout == 4) { orchestrator.ArrangeGrid(viewer.DocumentIds); }
+            else { orchestrator.ArrangePanes(Orientation.Horizontal, viewer.DocumentIds); }
+            orchestrator.ActivateLayer(viewer.ActivePaneId);
+        }
+
+        private void OnMainSourcesChanged(object sender, EventArgs e) => orchestrator.RefreshViews();
 
         public void ClearDockedLayerDocuments()
         {
@@ -186,6 +220,12 @@ namespace OpenVisionLab
 
         public void ReleaseLayerViewerContents()
         {
+            if (contentSource.MainViewer != null)
+            {
+                contentSource.MainViewer.LayoutChanged -= OnMainLayoutChanged;
+                contentSource.MainViewer.SourcesChanged -= OnMainSourcesChanged;
+                contentSource.MainViewer = null;
+            }
             orchestrator.ClearDocuments();
         }
 
@@ -207,6 +247,7 @@ namespace OpenVisionLab
 
         private void OnActiveDocumentChanged(object sender, EventArgs e)
         {
+            WorkspaceStateChanged?.Invoke(this, EventArgs.Empty);
             if (!pointerLayerSelectionPending)
             {
                 return;
@@ -214,6 +255,11 @@ namespace OpenVisionLab
 
             pointerLayerSelectionPending = false;
             string layerTitle = workspaceView.ActiveDocumentId;
+            if (contentSource.MainViewer?.FindPane(layerTitle) != null)
+            {
+                contentSource.MainViewer.Activate(layerTitle);
+                return;
+            }
             if (!string.IsNullOrWhiteSpace(layerTitle))
             {
                 QueueLayerActivation(layerTitle);
@@ -222,6 +268,13 @@ namespace OpenVisionLab
 
         private void OnWorkspacePreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
+            OpenVisionLayerViewerView mainView = FindVisualAncestor<OpenVisionLayerViewerView>(e?.OriginalSource as DependencyObject);
+            if (mainView?.MainPane != null)
+            {
+                orchestrator.ActivateLayer(mainView.MainPane.Id);
+                contentSource.MainViewer?.Activate(mainView.MainPane.Id);
+                return;
+            }
             if (FindVisualAncestor<ButtonBase>(e?.OriginalSource as DependencyObject) != null)
             {
                 return;
@@ -241,6 +294,12 @@ namespace OpenVisionLab
 
         private void QueueLayerActivation(string layerTitle)
         {
+            if (contentSource.MainViewer != null)
+            {
+                string paneId = workspaceView.ActiveDocumentId;
+                if (contentSource.MainViewer.FindPane(paneId) != null) { contentSource.MainViewer.Activate(paneId); }
+                return;
+            }
             workspaceView.Dispatcher.BeginInvoke(
                 DispatcherPriority.Background,
                 (Action)(() => activateLayer(layerTitle)));

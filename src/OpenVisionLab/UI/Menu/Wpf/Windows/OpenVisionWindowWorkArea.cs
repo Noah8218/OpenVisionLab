@@ -8,7 +8,7 @@ namespace OpenVisionLab
         internal const int GetMinMaxInfoMessage = 0x0024;
         private const uint MonitorDefaultToNearest = 0x00000002;
 
-        internal static void Apply(IntPtr hwnd, IntPtr lParam)
+        internal static void Apply(IntPtr hwnd, IntPtr lParam, double minimumWidth = 0D, double minimumHeight = 0D)
         {
             IntPtr monitor = MonitorFromWindow(hwnd, MonitorDefaultToNearest);
             if (monitor == IntPtr.Zero || lParam == IntPtr.Zero)
@@ -30,6 +30,8 @@ namespace OpenVisionLab
             minMaxInfo.MaxPosition.Y = monitorInfo.WorkArea.Top - monitorInfo.MonitorArea.Top;
             minMaxInfo.MaxSize.X = monitorInfo.WorkArea.Right - monitorInfo.WorkArea.Left;
             minMaxInfo.MaxSize.Y = monitorInfo.WorkArea.Bottom - monitorInfo.WorkArea.Top;
+            minMaxInfo.MinTrackSize.X = Math.Max(minMaxInfo.MinTrackSize.X, (int)Math.Ceiling(minimumWidth));
+            minMaxInfo.MinTrackSize.Y = Math.Max(minMaxInfo.MinTrackSize.Y, (int)Math.Ceiling(minimumHeight));
             Marshal.StructureToPtr(minMaxInfo, lParam, false);
         }
 

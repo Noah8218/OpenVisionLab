@@ -10,7 +10,9 @@ namespace OpenVisionLab
 {
     internal sealed class VisionToolCustomParameterGuideBinder : IDisposable
     {
-        private readonly VisionToolSingleInputPropertyToolShell shell;
+        private readonly FrameworkElement shell;
+        private readonly VisionToolParameterGuideView guideView;
+        private readonly Action applyLocalization;
         private readonly Func<object> selectedObjectFactory;
         private readonly IReadOnlyDictionary<FrameworkElement, string> bindings;
         private readonly VisionToolParameterGuidePresenter presenter;
@@ -19,20 +21,24 @@ namespace OpenVisionLab
         private bool disposed;
 
         private VisionToolCustomParameterGuideBinder(
-            VisionToolSingleInputPropertyToolShell shell,
+            FrameworkElement shell,
+            VisionToolParameterGuideView guideView,
+            Action applyLocalization,
             Func<object> selectedObjectFactory,
             IReadOnlyDictionary<FrameworkElement, string> bindings)
         {
             this.shell = shell ?? throw new ArgumentNullException(nameof(shell));
+            this.guideView = guideView ?? throw new ArgumentNullException(nameof(guideView));
+            this.applyLocalization = applyLocalization ?? throw new ArgumentNullException(nameof(applyLocalization));
             this.selectedObjectFactory =
                 selectedObjectFactory ?? throw new ArgumentNullException(nameof(selectedObjectFactory));
             this.bindings = bindings ?? throw new ArgumentNullException(nameof(bindings));
             presenter = new VisionToolParameterGuidePresenter(
-                shell.ParameterGuide,
+                guideView,
                 selectedObjectFactory(),
                 FocusProperty);
             languageController = VisionToolLanguageChangeController.Attach(Refresh);
-            shell.ParameterGuideVisibility = Visibility.Visible;
+            applyLocalization();
 
             foreach (FrameworkElement element in bindings.Keys)
             {
@@ -76,10 +82,22 @@ namespace OpenVisionLab
             Func<object> selectedObjectFactory,
             IReadOnlyDictionary<FrameworkElement, string> bindings)
         {
+            shell.ParameterGuideVisibility = Visibility.Visible;
             return new VisionToolCustomParameterGuideBinder(
                 shell,
+                shell.ParameterGuide,
+                shell.ApplyParameterGuideLocalization,
                 selectedObjectFactory,
                 bindings);
+        }
+
+        public static VisionToolCustomParameterGuideBinder Attach(
+            VisionToolDoubleInputCustomToolShell shell,
+            Func<object> selectedObjectFactory,
+            IReadOnlyDictionary<FrameworkElement, string> bindings)
+        {
+            shell.ParameterGuideVisibility = Visibility.Visible;
+            return new VisionToolCustomParameterGuideBinder(shell, shell.ParameterGuide, shell.ApplyParameterGuideLocalization, selectedObjectFactory, bindings);
         }
 
         public void Dispose()
@@ -165,13 +183,16 @@ namespace OpenVisionLab
 
         private void Refresh()
         {
-            if (disposed || string.IsNullOrWhiteSpace(selectedPropertyName))
+            if (disposed)
             {
                 return;
             }
 
+            bool expanded = guideView.IsExpanded;
+            applyLocalization();
             presenter.SelectObject(selectedObjectFactory());
             presenter.SelectProperty(selectedPropertyName);
+            if (expanded) guideView.Expand();
         }
 
         private bool FocusProperty(string propertyName)

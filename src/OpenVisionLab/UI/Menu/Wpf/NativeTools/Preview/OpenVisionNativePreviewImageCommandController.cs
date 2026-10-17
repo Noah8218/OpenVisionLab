@@ -20,6 +20,7 @@ namespace OpenVisionLab
         private readonly Action clearPreviewResult;
         private readonly Action refreshLayerState;
         private readonly Action<string> setStatus;
+        private readonly Action<VisionToolPreviewImageRole, string> imageLoaded;
         private static string lastImageDirectory;
 
         public OpenVisionNativePreviewImageCommandController(
@@ -31,7 +32,8 @@ namespace OpenVisionLab
             Func<string> resolvePrimaryInputLayer,
             Action clearPreviewResult,
             Action refreshLayerState,
-            Action<string> setStatus)
+            Action<string> setStatus,
+            Action<VisionToolPreviewImageRole, string> imageLoaded = null)
         {
             this.displayManager = displayManager ?? throw new ArgumentNullException(nameof(displayManager));
             this.previewLayerPublisher = previewLayerPublisher ?? throw new ArgumentNullException(nameof(previewLayerPublisher));
@@ -42,6 +44,7 @@ namespace OpenVisionLab
             this.clearPreviewResult = clearPreviewResult ?? throw new ArgumentNullException(nameof(clearPreviewResult));
             this.refreshLayerState = refreshLayerState ?? throw new ArgumentNullException(nameof(refreshLayerState));
             this.setStatus = setStatus ?? throw new ArgumentNullException(nameof(setStatus));
+            this.imageLoaded = imageLoaded;
         }
 
         public void LoadWithDialog(VisionToolPreviewImageRole role)
@@ -112,6 +115,7 @@ namespace OpenVisionLab
                     ? resolvePrimaryInputLayer()
                     : layerName;
                 previewLayerPublisher.RestoreDisplayActivation(activationLayer);
+                imageLoaded?.Invoke(role, layerName);
                 lastImageDirectory = Path.GetDirectoryName(path);
                 OpenVisionImageDirectoryResolver.RememberImagePath(path);
                 clearPreviewResult();

@@ -1,8 +1,10 @@
+using OpenCvSharp;
 using OpenVisionLab.Vision2D.Pipeline;
 using OpenVisionLab.Vision2D.Result;
 using OpenVisionLab.Vision2D.Tool;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 
 namespace OpenVisionLab
@@ -22,9 +24,20 @@ namespace OpenVisionLab
         public bool HasResultImage { get; set; }
         public int ResultImageWidth { get; set; }
         public int ResultImageHeight { get; set; }
+        [System.Xml.Serialization.XmlIgnore, System.Text.Json.Serialization.JsonIgnore]
+        public double? OutputMean { get; set; }
+        [System.Xml.Serialization.XmlIgnore, System.Text.Json.Serialization.JsonIgnore]
+        public double? OutputMinimum { get; set; }
+        [System.Xml.Serialization.XmlIgnore, System.Text.Json.Serialization.JsonIgnore]
+        public double? OutputMaximum { get; set; }
+        [System.Xml.Serialization.XmlIgnore, System.Text.Json.Serialization.JsonIgnore]
+        public IReadOnlyList<VisionPipelineMatchResultEvidence> MatchResults { get; set; } = Array.Empty<VisionPipelineMatchResultEvidence>();
         public int OverlayCount { get; set; }
+        [System.Xml.Serialization.XmlIgnore, System.Text.Json.Serialization.JsonIgnore]
+        public IReadOnlyList<VisionToolOverlay> Overlays { get; set; } = Array.Empty<VisionToolOverlay>();
         public int MetricCount { get; set; }
         public int ParameterCount { get; set; }
+        public IReadOnlyDictionary<string, string> Parameters { get; set; } = new ReadOnlyDictionary<string, string>(new Dictionary<string, string>());
         public double ElapsedMilliseconds { get; set; }
         public string Message { get; set; } = string.Empty;
         public int ErrorCode { get; set; }
@@ -45,6 +58,18 @@ namespace OpenVisionLab
         public int GeometryFeatureCount => GeometryFeatures?.Count ?? 0;
         public VisionPipelineCircleEvidence CircleEvidence { get; set; }
         public EdgeBasedMatchingDiagnosticEvidence EdgeBasedMatchingDiagnostics { get; set; }
+        internal VisionPipelineStepResultSummary CopyForMainRetention(bool judged)
+        {
+            VisionPipelineStepResultSummary copy = (VisionPipelineStepResultSummary)MemberwiseClone();
+            copy.Metrics = new Dictionary<string, double>(Metrics, StringComparer.OrdinalIgnoreCase);
+            copy.Parameters = new ReadOnlyDictionary<string, string>(Parameters.ToDictionary(item => item.Key, item => item.Value, StringComparer.OrdinalIgnoreCase));
+            copy.Overlays = judged ? Overlays.Select(VisionPipelineOverlayMergeService.CloneOverlay).Where(item => item != null).ToArray() : Array.Empty<VisionToolOverlay>();
+            copy.ObjectResults = judged ? ObjectResults.ToArray() : Array.Empty<VisionPipelineObjectResult>();
+            copy.MatchResults = judged ? MatchResults.ToArray() : Array.Empty<VisionPipelineMatchResultEvidence>();
+            if (!judged) { copy.HasResultImage = false; copy.OutputMean = null; copy.OutputMinimum = null; copy.OutputMaximum = null; }
+            return copy;
+        }
+
         public string ResultImageSizeText => HasResultImage
             ? $"{ResultImageWidth} x {ResultImageHeight}"
             : string.Empty;
@@ -130,7 +155,7 @@ namespace OpenVisionLab
             VisionPipelineStep step = stepResult?.Step;
             VisionToolResult toolResult = stepResult?.ToolResult;
             string resolvedMessage = ResolveMessage(stepResult);
-            return new VisionPipelineStepResultSummary
+            VisionPipelineStepResultSummary summary = new VisionPipelineStepResultSummary
             {
                 Index = index,
                 Name = step?.Name ?? string.Empty,
@@ -150,8 +175,11 @@ namespace OpenVisionLab
                 ResultImageWidth = toolResult?.ResultImage != null && !toolResult.ResultImage.Empty() ? toolResult.ResultImage.Width : 0,
                 ResultImageHeight = toolResult?.ResultImage != null && !toolResult.ResultImage.Empty() ? toolResult.ResultImage.Height : 0,
                 OverlayCount = toolResult?.Overlays?.Count ?? 0,
+                Overlays = toolResult?.Overlays?.Select(VisionPipelineOverlayMergeService.CloneOverlay).ToArray() ?? Array.Empty<VisionToolOverlay>(),
                 MetricCount = toolResult?.Metrics?.Count ?? 0,
                 ParameterCount = step?.Parameters?.Count ?? 0,
+                Parameters = new ReadOnlyDictionary<string, string>(step?.Parameters?.ToDictionary(parameter => parameter.Key, parameter => parameter.Value, StringComparer.OrdinalIgnoreCase)
+                    ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)),
                 ElapsedMilliseconds = toolResult?.Elapsed.TotalMilliseconds ?? 0d,
                 Message = resolvedMessage,
                 ErrorCode = toolResult?.ErrorCodeValue ?? 0,
@@ -167,10 +195,28 @@ namespace OpenVisionLab
                     .ToDictionary(metric => metric.Key, metric => metric.Value, StringComparer.OrdinalIgnoreCase),
                 ObjectResults = VisionPipelineObjectResultStore.Get(toolResult).ToList(),
                 InstanceResults = VisionPipelineInstanceResultStore.Get(toolResult).Select(item => item.Clone()).ToList(),
+                MatchResults = VisionPipelineMatchResultStore.Get(toolResult).Select(item => item.Clone()).ToList(),
                 GeometryFeatures = VisionPipelineGeometryFeatureStore.Get(toolResult).Select(item => item.Clone()).ToList(),
                 CircleEvidence = VisionPipelineCircleEvidenceStore.Get(toolResult),
                 EdgeBasedMatchingDiagnostics = toolResult?.EdgeBasedMatchingDiagnostics?.Clone()
             };
+            if (summary.HasResultImage && toolResult.ResultImage.Channels() is 1 or 3 or 4)
+            {
+                using Mat gray = new Mat();
+                try
+                {
+                    if (toolResult.ResultImage.Channels() != 1) { Cv2.CvtColor(toolResult.ResultImage, gray, toolResult.ResultImage.Channels() == 4 ? ColorConversionCodes.BGRA2GRAY : ColorConversionCodes.BGR2GRAY); }
+                    Mat pixels = toolResult.ResultImage.Channels() == 1 ? toolResult.ResultImage : gray;
+                    Cv2.MinMaxLoc(pixels, out double minimum, out double maximum);
+                    double mean = Cv2.Mean(pixels).Val0;
+                    if (double.IsFinite(mean) && double.IsFinite(minimum) && double.IsFinite(maximum))
+                    {
+                        summary.OutputMean = mean; summary.OutputMinimum = minimum; summary.OutputMaximum = maximum;
+                    }
+                }
+                catch (OpenCVException) { /* Optional display statistics are unavailable for unsupported result depths. */ }
+            }
+            return summary;
         }
 
         private static VisionPipelineStepResultSummary CreateUnexecutedSummary(

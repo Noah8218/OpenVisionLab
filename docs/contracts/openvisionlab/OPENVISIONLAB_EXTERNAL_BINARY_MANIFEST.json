@@ -132,7 +132,7 @@
       "publishCopy": "clean-runtime-observed",
       "licenseStatus": "upstream-Apache-2.0-confirmed-notice-covered",
       "licenseEvidence": [
-        "docs/reports/OPENVISIONLAB_RETAINED_DEPENDENCY_NOTICE_COVERAGE_20260826.md",
+        "NOTICE",
         "https://github.com/awesome-inc/FontAwesome.Sharp"
       ],
       "noticeMarker": "FontAwesome.Sharp",
@@ -230,7 +230,7 @@
       "licenseEvidence": [
         "dll/OpenVisionLab-Vision-SDK/sdk-manifest.json",
         "docs/contracts/openvisionlab/OPENVISIONLAB_EXTERNAL_REFERENCE_POLICY.md",
-        "docs/reports/OPENVISIONLAB_RETAINED_DEPENDENCY_NOTICE_COVERAGE_20260826.md",
+        "NOTICE",
         "https://github.com/shimat/opencvsharp"
       ],
       "noticeMarker": "OpenCvSharp",
@@ -256,7 +256,7 @@
       "licenseStatus": "manifest-provenance-recorded-notice-covered",
       "licenseEvidence": [
         "dll/OpenVisionLab-Vision-SDK/sdk-manifest.json",
-        "docs/reports/OPENVISIONLAB_RETAINED_DEPENDENCY_NOTICE_COVERAGE_20260826.md",
+        "NOTICE",
         "https://github.com/Noah8218/OpenVisionLab-Vision-SDK"
       ],
       "noticeMarker": "OpenVisionLab Vision SDK",
@@ -287,7 +287,7 @@
       "licenseStatus": "manifest-provenance-recorded-upstream-Apache-2.0-notice-covered",
       "licenseEvidence": [
         "dll/OpenVisionLab-Vision-SDK/sdk-manifest.json",
-        "docs/reports/OPENVISIONLAB_RETAINED_DEPENDENCY_NOTICE_COVERAGE_20260826.md",
+        "NOTICE",
         "https://github.com/shimat/opencvsharp"
       ],
       "noticeMarker": "OpenCvSharp",
@@ -313,8 +313,7 @@
       "licenseStatus": "manifest-provenance-recorded-notice-covered",
       "licenseEvidence": [
         "dll/OpenVisionLab-Vision-SDK/sdk-manifest.json",
-        "docs/reports/OPENVISIONLAB_VISION_SDK_3_MIGRATION_20260805.md",
-        "docs/reports/OPENVISIONLAB_RETAINED_DEPENDENCY_NOTICE_COVERAGE_20260826.md",
+        "NOTICE",
         "https://github.com/Noah8218/OpenVisionLab-Vision-SDK"
       ],
       "noticeMarker": "OpenVisionLab Vision SDK",
@@ -339,8 +338,7 @@
       "licenseStatus": "manifest-provenance-recorded-notice-covered",
       "licenseEvidence": [
         "dll/OpenVisionLab-Vision-SDK/sdk-manifest.json",
-        "docs/reports/OPENVISIONLAB_VISION_SDK_3_MIGRATION_20260805.md",
-        "docs/reports/OPENVISIONLAB_RETAINED_DEPENDENCY_NOTICE_COVERAGE_20260826.md",
+        "NOTICE",
         "https://github.com/Noah8218/OpenVisionLab-Vision-SDK"
       ],
       "noticeMarker": "OpenVisionLab Vision SDK",
@@ -367,8 +365,7 @@
       "licenseStatus": "manifest-provenance-recorded-notice-covered",
       "licenseEvidence": [
         "dll/OpenVisionLab-Vision-SDK/sdk-manifest.json",
-        "docs/reports/OPENVISIONLAB_VISION_SDK_3_MIGRATION_20260805.md",
-        "docs/reports/OPENVISIONLAB_RETAINED_DEPENDENCY_NOTICE_COVERAGE_20260826.md",
+        "NOTICE",
         "https://github.com/Noah8218/OpenVisionLab-Vision-SDK"
       ],
       "noticeMarker": "OpenVisionLab Vision SDK",
@@ -408,7 +405,7 @@
       "publishCopy": "clean-runtime-observed",
       "licenseStatus": "upstream-MIT-confirmed-notice-covered",
       "licenseEvidence": [
-        "docs/reports/OPENVISIONLAB_RETAINED_DEPENDENCY_NOTICE_COVERAGE_20260826.md",
+        "NOTICE",
         "https://github.com/dwmkerr/sharpgl"
       ],
       "noticeMarker": "SharpGL",
@@ -431,7 +428,7 @@
       "publishCopy": "clean-runtime-observed",
       "licenseStatus": "upstream-MIT-confirmed-notice-covered",
       "licenseEvidence": [
-        "docs/reports/OPENVISIONLAB_RETAINED_DEPENDENCY_NOTICE_COVERAGE_20260826.md",
+        "NOTICE",
         "https://github.com/dwmkerr/sharpgl"
       ],
       "noticeMarker": "SharpGL",
@@ -456,8 +453,7 @@
       "publishCopy": "clean-runtime-observed",
       "licenseStatus": "user-created-owner-declaration",
       "licenseEvidence": [
-        "docs/reports/OPENVISIONLAB_RETAINED_DEPENDENCY_NOTICE_COVERAGE_20260826.md",
-        "docs/reports/OPENVISIONLAB_WPG_CUSTOM_OWNER_CLASSIFICATION_20260826.md"
+        "NOTICE"
       ],
       "noticeMarker": "WPG-CUSTOM",
       "releasePolicy": "allow-with-user-ownership-declaration",

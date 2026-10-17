@@ -1,6 +1,4 @@
 using OpenVisionLab.Vision2D.Pipeline;
-using OpenVisionLab.Vision2D.Tool;
-using OpenCvSharp;
 using System;
 
 namespace OpenVisionLab
@@ -11,14 +9,14 @@ namespace OpenVisionLab
             string toolName,
             string defaultOutputLayer,
             Action<SimplePreprocessToolWpfView> configureView,
-            Func<Mat, SimplePreprocessToolWpfView, VisionToolResult> executePreview,
+            Func<SimplePreprocessToolWpfView, OpenVisionNativePreviewOperation> capturePreview,
             Func<SimplePreprocessToolWpfView, string, string, VisionPipelineStep> createStep,
             bool normalizeSingleChannelInput = true)
         {
             ToolName = string.IsNullOrWhiteSpace(toolName) ? throw new ArgumentException("Tool name is required.", nameof(toolName)) : toolName;
             DefaultOutputLayer = string.IsNullOrWhiteSpace(defaultOutputLayer) ? ToolName + "_Preview" : defaultOutputLayer;
             ConfigureView = configureView ?? throw new ArgumentNullException(nameof(configureView));
-            ExecutePreview = executePreview ?? throw new ArgumentNullException(nameof(executePreview));
+            CapturePreview = capturePreview ?? throw new ArgumentNullException(nameof(capturePreview));
             CreateStep = createStep;
             NormalizeSingleChannelInput = normalizeSingleChannelInput;
         }
@@ -29,7 +27,7 @@ namespace OpenVisionLab
 
         public Action<SimplePreprocessToolWpfView> ConfigureView { get; }
 
-        public Func<Mat, SimplePreprocessToolWpfView, VisionToolResult> ExecutePreview { get; }
+        public Func<SimplePreprocessToolWpfView, OpenVisionNativePreviewOperation> CapturePreview { get; }
 
         public Func<SimplePreprocessToolWpfView, string, string, VisionPipelineStep> CreateStep { get; }
 

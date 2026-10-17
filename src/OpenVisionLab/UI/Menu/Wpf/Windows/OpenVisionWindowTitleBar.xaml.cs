@@ -9,6 +9,15 @@ namespace OpenVisionLab
 {
     public partial class OpenVisionWindowTitleBar : UserControl
     {
+        public static readonly DependencyProperty HeaderContentProperty =
+            DependencyProperty.Register(nameof(HeaderContent), typeof(object), typeof(OpenVisionWindowTitleBar), new PropertyMetadata(null));
+
+        public object HeaderContent
+        {
+            get => GetValue(HeaderContentProperty);
+            set => SetValue(HeaderContentProperty, value);
+        }
+
         public OpenVisionWindowTitleBar()
         {
             InitializeComponent();
@@ -136,8 +145,7 @@ namespace OpenVisionLab
 
         public void ApplyLocalizedChromeText()
         {
-            string dockText = OpenVisionLanguageService.T("Common.DockRight");
-            btnDock.ToolTip = string.Equals(dockText, "Common.DockRight", StringComparison.Ordinal) ? "우측 고정" : dockText;
+            btnDock.ToolTip = OpenVisionLanguageService.T("Workbench.Tool.Dock");
             btnMinimize.ToolTip = OpenVisionLanguageService.T("Common.Minimize");
             Window owner = Window.GetWindow(this);
             btnMaximize.ToolTip = owner?.WindowState == WindowState.Maximized

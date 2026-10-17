@@ -68,6 +68,7 @@ internal static class MorphologyToolPartialBoundaryContract
         string viewModelSource = File.ReadAllText(viewModelPath);
         string factorySource = File.ReadAllText(factoryPath);
         string baseViewSource = File.ReadAllText(baseViewPath);
+        string documentBuilderSource = File.ReadAllText(Path.Combine(Path.GetDirectoryName(factoryPath)!, "OpenVisionNativeCustomToolDocumentBuilder.cs"));
         List<string> results = new();
 
         Check(
@@ -114,6 +115,16 @@ internal static class MorphologyToolPartialBoundaryContract
                 && factorySource.Contains("new MorphologyToolWpfView(viewPresenter)", StringComparison.Ordinal)
                 && baseViewSource.Contains("DisposeToolResources();", StringComparison.Ordinal)
                 && baseViewSource.Contains("toolController?.Dispose();", StringComparison.Ordinal),
+            results);
+        Check(
+            "Morphology production descriptor captures UI parameters before data-only native execution",
+            factorySource.Contains("CreateSinglePropertyToolDocument<MorphologyToolWpfView, MorphologyToolPresenter, MorphologyToolProperty>", StringComparison.Ordinal)
+                && documentBuilderSource.Contains("view => CapturePropertyTool(view, createProperty, createTool)", StringComparison.Ordinal)
+                && documentBuilderSource.Contains("view.Dispatcher.VerifyAccess();", StringComparison.Ordinal)
+                && documentBuilderSource.Contains("TProperty property = createProperty(view);", StringComparison.Ordinal)
+                && documentBuilderSource.Contains("source => ExecutePropertyTool(source, property, createTool)", StringComparison.Ordinal)
+                && documentBuilderSource.Contains("ExecutePropertyTool(Mat source, TProperty property, Func<TProperty, IVisionTool> createTool)", StringComparison.Ordinal)
+                && documentBuilderSource.Contains("capturePreview: descriptor.CapturePreview", StringComparison.Ordinal),
             results);
 
         File.WriteAllLines(

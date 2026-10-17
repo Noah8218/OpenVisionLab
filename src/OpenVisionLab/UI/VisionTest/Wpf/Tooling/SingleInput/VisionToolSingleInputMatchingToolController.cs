@@ -171,6 +171,8 @@ namespace OpenVisionLab
             toolRuntime.SetResultReview(resultReviewTitle, results, tactTime);
         }
 
+        internal Action<IEnumerable<MatchingResult>, TimeSpan?> CaptureResultReview() => toolRuntime.CaptureResultReview(resultReviewTitle);
+
         public void Dispose()
         {
             languageChangeController.Dispose();

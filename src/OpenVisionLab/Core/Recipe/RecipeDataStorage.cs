@@ -29,7 +29,8 @@ namespace OpenVisionLab
                         out Exception loadException)
                     && loaded != null)
                 {
-                    return loaded;
+                    if (loaded.SavedRevision == 0 || !string.IsNullOrEmpty(loaded.SavedContentHash)) { return loaded; }
+                    loadException = new InvalidDataException("Saved recipe revision has no successful content baseline.");
                 }
 
                 if (!File.Exists(path))

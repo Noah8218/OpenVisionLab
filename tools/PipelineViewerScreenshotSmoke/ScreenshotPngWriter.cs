@@ -137,8 +137,21 @@ internal static class ScreenshotPngWriter
     {
         int width = Math.Max(1, (int)Math.Round(element.ActualWidth));
         int height = Math.Max(1, (int)Math.Round(element.ActualHeight));
+        DrawingVisual visual = new();
+        Vector offset = VisualTreeHelper.GetOffset(element);
+        using (DrawingContext drawing = visual.RenderOpen())
+        {
+            VisualBrush content = new(element)
+            {
+                AutoLayoutContent = false,
+                ViewboxUnits = BrushMappingMode.Absolute,
+                Viewbox = new Rect(offset.X, offset.Y, element.ActualWidth, element.ActualHeight),
+                Stretch = Stretch.Fill
+            };
+            drawing.DrawRectangle(content, null, new Rect(0D, 0D, width, height));
+        }
         RenderTargetBitmap bitmap = new(width, height, 96, 96, PixelFormats.Pbgra32);
-        bitmap.Render(element);
+        bitmap.Render(visual);
         PngBitmapEncoder encoder = new();
         encoder.Frames.Add(BitmapFrame.Create(bitmap));
         using FileStream stream = File.Create(outputPath);

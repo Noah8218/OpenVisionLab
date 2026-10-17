@@ -58,14 +58,15 @@ Add-IndexedPath $indexedPaths $index.detailedRegistry
 foreach ($item in @($index.authority)) { Add-IndexedPath $indexedPaths $item.path }
 foreach ($route in @($index.routes)) {
     foreach ($path in @($route.read)) { Add-IndexedPath $indexedPaths $path }
-}
-foreach ($item in @($index.references)) { Add-IndexedPath $indexedPaths $item.path }
-foreach ($path in @($index.discovery.pNumberSearchOrder)) {
-    if ([string]$path -notin @('docs/reports', 'artifacts')) {
-        Add-IndexedPath $indexedPaths $path
+    foreach ($lookup in @($route.lookup)) {
+        if ($null -eq $lookup) { continue }
+        Add-IndexedPath $indexedPaths $lookup.path
+        if ([string]::IsNullOrWhiteSpace([string]$lookup.path) -or [string]::IsNullOrWhiteSpace([string]$lookup.when)) {
+            $errors.Add("Conditional lookup requires path and when: $($route.id)")
+        }
     }
 }
-
+foreach ($item in @($index.references)) { Add-IndexedPath $indexedPaths $item.path }
 $routeIds = @($index.routes | ForEach-Object { [string]$_.id })
 $duplicateRouteIds = @($routeIds | Group-Object | Where-Object Count -gt 1 | ForEach-Object Name)
 if ($duplicateRouteIds.Count -gt 0) {
@@ -76,6 +77,30 @@ $authorityRanks = @($index.authority | ForEach-Object { [int]$_.rank })
 $duplicateAuthorityRanks = @($authorityRanks | Group-Object | Where-Object Count -gt 1 | ForEach-Object Name)
 if ($duplicateAuthorityRanks.Count -gt 0) {
     $errors.Add("Duplicate authority ranks: $($duplicateAuthorityRanks -join ', ')")
+}
+
+$startRoutes = @($index.routes | Where-Object { $_.id -eq 'start_or_continue' })
+$startupPaths = @()
+if ($startRoutes.Count -ne 1) {
+    $errors.Add('Exactly one start_or_continue route is required.')
+}
+else {
+    $startupPaths = @($startRoutes[0].read | Sort-Object -Unique)
+    if ($startupPaths.Count -eq 0) {
+        $errors.Add('The start_or_continue route must name at least one entry document.')
+    }
+    foreach ($required in @('AGENTS.md', 'docs/README.md')) {
+        if ($startupPaths -notcontains $required) {
+            $errors.Add("The start_or_continue route is missing an entry document: $required")
+        }
+    }
+    $prioritySource = [string]$index.rules.currentPrioritySource
+    if (-not [string]::IsNullOrWhiteSpace($prioritySource) -and $startupPaths -notcontains $prioritySource) {
+        $errors.Add("The start_or_continue route is missing its declared currentPrioritySource: $prioritySource")
+    }
+    if ($index.rules.authorityIsReadingBundle -ne $false) {
+        $errors.Add('Authority ranks must not become an automatic full-document reading bundle.')
+    }
 }
 
 $uniqueIndexedPaths = @($indexedPaths | Sort-Object -Unique)
@@ -162,4 +187,5 @@ if ($errors.Count -gt 0) {
     exit 1
 }
 
-Write-Output ("DocumentationIndex=PASS IndexedPaths={0} Routes={1} RootRedirects={2}" -f $uniqueIndexedPaths.Count, @($index.routes).Count, $rootRedirectCount)
+$startupBytes = ($startupPaths | ForEach-Object { (Get-Item -LiteralPath (Join-Path $resolvedRepoRoot $_)).Length } | Measure-Object -Sum).Sum
+Write-Output ("DocumentationIndex=PASS IndexedPaths={0} Routes={1} RootRedirects={2} StartupDocuments={3} StartupBytes={4}" -f $uniqueIndexedPaths.Count, @($index.routes).Count, $rootRedirectCount, $startupPaths.Count, $startupBytes)

@@ -55,9 +55,17 @@ namespace OpenVisionLab
             global.System.SaveConfig();
         }
 
+        public string CurrentRecipeDescription => runtimeContext.Global?.Data?.Description ?? string.Empty;
+
+        public bool SaveRuntimeRecipeCopy(string recipeName) => RecipeRuntimeStorage.Save(recipeName, () => runtimeContext.Global.Data, () => runtimeContext.Global.VisionTools);
+
+        public long CurrentSavedRevision => runtimeContext.Global?.Data?.SavedRevision ?? 0;
+
+        public void PrepareRuntimeRecipeSave() => RecipeRuntimeStorage.PrepareSavedRevision(runtimeContext.Global.Recipe.Name, runtimeContext.Global.Data);
+
         public bool SaveRuntimeRecipeTools()
         {
-            return runtimeContext.Global?.Recipe?.SaveTools() == true;
+            return RecipeRuntimeStorage.SaveWithRevision(runtimeContext.Global.Recipe.Name, () => runtimeContext.Global.Data, () => runtimeContext.Global.VisionTools);
         }
 
         public void OnRecipeChanged(object sender, EventArgs e)

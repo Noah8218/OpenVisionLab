@@ -635,7 +635,7 @@ namespace OpenVisionLab
             property.USE_MASKING |= property.CvMASKS?.Count > 0;
         }
 
-        private static Rect GetRect(IDictionary<string, string> parameters, string key, Rect defaultValue)
+        internal static Rect GetRect(IDictionary<string, string> parameters, string key, Rect defaultValue)
         {
             string value = GetValue(parameters, key);
             if (string.IsNullOrWhiteSpace(value))
@@ -657,7 +657,7 @@ namespace OpenVisionLab
                 : defaultValue;
         }
 
-        private static List<Rect> GetRectList(IDictionary<string, string> parameters, string key, List<Rect> defaultValue)
+        internal static List<Rect> GetRectList(IDictionary<string, string> parameters, string key, List<Rect> defaultValue)
         {
             string value = GetValue(parameters, key);
             if (string.IsNullOrWhiteSpace(value))

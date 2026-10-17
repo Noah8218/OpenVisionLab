@@ -27,7 +27,8 @@ namespace OpenVisionLab
                 options.WorkspaceView,
                 content.ViewModel,
                 orchestrator,
-                options.ActivateLayer);
+                options.ActivateLayer,
+                (OpenVisionDockedLayerContentSource)content.ContentSource);
         }
     }
 }

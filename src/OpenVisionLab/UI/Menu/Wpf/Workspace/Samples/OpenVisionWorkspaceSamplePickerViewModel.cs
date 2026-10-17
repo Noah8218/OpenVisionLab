@@ -16,6 +16,7 @@ namespace OpenVisionLab
         #region Fields
 
         private readonly List<VisionPipelineSampleCatalogItem> samples;
+        private readonly bool imageOnly;
         private readonly IReadOnlyList<OpenVisionWorkspaceSampleCatalogSourceOption> catalogSourceOptions;
         private readonly ICollectionView samplesView;
         private readonly RelayCommand openLearnDocumentCommand;
@@ -29,6 +30,7 @@ namespace OpenVisionLab
         private OpenVisionWorkspaceSampleFocusOption selectedSampleFocusOption;
         private OpenVisionWorkspaceSampleLearnPathOption selectedLearnPathOption;
         private string searchText = string.Empty;
+        private string imageSelectionRole = "one";
 
         #endregion
 
@@ -40,7 +42,13 @@ namespace OpenVisionLab
         }
 
         public OpenVisionWorkspaceSamplePickerViewModel(IEnumerable<VisionPipelineSampleCatalogItem> samples, string preferredLearnPathId)
+            : this(samples, preferredLearnPathId, false)
         {
+        }
+
+        public OpenVisionWorkspaceSamplePickerViewModel(IEnumerable<VisionPipelineSampleCatalogItem> samples, string preferredLearnPathId, bool imageOnly)
+        {
+            this.imageOnly = imageOnly;
             this.samples = (samples ?? Enumerable.Empty<VisionPipelineSampleCatalogItem>())
                 .Where(item => item != null
                     && item.CanOpen
@@ -70,6 +78,26 @@ namespace OpenVisionLab
 
         #region Properties
 
+        public bool IsImageOnly => imageOnly;
+        public Visibility ImageWorkflowVisibility => imageOnly ? Visibility.Visible : Visibility.Collapsed;
+        public string ImageSelectionRole
+        {
+            get => imageSelectionRole;
+            set { if (value is "one" or "set" or "nolabel" && SetProperty(ref imageSelectionRole, value)) { RaiseImageSelection(); } }
+        }
+        public bool SelectOne { get => ImageSelectionRole == "one"; set { if (value) { ImageSelectionRole = "one"; } } }
+        public bool SelectSet { get => ImageSelectionRole == "set"; set { if (value) { ImageSelectionRole = "set"; } } }
+        public bool SelectUnlabeled { get => ImageSelectionRole == "nolabel"; set { if (value) { ImageSelectionRole = "nolabel"; } } }
+        public IReadOnlyList<VisionPipelineSampleCatalogItem> SelectedImageSamples => SelectedSample == null ? Array.Empty<VisionPipelineSampleCatalogItem>()
+            : ImageSelectionRole == "one" || string.IsNullOrWhiteSpace(SelectedSample.PairGroup) ? new[] { SelectedSample }
+            : samples.Where(item => item.CatalogSourceKind == SelectedSample.CatalogSourceKind && string.Equals(item.PairGroup, SelectedSample.PairGroup, StringComparison.OrdinalIgnoreCase)).GroupBy(item => item.ImageFullPath, StringComparer.OrdinalIgnoreCase).Select(group => group.First()).ToArray();
+        public bool UseCatalogLabels => ImageSelectionRole == "set";
+        public string ImageSetText => LocalText("묶음 이미지", "Image set");
+        public string ImageOneText => LocalText("선택한 기준 이미지 1장", "Selected reference image");
+        public string ImageUnlabeledText => LocalText("양불 없는 묶음", "Unlabeled image set");
+        public string ImageSelectionNotice => OpenVisionLanguageService.T("Workbench.Samples.SelectionNotice");
+        public string ImageRoleSummary => string.Format(CultureInfo.CurrentCulture, OpenVisionLanguageService.T(UseCatalogLabels ? "Workbench.Samples.RoleWithLabelsFormat" : "Workbench.Samples.RoleWithoutLabelsFormat"), SelectedImageSamples.Count);
+
         public ICollectionView SamplesView => samplesView;
 
         public ICommand OpenLearnDocumentCommand => openLearnDocumentCommand;
@@ -86,11 +114,11 @@ namespace OpenVisionLab
 
         public IReadOnlyList<OpenVisionWorkspaceSampleLearnPathOption> LearnPathOptions => learnPathOptions;
 
-        public string DialogTitleText => LocalText("샘플 카탈로그", "Sample Catalog");
+        public string DialogTitleText => imageOnly ? OpenVisionLanguageService.T("Workbench.Samples.Title") : LocalText("샘플 카탈로그", "Sample Catalog");
 
-        public string HeaderText => LocalText("검증 샘플 선택", "Select Verification Sample");
+        public string HeaderText => imageOnly ? OpenVisionLanguageService.T("Workbench.Samples.Title") : LocalText("검증 샘플 선택", "Select Verification Sample");
 
-        public string IntroText => LocalText(
+        public string IntroText => imageOnly ? OpenVisionLanguageService.T("Workbench.Samples.Intro") : LocalText(
             "목적, 도구 흐름, 기대 결과를 확인한 뒤 Main 이미지와 Sample_ 파이프라인만 준비합니다. Preview와 Run은 사용자가 직접 실행합니다.",
             "Review the goal, tool flow, and expected result. This only prepares the Main image and Sample_ pipeline; Preview and Run remain manual.");
 
@@ -182,7 +210,7 @@ namespace OpenVisionLab
 
         public string ImageLabelText => LocalText("입력 이미지", "Input Image");
 
-        public string OpenButtonText => LocalText("이 샘플 열기", "Open This Sample");
+        public string OpenButtonText => imageOnly ? OpenVisionLanguageService.T("Workbench.Samples.AddImage") : LocalText("이 샘플 열기", "Open This Sample");
 
         public string OpenLearnAndSampleButtonText => LocalText("가이드와 샘플 열기", "Open Guide + Sample");
 
@@ -191,6 +219,8 @@ namespace OpenVisionLab
         public string ManualPreviewNoticeText => LocalText(
             "열기 후에는 Main 레이어와 Sample_ 파이프라인만 준비됩니다. 도구 검증은 Preview/Run을 직접 눌러 확인하십시오.",
             "After opening, only the Main layer and Sample_ pipeline are prepared. Use Preview/Run manually to verify the tool.");
+
+        public Visibility LearnWorkflowVisibility => imageOnly ? Visibility.Collapsed : Visibility.Visible;
 
         public string PracticeWorkflowLabelText => LocalText("실습 다음 단계", "Practice Next Step");
 
@@ -215,7 +245,7 @@ namespace OpenVisionLab
         public bool HasLearnDocument =>
             OpenVisionWorkspaceLearnDocumentService.TryResolveDocumentPath(SelectedSample, SelectedLearnPathOption, out _);
 
-        public bool CanOpenLearnAndSample => CanSelect && HasLearnDocument;
+        public bool CanOpenLearnAndSample => !imageOnly && CanSelect && HasLearnDocument;
 
         public string SearchText
         {
@@ -298,6 +328,7 @@ namespace OpenVisionLab
                     return;
                 }
 
+                RaiseImageSelection();
                 OnPropertyChanged(nameof(CanSelect));
                 OnPropertyChanged(nameof(CanOpenLearnAndSample));
                 OnPropertyChanged(nameof(SelectedImageSource));
@@ -852,6 +883,12 @@ namespace OpenVisionLab
 
             OpenLearnDocumentForSelection();
             SelectionAccepted?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void RaiseImageSelection()
+        {
+            OnPropertyChanged(nameof(SelectOne)); OnPropertyChanged(nameof(SelectSet)); OnPropertyChanged(nameof(SelectUnlabeled));
+            OnPropertyChanged(nameof(SelectedImageSamples)); OnPropertyChanged(nameof(UseCatalogLabels)); OnPropertyChanged(nameof(ImageRoleSummary));
         }
 
         private void AcceptSelection()

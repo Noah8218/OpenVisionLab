@@ -21,6 +21,10 @@
     </shell:WindowChrome.WindowChrome>
 
     <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="../../Wpf/OpenVisionLabWpfTheme.xaml" />
+            </ResourceDictionary.MergedDictionaries>
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
 
         <SolidColorBrush x:Key="Compare.ChromeBrush" Color="#30383B" />
@@ -33,7 +37,7 @@
         <SolidColorBrush x:Key="Compare.AccentBrush" Color="#157C86" />
         <SolidColorBrush x:Key="Compare.WarningBrush" Color="#8A5B13" />
 
-        <Style x:Key="CompareChromeButtonStyle" TargetType="Button">
+        <Style x:Key="CompareChromeButtonStyle" TargetType="Button" BasedOn="{StaticResource OpenVision.ControlButtonDarkStyle}">
             <Setter Property="Width" Value="42" />
             <Setter Property="Height" Value="42" />
             <Setter Property="Padding" Value="0" />
@@ -41,27 +45,11 @@
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="Foreground" Value="#EAF5F7" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="AutomationProperties.Name" Value="{Binding ToolTip, RelativeSource={RelativeSource Self}}" />
             <Setter Property="shell:WindowChrome.IsHitTestVisibleInChrome" Value="True" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="buttonChrome" Background="{TemplateBinding Background}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="buttonChrome" Property="Background" Value="#405057" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="buttonChrome" Property="Background" Value="#157C86" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
         </Style>
 
-        <Style x:Key="CompareToolButtonStyle" TargetType="Button">
+        <Style x:Key="CompareToolButtonStyle" TargetType="Button" BasedOn="{StaticResource OpenVision.ControlButtonStyle}">
             <Setter Property="Height" Value="34" />
             <Setter Property="MinWidth" Value="104" />
             <Setter Property="Padding" Value="12,0" />
@@ -73,33 +61,9 @@
             <Setter Property="FontSize" Value="12" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="buttonBorder"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="4">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"
-                                              Margin="{TemplateBinding Padding}" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="buttonBorder" Property="Background" Value="#E6F1F2" />
-                                <Setter Property="BorderBrush" Value="{StaticResource Compare.AccentBrush}" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="buttonBorder" Property="Background" Value="#D8ECEE" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
         </Style>
 
-        <Style x:Key="ComparePrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource CompareToolButtonStyle}">
+        <Style x:Key="ComparePrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource OpenVision.ControlPrimaryButtonStyle}">
             <Setter Property="Background" Value="{StaticResource Compare.AccentBrush}" />
             <Setter Property="BorderBrush" Value="{StaticResource Compare.AccentBrush}" />
             <Setter Property="Foreground" Value="White" />
@@ -112,6 +76,8 @@
             <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
         </Style>
+
+        </ResourceDictionary>
     </Window.Resources>
 
     <Border BorderBrush="{StaticResource Compare.AccentBrush}"

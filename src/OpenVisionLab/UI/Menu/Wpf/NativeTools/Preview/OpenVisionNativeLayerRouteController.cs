@@ -140,6 +140,12 @@ namespace OpenVisionLab
             return ResolveArithmeticInputLayerBForOutput(ResolveArithmeticOutputLayer());
         }
 
+        internal string ResolveDefaultArithmeticInputLayerB(string inputLayerA, string outputLayer)
+        {
+            if (TryGetFirstInputLayerNameExcept(outputLayer, inputLayerA, out string alternative)) { return alternative; }
+            return IsInputLayerCandidate(inputLayerA, outputLayer) ? inputLayerA : string.Empty;
+        }
+
         public string ResolveArithmeticInputLayerBForOutput(string outputLayer)
         {
             outputLayer = string.IsNullOrWhiteSpace(outputLayer) ? ResolveArithmeticOutputLayer() : outputLayer;
@@ -300,18 +306,22 @@ namespace OpenVisionLab
             string outputLayer = ResolveArithmeticOutputLayer();
             string inputA = ResolveArithmeticInputLayerAForOutput(outputLayer);
             string inputB = ResolveArithmeticInputLayerBForOutput(outputLayer);
+            selectedArithmeticInputLayerB = SelectArithmeticInputLayerBLoadTarget(inputA, inputB, outputLayer);
+            selectedArithmeticInputLayerBExplicit = true;
+            return selectedArithmeticInputLayerB;
+        }
+
+        internal string SelectArithmeticInputLayerBLoadTarget(string inputA, string inputB, string outputLayer)
+        {
             if (IsInputLayerCandidate(inputB, outputLayer) && !IsSameLayer(inputB, inputA))
             {
-                selectedArithmeticInputLayerB = inputB;
-                selectedArithmeticInputLayerBExplicit = true;
-                return selectedArithmeticInputLayerB;
+                return inputB;
             }
 
             // Explicit B-image load must not overwrite Input A/Main when only one input layer exists.
-            selectedArithmeticInputLayerB = CreateAvailableInputLayerName(CreateDefaultArithmeticInputLayerName("InputB"));
-            selectedArithmeticInputLayerBExplicit = true;
-            preparedInputLayers.Add(selectedArithmeticInputLayerB);
-            return selectedArithmeticInputLayerB;
+            string target = CreateAvailableInputLayerName(CreateDefaultArithmeticInputLayerName("InputB"));
+            preparedInputLayers.Add(target);
+            return target;
         }
 
         public void AcceptArithmeticOutputLayer(string requestedOutputLayer)

@@ -32,8 +32,8 @@ namespace OpenVisionLab
         {
             operationGroup.Header = ResolveText("Arithmetic.Operation", "Operation");
             kernelGroup.Header = ResolveText("PropertyGrid.Category.Kernel", "Kernel");
-            kernelWidthLabel.Text = ResolveText("PropertyGrid.Property.KernelWidth.DisplayName", "Kernel width");
-            kernelHeightLabel.Text = ResolveText("PropertyGrid.Property.KernelHeight.DisplayName", "Kernel height");
+            kernelWidthLabel.Text = ResolveText("VisionTool.Kernel.Width", "Width");
+            kernelHeightLabel.Text = ResolveText("VisionTool.Kernel.Height", "Height");
             shapeLabel.Text = ResolveText("PropertyGrid.Property.Shape.DisplayName", "Shape");
             refreshOperationAndShapeLabels();
         }

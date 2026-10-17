@@ -291,7 +291,7 @@ namespace OpenVisionLab
 
         public bool DockActiveWpfToolWindow()
         {
-            return floatingToolWindowHost.RequestDockForTest();
+            return IsDockedToolInspectorVisible || IsDockedDocumentWorkspaceVisible || floatingToolWindowHost.RequestDockForTest();
         }
 
         public bool FloatDockedWpfToolWindow()

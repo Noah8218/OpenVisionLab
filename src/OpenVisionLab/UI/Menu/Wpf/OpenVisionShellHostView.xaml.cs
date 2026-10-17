@@ -25,6 +25,11 @@ namespace OpenVisionLab
         public const string ShellMode = "WpfShellHost";
         private const string LayerDragDataFormat = "OpenVisionLab.LayerTitle";
 
+        public static readonly DependencyProperty WorkbenchProperty =
+            DependencyProperty.Register(nameof(Workbench), typeof(OpenVisionWorkbenchViewModel), typeof(OpenVisionShellHostView), new PropertyMetadata(null));
+
+        public OpenVisionWorkbenchViewModel Workbench => (OpenVisionWorkbenchViewModel)GetValue(WorkbenchProperty);
+
         public static readonly DependencyProperty IsToolRailCompactProperty =
             DependencyProperty.Register(
                 nameof(IsToolRailCompact),
@@ -80,13 +85,14 @@ namespace OpenVisionLab
 
         private readonly ApplicationRuntimeContext runtimeContext;
         private readonly IDisplayManager displayManager;
+        private Point workbenchDragOrigin;
+        private int workbenchDragIndex = -1;
         private readonly OpenVisionRecipeContextStore recipeContextStore;
         private readonly OpenVisionShellPreviewViewModel viewModel;
         private readonly OpenVisionShellHostRecipeContextPresenter recipeContextPresenter;
         private readonly OpenVisionShellHostLayerListPresenter layerListPresenter;
         private readonly OpenVisionShellHostLayerDetailPresenter layerDetailPresenter;
         private readonly OpenVisionShellHostLayerWorkspacePresenter layerWorkspacePresenter;
-        private readonly OpenVisionShellHostMainActionPresenter mainActionPresenter;
         private readonly OpenVisionShellHostSampleWorkflowPresenter sampleWorkflowPresenter;
         private readonly OpenVisionShellHostLayerRefreshController layerRefreshController;
         private readonly OpenVisionShellHostWorkspacePreviewController workspacePreviewController;
@@ -132,7 +138,11 @@ namespace OpenVisionLab
         private readonly OpenVisionTcpIntegrationController tcpIntegrationController;
         private readonly OpenVisionShellHostRecipePanelDragController recipePanelDragController;
         private VisionToolPropertyGridHost recipeStepPropertyGridHostController;
+        private System.Windows.Controls.TextBox recipeStepInvalidNumericEditor;
         private bool isRestoringRecipeManagerAfterCanceledClose;
+        private bool isPreservingRecipeManagerContextForRunReview;
+        private bool returnToValidationAfterPipelineReview;
+        private bool isRestoringRecipeManagerAdvancedReviewAfterCanceledClose;
         private bool failNextRecipeStepEditCommitForTest;
         private bool disposed;
 
@@ -191,7 +201,9 @@ namespace OpenVisionLab
                 txtHostSelectedTool,
                 txtHostSelectedRoute,
                 txtHostDirectStatus,
-                () => viewModel.SelectedDirectRunText);
+                () => Workbench?.Tool?.IsOpen == true
+                    ? string.Format(System.Globalization.CultureInfo.CurrentCulture, OpenVisionLanguageService.T("Shell.SelectedToolFormat"), Workbench.Tool.DisplayName)
+                    : viewModel.SelectedDirectRunText);
             menuPresenter = new OpenVisionShellHostMenuPresenter(
                 miWorkspaceLoadImage,
                 miWorkspaceOpenLayerWindow,
@@ -201,19 +213,8 @@ namespace OpenVisionLab
                 miWorkspaceClearDockedLayers,
                 txtHostWorkspaceEmptyTitle,
                 txtHostWorkspaceEmptyDetail,
-                txtWorkspaceEmptyStepLoadTitle,
-                txtWorkspaceEmptyStepLoadDetail,
-                txtWorkspaceEmptyStepSelectTitle,
-                txtWorkspaceEmptyStepSelectDetail,
-                txtWorkspaceEmptyStepPipelineTitle,
-                txtWorkspaceEmptyStepPipelineDetail,
-                txtWorkspaceEmptyStepPreviewTitle,
-                txtWorkspaceEmptyStepPreviewDetail,
                 txtWorkspaceLoadImageButtonText,
                 txtWorkspaceEmptySampleButtonText,
-                txtWorkspaceEmptyGuideButtonText,
-                txtWorkspaceEmptyPipelineButtonText,
-                txtWorkspaceEmptyLogHint,
                 txtOpenSelectedLayerWindowButton,
                  txtDockSelectedLayerButton,
                  btnFloatDockedTool,
@@ -309,7 +310,8 @@ namespace OpenVisionLab
                 OpenWorkspaceSampleByNameFromReview,
                 ReturnToRecipeManagerFromPipelineReview,
                 OpenPipelineStepEditorFromPipelineReview,
-                OpenLearnForPipelineReviewTool);
+                OpenLearnForPipelineReviewTool,
+                () => { if (Workbench != null) { Workbench.IsRightCollapsed = false; } });
             toolPrewarmController = new OpenVisionShellHostToolPrewarmController(
                 Dispatcher,
                 nativeToolPrewarmService,
@@ -344,7 +346,8 @@ namespace OpenVisionLab
             workspaceFallbackZoomController = new OpenVisionZoomableImageController(
                 hostWorkspaceImageSurface,
                 hostWorkspaceFallbackImage,
-                refreshCoordinator.ApplyWorkspacePointerStatus);
+                refreshCoordinator.ApplyWorkspacePointerStatus,
+                usePixelZoomRange: true);
             layerWorkspacePresenter = new OpenVisionShellHostLayerWorkspacePresenter(
                 workspacePreviewController,
                 workspaceFallbackZoomController,
@@ -391,7 +394,8 @@ namespace OpenVisionLab
                 chromeController.SetDirectRunPending,
                 refreshCoordinator.RefreshHostLayerRows,
                 refreshCoordinator.RefreshHostCommandCanExecute,
-                chromeController.RefreshDirectRouteText);
+                chromeController.RefreshDirectRouteText,
+                viewModel.UpdateWorkspaceInputImage);
             sampleWorkflowPresenter = new OpenVisionShellHostSampleWorkflowPresenter(
                 workspaceSampleWorkflowOverlay,
                 txtWorkspaceSampleWorkflowTitle,
@@ -402,19 +406,12 @@ namespace OpenVisionLab
                 txtWorkspaceSamplePipelineButtonText,
                 txtWorkspaceSampleFirstStepButtonText,
                 () => recipeContextStore.Current);
-            mainActionPresenter = new OpenVisionShellHostMainActionPresenter(
-                workspaceMainActionOverlay,
-                txtWorkspaceMainActionTitle,
-                txtWorkspaceMainActionDetail,
-                txtWorkspaceMainActionMeta,
-                txtWorkspaceMainActionThresholdButtonText,
-                txtWorkspaceMainActionMatchingButtonText,
-                txtWorkspaceMainActionLineButtonText);
             commandController = new OpenVisionShellHostCommandController(
                 () => Window.GetWindow(this),
                 workspaceImageController.LoadImage,
                 workspacePreviewController,
                 workspaceFallbackZoomController,
+                dockedLayerWorkspaceComposition.Commands,
                 () => WorkspaceLayerTitle,
                 () => recipeContextStore.Current,
                 (sampleName, pipelineName) =>
@@ -423,7 +420,6 @@ namespace OpenVisionLab
                         pipelineName) != false,
                 (sampleName, pipelineName) =>
                 {
-                    mainActionPresenter.Hide();
                     RefreshRecipeContext();
                     RecipeCommands?.SynchronizeWorkspaceSampleContext(
                         sampleName,
@@ -436,7 +432,6 @@ namespace OpenVisionLab
                 {
                     sampleWorkflowPresenter.Hide();
                     RefreshRecipeContext();
-                    mainActionPresenter.ShowImageReady(txtHostWorkspaceLayerTitle?.Text, txtHostWorkspaceLayerMeta?.Text);
                     chromeController.SetWorkspaceImageReadyStatus();
                     WorkspaceCommands?.RefreshCanExecute();
                 },
@@ -449,14 +444,12 @@ namespace OpenVisionLab
             WorkspaceCommands = new OpenVisionShellHostWorkspaceCommandSurface(
                 commandController,
                 workspacePreviewController,
+                workspaceFallbackZoomController,
+                dockedLayerWorkspaceComposition.Commands,
                 SelectToolMenu,
                 () => sampleWorkflowPresenter.FirstStepMenu,
                 () => sampleWorkflowPresenter.CounterpartSampleName,
                 ApplyActiveSampleFirstStepParameters);
-            OpenVisionRecipeRunEvidenceViewerController runEvidenceViewerController =
-                new OpenVisionRecipeRunEvidenceViewerController(
-                    () => Window.GetWindow(this),
-                    layerViewerWindows);
             recipeDialogAdapter = new RecipeDialogAdapter(() => Window.GetWindow(this));
             RecipeCommands = new OpenVisionShellHostRecipeCommandSurface(
                 ResolveRuntimeRecipeName,
@@ -482,7 +475,7 @@ namespace OpenVisionLab
                 recipeDialogAdapter.SelectValidationSetReplacementImagePath,
                 recipeDialogAdapter.ConfirmDeleteValidationSet,
                 OpenRecipePipelineReview,
-                evidence => runEvidenceViewerController.Open(evidence),
+                OpenRecipeRunEvidenceInPipelineReview,
                 OpenRecipeImageListValidation,
                 recipeDialogAdapter.DecidePendingEdit,
                 confirmQualifiedSnapshotLifecycle:
@@ -519,7 +512,17 @@ namespace OpenVisionLab
                                 System.Windows.Threading.DispatcherPriority.Render,
                                 new Action(() => { }));
                         }
-                    });
+                    },
+                closeRecipeManager: CloseRecipeManager,
+                openRecipeManagerStepSettings: ShowRecipePipelineStepEditor,
+                openRecipeManagerValidationDetail: OpenRecipeImageListValidation,
+                restoreRecipeManagerOpenToggle: RestoreRecipeManagerOpenToggle,
+                restoreRecipeManagerAdvancedReviewToggle: RestoreRecipeManagerAdvancedReviewToggle,
+                openMainRecipeWork: ShowMainRecipeWork,
+                saveRuntimeRecipeCopy: recipeController.SaveRuntimeRecipeCopy,
+                recipeDescriptionProvider: () => recipeController.CurrentRecipeDescription,
+                prepareRecipeSave: recipeController.PrepareRuntimeRecipeSave,
+                savedRevisionProvider: () => recipeController.CurrentSavedRevision);
             InputBindings.Add(new KeyBinding(
                 RecipeCommands.SaveRecipeCommand,
                 new KeyGesture(Key.S, ModifierKeys.Control)));
@@ -552,9 +555,59 @@ namespace OpenVisionLab
                 Dispose,
                 () => Dispatcher);
             hostWorkspaceCanvas.DataContext = workspacePreviewController.CanvasViewModel;
+            RecipeCommands.AttachWorkbenchPipeline(new OpenVisionWorkbenchPipelineViewModel(
+                RecipeCommands, displayManager, action => Dispatcher.Invoke(action), recipeDialogAdapter.DecidePendingEdit,
+                recipeDialogAdapter.ConfirmDeleteStep, viewModel.NavigationGroups));
+            SetValue(WorkbenchProperty, new OpenVisionWorkbenchViewModel(
+                runtimeContext.Global?.System?.WorkbenchLayoutPreferences ?? new SystemStateConfig(),
+                preferences => runtimeContext.Global?.System?.SaveWorkbenchLayout(preferences) == true,
+                viewModel, RecipeCommands, ChromeCommands, WorkspaceCommands, LayerCommands));
+            refreshCoordinator.AttachWorkbenchPipeline(Workbench.Pipeline);
+            Workbench.AttachToolEditor(new OpenVisionWorkbenchToolViewModel(Workbench.Pipeline));
+            Workbench.AttachImages(new OpenVisionWorkbenchImagesViewModel(viewModel, commandController.TryLoadListedImage, () =>
+            {
+                workspaceImageController.ClearWorkspaceInput();
+                sampleWorkflowPresenter.Hide();
+                chromeController.SetWorkspaceEmptyStatus();
+            }));
+            commandController.AttachWorkspaceImages(Workbench.Images);
+            Workbench.Images.AttachPipeline(Workbench.Pipeline, commandController.TryLoadBatchImage, workspaceImageController.CaptureMainInput,
+                (image, path) => { workspaceImageController.RestoreMainInput(image, path); commandController.NotifyRestoredWorkspaceInput(path); });
+            InputBindings.Add(new KeyBinding(Workbench.Images.PreviousCommand, new KeyGesture(Key.PageUp)));
+            InputBindings.Add(new KeyBinding(Workbench.Images.NextCommand, new KeyGesture(Key.PageDown)));
+            Workbench.AttachViewer(new OpenVisionWorkbenchViewerViewModel(displayManager, Workbench)
+            {
+                OpenLayerWindow = title => layerViewerController.Open(title),
+                OpenSnapshotWindow = (name, image, overlays) => layerViewerController.OpenSnapshot(name, image, overlays),
+                SaveImage = commandController.PromptAndSaveDisplayImage
+            });
+            Workbench.AttachResults(new OpenVisionWorkbenchResultsViewModel(Workbench));
+            dockedLayerWorkspaceComposition.Commands.AttachMainViewer(Workbench.Viewer);
+            Workbench.Tool.PropertyChanged += OnWorkbenchToolChanged;
+            toolWindowController.AttachWorkbenchEditor(Workbench.Tool, toolType => viewModel.NavigationGroups.SelectMany(group => group.Items).FirstOrDefault(item =>
+                string.Equals(VisionPipelineNormalizer.NormalizeToolType(item.CommandId), VisionPipelineNormalizer.NormalizeToolType(toolType), StringComparison.OrdinalIgnoreCase)
+                || (item.Menu == VISION_MENU.Line && new[] { "linegauge", "linedistance", "lineintersection" }.Contains(VisionPipelineNormalizer.NormalizeToolType(toolType)))
+                || (item.Menu == VISION_MENU.RotateAndScale && VisionPipelineNormalizer.NormalizeToolType(toolType) == "rotatescale")), Workbench);
+            Workbench.RecipeManagerOpenRequested += OnWorkbenchRecipeManagerOpenRequested;
+            Workbench.ToolPaletteFocusRequested += OnWorkbenchToolPaletteFocusRequested;
+            InputBindings.Add(new KeyBinding(Workbench.Tool.RunCommand, new KeyGesture(Key.F8)));
+            InputBindings.Add(new KeyBinding(Workbench.Pipeline.RunCommand, new KeyGesture(Key.F5)));
+            InputBindings.Add(new KeyBinding(Workbench.Images.RunBatchCommand, new KeyGesture(Key.F6)) { CommandParameter = "all" });
+            InputBindings.Add(new KeyBinding(Workbench.Pipeline.RunToSelectedCommand, new KeyGesture(Key.F5, ModifierKeys.Control)));
+            InputBindings.Add(new KeyBinding(Workbench.Pipeline.StopCommand, new KeyGesture(Key.F5, ModifierKeys.Shift)));
+            SetBinding(IsToolRailCompactProperty, new System.Windows.Data.Binding(nameof(OpenVisionWorkbenchViewModel.IsLeftCollapsed))
+            {
+                Source = Workbench,
+                Mode = System.Windows.Data.BindingMode.TwoWay
+            });
+            InputBindings.Add(new KeyBinding(Workbench.ToggleLeftPanelCommand, new KeyGesture(Key.D1, ModifierKeys.Control)));
+            InputBindings.Add(new KeyBinding(Workbench.ToggleRightPanelCommand, new KeyGesture(Key.D2, ModifierKeys.Control)));
+            InputBindings.Add(new KeyBinding(Workbench.ToggleBottomPanelCommand, new KeyGesture(Key.D3, ModifierKeys.Control)));
+            InputBindings.Add(new KeyBinding(Workbench.OpenRecipeManagerCommand, new KeyGesture(Key.O, ModifierKeys.Control)));
+            InputBindings.Add(new KeyBinding(WorkspaceCommands.LoadImageCommand, new KeyGesture(Key.I, ModifierKeys.Control)));
+            InputBindings.Add(new KeyBinding(ChromeCommands.OpenTutorialCommand, new KeyGesture(Key.F1)));
             DataContext = viewModel;
             chromeController.ApplyLocalization(IsToolRailCompact);
-            mainActionPresenter.ApplyLocalization();
             ApplyShellLogLocalization();
 
             hostLayerRowsList.ItemsSource = layerListPresenter.Rows;
@@ -574,13 +627,17 @@ namespace OpenVisionLab
                 refreshCoordinator.RefreshHostLayerRows,
                 refreshCoordinator.RefreshDockedLayerViews,
                 chromeController.RefreshDirectRouteText,
-                 workspaceImageController.RememberWorkspaceImagePath);
+                 workspaceImageController.RememberWorkspaceImagePath,
+                () => Workbench?.Pipeline?.CopyWorkingPipeline(),
+                () => Workbench?.Tool?.IsOpen == true ? Workbench.Tool.CurrentStep : null);
             LayerCommands = new OpenVisionShellHostLayerCommandSurface(
                 layerSelectionController,
                 layerViewerController,
                 layerManagementController,
                 dockedLayerWorkspaceComposition.Commands,
-                () => WorkspaceLayerTitle);
+                () => txtHostWorkspaceLayerTitle?.Text ?? string.Empty,
+                layerListPresenter);
+            Workbench.AttachLayers(LayerCommands);
             layerInteractionController = new OpenVisionShellHostLayerInteractionController(
                 hostLayerRowsList,
                 layerListPresenter,
@@ -636,7 +693,6 @@ namespace OpenVisionLab
                     IsWorkspaceLoadImageIntoLayerMenuVisible = () => miWorkspaceLoadImageIntoLayer?.Visibility == Visibility.Visible,
                     WorkspaceImageReady = () =>
                     {
-                        mainActionPresenter.ShowImageReady(txtHostWorkspaceLayerTitle?.Text, txtHostWorkspaceLayerMeta?.Text);
                         chromeController.SetWorkspaceImageReadyStatus();
                     },
                     WorkspaceImageSurfaceWidth = () => hostWorkspaceImageSurface?.ActualWidth ?? 0D,
@@ -690,7 +746,6 @@ namespace OpenVisionLab
                     TcpIntegrationController = tcpIntegrationController,
                     CommandController = commandController,
                     SampleWorkflowPresenter = sampleWorkflowPresenter,
-                    MainActionPresenter = mainActionPresenter,
                     BusyPresenter = busyPresenter,
                     RecipeContextStore = recipeContextStore,
                     ShellLogToggle = btnShellLogToggle,
@@ -763,7 +818,7 @@ namespace OpenVisionLab
         public bool IsToolRailCompact
         {
             get => (bool)GetValue(IsToolRailCompactProperty);
-            set => SetValue(IsToolRailCompactProperty, value);
+            set => SetCurrentValue(IsToolRailCompactProperty, value);
         }
 
         public OpenVisionShellHostLayerCommandSurface LayerCommands
@@ -825,7 +880,16 @@ namespace OpenVisionLab
                 return;
             }
 
+            ClearRecipeStepNumericInputError();
             disposed = true;
+            WorkspaceCommands?.Dispose();
+            if (Workbench != null)
+            {
+                Workbench.RecipeManagerOpenRequested -= OnWorkbenchRecipeManagerOpenRequested;
+                Workbench.ToolPaletteFocusRequested -= OnWorkbenchToolPaletteFocusRequested;
+                Workbench.Tool.PropertyChanged -= OnWorkbenchToolChanged;
+                Workbench.Dispose();
+            }
             recipeLlmBrowserAssistWebView?.Dispose();
             llmBrowserAssistController.Dispose();
             hostWorkspaceCanvas?.Dispose();
@@ -860,6 +924,60 @@ namespace OpenVisionLab
             }
         }
 
+        private void OnWorkbenchToolPaletteFocusRequested(object sender, EventArgs e) => txtToolSearch.Focus();
+
+        private void WorkbenchRenameEditor_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.TextBox editor && editor.IsVisible) { editor.Focus(); editor.SelectAll(); }
+        }
+
+        private void WorkbenchStepMenu_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.Button button && button.ContextMenu is System.Windows.Controls.ContextMenu menu)
+            {
+                menu.PlacementTarget = button;
+                menu.IsOpen = true;
+            }
+        }
+
+        private void WorkbenchSteps_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            workbenchDragOrigin = e.GetPosition(workbenchPipelineSteps);
+            System.Windows.Controls.ListBoxItem item = System.Windows.Controls.ItemsControl.ContainerFromElement(
+                workbenchPipelineSteps, e.OriginalSource as DependencyObject) as System.Windows.Controls.ListBoxItem;
+            workbenchDragIndex = item?.Tag is int index ? index : -1;
+        }
+
+        private void WorkbenchSteps_PreviewMouseMove(object sender, MouseEventArgs e)
+        {
+            if (e.LeftButton != MouseButtonState.Pressed || workbenchDragIndex < 0 || !workbenchPipelineSteps.IsEnabled) { return; }
+            Point position = e.GetPosition(workbenchPipelineSteps);
+            if (Math.Abs(position.X - workbenchDragOrigin.X) < SystemParameters.MinimumHorizontalDragDistance
+                && Math.Abs(position.Y - workbenchDragOrigin.Y) < SystemParameters.MinimumVerticalDragDistance) { return; }
+            int index = workbenchDragIndex;
+            workbenchDragIndex = -1;
+            DragDrop.DoDragDrop(workbenchPipelineSteps, new DataObject("OpenVisionLab.WorkbenchStepIndex", index), DragDropEffects.Move);
+        }
+
+        private void WorkbenchSteps_DragOver(object sender, DragEventArgs e)
+        {
+            e.Effects = workbenchPipelineSteps.IsEnabled && e.Data.GetDataPresent("OpenVisionLab.WorkbenchStepIndex") ? DragDropEffects.Move : DragDropEffects.None;
+            e.Handled = true;
+        }
+
+        private void WorkbenchSteps_Drop(object sender, DragEventArgs e)
+        {
+            System.Windows.Controls.ListBoxItem target = System.Windows.Controls.ItemsControl.ContainerFromElement(
+                workbenchPipelineSteps, e.OriginalSource as DependencyObject) as System.Windows.Controls.ListBoxItem;
+            if (e.Data.GetData("OpenVisionLab.WorkbenchStepIndex") is int source && target?.Tag is int destination
+                && workbenchPipelineSteps.Tag is ICommand command)
+            {
+                Tuple<int, int> move = Tuple.Create(source, destination);
+                if (command.CanExecute(move)) { command.Execute(move); }
+            }
+            e.Handled = true;
+        }
+
         #endregion
 
         #endregion
@@ -878,10 +996,24 @@ namespace OpenVisionLab
             recipeStepPropertyGridHostController = VisionToolPropertyGridHost.Attach(
                 recipeStepPropertyGridHost,
                 RecipeCommands.SelectedStepEditObject,
-                (_, __) => RecipeCommands?.MarkSelectedStepEditDirty());
+                (_, __) => RecipeCommands?.MarkSelectedStepEditDirtyCommand.Execute(null));
             recipeStepPropertyGridHostController.SetCompactDensity(true);
             recipeStepPropertyGridHostController.SetThemeVariant(
                 System.Windows.Controls.WpfPropertyGrid.PropertyGridThemeVariant.Dark);
+            lifecycle.Track(
+                () => recipeStepPropertyGridHost.PreviewKeyDown += OnRecipeStepPropertyGridPreviewKeyDown,
+                () => recipeStepPropertyGridHost.PreviewKeyDown -= OnRecipeStepPropertyGridPreviewKeyDown);
+            lifecycle.Track(
+                () => recipeStepPropertyGridHost.AddHandler(System.Windows.Controls.Primitives.TextBoxBase.TextChangedEvent,
+                    new System.Windows.Controls.TextChangedEventHandler(OnRecipeStepPropertyGridTextChanged), true),
+                () => recipeStepPropertyGridHost.RemoveHandler(System.Windows.Controls.Primitives.TextBoxBase.TextChangedEvent,
+                    new System.Windows.Controls.TextChangedEventHandler(OnRecipeStepPropertyGridTextChanged)));
+            lifecycle.Track(
+                () => recipeStepPropertyGridHost.PreviewLostKeyboardFocus += OnRecipeStepPropertyGridPreviewLostKeyboardFocus,
+                () => recipeStepPropertyGridHost.PreviewLostKeyboardFocus -= OnRecipeStepPropertyGridPreviewLostKeyboardFocus);
+            lifecycle.Track(
+                () => recipeStepPropertyGridHost.IsVisibleChanged += OnRecipeStepPropertyGridVisibilityChanged,
+                () => recipeStepPropertyGridHost.IsVisibleChanged -= OnRecipeStepPropertyGridVisibilityChanged);
             lifecycle.Track(
                 () => RecipeCommands.PropertyChanged += OnRecipeCommandsPropertyChanged,
                 () => RecipeCommands.PropertyChanged -= OnRecipeCommandsPropertyChanged);
@@ -894,16 +1026,142 @@ namespace OpenVisionLab
                 });
         }
 
+        private void OnRecipeStepPropertyGridPreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Escape && recipeStepInvalidNumericEditor?.IsKeyboardFocused == true)
+            {
+                recipeStepInvalidNumericEditor.GetBindingExpression(System.Windows.Controls.TextBox.TextProperty)?.UpdateTarget();
+                ClearRecipeStepNumericInputError();
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key != Key.Tab || Keyboard.FocusedElement is not UIElement focused)
+            {
+                return;
+            }
+
+            if (recipeStepInvalidNumericEditor?.IsKeyboardFocused == true)
+            {
+                e.Handled = true;
+                return;
+            }
+
+            // The bundled PropertyGrid's Tab handler can dereference a missing visual child.
+            // Use WPF's normal focus traversal before that handler receives the key.
+            e.Handled = true;
+            FocusNavigationDirection direction = (Keyboard.Modifiers & ModifierKeys.Shift) != 0
+                ? FocusNavigationDirection.Previous
+                : FocusNavigationDirection.Next;
+            if (!focused.MoveFocus(new TraversalRequest(direction)))
+            {
+                recipeStepPropertyGridHost.MoveFocus(new TraversalRequest(direction));
+            }
+        }
+
+        private void OnRecipeStepPropertyGridTextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        {
+            if (e.OriginalSource is not System.Windows.Controls.TextBox editor || !editor.IsKeyboardFocused)
+            {
+                return;
+            }
+
+            object propertyValue = editor.DataContext;
+            if (propertyValue?.GetType().FullName != "System.Windows.Controls.WpfPropertyGrid.PropertyItemValue"
+                || RecipeCommands?.SelectedStepEditObject == null)
+            {
+                return;
+            }
+
+            object propertyItem = propertyValue.GetType().GetProperty("ParentProperty")?.GetValue(propertyValue);
+            PropertyDescriptor descriptor = propertyItem?.GetType().GetProperty("PropertyDescriptor")?.GetValue(propertyItem) as PropertyDescriptor;
+            if (descriptor == null)
+            {
+                return;
+            }
+
+            TypeCode typeCode = Type.GetTypeCode(Nullable.GetUnderlyingType(descriptor.PropertyType) ?? descriptor.PropertyType);
+            if (typeCode is not (TypeCode.Byte or TypeCode.Decimal or TypeCode.Double or TypeCode.Int16 or TypeCode.Int32
+                or TypeCode.Int64 or TypeCode.SByte or TypeCode.Single or TypeCode.UInt16 or TypeCode.UInt32 or TypeCode.UInt64))
+            {
+                return;
+            }
+
+            try
+            {
+                descriptor.Converter.ConvertFromString(null, System.Globalization.CultureInfo.CurrentCulture, editor.Text);
+                if (ReferenceEquals(recipeStepInvalidNumericEditor, editor))
+                {
+                    ClearRecipeStepNumericInputError();
+                }
+            }
+            catch (Exception error) when (error is FormatException or NotSupportedException or ArgumentException or OverflowException)
+            {
+                recipeStepInvalidNumericEditor = editor;
+                string message = OpenVisionRecipeText.Local(
+                    $"{descriptor.DisplayName}: 숫자 형식이 아닙니다. 값을 고치거나 Esc로 입력을 취소하세요.",
+                    $"{descriptor.DisplayName}: Enter a number, or press Esc to cancel this edit.");
+                recipeStepNumericInputErrorText.Text = message;
+                recipeStepNumericInputErrorPopup.PlacementTarget = editor;
+                recipeStepNumericInputErrorPopup.IsOpen = true;
+                recipePipelineCurrentStepSelector.IsEnabled = false;
+                System.Windows.Data.BindingExpression binding = editor.GetBindingExpression(System.Windows.Controls.TextBox.TextProperty);
+                if (binding != null)
+                {
+                    System.Windows.Controls.Validation.MarkInvalid(binding,
+                        new System.Windows.Controls.ValidationError(new System.Windows.Controls.ExceptionValidationRule(), binding, message, error));
+                }
+            }
+        }
+
+        private void OnRecipeStepPropertyGridPreviewLostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+        {
+            if (ReferenceEquals(e.OriginalSource, recipeStepInvalidNumericEditor))
+            {
+                e.Handled = true;
+            }
+        }
+
+        private void OnRecipeStepPropertyGridVisibilityChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (e.NewValue is false)
+            {
+                ClearRecipeStepNumericInputError();
+            }
+        }
+
+        private void ClearRecipeStepNumericInputError()
+        {
+            System.Windows.Data.BindingExpression binding = recipeStepInvalidNumericEditor?
+                .GetBindingExpression(System.Windows.Controls.TextBox.TextProperty);
+            if (binding != null && System.Windows.Controls.Validation.GetHasError(recipeStepInvalidNumericEditor))
+            {
+                System.Windows.Controls.Validation.ClearInvalid(binding);
+            }
+
+            recipeStepInvalidNumericEditor = null;
+            recipeStepNumericInputErrorPopup.IsOpen = false;
+            recipeStepNumericInputErrorPopup.PlacementTarget = null;
+            recipePipelineCurrentStepSelector.IsEnabled = true;
+        }
+
         private void OnRecipeCommandsPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             if (e == null || e.PropertyName == nameof(OpenVisionShellHostRecipeCommandSurface.SelectedStepEditObject))
             {
+                ClearRecipeStepNumericInputError();
                 recipeStepPropertyGridHostController?.SelectObject(RecipeCommands?.SelectedStepEditObject);
             }
         }
 
         private bool CommitPendingRecipeStepEdit()
         {
+            if (recipeStepInvalidNumericEditor != null)
+            {
+                recipeStepInvalidNumericEditor.Focus();
+                return false;
+            }
+
             if (failNextRecipeStepEditCommitForTest)
             {
                 failNextRecipeStepEditCommitForTest = false;
@@ -919,6 +1177,7 @@ namespace OpenVisionLab
 
         private void HandleRecipeManagerTitleBarMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
+            if (btnHostRecipeManager.IsChecked == true && !RecipeCommands.IsRecipeManagerDetailContextActive) { return; }
             recipePanelDragController.HandleMouseLeftButtonDown(sender, e);
         }
 
@@ -939,28 +1198,23 @@ namespace OpenVisionLab
 
         private void HandleRecipeManagerCloseClick(object sender, RoutedEventArgs e)
         {
-            btnHostRecipeManager.IsChecked = false;
+            if (recipeAdvancedReviewToggle.IsChecked == true)
+            {
+                recipeAdvancedReviewToggle.IsChecked = false;
+                RecipeCommands?.HandleRecipeAdvancedReviewToggleCommand.Execute(false);
+            }
+            else
+            {
+                btnHostRecipeManager.IsChecked = false;
+            }
             e.Handled = true;
         }
 
         private void HandleRecipeManagerOpenUnchecked(object sender, RoutedEventArgs e)
         {
-            if (RecipeCommands?.TryCloseRecipeManager() != false)
-            {
-                return;
-            }
-
-            isRestoringRecipeManagerAfterCanceledClose = true;
-            try
-            {
-                btnHostRecipeManager.IsChecked = true;
-            }
-            finally
-            {
-                isRestoringRecipeManagerAfterCanceledClose = false;
-            }
-
-            e.Handled = true;
+            RecipeCommands?.HandleRecipeManagerCloseCommand.Execute(
+                !isPreservingRecipeManagerContextForRunReview);
+            e.Handled = btnHostRecipeManager.IsChecked == true;
         }
 
         private void HandleRecipeManagerOpenChecked(object sender, RoutedEventArgs e)
@@ -970,14 +1224,16 @@ namespace OpenVisionLab
                 return;
             }
 
-            RecipeCommands?.RefreshOptions();
+            RecipeCommands?.RefreshRecipeManagerOptionsCommand.Execute(null);
 
-            if (recipeAdvancedReviewToggle != null)
+            if (RecipeCommands?.IsRecipeManagerDetailContextActive != true
+                && recipeAdvancedReviewToggle != null)
             {
                 recipeAdvancedReviewToggle.IsChecked = false;
             }
 
-            if (tabRecipeOverview != null)
+            if (RecipeCommands?.IsRecipeManagerDetailContextActive != true
+                && tabRecipeOverview != null)
             {
                 tabRecipeOverview.IsSelected = true;
             }
@@ -985,6 +1241,11 @@ namespace OpenVisionLab
 
         private void HandleRecipeAdvancedReviewChecked(object sender, RoutedEventArgs e)
         {
+            if (isRestoringRecipeManagerAdvancedReviewAfterCanceledClose)
+            {
+                return;
+            }
+
             if (tabRecipePipeline != null)
             {
                 tabRecipePipeline.IsSelected = true;
@@ -993,9 +1254,38 @@ namespace OpenVisionLab
 
         private void HandleRecipeAdvancedReviewUnchecked(object sender, RoutedEventArgs e)
         {
-            if (tabRecipeOverview != null)
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, new Action(() =>
             {
-                tabRecipeOverview.IsSelected = true;
+                if (recipeAdvancedReviewToggle.IsChecked != true)
+                {
+                    tabRecipeOverview.IsSelected = true;
+                }
+            }));
+        }
+
+        private void RestoreRecipeManagerAdvancedReviewToggle()
+        {
+            isRestoringRecipeManagerAdvancedReviewAfterCanceledClose = true;
+            try
+            {
+                recipeAdvancedReviewToggle.IsChecked = true;
+            }
+            finally
+            {
+                isRestoringRecipeManagerAdvancedReviewAfterCanceledClose = false;
+            }
+        }
+
+        private void RestoreRecipeManagerOpenToggle()
+        {
+            isRestoringRecipeManagerAfterCanceledClose = true;
+            try
+            {
+                btnHostRecipeManager.IsChecked = true;
+            }
+            finally
+            {
+                isRestoringRecipeManagerAfterCanceledClose = false;
             }
         }
 
@@ -1016,31 +1306,77 @@ namespace OpenVisionLab
 
         private void OpenRecipeGuidedSetup()
         {
-            btnHostRecipeManager.IsChecked = true;
-            recipeAdvancedReviewToggle.IsChecked = true;
-            tabRecipeGuidedSetup.IsSelected = true;
-            recipeGuidedSetupScrollViewer.ScrollToTop();
+            OpenMainRecipeSection("Builder");
         }
 
-        private void HandleOpenRecipeImageListValidation(object sender, RoutedEventArgs e)
+        private bool OpenMainRecipeSection(string section)
         {
-            OpenRecipeImageListValidation();
+            if (btnHostRecipeManager.IsChecked == true)
+            {
+                btnHostRecipeManager.IsChecked = false;
+                if (btnHostRecipeManager.IsChecked == true)
+                {
+                    return false;
+                }
+            }
+
+            if (RecipeCommands?.IsRecipeManagerDetailContextActive == true)
+            {
+                ShowMainRecipeWork(section);
+                return true;
+            }
+
+            if (RecipeCommands?.OpenMainRecipeWorkCommand.CanExecute(section) != true)
+            {
+                return false;
+            }
+
+            RecipeCommands.OpenMainRecipeWorkCommand.Execute(section);
+            return true;
+        }
+
+        private void ShowMainRecipeWork(string section)
+        {
+            recipeAdvancedReviewToggle.IsChecked = true;
+            if (string.Equals(section, "Builder", StringComparison.Ordinal))
+            {
+                tabRecipeGuidedSetup.IsSelected = true;
+                recipeGuidedSetupScrollViewer.ScrollToTop();
+                return;
+            }
+
+            if (string.Equals(section, "Llm", StringComparison.Ordinal))
+            {
+                tabRecipeLlmXml.IsSelected = true;
+                return;
+            }
+
+            if (string.Equals(section, "Browser", StringComparison.Ordinal))
+            {
+                tabRecipeLlmBrowserAssist.IsSelected = true;
+                return;
+            }
+
+            tabRecipePipeline.IsSelected = true;
+            if (string.Equals(section, "Validation", StringComparison.Ordinal))
+            {
+                tabRecipePipelineRunHistory.IsSelected = true;
+                return;
+            }
+
+            tabRecipePipelineReview.IsSelected = true;
         }
 
         private void OpenRecipeImageListValidation()
         {
-            btnHostRecipeManager.IsChecked = true;
-            recipeAdvancedReviewToggle.IsChecked = true;
-            tabRecipePipeline.IsSelected = true;
-            tabRecipePipelineRunHistory.IsSelected = true;
-            RecipeCommands?.SelectLocalValidationSetScope();
+            OpenMainRecipeSection("Validation");
         }
+
+        private void CloseRecipeManager() => btnHostRecipeManager.IsChecked = false;
 
         private void OpenRecipeLlmXmlReview()
         {
-            btnHostRecipeManager.IsChecked = true;
-            recipeAdvancedReviewToggle.IsChecked = true;
-            tabRecipeLlmXml.IsSelected = true;
+            OpenMainRecipeSection("Llm");
         }
 
         private void HandleOpenRecipeLlmBrowserAssist(object sender, RoutedEventArgs e)
@@ -1048,16 +1384,17 @@ namespace OpenVisionLab
             OpenRecipeLlmBrowserAssist();
         }
 
-        private void OpenRecipeLlmBrowserAssist()
+        private bool OpenRecipeLlmBrowserAssist()
         {
-            btnHostRecipeManager.IsChecked = true;
-            recipeAdvancedReviewToggle.IsChecked = true;
-            tabRecipeLlmBrowserAssist.IsSelected = true;
+            return OpenMainRecipeSection("Browser");
         }
 
         private async void HandleOpenRecipeLlmBrowserAssistChatGpt(object sender, RoutedEventArgs e)
         {
-            OpenRecipeLlmBrowserAssist();
+            if (!OpenRecipeLlmBrowserAssist())
+            {
+                return;
+            }
             recipeLlmBrowserAssistPlaceholder.Visibility = Visibility.Collapsed;
             recipeLlmBrowserAssistWebView.Visibility = Visibility.Visible;
 
@@ -1074,7 +1411,10 @@ namespace OpenVisionLab
 
         private void HandleOpenRecipeLlmBrowserAssistExternal(object sender, RoutedEventArgs e)
         {
-            OpenRecipeLlmBrowserAssist();
+            if (!OpenRecipeLlmBrowserAssist())
+            {
+                return;
+            }
             RecipeCommands?.SetLlmBrowserAssistStatus(llmBrowserAssistController.OpenChatGptInExternalBrowser());
         }
 
@@ -1084,14 +1424,52 @@ namespace OpenVisionLab
 
         private void OpenRecipePipelineReview()
         {
-            if (btnHostRecipeManager.IsChecked == true
-                && RecipeCommands?.TryCloseRecipeManager() == false)
+            returnToValidationAfterPipelineReview = tabRecipePipelineRunHistory.IsSelected;
+            if (btnHostRecipeManager.IsChecked == true)
             {
-                return;
+                btnHostRecipeManager.IsChecked = false;
+                if (btnHostRecipeManager.IsChecked == true)
+                {
+                    return;
+                }
             }
 
-            btnHostRecipeManager.IsChecked = false;
             SelectToolMenu(VISION_MENU.Pipeline);
+        }
+
+        private bool OpenRecipeRunEvidenceInPipelineReview(OpenVisionRecipeRunEvidence evidence)
+        {
+            returnToValidationAfterPipelineReview = tabRecipePipelineRunHistory.IsSelected;
+            bool preserveManagerContext = btnHostRecipeManager.IsChecked == true;
+            if (preserveManagerContext)
+            {
+                isPreservingRecipeManagerContextForRunReview = true;
+                try
+                {
+                    btnHostRecipeManager.IsChecked = false;
+                }
+                finally
+                {
+                    isPreservingRecipeManagerContextForRunReview = false;
+                }
+
+                if (btnHostRecipeManager.IsChecked == true)
+                {
+                    return false;
+                }
+            }
+
+            if (toolWindowController.ShowHistoricalPipelineReview(evidence))
+            {
+                return true;
+            }
+
+            if (preserveManagerContext)
+            {
+                btnHostRecipeManager.IsChecked = true;
+            }
+
+            return false;
         }
 
         private void ReturnToRecipeManagerFromPipelineReview()
@@ -1101,35 +1479,51 @@ namespace OpenVisionLab
                 toolWindowLifecycleController.CloseActiveWpfToolWindowByUser();
             }
 
+            if (RecipeCommands?.IsRecipeManagerDetailContextActive == true)
+            {
+                ShowMainRecipeWork(returnToValidationAfterPipelineReview ? "Validation" : "Pipeline");
+                return;
+            }
+
             btnHostRecipeManager.IsChecked = true;
         }
 
         private void OpenPipelineStepEditorFromPipelineReview(string recipeName, string pipelineName, int stepNumber)
         {
             toolWindowLifecycleController.CloseActiveWpfToolWindowByUser();
-            btnHostRecipeManager.IsChecked = true;
-
-            if (RecipeCommands?.FocusPipelineStepForEdit(recipeName, pipelineName, stepNumber) != true)
+            RecipeCommands.RecipeManagerSelectedRecipeName = recipeName;
+            if (RecipeCommands.TryEnterRecipeManagerSettingsDetail(pipelineName, stepNumber) != true)
             {
                 return;
             }
 
+            ShowRecipePipelineStepEditor();
+        }
+
+        private void ShowRecipePipelineStepEditor()
+        {
             recipeAdvancedReviewToggle.IsChecked = true;
             tabRecipePipeline.IsSelected = true;
-            tabRecipePipelineXmlSteps.IsSelected = true;
+            tabRecipePipelineStepSettings.IsSelected = true;
 
             Dispatcher.BeginInvoke(
                 System.Windows.Threading.DispatcherPriority.Background,
                 new Action(() =>
                 {
                     recipePipelineTabScrollViewer.UpdateLayout();
-                    recipePipelineTabScrollViewer.ScrollToEnd();
+                    recipePipelineTabScrollViewer.ScrollToTop();
+                    recipePipelineStepSettingsScrollViewer.ScrollToTop();
                     Dispatcher.BeginInvoke(
                         System.Windows.Threading.DispatcherPriority.Background,
                         new Action(() =>
                         {
                             recipePipelineTabScrollViewer.UpdateLayout();
-                            recipePipelineTabScrollViewer.ScrollToEnd();
+                            recipePipelineTabScrollViewer.ScrollToTop();
+                            recipePipelineStepSettingsScrollViewer.ScrollToTop();
+                            if (tabRecipePipelineStepSettings.IsVisible)
+                            {
+                                Keyboard.Focus(tabRecipePipelineStepSettings);
+                            }
                         }));
                 }));
         }
@@ -1143,10 +1537,28 @@ namespace OpenVisionLab
 
         #region Runtime and Localization
 
+        private void OnWorkbenchToolChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (disposed) { return; }
+            if (Workbench.Tool.IsOpen) { toolWindowLifecycleController.RefreshNativeToolTitle(Workbench.Tool.Title); }
+            else
+            {
+                dockedToolInspectorController.CloseSilently();
+                if (documentController.ActiveNativeDocument != null)
+                {
+                    if (viewModel.HasWorkspaceInputImage) { chromeController.SetWorkspaceImageReadyStatus(); }
+                    else { chromeController.SetWorkspaceEmptyStatus(); }
+                }
+            }
+        }
+
         private void OnLanguageChanged(object sender, EventArgs e)
         {
             chromeController.ApplyLocalization(IsToolRailCompact);
-            mainActionPresenter?.ApplyLocalization();
+            if (viewModel.SelectedItem != null)
+            {
+                toolWindowLifecycleController.RefreshNativeToolTitle(Workbench.Tool.IsOpen ? Workbench.Tool.Title : OpenVisionShellCommandCatalog.DisplayName(viewModel.SelectedItem.Menu));
+            }
             sampleWorkflowPresenter?.ApplyLocalization();
             if (sampleWorkflowPresenter?.IsVisible == true)
             {
@@ -1155,6 +1567,8 @@ namespace OpenVisionLab
             recipeContextPresenter?.Refresh();
             RecipeCommands?.RefreshLocalization();
             LayerCommands?.RefreshLocalization();
+            layerListPresenter?.ApplyLocalization();
+            layerWorkspacePresenter?.ApplyLocalization();
             ApplyShellLogLocalization();
         }
 
@@ -1382,34 +1796,22 @@ namespace OpenVisionLab
             SetShellLogExpanded(false);
         }
 
+        private void OnWorkbenchRecipeManagerOpenRequested(object sender, EventArgs e)
+        {
+            btnHostRecipeManager.IsChecked = true;
+        }
+
         private void SetShellLogExpanded(bool expanded)
         {
-            if (logPanelRow != null)
-            {
-                logPanelRow.Height = new GridLength(expanded ? 184D : 68D);
-            }
-
-            if (shellLogPanel != null)
-            {
-                shellLogPanel.Visibility = expanded ? Visibility.Visible : Visibility.Collapsed;
-            }
-
-            if (txtShellLogToggle != null)
-            {
-                txtShellLogToggle.Text = expanded
-                    ? T("Shell.LogPanel.Close", LocalText("濡쒓렇 ?リ린", "Close Log"))
-                    : T("Shell.LogPanel.Open", LocalText("濡쒓렇 ?닿린", "Open Log"));
-            }
+            if (Workbench == null) { return; }
+            if (expanded) { Workbench.OpenLogCommand.Execute(null); }
+            else { Workbench.IsBottomCollapsed = true; }
         }
 
         private void ApplyShellLogLocalization()
         {
-            if (txtShellLogTitle != null)
-            {
-                txtShellLogTitle.Text = T("Pipeline.RunLog", LocalText("?ㅽ뻾 濡쒓렇", "Run Log"));
-            }
-
-            SetShellLogExpanded(btnShellLogToggle?.IsChecked == true);
+            if (txtShellLogTitle != null) { txtShellLogTitle.Text = OpenVisionLanguageService.T("Workbench.Bottom.Log"); }
+            if (txtShellLogToggle != null) { txtShellLogToggle.Text = OpenVisionLanguageService.T("Workbench.Menu.BottomPanel"); }
         }
 
         #endregion
@@ -1442,8 +1844,7 @@ namespace OpenVisionLab
                 return;
             }
 
-            toolInspectorColumn.Width = new System.Windows.GridLength(width);
-            toolInspectorColumn.MinWidth = Math.Min(toolInspectorColumn.MinWidth, width);
+            Workbench.RightPanelWidth = new System.Windows.GridLength(width);
             toolInspectorPanel?.UpdateLayout();
             UpdateLayout();
         }
@@ -1915,14 +2316,6 @@ namespace OpenVisionLab
         public bool OpenWorkspaceSampleForTest(string sampleName) => testSurface.OpenWorkspaceSampleForTest(sampleName);
 
         public bool IsWorkspaceSampleWorkflowVisibleForTest => testSurface.IsWorkspaceSampleWorkflowVisibleForTest;
-
-        public bool IsWorkspaceMainActionVisibleForTest => testSurface.IsWorkspaceMainActionVisibleForTest;
-
-        public string WorkspaceMainActionTitleForTest => testSurface.WorkspaceMainActionTitleForTest;
-
-        public string WorkspaceMainActionDetailForTest => testSurface.WorkspaceMainActionDetailForTest;
-
-        public string WorkspaceMainActionMetaForTest => testSurface.WorkspaceMainActionMetaForTest;
 
         public string WorkspaceSampleWorkflowTitleForTest => testSurface.WorkspaceSampleWorkflowTitleForTest;
 

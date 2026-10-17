@@ -162,6 +162,19 @@ namespace OpenVisionLab
             previewScheduler.Dispose();
         }
 
+        internal void RefreshRestoredParameters()
+        {
+            bool previous = suppressEvents;
+            suppressEvents = true;
+            try
+            {
+                presenter.NotifyAllParametersChanged();
+                parameterChangeController.RefreshProgrammatic(thresholdInteractionController.RefreshModePanels);
+                previewScheduler.Cancel();
+            }
+            finally { suppressEvents = previous; }
+        }
+
         private void ApplyLocalization()
         {
             ToolController.ApplyLocalization();

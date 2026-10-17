@@ -62,6 +62,7 @@ namespace OpenVisionLab
             }
 
             this.refreshOverlay = refreshOverlay;
+            presenter.ParametersRestored += OnParametersRestored;
             propertyChangeController = OpenVisionToolOpenProfiler.Measure(
                 "CreateMatchingPropertyChangeController",
                 () => new VisionToolPropertyChangeController(
@@ -171,18 +172,33 @@ namespace OpenVisionLab
                 return false;
             }
 
-            preset.ApplyTo(property);
-            presenter.PersistSelectedObject();
-            propertyGridController.RefreshAndApplyVisibilityRules();
-            UpdateSummary();
-            refreshOverlay?.Invoke();
-            ClearResultReview();
+            autoPreviewScheduler?.Cancel();
+            try
+            {
+                preset.ApplyTo(property);
+                presenter.PersistSelectedObject();
+                propertyGridController.RefreshAndApplyVisibilityRules();
+                UpdateSummary();
+                refreshOverlay?.Invoke();
+                ClearResultReview();
+            }
+            finally { autoPreviewScheduler?.Cancel(); }
             return true;
         }
 
         public void RefreshSelectedObject()
         {
             propertyGridController.RefreshSelectedObject();
+        }
+
+        private void OnParametersRestored(object sender, EventArgs e)
+        {
+            autoPreviewScheduler?.Cancel();
+            propertyGridController.RefreshAndApplyVisibilityRules();
+            UpdateSummary();
+            refreshOverlay?.Invoke();
+            ClearResultReview();
+            autoPreviewScheduler?.Cancel();
         }
 
         public void UpdateSummary()
@@ -207,6 +223,12 @@ namespace OpenVisionLab
             resultReviewPresenter.Show(title, results, tactTime, CreateCriteria());
         }
 
+        internal Action<IEnumerable<MatchingResult>, TimeSpan?> CaptureResultReview(string title)
+        {
+            VisionToolMatchingResultReviewCriteria criteria = CreateCriteria();
+            return (results, tactTime) => resultReviewPresenter.Show(title, results, tactTime, criteria);
+        }
+
         public void ClearResultReview()
         {
             resultReviewPresenter.Clear();
@@ -215,6 +237,7 @@ namespace OpenVisionLab
 
         public void Dispose()
         {
+            presenter.ParametersRestored -= OnParametersRestored;
             autoPreviewScheduler?.Dispose();
             propertyGridController.Dispose();
         }

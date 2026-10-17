@@ -55,6 +55,7 @@ namespace OpenVisionLab
                     this.openGuidedSetupForTool(item.Menu);
                 }
             });
+            OpenImageCompareCommand = new RelayCommand(this.commandController.OpenImageCompare);
             OpenTutorialCommand = new RelayCommand(this.commandController.OpenTutorial);
             OpenTcpIntegrationCommand = new RelayCommand(this.openTcpIntegration);
             FloatDockedToolCommand = new RelayCommand(FloatDockedTool);
@@ -70,6 +71,8 @@ namespace OpenVisionLab
         public ICommand OpenToolSamplesCommand { get; }
 
         public ICommand OpenToolGuidedSetupCommand { get; }
+
+        public ICommand OpenImageCompareCommand { get; }
 
         public ICommand OpenTutorialCommand { get; }
 

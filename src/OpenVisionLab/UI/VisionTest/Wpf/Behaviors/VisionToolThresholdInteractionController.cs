@@ -172,8 +172,15 @@ namespace OpenVisionLab
 
         public void RefreshModePanels()
         {
-            FlushParameterBindings();
             ThresholdToolMode mode = presenter.Mode;
+            RunSuppressed(() =>
+            {
+                (mode == ThresholdToolMode.Range ? rbRange : mode == ThresholdToolMode.Adaptive ? rbAdaptive : rbBasic).SetCurrentValue(ToggleButton.IsCheckedProperty, true);
+                (presenter.BasicInvert ? rbBasicInvert : rbBasicBinary).SetCurrentValue(ToggleButton.IsCheckedProperty, true);
+                (presenter.AdaptiveGaussian ? rbAdaptiveGaussian : rbAdaptiveMean).SetCurrentValue(ToggleButton.IsCheckedProperty, true);
+                (presenter.AdaptiveInvert ? rbAdaptiveInvert : rbAdaptiveBinary).SetCurrentValue(ToggleButton.IsCheckedProperty, true);
+            });
+            FlushParameterBindings();
             VisionToolControlBinding.SetPanelVisible(panelBasic, mode == ThresholdToolMode.Threshold);
             VisionToolControlBinding.SetPanelVisible(panelRange, mode == ThresholdToolMode.Range);
             VisionToolControlBinding.SetPanelVisible(panelAdaptive, mode == ThresholdToolMode.Adaptive);

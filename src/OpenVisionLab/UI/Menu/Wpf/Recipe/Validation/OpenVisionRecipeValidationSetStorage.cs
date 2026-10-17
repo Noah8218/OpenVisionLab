@@ -519,8 +519,15 @@ namespace OpenVisionLab
                 return false;
             }
 
+            string replacementSha256 = image.Sha256;
+            if (!string.IsNullOrWhiteSpace(image.Sha256))
+            {
+                try { replacementSha256 = ComputeFileSha256(normalizedReplacementPath); }
+                catch (Exception exception) { error = exception.GetBaseException().Message; return false; }
+            }
             repairedPath = normalizedReplacementPath;
             image.Path = normalizedReplacementPath;
+            image.Sha256 = replacementSha256;
             return true;
         }
 
@@ -598,6 +605,32 @@ namespace OpenVisionLab
         {
             using FileStream stream = File.OpenRead(path);
             return Convert.ToHexString(SHA256.HashData(stream));
+        }
+
+        public static bool TryValidateImageContentIdentity(OpenVisionRecipeValidationSet set, out string error)
+        {
+            error = string.Empty;
+            try
+            {
+                foreach (OpenVisionRecipeValidationSetImage image in set.Images)
+                {
+                    if (!image.Exists) { error = string.Format(CultureInfo.CurrentCulture, OpenVisionLanguageService.T("Workbench.ValidationSet.ImageFailed"), image.Path); return false; }
+                    if (string.IsNullOrWhiteSpace(image.Sha256))
+                    {
+                        if (set.IsIdentityLocked) { error = string.Format(CultureInfo.CurrentCulture, OpenVisionLanguageService.T("Workbench.ValidationSet.HashMissing"), image.Path); return false; }
+                        continue;
+                    }
+                    if (!IsFileSha256Match(image.Path, image.Sha256)) { error = string.Format(CultureInfo.CurrentCulture, OpenVisionLanguageService.T("Workbench.ValidationSet.ImageChanged"), image.Path); return false; }
+                }
+                if ((set.IsIdentityLocked || !string.IsNullOrWhiteSpace(set.ImageSetSha256))
+                    && !string.Equals(set.ImageSetSha256, ComputeImageSetSha256(set.Images), StringComparison.OrdinalIgnoreCase))
+                {
+                    error = OpenVisionLanguageService.T("Workbench.ValidationSet.SetChanged");
+                    return false;
+                }
+                return true;
+            }
+            catch (Exception exception) { error = exception.GetBaseException().Message; return false; }
         }
 
         public static string ComputeTextSha256(string value)

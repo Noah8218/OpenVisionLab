@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFramework>net8.0-windows7.0</TargetFramework>
     <OutputType>WinExe</OutputType>
-    <Version>2.2.0-dev.5</Version>
+    <Version>2.2.0-dev.9</Version>
     <AssemblyVersion>2.2.0.0</AssemblyVersion>
     <FileVersion>2.2.0.0</FileVersion>
     <Deterministic>true</Deterministic>
@@ -54,6 +54,9 @@
     <DefineConstants>$(DefineConstants);OPENVISIONLAB_EMBEDDED_SMOKE</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
+    <Resource Include="UI\Wpf\Fonts\*.ttf" />
+  </ItemGroup>
+  <ItemGroup>
     <Reference Include="FontAwesome.Sharp">
       <HintPath>$(OpenVisionLabDllRoot)FontAwesome.Sharp.dll</HintPath>
     </Reference>
@@ -91,8 +94,8 @@
     <PackageReference Include="WPF-UI" Version="4.3.0" />
     <PackageReference Include="System.Drawing.Common" Version="8.0.27" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.8" />
-    <PackageReference Include="OpenVisionLab.Integration.Contracts" Version="[0.2.0-alpha.3]" />
-    <PackageReference Include="OpenVisionLab.Integration.Transport.Tcp" Version="[0.1.0-alpha.3]" />
+    <PackageReference Include="OpenVisionLab.Integration.Contracts" Version="[0.2.0-alpha.4]" />
+    <PackageReference Include="OpenVisionLab.Integration.Transport.Tcp" Version="[0.1.0-alpha.4]" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Libraries\PropertyGrid.Abstractions\PropertyGrid.Abstractions.csproj" />
@@ -104,6 +107,7 @@
     <ProjectReference Include="..\Libraries\OpenVisionLab.Logging.Controls\OpenVisionLab.Logging.Controls.csproj" />
     <ProjectReference Include="..\Libraries\OpenVisionLab.Pipeline.Controls\OpenVisionLab.Pipeline.Controls.csproj" />
     <ProjectReference Include="..\Libraries\OpenVisionLab.Localization\OpenVisionLab.Localization.csproj" />
+    <ProjectReference Include="$(OpenVisionLabRepoRoot)tools\OpenVisionLab.ImageCompare\OpenVisionLab.ImageCompare.csproj" ReferenceOutputAssembly="false" AdditionalProperties="OutputPath=$(OutputPath)Tools\ImageCompare\" />
     <ProjectReference Include="..\Libraries\OpenVisionLab.History\OpenVisionLab.History.csproj" />
     <ProjectReference Include="..\Libraries\OpenVisionLab.Mvvm\OpenVisionLab.Mvvm.csproj" />
     <ProjectReference Include="..\Libraries\OpenVisionLab.Docking.Controls\OpenVisionLab.Docking.Controls.csproj" />

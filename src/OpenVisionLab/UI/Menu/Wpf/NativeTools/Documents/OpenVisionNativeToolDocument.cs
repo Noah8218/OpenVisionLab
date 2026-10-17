@@ -1,11 +1,15 @@
 using OpenVisionLab.Vision2D.Pipeline;
 using OpenVisionLab.Vision2D.Tool;
 using OpenCvSharp;
+using Bitmap = System.Drawing.Bitmap;
 using OpenVisionLab.Core;
 using OpenVisionLab.Vision._1._Tools.OpenCV;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
 using static OpenVisionLab.DEFINE;
 
 namespace OpenVisionLab
@@ -20,6 +24,7 @@ namespace OpenVisionLab
         private readonly string defaultOutputLayer;
         private readonly Func<string, string, VisionPipelineStep> createStep;
         private readonly Func<Mat, VisionToolResult> executePreview;
+        private readonly Func<OpenVisionNativePreviewOperation> capturePreview;
         private readonly bool normalizeSingleChannelInput;
         private readonly OpenVisionNativePreviewLayerPublisher previewLayerPublisher;
         private readonly OpenVisionNativeLayerRouteController layerRouteController;
@@ -41,6 +46,26 @@ namespace OpenVisionLab
         private Action closePreviewViewer;
         private VisionToolPreviewImageRole? openPreviewViewerRole;
         private bool disposed;
+        private OpenVisionWorkbenchToolViewModel workbenchEditor;
+        private long workbenchSession;
+        private OpenVisionWorkbenchViewModel workbenchRoot;
+        private bool nImageWindowOpen;
+        private bool isWorkbenchDocument;
+        private bool restoringParameters;
+        private bool refreshingLayerState;
+        private bool capturingParameters;
+        private Func<object> captureParameters;
+        private Action<object> restoreParameters;
+        private Func<OpenVisionRecipeContext, object> loadParameters;
+        private Action<VisionPipelineStep> applyStepParameters;
+        private Func<bool> templateReady = () => true;
+        private Func<string, string, VisionPipelineStep> captureParameterStep;
+        private Func<object> createDefaultParameters;
+        private Func<bool> autoPreviewOptedIn;
+        private Func<OpenVisionLab.Contracts.VisionToolTemplateStatus> getTemplateStatus;
+        private Func<System.Windows.Media.ImageSource> getTemplateThumbnail;
+        private Func<string, bool> applyTemplatePath;
+        private Func<bool, string> templateSelectionOverrideForTest;
 
         internal OpenVisionNativeToolDocument(
             IDisplayManager displayManager,
@@ -50,7 +75,8 @@ namespace OpenVisionLab
             string defaultOutputLayer,
             Func<Mat, VisionToolResult> executePreview,
             Func<string, string, VisionPipelineStep> createStep,
-            bool normalizeSingleChannelInput = true)
+            bool normalizeSingleChannelInput = true,
+            Func<OpenVisionNativePreviewOperation> capturePreview = null)
         {
             this.displayManager = displayManager ?? throw new ArgumentNullException(nameof(displayManager));
             previewLayerPublisher = new OpenVisionNativePreviewLayerPublisher(this.displayManager);
@@ -72,10 +98,11 @@ namespace OpenVisionLab
                 () => view?.SelectedOutputLayer);
             layerViewController = new OpenVisionNativeToolLayerViewController(this.displayManager, layerRouteController, previewLayerPublisher);
             routeInteractionController = new OpenVisionNativeToolRouteInteractionController(layerRouteController, layerViewController, NotifyLayerStateChanged, SetStatus);
-            previewExecutionController = new OpenVisionNativePreviewExecutionController(this.displayManager, previewLayerPublisher);
+            previewExecutionController = new OpenVisionNativePreviewExecutionController(this.displayManager, previewLayerPublisher, AcquireInputSnapshot);
             previewExecutionBoundary = new OpenVisionNativePreviewExecutionBoundary(
                 previewExecutionController,
-                action => this.element.Dispatcher.BeginInvoke(action));
+                action => this.element.Dispatcher.Invoke(action),
+                QueueWorkbenchExecutionStateChanged);
             previewImageCommandController = new OpenVisionNativePreviewImageCommandController(
                 this.displayManager,
                 previewLayerPublisher,
@@ -100,7 +127,12 @@ namespace OpenVisionLab
                 this.element,
                 ResolveInputLayer,
                 SetStatus);
-            this.executePreview = executePreview ?? throw new ArgumentNullException(nameof(executePreview));
+            this.executePreview = executePreview;
+            this.capturePreview = capturePreview;
+            if (executePreview == null && capturePreview == null)
+            {
+                throw new ArgumentNullException(nameof(executePreview));
+            }
             this.normalizeSingleChannelInput = normalizeSingleChannelInput;
             eventBinder = OpenVisionNativeToolEventBinder.BindSingle(
                 view,
@@ -148,7 +180,7 @@ namespace OpenVisionLab
                 () => arithmeticView?.SelectedOutputLayer);
             layerViewController = new OpenVisionNativeToolLayerViewController(this.displayManager, layerRouteController, previewLayerPublisher);
             routeInteractionController = new OpenVisionNativeToolRouteInteractionController(layerRouteController, layerViewController, NotifyLayerStateChanged, SetStatus);
-            previewExecutionController = new OpenVisionNativePreviewExecutionController(this.displayManager, previewLayerPublisher);
+            previewExecutionController = new OpenVisionNativePreviewExecutionController(this.displayManager, previewLayerPublisher, AcquireInputSnapshot);
             previewExecutionBoundary = null;
             previewImageCommandController = new OpenVisionNativePreviewImageCommandController(
                 this.displayManager,
@@ -159,7 +191,8 @@ namespace OpenVisionLab
                 ResolvePrimaryInputLayer,
                 ClearPreviewResult,
                 RefreshLayerState,
-                SetStatus);
+                SetStatus,
+                OnPreviewImageLoaded);
             pipelineCommandController = new OpenVisionNativePipelineCommandController(
                 this.toolName,
                 null,
@@ -198,6 +231,222 @@ namespace OpenVisionLab
         public int PreviewRunCount { get; private set; }
         public bool HasPreviewResult { get; private set; }
         public string LastStatusText { get; private set; } = string.Empty;
+        internal bool IsPreviewRunning => previewExecutionBoundary?.IsRunning == true;
+        internal VisionPipelineStep WorkbenchParameterStep => isWorkbenchDocument && workbenchEditor?.IsActive(workbenchSession) == true ? workbenchEditor.CurrentStep : null;
+
+        internal void ConfigureParameterState(bool forWorkbench, Func<object> capture, Action<object> restore,
+            Func<OpenVisionRecipeContext, object> load, Action<VisionPipelineStep> applyStep, Func<bool> canUseTemplate = null,
+            Func<string, string, VisionPipelineStep> captureStep = null, Func<object> createDefaults = null, Func<bool> autoPreviewOptedIn = null)
+        {
+            isWorkbenchDocument = forWorkbench;
+            captureParameters = capture ?? throw new ArgumentNullException(nameof(capture));
+            restoreParameters = restore ?? throw new ArgumentNullException(nameof(restore));
+            loadParameters = load ?? throw new ArgumentNullException(nameof(load));
+            applyStepParameters = applyStep ?? throw new ArgumentNullException(nameof(applyStep));
+            templateReady = canUseTemplate ?? (() => true);
+            captureParameterStep = captureStep;
+            createDefaultParameters = createDefaults;
+            this.autoPreviewOptedIn = autoPreviewOptedIn;
+        }
+
+        internal void ConfigureTemplateState(Func<OpenVisionLab.Contracts.VisionToolTemplateStatus> status,
+            Func<System.Windows.Media.ImageSource> thumbnail, Func<string, bool> applyPath)
+        {
+            getTemplateStatus = status;
+            getTemplateThumbnail = thumbnail;
+            applyTemplatePath = applyPath;
+        }
+
+        internal void SetTemplateSelectionForTest(Func<bool, string> select) => templateSelectionOverrideForTest = select;
+
+        private bool? ChangeTemplate(bool fromFile)
+        {
+            using IDisposable imageEditScope = fromFile ? null : PropertyGridEditorFactory.BeginImageEditWriteScope(element);
+            if (disposed || workbenchEditor?.CanEditParameters != true || applyTemplatePath == null) { return null; }
+            OpenVisionWorkbenchToolViewModel editor = workbenchEditor;
+            long session = workbenchSession;
+            Action<string> editAction = PropertyGridEditorFactory.GetEditActionCallback(element);
+            VisionToolDebouncedPreviewScheduler.CancelPending(element);
+            try
+            {
+                CaptureStep();
+                editor.ParametersChanged(session);
+                string path = templateSelectionOverrideForTest != null ? templateSelectionOverrideForTest(fromFile)
+                    : PropertyGridEditorFactory.SelectTemplate(fromFile, getTemplateStatus().Path, System.Windows.Window.GetWindow(element), true, editAction, element);
+                if (string.IsNullOrWhiteSpace(path) || !editor.IsActive(session)) { return null; }
+                if (!applyTemplatePath(path)) { editAction?.Invoke("Workbench.Status.Error"); return false; }
+                editor.ParametersChanged(session);
+                editAction?.Invoke("Workbench.Action.TemplateRegistered");
+                return true;
+            }
+            catch (Exception exception) { editAction?.Invoke("Workbench.Status.Error"); SetStatus(exception.GetBaseException().Message); return false; }
+            finally { VisionToolDebouncedPreviewScheduler.CancelPending(element); }
+        }
+
+        internal void DeactivateWorkbenchEditor()
+        {
+            OpenVisionWorkbenchToolViewModel activeEditor = workbenchEditor;
+            long activeSession = workbenchSession;
+            if (workbenchEditor != null) { workbenchEditor.PropertyChanged -= OnNImageContextChanged; }
+            if (workbenchRoot?.Images != null) { workbenchRoot.Images.PropertyChanged -= OnNImageContextChanged; }
+            workbenchRoot = null;
+            PropertyGridEditorFactory.SetEditActionCallback(element, null);
+            PropertyGridEditorFactory.SetImageEditContext(element, null);
+            workbenchEditor = null;
+            workbenchSession = 0;
+            activeEditor?.Deactivate(activeSession);
+        }
+
+        internal bool CanReuseWorkbenchEditor(OpenVisionWorkbenchToolViewModel editor, int selectedStep, OpenVisionWorkbenchViewModel theme) => !disposed
+            && isWorkbenchDocument && ReferenceEquals(workbenchEditor, editor) && ReferenceEquals(workbenchRoot, theme)
+            && editor?.IsEditingSession(workbenchSession, selectedStep) == true;
+
+        internal bool ActivateWorkbenchEditor(OpenVisionWorkbenchToolViewModel editor, OpenVisionShellNavItem item, int selectedStep = -1, OpenVisionWorkbenchViewModel theme = null)
+        {
+            if (!isWorkbenchDocument || captureParameters == null) { return false; }
+            VisionToolSingleInputPropertyToolShell parameterShell = element.FindName("toolShell") as VisionToolSingleInputPropertyToolShell;
+            VisionToolDoubleInputCustomToolShell doubleParameterShell = element.FindName("toolShell") as VisionToolDoubleInputCustomToolShell;
+            FrameworkElement themeShell = (FrameworkElement)parameterShell ?? doubleParameterShell;
+            if (theme != null && themeShell != null) element.SetBinding(OpenVisionWorkbenchThemeBehavior.ThemeNameProperty, new Binding(nameof(theme.ThemeName)) { Source = theme });
+            if (theme != null && themeShell != null) themeShell.SetBinding(OpenVisionWorkbenchThemeBehavior.ThemeNameProperty, new Binding(nameof(theme.ThemeName)) { Source = theme });
+            if (workbenchEditor != null) { workbenchEditor.PropertyChanged -= OnNImageContextChanged; }
+            workbenchEditor = editor ?? throw new ArgumentNullException(nameof(editor));
+            if (workbenchRoot?.Images != null) { workbenchRoot.Images.PropertyChanged -= OnNImageContextChanged; }
+            workbenchRoot = theme;
+            editor.PropertyChanged -= OnNImageContextChanged;
+            editor.PropertyChanged += OnNImageContextChanged;
+            if (workbenchRoot?.Images != null) { workbenchRoot.Images.PropertyChanged += OnNImageContextChanged; }
+            VisionToolDebouncedPreviewScheduler.CancelPending(element);
+            workbenchSession = editor.Activate(ResolveRecipeContext(), new OpenVisionWorkbenchToolViewModel.EditorBinding
+            {
+                ToolName = toolName,
+                DisplayName = () => OpenVisionShellCommandCatalog.DisplayName(item.Menu),
+                EnglishName = OpenVisionLanguageService.GetEntries().FirstOrDefault(entry => entry.Key == "VisionMenu." + item.Menu)?.English ?? item.Menu.ToString(),
+                Icon = item.IconKind,
+                CaptureParameters = captureParameters,
+                RestoreParameters = RestoreParameters,
+                LoadParameters = loadParameters,
+                CreateStep = CaptureStep,
+                CommitPendingEdits = CommitPendingEdits,
+                SupportsPipeline = createStep != null || arithmeticView != null,
+                InitializeTestRoute = arithmeticView == null ? null : step =>
+                    step.Parameters[VisionPipelineArithmeticStep.ParameterInputLayerB] = layerRouteController.ResolveDefaultArithmeticInputLayerB(step.InputLayer, step.OutputLayer),
+                ApplyStep = RestoreStepParameters,
+                TemplateReady = templateReady,
+                GetTemplateStatus = getTemplateStatus,
+                GetTemplateThumbnail = getTemplateThumbnail,
+                ChangeTemplate = applyTemplatePath == null ? null : ChangeTemplate,
+                IsRunning = () => IsPreviewRunning,
+                AutoPreviewOptedIn = autoPreviewOptedIn,
+                Run = RunPreview,
+                CreateDefaults = createDefaultParameters,
+                ClearResult = () => { ClearPreviewResult(); SetStatus(string.Empty); },
+                ShowParameterGuide = parameterShell?.ParameterGuideVisibility == Visibility.Visible ? (Action)parameterShell.ToggleParameterGuide
+                    : doubleParameterShell?.ParameterGuideVisibility == Visibility.Visible ? (Action)doubleParameterShell.ToggleParameterGuide : null
+            }, selectedStep);
+            long editSession = workbenchSession;
+            PropertyGridEditorFactory.SetEditActionCallback(element, key => editor.NotifyEditAction(editSession, key));
+            PropertyGridEditorFactory.SetImageEditContext(element, () => editor.IsActive(editSession));
+            if (editor.SupportsAutoRun)
+            {
+                BindingOperations.SetBinding(element, VisionToolDebouncedPreviewScheduler.AllowAutoPreviewProperty,
+                    new Binding(nameof(OpenVisionWorkbenchToolViewModel.IsAutoRunEnabled)) { Source = editor, Mode = BindingMode.OneWay });
+            }
+            if (element.FindName("toolShell") is VisionToolSingleInputPropertyToolShell singleShell)
+            {
+                VisionToolChromePresenter.ApplyWorkbenchEditor(singleShell.TitleText, singleShell.AddPipelineText, singleShell.RunPreviewText, singleShell.AddPipelineButton,
+                    singleShell.RunPreviewButton, singleShell.WorkbenchStepActions, singleShell.WorkbenchDefaultsButton, editor, singleShell.NImageVerificationButton, singleShell.NImageVerificationText,
+                    singleShell.WorkbenchRunShortcut, acceptanceHost: singleShell.WorkbenchAcceptanceHost);
+                VisionToolChromePresenter.ApplyWorkbenchRoute(singleShell.InputLayerGroup, singleShell.OutputLayerGroup, editor);
+                VisionToolChromePresenter.ApplyWorkbenchTemplate(singleShell, editor);
+                VisionToolChromePresenter.ApplyWorkbenchResult(singleShell, editor);
+            }
+            else if (element.FindName("toolShell") is VisionToolDoubleInputCustomToolShell doubleShell)
+            {
+                VisionToolChromePresenter.ApplyWorkbenchEditor(doubleShell.TitleText, doubleShell.AddPipelineText, doubleShell.RunPreviewText, doubleShell.AddPipelineButton,
+                    doubleShell.RunPreviewButton, doubleShell.WorkbenchStepActions, doubleShell.WorkbenchDefaultsButton, editor, runShortcut: doubleShell.WorkbenchRunShortcut,
+                    alternateRunText: doubleShell.RunOffsetText, alternateRunShortcut: doubleShell.WorkbenchRunOffsetShortcut, alternateRunButton: doubleShell.RunOffsetButton);
+                VisionToolChromePresenter.ApplyWorkbenchRoute(doubleShell.InputAGroup, doubleShell.OutputLayerGroup, editor, doubleShell.InputBGroup);
+                VisionToolChromePresenter.ApplyWorkbenchResult(doubleShell, editor);
+            }
+            editor.RefreshRoute = RefreshLayerState;
+            RefreshLayerState();
+            return true;
+        }
+
+        internal void RecordParameterChange(Action legacySave)
+        {
+            if (restoringParameters || capturingParameters || disposed) { return; }
+            if (!isWorkbenchDocument) { legacySave?.Invoke(); return; }
+            workbenchEditor?.ParametersChanged(workbenchSession);
+            RefreshWorkbenchArithmeticRoute();
+        }
+
+        private void QueueWorkbenchExecutionStateChanged()
+        {
+            if (disposed || !isWorkbenchDocument || workbenchEditor?.IsActive(workbenchSession) != true
+                || element.Dispatcher.HasShutdownStarted || element.Dispatcher.HasShutdownFinished) { return; }
+            OpenVisionWorkbenchToolViewModel editor = workbenchEditor;
+            long session = workbenchSession;
+            element.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                if (!disposed && ReferenceEquals(workbenchEditor, editor) && workbenchSession == session) { editor.NotifyExecutionState(session); }
+            }));
+        }
+
+        private VisionPipelineStep CaptureStep()
+        {
+            bool previous = capturingParameters;
+            capturingParameters = true;
+            try { return captureParameterStep != null ? captureParameterStep(ResolveInputLayer(), ResolveOutputLayer())
+                : arithmeticView != null ? CreateArithmeticStep() : createStep?.Invoke(ResolveInputLayer(), ResolveOutputLayer()); }
+            finally { capturingParameters = previous; }
+        }
+
+        private bool CommitPendingEdits()
+        {
+            bool previous = capturingParameters;
+            capturingParameters = true;
+            try { return VisionToolControlBinding.TryCommitPendingEdits(element); }
+            finally { capturingParameters = previous; VisionToolDebouncedPreviewScheduler.CancelPending(element); }
+        }
+
+        private VisionPipelineStep CaptureWorkbenchResultStep(VisionPipelineStep captured = null)
+        {
+            if (workbenchEditor?.CurrentStep == null) { return null; }
+            VisionPipelineStep actual;
+            bool previous = capturingParameters;
+            capturingParameters = true;
+            try { actual = captured ?? createStep?.Invoke(ResolveInputLayer(), ResolveOutputLayer()) ?? CaptureStep(); }
+            finally { capturingParameters = previous; }
+            workbenchEditor.ParametersChanged(workbenchSession);
+            VisionPipelineStep snapshot = VisionPipelineStepEditService.CopyStep(workbenchEditor.CurrentStep);
+            if (snapshot == null) { return null; }
+            if (actual?.Parameters != null)
+            {
+                snapshot.Parameters.Clear();
+                foreach (var parameter in actual.Parameters) { snapshot.Parameters[parameter.Key] = parameter.Value; }
+            }
+            return snapshot;
+        }
+
+        private void RestoreParameters(object snapshot)
+        {
+            bool previous = restoringParameters;
+            restoringParameters = true;
+            VisionToolDebouncedPreviewScheduler.CancelPending(element);
+            try { restoreParameters(snapshot); }
+            finally { VisionToolDebouncedPreviewScheduler.CancelPending(element); restoringParameters = previous; }
+        }
+
+        private void RestoreStepParameters(VisionPipelineStep step)
+        {
+            bool previous = restoringParameters;
+            restoringParameters = true;
+            VisionToolDebouncedPreviewScheduler.CancelPending(element);
+            try { applyStepParameters(step); }
+            finally { VisionToolDebouncedPreviewScheduler.CancelPending(element); restoringParameters = previous; }
+        }
 
         internal void SetPropertyPersistenceStatus(string status)
         {
@@ -261,6 +510,7 @@ namespace OpenVisionLab
 
         public bool LoadPreviewImageFromFileForTest(VisionToolPreviewImageRole role, string path)
         {
+            VisionToolDebouncedPreviewScheduler.CancelPending(element);
             return previewImageCommandController.LoadFromFile(role, path);
         }
 
@@ -295,22 +545,71 @@ namespace OpenVisionLab
             openPreviewViewerRole = null;
         }
 
+        private void RefreshWorkbenchArithmeticRoute()
+        {
+            if (arithmeticView == null || workbenchEditor?.IsActive(workbenchSession) != true
+                || element.FindName("toolShell") is not VisionToolDoubleInputCustomToolShell shell) { return; }
+            bool imageB = !arithmeticView.UseOffsetMode && !arithmeticView.UseConstantInput;
+            shell.SetWorkbenchInputBRouteVisible(imageB);
+            VisionToolChromePresenter.ApplyWorkbenchRoute(shell.InputAGroup, shell.OutputLayerGroup, workbenchEditor, imageB ? shell.InputBGroup : null);
+        }
+
         public void RefreshLayerState()
         {
-            if (arithmeticView != null)
+            if (refreshingLayerState) { return; }
+            refreshingLayerState = true;
+            try
             {
-                routeInteractionController.RefreshArithmeticLayerState(arithmeticView);
+                if (workbenchEditor?.IsActive(workbenchSession) == true)
+                {
+                    RefreshWorkbenchArithmeticRoute();
+                    string input = workbenchEditor.InputLayer;
+                    string output = workbenchEditor.OutputLayer;
+                    IReadOnlyList<string> layers = layerRouteController.GetWorkspaceLayerNames(input, workbenchEditor.InputLayerB, output);
+                    IReadOnlyList<KeyValuePair<string, string>> inputChoices = workbenchEditor.GetInputLayerChoices(displayManager.GetLayerInfos().Select(layer => layer.Title));
+                    if (element.FindName("toolShell") is FrameworkElement routeShell)
+                    {
+                        foreach (string name in new[] { "cbInputLayer", "cbInputA", "cbInputB" })
+                        {
+                            VisionToolLayerSelectionPresenter.SetWorkbenchInputChoices(routeShell.FindName(name) as ComboBox, inputChoices);
+                        }
+                    }
+                    if (arithmeticView != null)
+                    {
+                        arithmeticView.SetLayerList(layers, input, workbenchEditor.InputLayerB, output);
+                        using Bitmap inputA = AcquireInputSnapshot(input);
+                        using Bitmap inputB = AcquireInputSnapshot(workbenchEditor.InputLayerB);
+                        arithmeticView.SetInputAPreview(inputA);
+                        arithmeticView.SetInputBPreview(inputB);
+                        arithmeticView.SetOutputPreview(displayManager.GetLayerImage(output));
+                    }
+                    else
+                    {
+                        view.SetLayerList(layers, input, output);
+                        using Bitmap inputImage = AcquireInputSnapshot(input);
+                        view.SetInputPreview(inputImage);
+                        view.SetOutputPreview(displayManager.GetLayerImage(output));
+                    }
+                    NotifyLayerStateChanged();
+                    return;
+                }
+                if (arithmeticView != null)
+                {
+                    routeInteractionController.RefreshArithmeticLayerState(arithmeticView);
+                }
+                else
+                {
+                    routeInteractionController.RefreshSingleLayerState(view);
+                }
             }
-            else
-            {
-                routeInteractionController.RefreshSingleLayerState(view);
-            }
+            finally { refreshingLayerState = false; }
         }
 
         public void InvalidatePreviewResultForInputChange()
         {
             bool wasRunning = previewExecutionBoundary?.IsRunning == true;
             ClearPreviewResult();
+            workbenchEditor?.InvalidateResult(workbenchSession);
             if (wasRunning)
             {
                 SetStatus("Preview CANCELED / " + VisionToolVerificationText.InspectionJudgmentNotEvaluated + " / input changed");
@@ -324,6 +623,10 @@ namespace OpenVisionLab
 
         public void RunPreview()
         {
+            if (isWorkbenchDocument && (workbenchEditor?.IsActive(workbenchSession) != true || !workbenchEditor.CanUseToolActions)) { return; }
+            if (restoringParameters || capturingParameters) { return; }
+            if (isWorkbenchDocument && !workbenchEditor.CommitPendingEdits()) { return; }
+            VisionToolDebouncedPreviewScheduler.CancelPending(element);
             if (arithmeticView != null)
             {
                 RunArithmeticPreview(arithmeticView.UseOffsetMode);
@@ -337,14 +640,33 @@ namespace OpenVisionLab
             }
 
             ClearPreviewResult();
+            OpenVisionWorkbenchToolViewModel resultOwner = isWorkbenchDocument ? workbenchEditor : null;
+            long resultSession = workbenchSession;
+            VisionPipelineStep resultStep = resultOwner == null ? null : CaptureWorkbenchResultStep();
             previewExecutionBoundary.TryStartSingleInput(
                 ResolveInputLayer(),
                 ResolveOutputLayer(),
                 ResolvePrimaryInputLayer(),
                 normalizeSingleChannelInput,
                 previewExecutionOverrideForTest ?? executePreview,
-                result => ApplyPreviewExecutionResult(result, () => routeInteractionController.RefreshSinglePreviews(view)),
-                () => SetStatus("Preview RUN / processing"));
+                result =>
+                {
+                    if (resultOwner != null && (!ReferenceEquals(workbenchEditor, resultOwner) || workbenchSession != resultSession || !resultOwner.IsActive(resultSession))) { return; }
+                    PublishWorkbenchResult(resultOwner, resultSession, resultStep, result);
+                    ApplyPreviewExecutionResult(result, () => routeInteractionController.RefreshSinglePreviews(view));
+                    if (resultOwner != null && !result.IsTeachingPreview) { VisionToolChromePresenter.RevealWorkbenchResult(element.FindName("toolShell") as FrameworkElement); }
+                },
+                () =>
+                {
+                    SetStatus("Preview RUN / processing");
+                    if (resultOwner != null && ReferenceEquals(workbenchEditor, resultOwner) && workbenchSession == resultSession && resultOwner.IsActive(resultSession))
+                    {
+                        resultOwner.NotifyExecutionStarted(resultSession, resultStep);
+                    }
+                },
+                previewExecutionOverrideForTest == null ? capturePreview : null,
+                resultStep);
+            VisionToolDebouncedPreviewScheduler.CancelPending(element);
         }
 
         public void CreateOutputLayerForTest()
@@ -564,6 +886,12 @@ namespace OpenVisionLab
 
         public VisionPipelineStep AddPipelineStep()
         {
+            if (isWorkbenchDocument)
+            {
+                VisionPipelineStep added = workbenchEditor?.AddCurrent(workbenchSession);
+                if (added == null && workbenchEditor != null) { SetStatus(workbenchEditor.StatusText); }
+                return added;
+            }
             return arithmeticView != null
                 ? pipelineCommandController.AddArithmeticStep()
                 : pipelineCommandController.AddSingleInputStep();
@@ -577,6 +905,9 @@ namespace OpenVisionLab
             }
 
             disposed = true;
+            BindingOperations.ClearBinding(element, OpenVisionWorkbenchThemeBehavior.ThemeNameProperty);
+            if (element.FindName("toolShell") is FrameworkElement themeShell) BindingOperations.ClearBinding(themeShell, OpenVisionWorkbenchThemeBehavior.ThemeNameProperty);
+            DeactivateWorkbenchEditor();
             if (previewExecutionBoundary?.IsRunning == true)
             {
                 SetStatus("Preview CANCELED / " + VisionToolVerificationText.InspectionJudgmentNotEvaluated + " / document disposed");
@@ -595,6 +926,8 @@ namespace OpenVisionLab
             }
 
             nImageVerificationLanguageController?.Dispose();
+            if (workbenchEditor != null) { workbenchEditor.PropertyChanged -= OnNImageContextChanged; }
+            if (workbenchRoot?.Images != null) { workbenchRoot.Images.PropertyChanged -= OnNImageContextChanged; }
             nImageVerificationLanguageController = null;
             eventBinder.Dispose();
             DisposeHostedView();
@@ -623,20 +956,25 @@ namespace OpenVisionLab
                 return;
             }
 
-            string text = OpenVisionLanguageService.T("ToolView.NImageVerification");
-            string tooltip = OpenVisionLanguageService.T("ToolView.NImageVerification.ToolTip");
+            string text = OpenVisionLanguageService.T(isWorkbenchDocument ? "Workbench.Tool.NTest" : "ToolView.NImageVerification");
+            string tooltip = isWorkbenchDocument ? workbenchEditor?.NImageToolTip ?? text : OpenVisionLanguageService.T("ToolView.NImageVerification.ToolTip");
+            if (isWorkbenchDocument) { nImageVerificationShell.NImageVerificationButton.IsEnabled = workbenchEditor?.CanUseToolActions == true && (workbenchRoot?.Images?.Count ?? 0) > 0; }
             nImageVerificationShell.NImageVerificationText.Text = text;
             VisionToolChromePresenter.ApplyTooltip(
                 nImageVerificationShell.NImageVerificationButton,
                 tooltip);
         }
 
+        private void OnNImageContextChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e) => ApplyNImageVerificationLocalization();
+
         private void OnNImageVerificationRequested(object sender, RoutedEventArgs e)
         {
-            if (disposed || createStep == null)
+            if (disposed || nImageWindowOpen || createStep == null || (isWorkbenchDocument && (workbenchEditor?.IsNewTest != true || !workbenchEditor.CanUseToolActions)))
             {
                 return;
             }
+
+            if (isWorkbenchDocument && !workbenchEditor.CommitPendingEdits()) { return; }
 
             VisionToolNImageVerificationController controller =
                 new VisionToolNImageVerificationController(
@@ -644,6 +982,108 @@ namespace OpenVisionLab
                     ResolveRecipeContext().Name,
                     () => createStep("Main", "NImageResult"),
                     normalizeSingleChannelInput);
+            if (isWorkbenchDocument)
+            {
+                var capturedEditor = workbenchEditor;
+                long capturedSession = workbenchSession;
+                string capturedContext = capturedEditor.NImageContextKey;
+                var capturedImages = workbenchRoot?.Images;
+                if (capturedImages == null) { controller.Dispose(); return; }
+                var capturedItems = capturedImages.Images.ToArray();
+                Dictionary<string, (string Path, string Name)> capturedNames = null;
+                Dictionary<string, string> capturedInputs = null;
+                VisionPipeline capturedPlan = null;
+                bool Active() => !disposed && ReferenceEquals(workbenchEditor, capturedEditor) && workbenchSession == capturedSession && capturedEditor.IsActive(capturedSession) && capturedEditor.NImageContextKey == capturedContext && ReferenceEquals(workbenchRoot?.Images, capturedImages);
+                string Identity()
+                {
+                    VisionPipeline plan = capturedEditor.CaptureNImagePipeline(CaptureWorkbenchResultStep());
+                    plan.Name = "NImage_" + string.Concat(toolName.Select(ch => char.IsLetterOrDigit(ch) || ch == '_' || ch == '-' ? ch : '_'));
+                    var values = new System.Text.StringBuilder(capturedContext).Append('|').Append(VisionToolNImageVerificationService.SerializePipeline(plan));
+                    foreach (var item in capturedImages.Images)
+                    {
+                        values.Append('|').Append(item.Path).Append('|').Append(item.Name);
+                        if (!string.IsNullOrWhiteSpace(item.Path))
+                        {
+                            using var stream = System.IO.File.OpenRead(item.Path);
+                            values.Append('|').Append(Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(stream)));
+                        }
+                        else
+                        {
+                            using Bitmap bitmap = AcquireInputSnapshot(VisionRecipeRunner.DefaultInputLayer);
+                            using var stream = new System.IO.MemoryStream();
+                            if (bitmap == null) { throw new InvalidOperationException("Current input snapshot is unavailable."); }
+                            bitmap.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
+                            values.Append('|').Append(Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(stream.ToArray())));
+                        }
+                    }
+                    foreach (string layer in capturedEditor.NImageExternalInputLayers(plan))
+                    {
+                        using Bitmap bitmap = AcquireInputSnapshot(layer);
+                        using var stream = new System.IO.MemoryStream();
+                        if (bitmap == null) { throw new InvalidOperationException("Unavailable input snapshot: " + layer); }
+                        bitmap.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
+                        values.Append('|').Append(layer).Append('|').Append(Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(stream.ToArray())));
+                    }
+                    return Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(values.ToString())));
+                }
+                VisionToolNImageVerificationSession retained = capturedImages.NImageTrialSession;
+                try { if (retained?.InputIdentity != Identity()) { retained = null; } }
+                catch { retained = null; }
+                controller.ConfigureMain(capturedItems.Select(image => image.Path).ToArray(),
+                    () => capturedPlan = capturedEditor.CaptureNImagePipeline(CaptureWorkbenchResultStep()), Active,
+                    (running, stop) => { if (running && Active()) { capturedImages.BeginNImageTrial(); } capturedEditor.SetNImageRunning(capturedSession, running, stop); },
+                    progress =>
+                    {
+                        if (!Active()) { return; }
+                        if (progress.IsStarting)
+                        {
+                            capturedEditor.NotifyNImageAction(capturedSession, "Workbench.Action.NImageProgressFormat", "Running",
+                                capturedNames?.TryGetValue(progress.ImagePath, out var identity) == true ? identity.Name : System.IO.Path.GetFileName(progress.ImagePath), progress.CompletedCount + 1, progress.TotalCount);
+                        }
+                        else { capturedImages.PublishNImageTrial(progress.Row); }
+                    },
+                    (session, failure) =>
+                    {
+                        if (!Active()) { return false; }
+                        string key = !string.IsNullOrEmpty(failure) ? "Workbench.Status.Error" : session?.WasCancelled == true ? "Workbench.Action.NImageStoppedFormat" : "Workbench.Action.NImageCompletedFormat";
+                        string kind = !string.IsNullOrEmpty(failure) || session?.Rows.Any(row => row.IsError) == true ? "Error" : session?.WasCancelled == true ? "Warning" : "";
+                        capturedEditor.NotifyNImageAction(capturedSession, key, kind,
+                            failure, session?.Rows.Count ?? 0, session?.PlannedCount ?? 0, session?.PrefixCount ?? 0);
+                        return capturedImages.RetainNImageTrial(session);
+                    },
+                    () => { if (Active()) { capturedEditor.RequestNImageStop(capturedSession); } },
+                    directory =>
+                    {
+                        capturedNames = new Dictionary<string, (string Path, string Name)>(StringComparer.OrdinalIgnoreCase);
+                        foreach (var item in capturedItems)
+                        {
+                            string path = item.Path;
+                            if (string.IsNullOrWhiteSpace(path))
+                            {
+                                Bitmap bitmap = AcquireInputSnapshot(VisionRecipeRunner.DefaultInputLayer);
+                                if (bitmap == null) { throw new InvalidOperationException("Current input snapshot is unavailable."); }
+                                using (bitmap)
+                                {
+                                    System.IO.Directory.CreateDirectory(System.IO.Path.Combine(directory, "inputs"));
+                                    path = System.IO.Path.Combine(directory, "inputs", "current.png");
+                                    bitmap.Save(path, System.Drawing.Imaging.ImageFormat.Png);
+                                }
+                            }
+                            capturedNames.Add(path, (item.Path, item.Name));
+                        }
+                        capturedInputs = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                        foreach (string layer in capturedEditor.NImageExternalInputLayers(capturedPlan))
+                        {
+                            using Bitmap bitmap = AcquireInputSnapshot(layer);
+                            if (bitmap == null || DisplayManagerImageExtensions.IsPlaceholderBitmap(bitmap)) { throw new InvalidOperationException("Unavailable input snapshot: " + layer); }
+                            System.IO.Directory.CreateDirectory(System.IO.Path.Combine(directory, "inputs"));
+                            string path = System.IO.Path.Combine(directory, "inputs", "aux-" + capturedInputs.Count + ".png");
+                            bitmap.Save(path, System.Drawing.Imaging.ImageFormat.Png);
+                            capturedInputs.Add(layer, path);
+                        }
+                        return capturedNames;
+                    }, capturedItems.Select(item => item.Name).ToArray(), () => capturedInputs, Identity, retained);
+            }
             VisionToolNImageVerificationWindow window =
                 new VisionToolNImageVerificationWindow(controller);
             System.Windows.Window owner = System.Windows.Window.GetWindow(element);
@@ -652,7 +1092,16 @@ namespace OpenVisionLab
                 window.Owner = owner;
             }
 
-            window.ShowDialog();
+            bool followsMainTheme = isWorkbenchDocument && workbenchRoot != null;
+            if (followsMainTheme) { window.SetBinding(OpenVisionWorkbenchThemeBehavior.ThemeNameProperty, new Binding(nameof(workbenchRoot.ThemeName)) { Source = workbenchRoot }); }
+            nImageWindowOpen = true;
+            try { window.ShowDialog(); }
+            finally
+            {
+                if (followsMainTheme) { BindingOperations.ClearBinding(window, OpenVisionWorkbenchThemeBehavior.ThemeNameProperty); }
+                nImageWindowOpen = false;
+                ApplyNImageVerificationLocalization();
+            }
         }
 
         private void DisposeHostedView()
@@ -680,6 +1129,7 @@ namespace OpenVisionLab
 
         private void OnLoadPreviewImageRequested(object sender, VisionToolPreviewImageCommandEventArgs e)
         {
+            VisionToolDebouncedPreviewScheduler.CancelPending(element);
             previewImageCommandController.LoadWithDialog(e.Role);
         }
 
@@ -712,12 +1162,14 @@ namespace OpenVisionLab
 
         private void OnSourceLayerChanged(object sender, EventArgs e)
         {
+            if (TrySetWorkbenchRoute(view.SelectedInputLayer, null, view.SelectedOutputLayer)) { return; }
             InvalidatePreviewResultForInputChange();
             routeInteractionController.HandleSingleInputLayerChanged(view);
         }
 
         private void OnDestinationLayerChanged(object sender, EventArgs e)
         {
+            if (TrySetWorkbenchRoute(view.SelectedInputLayer, null, view.SelectedOutputLayer)) { return; }
             InvalidatePreviewResultForInputChange();
             routeInteractionController.HandleSingleOutputLayerChanged(view);
         }
@@ -749,21 +1201,24 @@ namespace OpenVisionLab
 
         private void OnAddPipelineRequested(object sender, EventArgs e)
         {
-            AddPipelineStep();
+            if (!isWorkbenchDocument) { AddPipelineStep(); }
         }
 
         private void OnArithmeticInputALayerChanged(object sender, EventArgs e)
         {
+            if (TrySetWorkbenchRoute(arithmeticView.SelectedInputLayerA, arithmeticView.SelectedInputLayerB, arithmeticView.SelectedOutputLayer)) { return; }
             routeInteractionController.HandleArithmeticInputALayerChanged(arithmeticView);
         }
 
         private void OnArithmeticInputBLayerChanged(object sender, EventArgs e)
         {
+            if (TrySetWorkbenchRoute(arithmeticView.SelectedInputLayerA, arithmeticView.SelectedInputLayerB, arithmeticView.SelectedOutputLayer)) { return; }
             routeInteractionController.HandleArithmeticInputBLayerChanged(arithmeticView);
         }
 
         private void OnArithmeticOutputLayerChanged(object sender, EventArgs e)
         {
+            if (TrySetWorkbenchRoute(arithmeticView.SelectedInputLayerA, arithmeticView.SelectedInputLayerB, arithmeticView.SelectedOutputLayer)) { return; }
             routeInteractionController.HandleArithmeticOutputLayerChanged(arithmeticView);
         }
 
@@ -797,13 +1252,21 @@ namespace OpenVisionLab
             RunArithmeticPreview(true);
         }
 
+        private Bitmap AcquireInputSnapshot(string layerName)
+        {
+            if (workbenchEditor?.IsActive(workbenchSession) == true && workbenchEditor.TryAcquireInputSnapshot(layerName, out Bitmap snapshot)) { return snapshot; }
+            return displayManager.GetLayerImageSnapshot(layerName);
+        }
+
         private string ResolveInputLayer()
         {
+            if (workbenchEditor?.IsActive(workbenchSession) == true) { return workbenchEditor.InputLayer; }
             return layerRouteController.ResolveInputLayer();
         }
 
         private string ResolveOutputLayer()
         {
+            if (workbenchEditor?.IsActive(workbenchSession) == true) { return workbenchEditor.OutputLayer; }
             return layerRouteController.ResolveOutputLayer();
         }
 
@@ -845,10 +1308,23 @@ namespace OpenVisionLab
         {
             if (arithmeticView != null && role == VisionToolPreviewImageRole.InputB)
             {
+                if (workbenchEditor?.IsActive(workbenchSession) == true)
+                {
+                    return layerRouteController.SelectArithmeticInputLayerBLoadTarget(workbenchEditor.InputLayer, workbenchEditor.InputLayerB, workbenchEditor.OutputLayer);
+                }
                 return layerRouteController.SelectArithmeticInputLayerBLoadTarget();
             }
 
             return ResolveLayerForPreviewRole(role);
+        }
+
+        private void OnPreviewImageLoaded(VisionToolPreviewImageRole role, string layerName)
+        {
+            VisionToolDebouncedPreviewScheduler.CancelPending(element);
+            if (role == VisionToolPreviewImageRole.InputB && workbenchEditor?.IsActive(workbenchSession) == true)
+            {
+                workbenchEditor.SetRoute(workbenchSession, workbenchEditor.InputLayer, layerName, workbenchEditor.OutputLayer);
+            }
         }
 
         private string ResolvePrimaryInputLayer()
@@ -858,15 +1334,49 @@ namespace OpenVisionLab
 
         private void RunArithmeticPreview(bool useOffsetMode)
         {
+            if (isWorkbenchDocument && (workbenchEditor?.IsActive(workbenchSession) != true || !workbenchEditor.CanUseToolActions)) { return; }
+            if (isWorkbenchDocument && !workbenchEditor.CommitPendingEdits()) { return; }
             ClearPreviewResult();
+            VisionToolDebouncedPreviewScheduler.CancelPending(element);
             VisionPipelineStep step = CreateArithmeticStep(useOffsetMode);
+            OpenVisionWorkbenchToolViewModel resultOwner = isWorkbenchDocument ? workbenchEditor : null;
+            long resultSession = workbenchSession;
+            VisionPipelineStep resultStep = resultOwner == null ? null : CaptureWorkbenchResultStep(step);
             OpenVisionNativePreviewExecutionResult result = previewExecutionController.RunArithmetic(
                 step,
                 ResolveArithmeticInputLayerA(),
                 ResolveArithmeticOutputLayer(),
                 ResolvePrimaryInputLayer(),
-                useOffsetMode);
+                useOffsetMode,
+                resultStep,
+                () =>
+                {
+                    if (resultOwner != null && ReferenceEquals(workbenchEditor, resultOwner) && workbenchSession == resultSession && resultOwner.IsActive(resultSession))
+                    {
+                        resultOwner.NotifyExecutionStarted(resultSession, resultStep);
+                    }
+                });
+            VisionToolDebouncedPreviewScheduler.CancelPending(element);
+            if (resultOwner != null && (!ReferenceEquals(workbenchEditor, resultOwner) || workbenchSession != resultSession || !resultOwner.IsActive(resultSession))) { return; }
+            PublishWorkbenchResult(resultOwner, resultSession, resultStep, result);
             ApplyPreviewExecutionResult(result, () => routeInteractionController.RefreshArithmeticPreviews(arithmeticView));
+            if (isWorkbenchDocument) { VisionToolChromePresenter.RevealWorkbenchResult(element.FindName("toolShell") as FrameworkElement); }
+        }
+
+        private static void PublishWorkbenchResult(OpenVisionWorkbenchToolViewModel owner, long session, VisionPipelineStep step, OpenVisionNativePreviewExecutionResult result)
+        {
+            if (owner == null || !owner.IsActive(session) || step == null || result == null) { return; }
+            if (result.IsTeachingPreview) { owner.InvalidateResult(session); return; }
+            VisionPipelineStepResultSummary summary = result.Summary ?? OpenVisionNativePreviewExecutionController.CaptureSummary(step, null, result.Status);
+            if (!result.Success)
+            {
+                if (summary.Success || string.IsNullOrEmpty(summary.Message)) { summary.Message = result.Status; }
+                summary.Success = false;
+                summary.IsToolError = !result.Canceled;
+                summary.IsAcceptanceNg = false;
+            }
+            if (result.Canceled) { summary.ExecutionState = VisionPipelineResultSummaryService.CancelledState; }
+            owner.PublishResult(session, summary, step);
         }
 
         private void ClearPreviewResult()
@@ -918,7 +1428,7 @@ namespace OpenVisionLab
         private VisionPipelineStep CreateArithmeticStep(bool useOffsetMode)
         {
             string inputLayerA = ResolveArithmeticInputLayerA();
-            string inputLayerB = useOffsetMode ? string.Empty : ResolveArithmeticInputLayerB();
+            string inputLayerB = useOffsetMode && !isWorkbenchDocument ? string.Empty : ResolveArithmeticInputLayerB();
             string outputLayer = ResolveArithmeticOutputLayer();
             return VisionPipelineStepBuilder.FromArithmetic(
                 "Arithmetic",
@@ -939,16 +1449,19 @@ namespace OpenVisionLab
 
         private string ResolveArithmeticInputLayerA()
         {
+            if (workbenchEditor?.IsActive(workbenchSession) == true) { return workbenchEditor.InputLayer; }
             return layerRouteController.ResolveArithmeticInputLayerA();
         }
 
         private string ResolveArithmeticInputLayerB()
         {
+            if (workbenchEditor?.IsActive(workbenchSession) == true) { return workbenchEditor.InputLayerB; }
             return layerRouteController.ResolveArithmeticInputLayerB();
         }
 
         private string ResolveArithmeticOutputLayer()
         {
+            if (workbenchEditor?.IsActive(workbenchSession) == true) { return workbenchEditor.OutputLayer; }
             return layerRouteController.ResolveArithmeticOutputLayer();
         }
 
@@ -956,6 +1469,26 @@ namespace OpenVisionLab
         {
             LastStatusText = status ?? string.Empty;
             statusPresenter.Present(status);
+        }
+
+        private bool TrySetWorkbenchRoute(string input, string inputB, string output)
+        {
+            if (!isWorkbenchDocument) { return false; }
+            if (restoringParameters || capturingParameters || refreshingLayerState || workbenchEditor?.IsActive(workbenchSession) != true) { return true; }
+            bool accepted = workbenchEditor.SetRoute(workbenchSession, input, inputB, output);
+            if (accepted) { RefreshLayerState(); }
+            else
+            {
+                OpenVisionWorkbenchToolViewModel rejectedEditor = workbenchEditor;
+                long rejectedSession = workbenchSession;
+                // Restore after ComboBox finishes its editable-text transaction; it can overwrite a synchronous rollback.
+                element.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    if (!disposed && ReferenceEquals(workbenchEditor, rejectedEditor) && workbenchSession == rejectedSession
+                        && rejectedEditor.IsActive(rejectedSession)) { RefreshLayerState(); }
+                }));
+            }
+            return true;
         }
 
         private void NotifyLayerStateChanged()

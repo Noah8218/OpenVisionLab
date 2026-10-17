@@ -5,17 +5,86 @@
                                                xmlns:local="clr-namespace:OpenVisionLab"
                                                MinWidth="860"
                                                MinHeight="560"
-                                               Background="#EEF2F6">
+                                               Background="{DynamicResource OpenVision.Workbench.PanelBrush}">
     <local:VisionToolSingleInputCustomToolViewBase.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <local:SharedResourceDictionary Source="../Tooling/Presentation/VisionToolWpfTheme.xaml" />
+                <ResourceDictionary Source="../Tooling/Presentation/VisionToolWpfTheme.xaml" />
             </ResourceDictionary.MergedDictionaries>
-            <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+            <Style x:Key="KernelNumberStyle" TargetType="TextBox" BasedOn="{StaticResource OpenVision.ControlTextBoxStyle}">
+                <Style.Resources>
+                    <SolidColorBrush x:Key="OpenVision.ControlFocusBrush" Color="{Binding Color, Source={StaticResource VisionTool.AccentBrush}}" />
+                    <SolidColorBrush x:Key="OpenVision.ControlDisabledBrush" Color="{Binding Color, Source={StaticResource VisionTool.PanelBrush}}" />
+                    <SolidColorBrush x:Key="OpenVision.ControlDisabledTextBrush" Color="{Binding Color, Source={StaticResource VisionTool.DisabledTextBrush}}" />
+                    <SolidColorBrush x:Key="OpenVision.ControlDisabledBorderBrush" Color="{Binding Color, Source={StaticResource VisionTool.FieldBorderBrush}}" />
+                    <SolidColorBrush x:Key="OpenVision.ControlErrorBrush" Color="{Binding Color, Source={StaticResource VisionTool.StatusErrorBrush}}" />
+                </Style.Resources>
                 <Setter Property="Width" Value="72" />
+                <Setter Property="Height" Value="30" />
+                <Setter Property="MinHeight" Value="30" />
+                <Setter Property="Padding" Value="6,3" />
+                <Setter Property="HorizontalContentAlignment" Value="Center" />
+                <Setter Property="Background" Value="{DynamicResource OpenVision.Workbench.RaisedBrush}" />
+                <Setter Property="Foreground" Value="{DynamicResource OpenVision.Workbench.TextBrush}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource OpenVision.Workbench.FieldBorderBrush}" />
             </Style>
             <Style TargetType="RadioButton" BasedOn="{StaticResource {x:Type RadioButton}}">
                 <Setter Property="Margin" Value="0,0,18,0" />
+            </Style>
+            <Style x:Key="KernelPresetStyle" TargetType="Button" BasedOn="{StaticResource VisionTool.ButtonStyle}">
+                <Setter Property="Width" Value="72" />
+                <Setter Property="Height" Value="30" />
+                <Setter Property="MinHeight" Value="30" />
+                <Setter Property="Padding" Value="4,2" />
+                <Setter Property="Background" Value="{DynamicResource OpenVision.Workbench.RaisedBrush}" />
+                <Setter Property="Foreground" Value="{DynamicResource OpenVision.Workbench.TextBrush}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource OpenVision.Workbench.FieldBorderBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+            </Style>
+            <Style x:Key="KernelPreset3Style" TargetType="Button" BasedOn="{StaticResource KernelPresetStyle}">
+                <Setter Property="Content" Value="3 × 3" />
+                <Style.Triggers>
+                    <MultiDataTrigger>
+                        <MultiDataTrigger.Conditions>
+                            <Condition Binding="{Binding KernelWidth}" Value="3" />
+                            <Condition Binding="{Binding KernelHeight}" Value="3" />
+                        </MultiDataTrigger.Conditions>
+                        <Setter Property="BorderThickness" Value="2" />
+                        <Setter Property="BorderBrush" Value="{DynamicResource OpenVision.Workbench.AccentBrush}" />
+                        <Setter Property="Background" Value="{DynamicResource OpenVision.Workbench.AccentSoftBrush}" />
+                        <Setter Property="Content" Value="✓ 3 × 3" />
+                    </MultiDataTrigger>
+                </Style.Triggers>
+            </Style>
+            <Style x:Key="KernelPreset5Style" TargetType="Button" BasedOn="{StaticResource KernelPresetStyle}">
+                <Setter Property="Content" Value="5 × 5" />
+                <Style.Triggers>
+                    <MultiDataTrigger>
+                        <MultiDataTrigger.Conditions>
+                            <Condition Binding="{Binding KernelWidth}" Value="5" />
+                            <Condition Binding="{Binding KernelHeight}" Value="5" />
+                        </MultiDataTrigger.Conditions>
+                        <Setter Property="BorderThickness" Value="2" />
+                        <Setter Property="BorderBrush" Value="{DynamicResource OpenVision.Workbench.AccentBrush}" />
+                        <Setter Property="Background" Value="{DynamicResource OpenVision.Workbench.AccentSoftBrush}" />
+                        <Setter Property="Content" Value="✓ 5 × 5" />
+                    </MultiDataTrigger>
+                </Style.Triggers>
+            </Style>
+            <Style x:Key="KernelPreset7Style" TargetType="Button" BasedOn="{StaticResource KernelPresetStyle}">
+                <Setter Property="Content" Value="7 × 7" />
+                <Style.Triggers>
+                    <MultiDataTrigger>
+                        <MultiDataTrigger.Conditions>
+                            <Condition Binding="{Binding KernelWidth}" Value="7" />
+                            <Condition Binding="{Binding KernelHeight}" Value="7" />
+                        </MultiDataTrigger.Conditions>
+                        <Setter Property="BorderThickness" Value="2" />
+                        <Setter Property="BorderBrush" Value="{DynamicResource OpenVision.Workbench.AccentBrush}" />
+                        <Setter Property="Background" Value="{DynamicResource OpenVision.Workbench.AccentSoftBrush}" />
+                        <Setter Property="Content" Value="✓ 7 × 7" />
+                    </MultiDataTrigger>
+                </Style.Triggers>
             </Style>
         </ResourceDictionary>
     </local:VisionToolSingleInputCustomToolViewBase.Resources>
@@ -34,9 +103,9 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="12" />
-                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-                <GroupBox x:Name="gbOperation" Grid.Row="0" Header="Operation" Padding="12" Foreground="{StaticResource PrimaryTextBrush}">
+                <GroupBox x:Name="gbOperation" Grid.Row="0" Header="Operation" Padding="12" Foreground="{DynamicResource OpenVision.Workbench.TextBrush}">
                                 <UniformGrid Columns="4" Rows="2">
                                     <Button x:Name="btnMorphOperationErode" Content="Erode" Tag="Erode" Margin="0,0,8,10" />
                                     <Button x:Name="btnMorphOperationDilate" Content="Dilate" Tag="Dilate" Margin="0,0,8,10" />
@@ -49,7 +118,7 @@
                                 </UniformGrid>
                             </GroupBox>
 
-                <GroupBox x:Name="gbKernel" Grid.Row="2" Header="Kernel" Padding="12" Foreground="{StaticResource PrimaryTextBrush}">
+                <GroupBox x:Name="gbKernel" Grid.Row="2" Header="Kernel" Padding="12" Foreground="{DynamicResource OpenVision.Workbench.TextBrush}">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -60,17 +129,18 @@
                         </Grid.RowDefinitions>
 
                         <WrapPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,-8">
-                            <StackPanel x:Name="panelKernelWidth" Width="136" Margin="0,0,16,12">
-                                <TextBlock x:Name="lblKernelWidth" Text="Width" TextTrimming="CharacterEllipsis" Style="{StaticResource SectionTitleStyle}" />
-                                <TextBox x:Name="txtWidth" MinWidth="72" HorizontalAlignment="Left" Text="{Binding KernelWidth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" local:VisionToolTextInputBehavior.Mode="UnsignedInteger" />
+                            <StackPanel x:Name="panelKernelWidth" Orientation="Horizontal" Margin="0,0,0,8">
+                                <TextBlock x:Name="lblKernelWidth" Text="Width" Margin="0,0,6,0" VerticalAlignment="Center" Style="{StaticResource SectionTitleStyle}" />
+                                <TextBox x:Name="txtWidth" Style="{StaticResource KernelNumberStyle}" MinWidth="72" HorizontalAlignment="Left" Text="{Binding KernelWidth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" local:VisionToolTextInputBehavior.Mode="UnsignedInteger" />
                             </StackPanel>
 
-                            <StackPanel x:Name="panelKernelHeight" Width="136" Margin="0,0,16,12">
-                                <TextBlock x:Name="lblKernelHeight" Text="Height" TextTrimming="CharacterEllipsis" Style="{StaticResource SectionTitleStyle}" />
-                                <TextBox x:Name="txtHeight" MinWidth="72" HorizontalAlignment="Left" Text="{Binding KernelHeight, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" local:VisionToolTextInputBehavior.Mode="UnsignedInteger" />
+                            <TextBlock x:Name="kernelDimensionSeparator" Text="×" Margin="6,0,6,8" VerticalAlignment="Center" Foreground="{DynamicResource OpenVision.Workbench.SecondaryTextBrush}" />
+                                        <StackPanel x:Name="panelKernelHeight" Orientation="Horizontal" Margin="0,0,12,8">
+                                <TextBlock x:Name="lblKernelHeight" Text="Height" Margin="0,0,6,0" VerticalAlignment="Center" Style="{StaticResource SectionTitleStyle}" />
+                                <TextBox x:Name="txtHeight" Style="{StaticResource KernelNumberStyle}" MinWidth="72" HorizontalAlignment="Left" Text="{Binding KernelHeight, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" local:VisionToolTextInputBehavior.Mode="UnsignedInteger" />
                             </StackPanel>
 
-                            <StackPanel x:Name="panelKernelLock" Width="90" Orientation="Horizontal" VerticalAlignment="Bottom" Margin="0,19,16,12">
+                            <StackPanel x:Name="panelKernelLock" Visibility="{Binding Visibility, ElementName=chkLockSize}" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,8">
                                 <CheckBox x:Name="chkLockSize"
                                           Content="W=H"
                                           IsChecked="True"
@@ -79,9 +149,9 @@
                         </WrapPanel>
 
                         <StackPanel x:Name="panelKernelPresets" Grid.Row="2" Orientation="Horizontal" VerticalAlignment="Center">
-                            <Button x:Name="btnKernelPreset3" Content="3 x 3" Tag="3" MinWidth="64" Margin="0,0,8,0" />
-                            <Button x:Name="btnKernelPreset5" Content="5 x 5" Tag="5" MinWidth="64" Margin="0,0,8,0" />
-                            <Button x:Name="btnKernelPreset7" Content="7 x 7" Tag="7" MinWidth="64" />
+                            <Button x:Name="btnKernelPreset3" Style="{StaticResource KernelPreset3Style}" Tag="3" MinWidth="64" Margin="0,0,8,0" />
+                            <Button x:Name="btnKernelPreset5" Style="{StaticResource KernelPreset5Style}" Tag="5" MinWidth="64" Margin="0,0,8,0" />
+                            <Button x:Name="btnKernelPreset7" Style="{StaticResource KernelPreset7Style}" Tag="7" MinWidth="64" />
                         </StackPanel>
 
                         <Grid x:Name="panelShape" Grid.Row="4" VerticalAlignment="Center">

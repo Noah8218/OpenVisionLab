@@ -1,6 +1,9 @@
 using OpenVisionLab.Core;
 using System;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Media;
 using static OpenVisionLab.DEFINE;
@@ -24,6 +27,11 @@ namespace OpenVisionLab
         private readonly Action returnToRecipeManager;
         private readonly Action<string, string, int> openPipelineStepEditor;
         private readonly Action<string> openLearnForToolType;
+        private readonly Action expandToolPanel;
+        private OpenVisionWorkbenchToolViewModel workbenchEditor;
+        private OpenVisionWorkbenchViewModel workbenchTheme;
+        private Func<string, OpenVisionShellNavItem> resolveWorkbenchTool;
+        private int workbenchStepIndex = -1;
 
         public OpenVisionShellHostToolWindowController(
             IDisplayManager displayManager,
@@ -40,7 +48,8 @@ namespace OpenVisionLab
             Func<string, bool> openWorkspaceSampleByName,
             Action returnToRecipeManager,
             Action<string, string, int> openPipelineStepEditor,
-            Action<string> openLearnForToolType)
+            Action<string> openLearnForToolType,
+            Action expandToolPanel)
         {
             this.displayManager = displayManager ?? throw new ArgumentNullException(nameof(displayManager));
             this.documentController = documentController ?? throw new ArgumentNullException(nameof(documentController));
@@ -57,9 +66,31 @@ namespace OpenVisionLab
             this.returnToRecipeManager = returnToRecipeManager ?? throw new ArgumentNullException(nameof(returnToRecipeManager));
             this.openPipelineStepEditor = openPipelineStepEditor ?? throw new ArgumentNullException(nameof(openPipelineStepEditor));
             this.openLearnForToolType = openLearnForToolType ?? throw new ArgumentNullException(nameof(openLearnForToolType));
+            this.expandToolPanel = expandToolPanel ?? throw new ArgumentNullException(nameof(expandToolPanel));
         }
 
         public OpenVisionToolOpenTiming LastTiming { get; private set; }
+
+        internal void AttachWorkbenchEditor(OpenVisionWorkbenchToolViewModel editor, Func<string, OpenVisionShellNavItem> resolveTool, OpenVisionWorkbenchViewModel theme = null)
+        {
+            workbenchEditor = editor ?? throw new ArgumentNullException(nameof(editor));
+            workbenchTheme = theme;
+            resolveWorkbenchTool = resolveTool ?? throw new ArgumentNullException(nameof(resolveTool));
+            workbenchEditor.OpenStepRequested = OpenWorkbenchStep;
+            workbenchEditor.OpenTestRequested = toolName => ShowSelectedTool(resolveWorkbenchTool(toolName));
+            workbenchEditor.OpenLearnRequested = openLearnForToolType;
+        }
+
+        private void OpenWorkbenchStep(int index)
+        {
+            if (workbenchEditor?.CanChangeSelection != true) { return; }
+            string toolName = workbenchEditor?.GetStepToolType(index);
+            OpenVisionShellNavItem item = resolveWorkbenchTool?.Invoke(toolName);
+            if (item == null) { return; }
+            workbenchStepIndex = index;
+            try { ShowSelectedTool(item); }
+            finally { workbenchStepIndex = -1; }
+        }
 
         public bool HasPreparedPipelineReview =>
             documentController.HasPipelineReviewFor(ResolveRecipeContext());
@@ -88,8 +119,11 @@ namespace OpenVisionLab
 
             phaseStopwatch.Restart();
             bool nativeDocumentWasCached = documentController.NativeToolDocuments.Contains(item.Menu);
-            if (documentController.TryActivateNativeTool(item.Menu, displayManager, ResolveRecipeContext(), out OpenVisionNativeToolDocument nativeDocument))
+            OpenVisionNativeToolDocument nativeDocument = documentController.ActiveNativeDocument;
+            bool reuseEditor = workbenchStepIndex >= 0 && nativeDocument?.CanReuseWorkbenchEditor(workbenchEditor, workbenchStepIndex, workbenchTheme) == true;
+            if (reuseEditor || documentController.TryActivateNativeTool(item.Menu, displayManager, ResolveRecipeContext(), out nativeDocument))
             {
+                if (reuseEditor) { nativeDocument.ApplyRecipeContext(ResolveRecipeContext()); }
                 timing.Path = "Native";
                 timing.ActivateDocumentMs = phaseStopwatch.ElapsedMilliseconds;
                 timing.Document = nativeDocument.View?.GetType().Name ?? nativeDocument.GetType().Name;
@@ -97,8 +131,13 @@ namespace OpenVisionLab
                     layerViewerController.OpenToolPreview,
                     layerViewerController.RefreshToolPreview,
                     layerViewerController.CloseToolPreview);
+                bool editorRefreshedLayerState = false;
+                if (workbenchEditor != null && !reuseEditor)
+                {
+                    editorRefreshedLayerState = nativeDocument.ActivateWorkbenchEditor(workbenchEditor, item, workbenchStepIndex, workbenchTheme);
+                }
                 phaseStopwatch.Restart();
-                nativeDocument.RefreshLayerState();
+                if (!reuseEditor && !editorRefreshedLayerState) { nativeDocument.RefreshLayerState(); }
                 if (!nativeDocumentWasCached)
                 {
                     WarmPrewarmedNativeToolDocument(nativeDocument);
@@ -107,9 +146,9 @@ namespace OpenVisionLab
                 phaseStopwatch.Restart();
                 Size nativeToolSize = OpenVisionNativeToolPrewarmPolicy.GetPreferredWindowSize(item.Menu);
                 timing.ResolveSizeMs = phaseStopwatch.ElapsedMilliseconds;
-                ShowWpfToolWindow(nativeDocument.View, item.Title, nativeToolSize.Width, nativeToolSize.Height, timing, preferDockedWhenActive: true);
+                ShowWpfToolWindow(nativeDocument.View, workbenchEditor?.IsOpen == true ? workbenchEditor.Title : OpenVisionShellCommandCatalog.DisplayName(item.Menu), nativeToolSize.Width, nativeToolSize.Height, timing, preferDocked: true);
                 phaseStopwatch.Restart();
-                CompleteToolSelection(item.Title, HasDisplayablePreviewResult(nativeDocument));
+                CompleteToolSelection(item.Title, HasDisplayablePreviewResult(nativeDocument), refreshLayerRows: false);
                 timing.CompleteSelectionMs = phaseStopwatch.ElapsedMilliseconds;
                 timing.TotalMs = totalStopwatch.ElapsedMilliseconds;
                 timing.DetailText = OpenVisionToolOpenProfiler.Consume();
@@ -163,6 +202,65 @@ namespace OpenVisionLab
             timing.TotalMs = totalStopwatch.ElapsedMilliseconds;
             timing.DetailText = OpenVisionToolOpenProfiler.Consume();
             LastTiming = timing;
+            return true;
+        }
+
+        public bool ShowHistoricalPipelineReview(OpenVisionRecipeRunEvidence evidence)
+        {
+            if (evidence?.DefaultDrawing == null)
+            {
+                return false;
+            }
+
+            string recipeName = string.IsNullOrWhiteSpace(evidence.RecipeName)
+                ? "Stored recipe"
+                : evidence.RecipeName;
+            string pipelineName = string.IsNullOrWhiteSpace(evidence.PipelineName)
+                ? VisionPipelineAppendService.DefaultPipelineName
+                : evidence.PipelineName;
+            OpenVisionRecipeContext recipeContext = new OpenVisionRecipeContext(
+                id: recipeName,
+                name: recipeName,
+                pipelineName: pipelineName,
+                sourcePath: string.Empty,
+                isDirty: false,
+                activeLayerName: "Stored evidence",
+                lastReviewState: evidence.RunRecordId);
+            OpenVisionPipelineReviewDocument document = CreatePipelineReviewDocument(
+                recipeContext,
+                isHistoricalRunReview: true);
+            try
+            {
+                document.SetHistoricalRunEvidence(evidence);
+            }
+            catch (Exception exception) when (
+                exception is ArgumentException
+                || exception is IOException
+                || exception is ExternalException
+                || exception is InvalidOperationException)
+            {
+                Debug.WriteLine("Could not load historical Pipeline Review evidence: " + exception);
+                document.Dispose();
+                return false;
+            }
+
+            if (!documentController.TryActivateHistoricalPipelineReview(document))
+            {
+                document.Dispose();
+                return false;
+            }
+
+            toolWindowLifecycleController.PrepareForToolSelection(VISION_MENU.Pipeline);
+            string title = OpenVisionLanguageService.T("PipelineReview.Title")
+                + " · "
+                + OpenVisionRecipeText.Local("과거 기록", "Stored result");
+            if (!ShowDockedDocumentWorkspace(document.View, title, 1180, 760, null))
+            {
+                documentController.ReturnFromHistoricalPipelineReview();
+                return false;
+            }
+
+            setActiveDocumentText(title);
             return true;
         }
 
@@ -251,9 +349,14 @@ namespace OpenVisionLab
                 lastReviewState: string.Empty);
         }
 
-        private OpenVisionPipelineReviewDocument CreatePipelineReviewDocument(OpenVisionRecipeContext recipeContext)
+        private OpenVisionPipelineReviewDocument CreatePipelineReviewDocument(
+            OpenVisionRecipeContext recipeContext,
+            bool isHistoricalRunReview = false)
         {
-            OpenVisionPipelineReviewDocument document = new OpenVisionPipelineReviewDocument(displayManager, recipeContext);
+            OpenVisionPipelineReviewDocument document = new OpenVisionPipelineReviewDocument(
+                displayManager,
+                recipeContext,
+                isHistoricalRunReview);
             document.OpenWorkspaceSampleRequested += OnPipelineReviewOpenWorkspaceSampleRequested;
             document.ReturnToRecipeRequested += OnPipelineReviewReturnToRecipeRequested;
             document.OpenSelectedToolLearnRequested += OnPipelineReviewOpenSelectedToolLearnRequested;
@@ -268,7 +371,7 @@ namespace OpenVisionLab
 
         private void ShowWpfToolWindow(FrameworkElement content, string title, double width, double height, OpenVisionToolOpenTiming timing)
         {
-            ShowWpfToolWindow(content, title, width, height, timing, preferDockedWhenActive: false);
+            ShowWpfToolWindow(content, title, width, height, timing, preferDocked: false);
         }
 
         private void ShowWpfToolWindow(
@@ -277,13 +380,14 @@ namespace OpenVisionLab
             double width,
             double height,
             OpenVisionToolOpenTiming timing,
-            bool preferDockedWhenActive,
+            bool preferDocked,
             bool applyToolDockMode = true)
         {
             Stopwatch phaseStopwatch = Stopwatch.StartNew();
             FrameworkElement preparedContent = PrepareHostedWpfDocument(content);
-            if (preferDockedWhenActive && toolWindowLifecycleController.IsDockedToolInspectorVisible)
+            if (preferDocked)
             {
+                expandToolPanel();
                 ShowDockedToolWindow(preparedContent, title, width, height, timing);
                 return;
             }

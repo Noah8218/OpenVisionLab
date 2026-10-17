@@ -2,12 +2,14 @@ using OpenVisionLab.Vision2D;
 using OpenVisionLab.Vision2D.Pipeline;
 using OpenVisionLab.Vision2D.Property;
 using OpenVisionLab.Mvvm;
+using OpenVisionLab.Logging;
 using OpenVisionLab.Vision._1._Tools.OpenCV;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
@@ -26,6 +28,10 @@ namespace OpenVisionLab
 
         private readonly Func<string> currentRecipeProvider;
         private readonly Action<string> switchRecipe;
+        private readonly Func<string, bool> saveRuntimeRecipeCopy;
+        private readonly Func<string> recipeDescriptionProvider;
+        private readonly Action prepareRecipeSave;
+        private readonly Func<long> savedRevisionProvider;
         private readonly Action refreshAfterSwitch;
         private readonly Func<Task> waitForRecipeSwitchCompletion;
         private readonly Func<string, bool> confirmDeleteRecipe;
@@ -52,6 +58,12 @@ namespace OpenVisionLab
         private readonly Func<OpenVisionRecipeRunEvidence, bool> openSelectedBatchRunEvidence;
         private readonly Action openPinArrayGapValidationRuns;
         private readonly Action openPipelineXmlSteps;
+        private readonly Action closeRecipeManager;
+        private readonly Action openRecipeManagerStepSettings;
+        private readonly Action openRecipeManagerValidationDetail;
+        private readonly Action<string> openMainRecipeWork;
+        private readonly Action restoreRecipeManagerOpenToggle;
+        private readonly Action restoreRecipeManagerAdvancedReviewToggle;
         private readonly Action<VISION_MENU> selectStepTool;
         private readonly Func<bool> commitSelectedStepEdit;
         private readonly Func<bool> saveRecipe;
@@ -101,6 +113,11 @@ namespace OpenVisionLab
             new OpenVisionRecipeExecutionSessionViewModel();
         private string selectedRecipeName = string.Empty;
         private string recipeFilterText = string.Empty;
+        private int recipeManagerSortIndex;
+        private IReadOnlyDictionary<string, string> recipeManagerLibraryDetails = new Dictionary<string, string>();
+        private IReadOnlyList<OpenVisionRecipeValidationSetOption> recipeManagerValidationSets = Array.Empty<OpenVisionRecipeValidationSetOption>();
+        private IReadOnlyList<OpenVisionRecipeBatchRunOption> recipeManagerRecentRuns = Array.Empty<OpenVisionRecipeBatchRunOption>();
+        private string recipeManagerValidationReadStatus = string.Empty;
         private string pipelineFilterText = string.Empty;
         private bool showRecentBatchNgOnly;
         private bool showRecentBatchReviewQueueOnly;
@@ -176,6 +193,8 @@ namespace OpenVisionLab
         private string meanIntentMinimumText = "185";
         private string meanIntentMaximumText = "220";
         private string llmPromptText = string.Empty;
+        private IReadOnlyList<KeyValuePair<OpenVisionRecipePipelineStepPreview, string>> llmDraftReviewRows = Array.Empty<KeyValuePair<OpenVisionRecipePipelineStepPreview, string>>();
+        private string validatedLlmDraftName = string.Empty;
         private string llmXmlDraftText = string.Empty;
         private string llmReferenceImagePath = string.Empty;
         private string llmXmlDraftValidationReport = string.Empty;
@@ -219,6 +238,7 @@ namespace OpenVisionLab
             new OpenVisionRecipePinArrayGapValidationIdentityOwner();
         private readonly OpenVisionRecipeValidationSetSelectionOwner validationSetSelectionOwner;
         private readonly OpenVisionRecipeStepEditLoader stepEditLoader = new OpenVisionRecipeStepEditLoader();
+        private OpenVisionWorkbenchPipelineViewModel workbenchPipeline;
         private readonly OpenVisionRecipeStepPreviewNavigationOwner stepPreviewNavigationOwner =
             new OpenVisionRecipeStepPreviewNavigationOwner();
         private readonly OpenVisionRecipePipelineExchangeUseCase pipelineExchangeUseCase = new OpenVisionRecipePipelineExchangeUseCase();
@@ -237,7 +257,21 @@ namespace OpenVisionLab
         private bool isGuidedSetupDraftStale;
         private bool isRefreshingOptions;
         private bool isSelectingRecipe;
+        private long mainRecipeOpenVersion;
         private bool isSwitchingRecipe;
+        private bool hasRecipeSaveFailure;
+        private string saveActionKey = string.Empty;
+        private string transitionActionKey = string.Empty;
+        private string transitionActionName = string.Empty;
+        private bool isRecipeManagerDetailContextActive;
+        private string recipeManagerSelectedRecipeName = string.Empty;
+        private string recipeManagerSelectedPipelineName = string.Empty;
+        private IReadOnlyList<string> recipeManagerSelectedPipelineOptions = Array.Empty<string>();
+        private IReadOnlyList<OpenVisionRecipePipelineOption> recipeManagerPipelineOptions = Array.Empty<OpenVisionRecipePipelineOption>();
+        private OpenVisionRecipePipelineOption recipeManagerSelectedPipelineOption;
+        private string recipeManagerPipelineEditName = string.Empty;
+        private bool isOpeningRecipeManagerWork;
+        private OpenVisionRecipeManagerSummary recipeManagerSelectedSummary = OpenVisionRecipeManagerSummary.Empty;
         private OpenVisionRecipePipelineOption selectedPipelineOption;
         private OpenVisionRecipeSampleOption selectedSampleOption;
         private OpenVisionRecipePairSampleRunSummary selectedPairSampleResult;
@@ -284,10 +318,24 @@ namespace OpenVisionLab
             Func<bool> clipboardContainsText = null,
             Func<string> readClipboardText = null,
             Func<Task> yieldToUi = null,
-            Action flushUi = null)
+            Action flushUi = null,
+            Action closeRecipeManager = null,
+            Action openRecipeManagerStepSettings = null,
+            Action openRecipeManagerValidationDetail = null,
+            Action restoreRecipeManagerOpenToggle = null,
+            Action restoreRecipeManagerAdvancedReviewToggle = null,
+            Action<string> openMainRecipeWork = null,
+            Func<string, bool> saveRuntimeRecipeCopy = null,
+            Func<string> recipeDescriptionProvider = null,
+            Action prepareRecipeSave = null,
+            Func<long> savedRevisionProvider = null)
         {
             this.currentRecipeProvider = currentRecipeProvider ?? throw new ArgumentNullException(nameof(currentRecipeProvider));
             this.switchRecipe = switchRecipe ?? throw new ArgumentNullException(nameof(switchRecipe));
+            this.saveRuntimeRecipeCopy = saveRuntimeRecipeCopy;
+            this.recipeDescriptionProvider = recipeDescriptionProvider ?? (() => string.Empty);
+            this.prepareRecipeSave = prepareRecipeSave ?? (() => { });
+            this.savedRevisionProvider = savedRevisionProvider ?? (() => 0);
             this.refreshAfterSwitch = refreshAfterSwitch ?? throw new ArgumentNullException(nameof(refreshAfterSwitch));
             validationSetSelectionOwner = new OpenVisionRecipeValidationSetSelectionOwner(validationSetDocumentOwner);
             this.waitForRecipeSwitchCompletion = waitForRecipeSwitchCompletion ?? (() => Task.CompletedTask);
@@ -315,6 +363,12 @@ namespace OpenVisionLab
             this.openSelectedBatchRunEvidence = openSelectedBatchRunEvidence ?? (_ => false);
             this.openPinArrayGapValidationRuns = openPinArrayGapValidationRuns ?? (() => { });
             this.openPipelineXmlSteps = openPipelineXmlSteps ?? (() => { });
+            this.closeRecipeManager = closeRecipeManager ?? (() => { });
+            this.openRecipeManagerStepSettings = openRecipeManagerStepSettings ?? (() => { });
+            this.openRecipeManagerValidationDetail = openRecipeManagerValidationDetail ?? (() => { });
+            this.openMainRecipeWork = openMainRecipeWork ?? (_ => { });
+            this.restoreRecipeManagerOpenToggle = restoreRecipeManagerOpenToggle ?? (() => { });
+            this.restoreRecipeManagerAdvancedReviewToggle = restoreRecipeManagerAdvancedReviewToggle ?? (() => { });
             this.qualifiedSnapshotController =
                 qualifiedSnapshotController
                 ?? new OpenVisionRecipeQualifiedSnapshotController();
@@ -335,7 +389,7 @@ namespace OpenVisionLab
             recipePipelineOptionProjectionOwner = new OpenVisionRecipePipelineOptionProjectionOwner();
             pendingEditTransitionController = new OpenVisionRecipePendingEditTransitionController(
                 decidePendingEdit ?? (_ => OpenVisionRecipePendingEditDecision.Cancel),
-                TryApplySelectedStepParameters,
+                () => workbenchPipeline == null ? TryApplySelectedStepParameters() : TrySaveSelectedRecipe(),
                 ClearSelectedStepEdit);
             selectedStepEditSession.PropertyChanged += OnSelectedStepEditSessionPropertyChanged;
             executionSession.PropertyChanging += OnExecutionSessionPropertyChanging;
@@ -365,10 +419,17 @@ namespace OpenVisionLab
             DuplicateRecipeCommand = new RelayCommand(DuplicateSelectedRecipe, CanDuplicateSelectedRecipe);
             RenameRecipeCommand = new RelayCommand(RenameSelectedRecipe, CanRenameSelectedRecipe);
             DeleteRecipeCommand = new RelayCommand(DeleteSelectedRecipe, CanDeleteSelectedRecipe);
+            CancelRecipeNameEditCommand = new RelayCommand(() => EditRecipeName = RecipeManagerSelectedRecipeName);
+            ManageBrowsedPipelineCommand = new RelayCommand<string>(ManageBrowsedPipeline, CanManageBrowsedPipeline);
+            CancelPipelineNameEditCommand = new RelayCommand(() => RecipeManagerPipelineEditName = RecipeManagerSelectedPipelineName);
+            OpenMainRecentRecipeCommand = new RelayCommand<string>(async name => { if (CanOpenMainRecentRecipe(name)) { await SelectRecipeAsync(name); } }, CanOpenMainRecentRecipe);
             SaveRecipeCommand = new RelayCommand(SaveSelectedRecipe, CanUseSelectedRecipe);
             ImportPipelineXmlCommand = new RelayCommand(ImportPipelineXml, CanUseSelectedRecipe);
             ExportPipelineXmlCommand = new RelayCommand(ExportActivePipelineXml, CanUseSelectedRecipe);
             ExportRecipeReviewBundleCommand = new RelayCommand(ExportActivePipelineReviewBundle, CanUseSelectedRecipe);
+            ImportBrowsedPipelineXmlCommand = new RelayCommand(ImportBrowsedPipelineXml, CanUseBrowsedRecipe);
+            ExportBrowsedPipelineXmlCommand = new RelayCommand(ExportBrowsedPipelineXml, CanExportBrowsedInspection);
+            ExportBrowsedReviewBundleCommand = new RelayCommand(ExportBrowsedReviewBundle, CanExportBrowsedInspection);
             DuplicateFromSampleCommand = new RelayCommand(DuplicatePipelineFromSample, CanDuplicatePipelineFromSample);
             ActivatePipelineCommand = new RelayCommand(ActivateSelectedPipeline, CanUseSelectedPipeline);
             DuplicatePipelineCommand = new RelayCommand(DuplicateSelectedPipeline, CanUseSelectedPipeline);
@@ -455,10 +516,26 @@ namespace OpenVisionLab
                 ResetSelectedStepDisplayDefaults,
                 CanResetSelectedStepDisplayDefaults);
             ApplySelectedStepParametersCommand = new RelayCommand(ApplySelectedStepParameters, CanApplySelectedStepParameters);
+            MarkSelectedStepEditDirtyCommand = new RelayCommand(
+                MarkSelectedStepEditDirty,
+                CanApplySelectedStepParameters);
             CopyOperatorHandoffReportCommand = new RelayCommand(CopyOperatorHandoffReport, CanCopyOperatorHandoffReport);
             CopySelectedRecentBatchRunReviewCommand = new RelayCommand(CopySelectedRecentBatchRunReview, CanCopySelectedRecentBatchRunReview);
             RunRecipeGuidedNextActionCommand = new RelayCommand(RunRecipeGuidedNextAction, CanRunRecipeGuidedNextAction);
             OpenPipelineReviewCommand = new RelayCommand(this.openPipelineReview, CanUseSelectedRecipe);
+            OpenMainRecipeWorkCommand = new RelayCommand<string>(section => OpenMainRecipeWork(section), CanOpenMainRecipeWork);
+            ApplyRecipeManagerSelectionToMainCommand = new RelayCommand(
+                ApplyRecipeManagerSelectionToMain,
+                CanApplyRecipeManagerSelectionToMain);
+            OpenRecipeManagerStepSettingsCommand = new RelayCommand<OpenVisionRecipePipelineStepPreview>(
+                OpenRecipeManagerStepSettings,
+                CanOpenRecipeManagerStepSettings);
+            OpenRecipeManagerValidationDetailCommand = new RelayCommand(
+                OpenRecipeManagerValidationDetail,
+                CanOpenRecipeManagerValidationDetail);
+            RefreshRecipeManagerOptionsCommand = new RelayCommand(RefreshOptions);
+            HandleRecipeManagerCloseCommand = new RelayCommand<bool>(HandleRecipeManagerClose);
+            HandleRecipeAdvancedReviewToggleCommand = new RelayCommand<bool>(HandleRecipeAdvancedReviewToggle);
             InitializeQualifiedSnapshotCommands();
             RefreshSampleOptions();
             RefreshOptions();
@@ -466,6 +543,8 @@ namespace OpenVisionLab
         }
 
         #endregion
+
+        internal event EventHandler<string> MainRecipeOpened = delegate { };
 
         #region Binding Properties
 
@@ -886,6 +965,7 @@ namespace OpenVisionLab
                 {
                     if (SetProperty(ref selectedPipelinePreviewStep, value))
                     {
+                        OnPropertyChanged(nameof(SelectedPipelinePreviewStepIndex));
                         RefreshSelectedPipelineStepFlow();
                         OnPropertyChanged(nameof(OpenSelectedStepToolText));
                         OnPropertyChanged(nameof(FailureReviewText));
@@ -902,11 +982,13 @@ namespace OpenVisionLab
                     value?.DisplayText))
                 {
                     OnPropertyChanged(nameof(SelectedPipelinePreviewStep));
+                    OnPropertyChanged(nameof(SelectedPipelinePreviewStepIndex));
                     return;
                 }
 
                 if (SetProperty(ref selectedPipelinePreviewStep, value))
                 {
+                    OnPropertyChanged(nameof(SelectedPipelinePreviewStepIndex));
                     ClearSelectedStepEdit();
                     RefreshSelectedPipelineStepFlow();
                     OnPropertyChanged(nameof(OpenSelectedStepToolText));
@@ -915,6 +997,24 @@ namespace OpenVisionLab
                     OnPropertyChanged(nameof(CorrectedOutputReviewText));
                     CommandManager.InvalidateRequerySuggested();
                 }
+            }
+        }
+
+        public int? SelectedPipelinePreviewStepIndex
+        {
+            get => selectedPipelinePreviewStep?.Index;
+            set
+            {
+                OpenVisionRecipePipelineStepPreview step = SelectedRecipeSummary?.PipelinePreviewSteps?
+                    .FirstOrDefault(candidate => candidate.Index == value);
+                if (step != null)
+                {
+                    SelectedPipelinePreviewStep = step;
+                }
+
+                OnPropertyChanged(nameof(SelectedPipelinePreviewStepIndex));
+                SynchronizationContext.Current?.Post(
+                    _ => OnPropertyChanged(nameof(SelectedPipelinePreviewStepIndex)), null);
             }
         }
 
@@ -981,6 +1081,13 @@ namespace OpenVisionLab
                 ? LocalText("Step 파라미터를 불러온 뒤 PropertyGrid에서 검토하고 XML 반영을 누르세요.", "Load step parameters, review them in the PropertyGrid, then apply to XML.")
                 : selectedStepEditSession.StatusText;
 
+        public string SaveActionKey => saveActionKey;
+        public long SavedRevision => savedRevisionProvider();
+        public string TransitionActionKey => transitionActionKey;
+        public string TransitionActionName => transitionActionName;
+
+        public bool HasRecipeSaveFailure { get => hasRecipeSaveFailure; private set => SetProperty(ref hasRecipeSaveFailure, value); }
+
         public bool IsSelectedStepEditDirty => selectedStepEditSession.IsDirty;
 
         public IReadOnlyList<string> LlmToolTemplateOptions => llmToolTemplateOptions;
@@ -995,6 +1102,139 @@ namespace OpenVisionLab
             set => SelectRecipe(value);
         }
 
+        public string MainRecipeName
+        {
+            get => NormalizeRecipeName(currentRecipeProvider());
+            set => SelectRecipe(value);
+        }
+
+        public string RecipeManagerSelectedRecipeName
+        {
+            get => recipeManagerSelectedRecipeName;
+            set
+            {
+                string normalized = NormalizeRecipeName(value);
+                if (!RecipeOptions.Contains(normalized, StringComparer.OrdinalIgnoreCase)
+                    || !SetProperty(ref recipeManagerSelectedRecipeName, normalized))
+                {
+                    return;
+                }
+
+                IReadOnlyList<string> pipelineNames = RecipeWorkspaceService.GetVisionPipelineNames(normalized);
+                RecipeManagerSelectedPipelineOptions = pipelineNames;
+                string activePipelineName = VisionPipelineStorage.LoadActivePipelineName(
+                    normalized,
+                    VisionPipelineAppendService.DefaultPipelineName);
+                RecipeManagerSelectedPipelineName = pipelineNames.FirstOrDefault(name =>
+                    string.Equals(name, activePipelineName, StringComparison.OrdinalIgnoreCase))
+                    ?? pipelineNames.FirstOrDefault()
+                    ?? activePipelineName;
+                OnPropertyChanged(nameof(RecipeManagerSelectionIsCurrentMain));
+                OnPropertyChanged(nameof(RecipeManagerApplyToMainEnabled));
+                EditRecipeName = normalized;
+                RefreshRecipeManagerSelectedSummary();
+                OnPropertyChanged(nameof(RecipeManagerFileTargetText));
+            }
+        }
+
+        public IReadOnlyList<string> RecipeManagerSelectedPipelineOptions
+        {
+            get => recipeManagerSelectedPipelineOptions;
+            private set => SetProperty(ref recipeManagerSelectedPipelineOptions, value ?? Array.Empty<string>());
+        }
+
+        public string RecipeManagerSelectedPipelineName
+        {
+            get => recipeManagerSelectedPipelineName;
+            set
+            {
+                string normalized = NormalizePipelineName(value);
+                if (RecipeManagerSelectedPipelineOptions.Count > 0
+                    && !RecipeManagerSelectedPipelineOptions.Contains(normalized, StringComparer.OrdinalIgnoreCase))
+                {
+                    return;
+                }
+
+                if (SetProperty(ref recipeManagerSelectedPipelineName, normalized))
+                {
+                    RecipeManagerPipelineEditName = normalized;
+                    RefreshRecipeManagerSelectedSummary(refreshPipelineOptions: false);
+                    SetProperty(ref recipeManagerSelectedPipelineOption,
+                        RecipeManagerPipelineOptions.FirstOrDefault(option => string.Equals(option.PipelineName, normalized, StringComparison.OrdinalIgnoreCase)),
+                        nameof(RecipeManagerSelectedPipelineOption));
+                    OnPropertyChanged(nameof(RecipeManagerFileTargetText));
+                    RefreshCommandState();
+                }
+            }
+        }
+
+        public IReadOnlyList<OpenVisionRecipePipelineOption> RecipeManagerPipelineOptions
+        {
+            get => recipeManagerPipelineOptions;
+            private set
+            {
+                if (SetProperty(ref recipeManagerPipelineOptions, value ?? Array.Empty<OpenVisionRecipePipelineOption>()))
+                {
+                    SetProperty(ref recipeManagerSelectedPipelineOption,
+                        RecipeManagerPipelineOptions.FirstOrDefault(option => string.Equals(option.PipelineName, RecipeManagerSelectedPipelineName, StringComparison.OrdinalIgnoreCase)),
+                        nameof(RecipeManagerSelectedPipelineOption));
+                }
+            }
+        }
+
+        public OpenVisionRecipePipelineOption RecipeManagerSelectedPipelineOption
+        {
+            get => recipeManagerSelectedPipelineOption;
+            set
+            {
+                if (value != null && SetProperty(ref recipeManagerSelectedPipelineOption, value))
+                {
+                    RecipeManagerSelectedPipelineName = value.PipelineName;
+                }
+            }
+        }
+
+        public string RecipeManagerPipelineEditName
+        {
+            get => recipeManagerPipelineEditName;
+            set
+            {
+                if (SetProperty(ref recipeManagerPipelineEditName, value ?? string.Empty))
+                {
+                    RefreshCommandState();
+                }
+            }
+        }
+
+        public string RecipeManagerCurrentWorkText => MainRecipeName + " / " + (SelectedPipelineOption?.PipelineName ?? "-");
+
+        public OpenVisionRecipeManagerSummary RecipeManagerSelectedSummary
+        {
+            get => recipeManagerSelectedSummary;
+            private set
+            {
+                if (SetProperty(ref recipeManagerSelectedSummary, value ?? OpenVisionRecipeManagerSummary.Empty))
+                {
+                    OnPropertyChanged(nameof(RecipeManagerApplyToMainEnabled));
+                }
+            }
+        }
+
+        public bool RecipeManagerSelectionIsCurrentMain => string.Equals(
+            RecipeManagerSelectedRecipeName,
+            MainRecipeName,
+            StringComparison.OrdinalIgnoreCase);
+
+        public bool RecipeManagerApplyToMainEnabled =>
+            !IsSwitchingRecipe
+            && !isOpeningRecipeManagerWork
+            && !string.IsNullOrWhiteSpace(RecipeManagerSelectedRecipeName)
+            && RecipeOptions.Contains(RecipeManagerSelectedRecipeName, StringComparer.OrdinalIgnoreCase)
+            && RecipeManagerSelectedPipelineOptions.Contains(RecipeManagerSelectedPipelineName, StringComparer.OrdinalIgnoreCase)
+            && RecipeManagerSelectedSummary.XmlValid;
+
+        public bool IsRecipeManagerDetailContextActive => isRecipeManagerDetailContextActive;
+
         public string RecipeFilterText
         {
             get => recipeFilterText;
@@ -1008,6 +1248,22 @@ namespace OpenVisionLab
                 ApplyRecipeFilter();
             }
         }
+
+        public int RecipeManagerSortIndex
+        {
+            get => recipeManagerSortIndex;
+            set { if (SetProperty(ref recipeManagerSortIndex, value == 1 ? 1 : 0)) { ApplyRecipeFilter(); } }
+        }
+
+        public IReadOnlyList<OpenVisionRecipeValidationSetOption> RecipeManagerValidationSets => recipeManagerValidationSets;
+        public IReadOnlyDictionary<string, string> RecipeManagerLibraryDetails => recipeManagerLibraryDetails;
+        public IReadOnlyList<OpenVisionRecipeBatchRunOption> RecipeManagerRecentRuns => recipeManagerRecentRuns;
+        public int RecipeManagerTotalSteps => RecipeManagerPipelineOptions.Sum(option => option.StepCount);
+        public string RecipeManagerValidationReadStatus => recipeManagerValidationReadStatus;
+        public string RecipeManagerRecentSummary => RecipeManagerRecentRuns.FirstOrDefault()?.DisplayText ?? OpenVisionLanguageService.T("Workbench.Manager.NoRuns");
+        public string RecipeManagerDescription => ReadRecipeManagerData(RecipeManagerSelectedRecipeName)?.Description ?? string.Empty;
+        public string RecipeManagerSavedVersion => (ReadRecipeManagerData(RecipeManagerSelectedRecipeName) is DataState data ? "r" + data.SavedRevision : "-")
+            + " / " + (RecipeWorkspaceService.GetRecipeLastWriteTime(RecipeManagerSelectedRecipeName)?.ToString("yyyy-MM-dd HH:mm:ss") ?? "-");
 
         public string PipelineFilterText
         {
@@ -1801,6 +2057,10 @@ namespace OpenVisionLab
             }
         }
 
+        public IReadOnlyList<KeyValuePair<OpenVisionRecipePipelineStepPreview, string>> LlmDraftReviewRows => llmDraftReviewRows;
+        public bool IsLlmXmlDraftReady => CanImportLlmXmlDraft();
+        internal string ValidatedLlmDraftName => validatedLlmDraftName;
+
         public string LlmPromptText
         {
             get => llmPromptText;
@@ -1823,6 +2083,9 @@ namespace OpenVisionLab
                     InvalidateLocatorEvidenceCompilation();
                     llmXmlDraftImportReady = false;
                     ClearLoadedReviewBundleContext();
+                    llmDraftReviewRows = Array.Empty<KeyValuePair<OpenVisionRecipePipelineStepPreview, string>>();
+                    OnPropertyChanged(nameof(LlmDraftReviewRows));
+                    OnPropertyChanged(nameof(IsLlmXmlDraftReady));
                     RefreshCommandState();
                 }
             }
@@ -1897,6 +2160,15 @@ namespace OpenVisionLab
             get => selectedPipelineOption;
             set => SelectPipelineOption(value);
         }
+
+        public OpenVisionWorkbenchPipelineViewModel WorkbenchPipeline => workbenchPipeline;
+
+        public bool IsWorkbenchPipelineDirty => workbenchPipeline?.IsDirty == true;
+
+        internal bool CanUseWorkbenchContext => CanUseSelectedRecipe() && !IsSwitchingRecipe && !IsSelectedStepEditDirty
+            && !executionSession.IsSampleCheckRunning && !executionSession.IsPairCheckRunning
+            && !executionSession.IsCatalogBenchmarkRunning && !executionSession.IsValidationSuiteRunning
+            && !executionSession.IsLocalValidationSetRunning;
 
         public bool HasSelectedPipelinePersistenceStatus =>
             selectedPipelineOption?.HasPersistenceStatus == true;
@@ -2033,6 +2305,7 @@ namespace OpenVisionLab
 
         public ICommand DeleteRecipeCommand { get; private set; }
 
+        public ICommand OpenMainRecentRecipeCommand { get; }
         public ICommand SaveRecipeCommand { get; private set; }
 
         public ICommand ImportPipelineXmlCommand { get; private set; }
@@ -2040,6 +2313,12 @@ namespace OpenVisionLab
         public ICommand ExportPipelineXmlCommand { get; private set; }
 
         public ICommand ExportRecipeReviewBundleCommand { get; private set; }
+
+        public ICommand ImportBrowsedPipelineXmlCommand { get; private set; }
+
+        public ICommand ExportBrowsedPipelineXmlCommand { get; private set; }
+
+        public ICommand ExportBrowsedReviewBundleCommand { get; private set; }
 
         public ICommand DuplicateFromSampleCommand { get; private set; }
 
@@ -2157,6 +2436,8 @@ namespace OpenVisionLab
 
         public ICommand ApplySelectedStepParametersCommand { get; private set; }
 
+        public ICommand MarkSelectedStepEditDirtyCommand { get; private set; }
+
         public ICommand CopyOperatorHandoffReportCommand { get; private set; }
 
         public ICommand CopySelectedRecentBatchRunReviewCommand { get; private set; }
@@ -2165,6 +2446,26 @@ namespace OpenVisionLab
 
         public ICommand OpenPipelineReviewCommand { get; private set; }
 
+        public ICommand OpenMainRecipeWorkCommand { get; private set; }
+
+        public ICommand ApplyRecipeManagerSelectionToMainCommand { get; private set; }
+
+        public ICommand CancelRecipeNameEditCommand { get; private set; }
+
+        public ICommand ManageBrowsedPipelineCommand { get; private set; }
+
+        public ICommand CancelPipelineNameEditCommand { get; private set; }
+
+        public ICommand OpenRecipeManagerStepSettingsCommand { get; private set; }
+
+        public ICommand OpenRecipeManagerValidationDetailCommand { get; private set; }
+
+        public ICommand RefreshRecipeManagerOptionsCommand { get; private set; }
+
+        public ICommand HandleRecipeManagerCloseCommand { get; private set; }
+
+        public ICommand HandleRecipeAdvancedReviewToggleCommand { get; private set; }
+
         #endregion
 
         public string NewRecipeButtonText => LocalText("새 레시피", "New recipe");
@@ -2172,6 +2473,14 @@ namespace OpenVisionLab
         public string RecipeSelectorToolTipText => LocalText("레시피 선택 / 전환", "Select or switch recipe");
 
         public string ManagerButtonText => LocalText("레시피 관리", "Manage recipes");
+
+        public string MainRecipeWorkText => LocalText("검사 작업", "Inspection work");
+
+        public string MainRecipeValidationText => LocalText("검증·기록", "Validation and history");
+
+        public string MainRecipeBuilderText => LocalText("검사 만들기", "Build inspection");
+
+        public string MainRecipeLlmText => LocalText("LLM 보조", "LLM assist");
 
         public string SaveRecipeText => LocalText("레시피 저장", "Save recipe");
 
@@ -2186,7 +2495,13 @@ namespace OpenVisionLab
         public bool IsSwitchingRecipe
         {
             get => isSwitchingRecipe;
-            private set => SetProperty(ref isSwitchingRecipe, value);
+            private set
+            {
+                if (SetProperty(ref isSwitchingRecipe, value))
+                {
+                    OnPropertyChanged(nameof(RecipeManagerApplyToMainEnabled));
+                }
+            }
         }
 
         public string ManagerButtonShortText => LocalText("관리", "Manage");
@@ -2206,6 +2521,32 @@ namespace OpenVisionLab
         public string RecipeOverviewPipelineText => LocalText("파이프라인 구성", "Pipeline");
 
         public string RecipeOverviewValidationText => LocalText("검증 상태", "Validation");
+
+        public string RecipeManagerApplyToMainText => LocalText("선택 검사로 작업 열기", "Open work with selected inspection");
+
+        public string RecipeManagerNameEditHintText => LocalText("이름 변경: F2 · Enter 저장 · Esc 취소", "Rename: F2 · Enter to save · Esc to cancel");
+
+        public string RecipeManagerActivateInspectionText => LocalText("활성 검사로 지정", "Set active inspection");
+
+        public string RecipeManagerBrowseHintText => LocalText("선택하면 저장된 내용을 확인합니다.", "Select to inspect saved contents.");
+
+        public string RecipeManagerEmptyStepsText => LocalText("작업을 열고 메인에서 도구를 추가하세요.", "Open the work and add tools in the main workspace.");
+
+        public string RecipeManagerInspectionLabelText => LocalText("저장된 검사", "Saved inspection");
+
+        public string RecipeManagerMainContextLabelText => LocalText("현재 메인 작업", "Current main work");
+
+        public string RecipeManagerStepsLabelText => LocalText("저장된 단계와 값", "Saved steps and values");
+
+        public string RecipeManagerStoredParametersLabelText => LocalText(
+            "저장된 값 / 단위(정의된 항목)",
+            "Saved values / units (where defined)");
+
+        public string RecipeManagerEditStepSettingsText => LocalText("설정 편집", "Edit settings");
+
+        public string RecipeManagerInspectionSelectorToolTipText => LocalText(
+            "저장된 검사를 선택합니다. 메인 적용과는 별도입니다.",
+            "Select a saved inspection. This does not apply it to the main workspace.");
 
         public string RecipeOverviewSelectedSampleText => LocalText("현재 작업 샘플", "Current work sample");
 
@@ -2279,13 +2620,26 @@ namespace OpenVisionLab
 
         public string ExportRecipeReviewBundleText => LocalText("검토 묶음", "Review bundle");
 
+        public string RecipeManagerFileActionsText => LocalText("파일 작업", "File actions");
+
+        public string RecipeManagerActiveInspectionText => LocalText("활성 검사", "Active inspection");
+
+        public string RecipeManagerBrowsedInspectionText => LocalText("조회 검사", "Browsed inspection");
+
+        public string RecipeManagerFileTargetText => LocalText("대상: ", "Target: ")
+            + RecipeManagerSelectedRecipeName + " / " + RecipeManagerSelectedPipelineName;
+
+        public string RecipeManagerImportImpactText => LocalText(
+            "가져온 XML은 선택 레시피의 활성 검사로 저장됩니다.",
+            "Imported XML becomes the selected recipe's active inspection.");
+
         public string ExportRecipeReviewBundleToolTipText => LocalText(
             "XML과 검토 manifest만 내보냅니다. 참조 파일 복사, Import, Preview, Run은 실행하지 않습니다.",
             "Exports XML and a review manifest only. It does not copy referenced files or run Import, Preview, or Run.");
 
         public string RecipeDetailText => LocalText("레시피 상세", "Recipe details");
 
-        public string RecipePipelineTabText => LocalText("파이프라인 검토", "Pipeline review");
+        public string RecipePipelineTabText => LocalText("검사 구성", "Inspection setup");
 
         public string RecipeGuidedSetupTabText => LocalText("검사 만들기", "Build inspection");
 
@@ -2383,7 +2737,7 @@ namespace OpenVisionLab
 
         public string CopySelectedRecentBatchRunReviewText => LocalText("판독 복사", "Copy review");
 
-        public string OpenSelectedRecentBatchRunEvidenceText => LocalText("도면 보기", "View drawing");
+        public string OpenSelectedRecentBatchRunEvidenceText => LocalText("Pipeline Review에서 결과 확인", "Review result in Pipeline Review");
 
         public string CatalogBenchmarkText => LocalText("카탈로그 벤치마크", "Catalog benchmark");
 
@@ -2551,7 +2905,9 @@ namespace OpenVisionLab
 
         public string PipelineRunHistoryTabText => LocalText("이력", "Runs");
 
-        public string PipelineXmlStepTabText => LocalText("XML/Step", "XML/Steps");
+        public string PipelineStepSettingsTabText => LocalText("현재 단계", "Current Step");
+
+        public string PipelineXmlStepTabText => LocalText("기술/XML", "Technical/XML");
 
         public string OperatorRunReviewLabelText => LocalText("실행 판정 요약", "Run review summary");
 
@@ -2662,7 +3018,11 @@ namespace OpenVisionLab
 
         public string PipelineStepComparisonText => LocalText("Step 비교표", "Step comparison");
 
-        public string PipelineSelectedStepDetailText => LocalText("선택 Step 상세", "Selected step detail");
+        public string PipelineSelectedStepDetailText => LocalText("현재 단계 선택", "Select current step");
+
+        public string PipelineWidenImageText => LocalText("영상 넓게 보기", "Widen image");
+
+        public string PipelineExpandToolRailText => LocalText("도구 펼치기", "Expand tools");
 
         public string PipelineSelectedStepRouteText => LocalText("입출력 레이어", "Input/output layers");
 
@@ -2676,7 +3036,7 @@ namespace OpenVisionLab
 
         public string PipelineSelectedStepRoiTemplateText => LocalText("ROI / 템플릿", "ROI / template");
 
-        public string PipelineSelectedStepPropertyGridText => LocalText("Step PropertyGrid 검토", "Step PropertyGrid review");
+        public string PipelineSelectedStepPropertyGridText => LocalText("현재 단계 설정", "Current step settings");
 
         public string PipelineStepFlowText => LocalText("Step 흐름 포커스", "Step flow focus");
 
@@ -3158,6 +3518,8 @@ namespace OpenVisionLab
 
         #endregion
 
+        internal IReadOnlyList<OpenVisionRecipeBatchRunOption> ReadMainHistory() => runHistoryOrchestrationOwner.BuildHistoryOptions(MainRecipeName);
+
         #region Run History Selection
 
         private void RefreshRecentBatchRunOptions()
@@ -3200,6 +3562,8 @@ namespace OpenVisionLab
             {
                 isRefreshingOptions = true;
                 string current = NormalizeRecipeName(currentRecipeProvider());
+                string previousBrowse = recipeManagerSelectedRecipeName;
+                string previousNameEdit = EditRecipeName;
                 IReadOnlyList<string> names = RecipeWorkspaceService.GetRecipeNames()
                     .Append(current)
                     .Where(name => !string.IsNullOrWhiteSpace(name))
@@ -3207,9 +3571,22 @@ namespace OpenVisionLab
                     .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
                     .ToList();
 
-                SetSelectedRecipeName(current, refreshCommandState: false);
+                if (!isRecipeManagerDetailContextActive)
+                {
+                    SetSelectedRecipeName(current, refreshCommandState: false);
+                }
                 RecipeOptions = names;
+                RefreshRecipeManagerLibraryDetails();
                 ApplyRecipeFilter();
+                string browseRecipe = RecipeOptions.Contains(recipeManagerSelectedRecipeName, StringComparer.OrdinalIgnoreCase)
+                    ? recipeManagerSelectedRecipeName
+                    : current;
+                RecipeManagerSelectedRecipeName = browseRecipe;
+                if (!isRecipeManagerDetailContextActive)
+                {
+                    EditRecipeName = string.Equals(previousBrowse, browseRecipe, StringComparison.OrdinalIgnoreCase) ? previousNameEdit : browseRecipe;
+                }
+                RefreshRecipeManagerSelectedSummary();
             }
             finally
             {
@@ -3217,6 +3594,205 @@ namespace OpenVisionLab
             }
 
             RefreshCommandState();
+        }
+
+        public bool TryEnterRecipeManagerSettingsDetail(string pipelineName, int stepNumber)
+        {
+            string recipeName = NormalizeRecipeName(RecipeManagerSelectedRecipeName);
+            string requestedPipeline = NormalizePipelineName(pipelineName);
+            if (stepNumber <= 0 || !TryEnterRecipeManagerDetailContext(recipeName, requestedPipeline))
+            {
+                return false;
+            }
+
+            if (FocusPipelineStepForEdit(recipeName, requestedPipeline, stepNumber))
+            {
+                return true;
+            }
+
+            RestoreRecipeManagerContextAfterDetail();
+            return false;
+        }
+
+        private void OpenMainRecipeWork(string section, bool preserveCurrentWork = false)
+        {
+            string recipeName = NormalizeRecipeName(currentRecipeProvider());
+            string pipelineName = string.Equals(selectedRecipeName, recipeName, StringComparison.OrdinalIgnoreCase)
+                ? selectedPipelineOption?.PipelineName
+                : null;
+            if (string.IsNullOrWhiteSpace(pipelineName))
+            {
+                pipelineName = VisionPipelineStorage.LoadActivePipelineName(
+                    recipeName,
+                    VisionPipelineAppendService.DefaultPipelineName);
+            }
+
+            if (preserveCurrentWork)
+            {
+                isRecipeManagerDetailContextActive = true;
+                OnPropertyChanged(nameof(IsRecipeManagerDetailContextActive));
+            }
+            else if (!TryEnterRecipeManagerDetailContext(recipeName, pipelineName))
+            {
+                return;
+            }
+
+            RecipeManagerSelectedRecipeName = recipeName;
+            RecipeManagerSelectedPipelineName = pipelineName;
+            openMainRecipeWork(section);
+        }
+
+        private bool CanOpenMainRecipeWork(string section) =>
+            !IsSwitchingRecipe
+            && !isRecipeManagerDetailContextActive
+            && RecipeOptions.Contains(MainRecipeName, StringComparer.OrdinalIgnoreCase);
+
+        public bool TryEnterRecipeManagerValidationDetail()
+        {
+            string recipeName = NormalizeRecipeName(RecipeManagerSelectedRecipeName);
+            if (!TryEnterRecipeManagerDetailContext(recipeName, RecipeManagerSelectedPipelineName))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        public bool TryReturnRecipeManagerToBrowse()
+        {
+            if (!isRecipeManagerDetailContextActive)
+            {
+                return true;
+            }
+
+            if (!TryLeaveSelectedStepEdit(
+                OpenVisionRecipePendingEditTransitionKind.Recipe,
+                RecipeManagerSelectedRecipeName))
+            {
+                return false;
+            }
+
+            RestoreRecipeManagerContextAfterDetail();
+            return true;
+        }
+
+        public async Task<bool> ApplyRecipeManagerSelectionToMainAsync()
+        {
+            string recipeName = NormalizeRecipeName(RecipeManagerSelectedRecipeName);
+            string pipelineName = RecipeManagerSelectedPipelineName;
+            if (!RecipeManagerApplyToMainEnabled || isRecipeManagerDetailContextActive)
+            {
+                return false;
+            }
+
+            bool sameRecipe = string.Equals(MainRecipeName, recipeName, StringComparison.OrdinalIgnoreCase);
+            bool sameWork = sameRecipe
+                && string.Equals(selectedRecipeName, recipeName, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(SelectedPipelineOption?.PipelineName, pipelineName, StringComparison.OrdinalIgnoreCase);
+            if (sameWork)
+            {
+                return true;
+            }
+
+            try
+            {
+                string path = RecipeWorkspaceService.GetVisionPipelinePath(recipeName, pipelineName);
+                if (!VisionPipelineStorage.TryLoadFromFile(path, out _, out string message))
+                {
+                    StatusText = message;
+                    RefreshRecipeManagerSelectedSummary();
+                    return false;
+                }
+
+                if (!TryLeaveSelectedStepEdit(
+                    sameRecipe ? OpenVisionRecipePendingEditTransitionKind.Pipeline : OpenVisionRecipePendingEditTransitionKind.Recipe,
+                    recipeName + " / " + pipelineName))
+                {
+                    return false;
+                }
+
+                await SelectRecipeAsync(recipeName);
+                if (!string.Equals(MainRecipeName, recipeName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+
+                RefreshPipelineOptions(pipelineName);
+                return string.Equals(SelectedPipelineOption?.PipelineName, pipelineName, StringComparison.OrdinalIgnoreCase);
+            }
+            catch (Exception ex)
+            {
+                StatusText = LocalText("작업 열기 실패: ", "Could not open work: ") + ex.GetBaseException().Message;
+                return false;
+            }
+        }
+
+        private async void ApplyRecipeManagerSelectionToMain()
+        {
+            if (await ApplyRecipeManagerSelectionToMainAsync())
+            {
+                isOpeningRecipeManagerWork = true;
+                try
+                {
+                    closeRecipeManager();
+                }
+                finally
+                {
+                    isOpeningRecipeManagerWork = false;
+                }
+
+            }
+        }
+
+        private bool CanApplyRecipeManagerSelectionToMain() =>
+            RecipeManagerApplyToMainEnabled && !isRecipeManagerDetailContextActive;
+
+        private void OpenRecipeManagerStepSettings(OpenVisionRecipePipelineStepPreview step)
+        {
+            if (step != null
+                && TryEnterRecipeManagerSettingsDetail(RecipeManagerSelectedPipelineName, step.Index))
+            {
+                openRecipeManagerStepSettings();
+            }
+        }
+
+        private bool CanOpenRecipeManagerStepSettings(OpenVisionRecipePipelineStepPreview step) =>
+            step != null
+            && step.Index > 0
+            && !isRecipeManagerDetailContextActive
+            && RecipeOptions.Contains(RecipeManagerSelectedRecipeName, StringComparer.OrdinalIgnoreCase);
+
+        private void OpenRecipeManagerValidationDetail()
+        {
+            if (!TryEnterRecipeManagerValidationDetail())
+            {
+                return;
+            }
+
+            SelectLocalValidationSetScope();
+            openRecipeManagerValidationDetail();
+        }
+
+        private bool CanOpenRecipeManagerValidationDetail() =>
+            !isRecipeManagerDetailContextActive
+            && RecipeOptions.Contains(RecipeManagerSelectedRecipeName, StringComparer.OrdinalIgnoreCase);
+
+        private void HandleRecipeAdvancedReviewToggle(bool isChecked)
+        {
+            if (!isChecked
+                && isRecipeManagerDetailContextActive
+                && !TryReturnRecipeManagerToBrowse())
+            {
+                restoreRecipeManagerAdvancedReviewToggle();
+            }
+        }
+
+        private void HandleRecipeManagerClose(bool restoreContextAfterClose)
+        {
+            if (!TryCloseRecipeManager(restoreContextAfterClose))
+            {
+                restoreRecipeManagerOpenToggle();
+            }
         }
 
         public void SelectLocalValidationSetScope()
@@ -3383,6 +3959,10 @@ namespace OpenVisionLab
             OnPropertyChanged(nameof(NewRecipeButtonText));
             OnPropertyChanged(nameof(RecipeSelectorToolTipText));
             OnPropertyChanged(nameof(ManagerButtonText));
+            OnPropertyChanged(nameof(MainRecipeWorkText));
+            OnPropertyChanged(nameof(MainRecipeValidationText));
+            OnPropertyChanged(nameof(MainRecipeBuilderText));
+            OnPropertyChanged(nameof(MainRecipeLlmText));
             OnPropertyChanged(nameof(SaveRecipeText));
             OnPropertyChanged(nameof(SaveRecipeToolTipText));
             OnPropertyChanged(nameof(RecipeSwitchingTitleText));
@@ -3395,6 +3975,17 @@ namespace OpenVisionLab
             OnPropertyChanged(nameof(RecipeOverviewTitleText));
             OnPropertyChanged(nameof(RecipeOverviewPipelineText));
             OnPropertyChanged(nameof(RecipeOverviewValidationText));
+            OnPropertyChanged(nameof(RecipeManagerApplyToMainText));
+            OnPropertyChanged(nameof(RecipeManagerNameEditHintText));
+            OnPropertyChanged(nameof(RecipeManagerActivateInspectionText));
+            OnPropertyChanged(nameof(RecipeManagerBrowseHintText));
+            OnPropertyChanged(nameof(RecipeManagerEmptyStepsText));
+            OnPropertyChanged(nameof(RecipeManagerInspectionLabelText));
+            OnPropertyChanged(nameof(RecipeManagerMainContextLabelText));
+            OnPropertyChanged(nameof(RecipeManagerStepsLabelText));
+            OnPropertyChanged(nameof(RecipeManagerStoredParametersLabelText));
+            OnPropertyChanged(nameof(RecipeManagerEditStepSettingsText));
+            OnPropertyChanged(nameof(RecipeManagerInspectionSelectorToolTipText));
             OnPropertyChanged(nameof(RecipeOverviewSelectedSampleText));
             OnPropertyChanged(nameof(RecipeOverviewSelectedSampleContextText));
             OnPropertyChanged(nameof(RecipeOverviewLastResultText));
@@ -3419,6 +4010,11 @@ namespace OpenVisionLab
             OnPropertyChanged(nameof(ImportPipelineXmlText));
             OnPropertyChanged(nameof(ExportPipelineXmlText));
             OnPropertyChanged(nameof(ExportRecipeReviewBundleText));
+            OnPropertyChanged(nameof(RecipeManagerFileActionsText));
+            OnPropertyChanged(nameof(RecipeManagerActiveInspectionText));
+            OnPropertyChanged(nameof(RecipeManagerBrowsedInspectionText));
+            OnPropertyChanged(nameof(RecipeManagerFileTargetText));
+            OnPropertyChanged(nameof(RecipeManagerImportImpactText));
             OnPropertyChanged(nameof(ExportRecipeReviewBundleToolTipText));
             OnPropertyChanged(nameof(RecipeDetailText));
             OnPropertyChanged(nameof(RecipePipelineTabText));
@@ -3494,6 +4090,7 @@ namespace OpenVisionLab
             OnPropertyChanged(nameof(PipelineReviewTabText));
             OnPropertyChanged(nameof(PipelineReportTabText));
             OnPropertyChanged(nameof(PipelineRunHistoryTabText));
+            OnPropertyChanged(nameof(PipelineStepSettingsTabText));
             OnPropertyChanged(nameof(PipelineXmlStepTabText));
             OnPropertyChanged(nameof(OperatorRunReviewLabelText));
             NotifyOperatorReviewChanged();
@@ -3515,6 +4112,8 @@ namespace OpenVisionLab
             OnPropertyChanged(nameof(PipelinePreviewStepListText));
             OnPropertyChanged(nameof(PipelineStepComparisonText));
             OnPropertyChanged(nameof(PipelineSelectedStepDetailText));
+            OnPropertyChanged(nameof(PipelineWidenImageText));
+            OnPropertyChanged(nameof(PipelineExpandToolRailText));
             OnPropertyChanged(nameof(PipelineSelectedStepOperatorContextText));
             OnPropertyChanged(nameof(PipelineSelectedStepRouteText));
             OnPropertyChanged(nameof(PipelineSelectedStepInputLayerText));
@@ -3665,6 +4264,8 @@ namespace OpenVisionLab
             RefreshValidationSetOptions();
             RefreshRecentBatchRunOptions();
             UpdateSelectedRecipeSummary();
+            RefreshRecipeManagerSelectedSummary();
+            RefreshRecipeManagerLibraryDetails();
         }
 
         internal void SetLlmBrowserAssistStatus(OpenVisionRecipeLlmBrowserAssistOpenResult result)
@@ -3691,6 +4292,33 @@ namespace OpenVisionLab
             return LocalText(
                 "자동 로그인·전송·XML 가져오기·Preview/Run은 수행하지 않습니다.",
                 "No automatic sign-in, send, XML import, Preview, or Run is performed.");
+        }
+
+        internal bool CanOpenMainRecentRecipe(string name) => CanCreateMainRecipe(false) && workbenchPipeline.CanCommitToolEdits?.Invoke() != false
+            && RecipeWorkspaceService.IsValidRecipeName(name) && !string.Equals(MainRecipeName, name, StringComparison.OrdinalIgnoreCase)
+            && RecipeWorkspaceService.GetRecipeNames().Contains(name, StringComparer.OrdinalIgnoreCase);
+
+        private bool IsMainRecipeOpenComplete(string name)
+        {
+            if (workbenchPipeline == null || !string.Equals(NormalizeRecipeName(currentRecipeProvider()), name, StringComparison.OrdinalIgnoreCase)
+                || !string.Equals(selectedRecipeName, name, StringComparison.OrdinalIgnoreCase)
+                || selectedPipelineOption == null) { return false; }
+            RecipeDataPersistenceState dataState = SelectedRecipeDataPersistenceState;
+            if (dataState?.IsFailure == true && dataState.Kind != RecipeDataPersistenceStateKind.SaveFailed) { return false; }
+            if (VisionPipelineStorage.TryGetPersistenceState(name, selectedPipelineOption.PipelineName, out VisionPipelinePersistenceState state)
+                && state.IsFailure && state.Kind != VisionPipelinePersistenceStateKind.SaveFailed) { return false; }
+            return VisionPipelineStorage.TryLoadFromFile(RecipeWorkspaceService.GetVisionPipelinePath(name, selectedPipelineOption.PipelineName), out _, out _);
+        }
+
+        private async Task ObserveMainRecipeOpenAsync(string name, long version)
+        {
+            try
+            {
+                await waitForRecipeSwitchCompletion();
+                if (version == mainRecipeOpenVersion && IsMainRecipeOpenComplete(name)) { MainRecipeOpened(this, name); }
+            }
+            catch (Exception ex) when (ex is OperationCanceledException or ObjectDisposedException) { }
+            catch (Exception ex) { OVLog.Write(LogCategory.System, LogLevel.Warning, nameof(ObserveMainRecipeOpenAsync) + ": " + ex.Message); }
         }
 
         private async void SelectRecipe(string recipeName)
@@ -3737,6 +4365,7 @@ namespace OpenVisionLab
                 BeginRecipeSwitchingState(normalized);
                 await yieldToUi();
                 RecipeWorkspaceService.EnsureVisionWorkspace(normalized);
+                long openVersion = ++mainRecipeOpenVersion;
                 switchRecipe(normalized);
                 if (!string.Equals(
                     NormalizeRecipeName(currentRecipeProvider()),
@@ -3753,10 +4382,24 @@ namespace OpenVisionLab
 
                 RefreshAfterRecipeSwitchIfNeeded(normalized);
                 await waitForRecipeSwitchCompletion();
+                if (isRecipeManagerDetailContextActive)
+                {
+                    SetSelectedRecipeName(normalized);
+                    RecipeManagerSelectedRecipeName = normalized;
+                }
                 StatusText = string.Format(
                     CultureInfo.CurrentCulture,
                     LocalText("선택됨: {0}", "Selected: {0}"),
                     normalized);
+                if (openVersion == mainRecipeOpenVersion && IsMainRecipeOpenComplete(normalized)) { MainRecipeOpened(this, normalized); }
+                if (string.Equals(NormalizeRecipeName(currentRecipeProvider()), normalized, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(selectedRecipeName, normalized, StringComparison.OrdinalIgnoreCase)
+                    && SelectedRecipeSummary?.XmlValid == true && selectedPipelineOption?.XmlValid == true && !HasSelectedRecipePersistenceFailure)
+                {
+                    transitionActionKey = "Workbench.Action.RecipeOpenedFormat";
+                    transitionActionName = normalized;
+                    OnPropertyChanged(nameof(TransitionActionKey));
+                }
             }
             finally
             {
@@ -3799,6 +4442,8 @@ namespace OpenVisionLab
                 return;
             }
 
+            bool contextChanged = selectedPipelineOption != null && !string.Equals(selectedPipelineOption.PipelineName, option.PipelineName, StringComparison.OrdinalIgnoreCase);
+
             if (!string.Equals(
                     selectedPipelineOption?.PipelineName,
                     option.PipelineName,
@@ -3828,13 +4473,20 @@ namespace OpenVisionLab
             NotifyValidationSetEvidenceChanged();
             NotifyQualifiedSnapshotContextChanged();
             RefreshCommandState();
+            if (contextChanged && !isRefreshingOptions && !IsSwitchingRecipe && SelectedRecipeSummary?.XmlValid == true
+                && selectedPipelineOption?.XmlValid == true && !HasSelectedRecipePersistenceFailure)
+            {
+                transitionActionKey = "Workbench.Action.PipelineSwitchedFormat";
+                transitionActionName = option.PipelineName;
+                OnPropertyChanged(nameof(TransitionActionKey));
+            }
         }
 
         private OpenVisionRecipeEditValidationRequest CreateRecipeEditValidationRequest()
         {
             return new OpenVisionRecipeEditValidationRequest
             {
-                SelectedRecipeName = NormalizeRecipeName(selectedRecipeName),
+                SelectedRecipeName = NormalizeRecipeName(RecipeManagerSelectedRecipeName),
                 RequestedRecipeName = EditRecipeName,
                 RecipeNames = RecipeOptions
             };
@@ -5386,7 +6038,32 @@ namespace OpenVisionLab
         }
 
 
-        private string BuildLlmPromptText()
+        internal string BuildMainLlmPrompt(bool includeCurrentPipeline)
+        {
+            string prompt = BuildLlmPromptText(includeCurrentPipeline, includeReferenceImage: false);
+            return includeCurrentPipeline && workbenchPipeline != null
+                ? prompt + Environment.NewLine + "Current working pipeline XML (reference only; do not overwrite):" + Environment.NewLine
+                    + System.Text.Encoding.UTF8.GetString(VisionPipelineExecutionPlan.SerializePipeline(workbenchPipeline.CopyWorkingPipeline()))
+                : prompt;
+        }
+
+        internal bool TrySaveMainLlmDraft(string name, bool open, out string error)
+        {
+            if (!CanImportLlmXmlDraft() || !string.Equals(MainRecipeName, NormalizeRecipeName(selectedRecipeName), StringComparison.OrdinalIgnoreCase))
+            {
+                error = LocalText("XML을 다시 검증하세요.", "Validate the XML again."); return false;
+            }
+            if (!RecipeWorkspaceService.TryNormalizeStoragePathSegment(name, string.Empty, "Pipeline name", out string normalized, out error)) { return false; }
+            if (RecipeWorkspaceService.GetVisionPipelineNames(MainRecipeName).Contains(normalized, StringComparer.OrdinalIgnoreCase))
+            {
+                error = LocalText("같은 이름의 파이프라인이 있습니다.", "A pipeline with this name already exists."); return false;
+            }
+            bool saved = ImportLlmXmlDraft(normalized, open);
+            error = saved ? string.Empty : LocalText("저장을 완료하지 못했습니다. XML과 현재 작업을 확인한 뒤 다시 시도하세요.", "Saving was not completed. Check the XML and current work, then retry.");
+            return saved;
+        }
+
+        private string BuildLlmPromptText(bool includeCurrentPipelineName = true, bool includeReferenceImage = true)
         {
             string recipeName = NormalizeRecipeName(selectedRecipeName);
             string activePipelineName = VisionPipelineStorage.LoadActivePipelineName(
@@ -5395,11 +6072,11 @@ namespace OpenVisionLab
             return OpenVisionRecipeLlmPromptBuilder.Build(new OpenVisionRecipeLlmPromptRequest
             {
                 RecipeName = recipeName,
-                ActivePipelineName = activePipelineName,
+                ActivePipelineName = includeCurrentPipelineName ? activePipelineName : string.Empty,
                 Template = SelectedLlmToolTemplate,
                 InspectionGoal = LlmInspectionGoalText,
                 DetectionPoints = LlmDetectionPointText,
-                ReferenceImagePath = OpenVisionRecipeLlmIntent.IsPinArrayGapTemplate(SelectedLlmToolTemplate)
+                ReferenceImagePath = !includeReferenceImage ? string.Empty : OpenVisionRecipeLlmIntent.IsPinArrayGapTemplate(SelectedLlmToolTemplate)
                     ? ResolvePinGapRoiSuggestionImagePath()
                     : LlmReferenceImagePath,
                 PinGapAverageMetricName = PinGapIntentAverageMetricName,
@@ -5578,8 +6255,22 @@ namespace OpenVisionLab
         private bool CanUseSelectedRecipe()
         {
             string selected = NormalizeRecipeName(selectedRecipeName);
-            return !string.IsNullOrWhiteSpace(selected)
+            return workbenchPipeline?.IsRunning != true && !string.IsNullOrWhiteSpace(selected)
                 && RecipeOptions.Any(name => string.Equals(name, selected, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private bool CanUseBrowsedRecipe()
+        {
+            return !IsSwitchingRecipe
+                && !isRecipeManagerDetailContextActive
+                && RecipeOptions.Contains(RecipeManagerSelectedRecipeName, StringComparer.OrdinalIgnoreCase);
+        }
+
+        private bool CanExportBrowsedInspection()
+        {
+            return CanUseBrowsedRecipe()
+                && RecipeManagerSelectedPipelineOptions.Contains(
+                    RecipeManagerSelectedPipelineName, StringComparer.OrdinalIgnoreCase);
         }
 
         private bool CanUseSelectedPipeline()
@@ -5807,10 +6498,13 @@ namespace OpenVisionLab
             IEnumerable<string> source = RecipeOptions;
             if (!string.IsNullOrWhiteSpace(filter))
             {
-                source = source.Where(name => name.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0);
+                source = source.Where(name => name.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0
+                    || (ReadRecipeManagerData(name)?.Description ?? string.Empty).IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0);
             }
 
-            FilteredRecipeOptions = source.ToList();
+            FilteredRecipeOptions = RecipeManagerSortIndex == 1
+                ? source.OrderBy(name => name, StringComparer.CurrentCultureIgnoreCase).ToList()
+                : source.OrderByDescending(RecipeWorkspaceService.GetRecipeLastWriteTime).ThenBy(name => name, StringComparer.CurrentCultureIgnoreCase).ToList();
         }
 
         private void ApplyPipelineFilter()
@@ -5840,7 +6534,7 @@ namespace OpenVisionLab
                 ?? options.FirstOrDefault();
         }
 
-        private void RefreshPipelineOptions(string preferredPipelineName = null, bool refreshCommandState = true)
+        private void RefreshPipelineOptions(string preferredPipelineName = null, bool refreshCommandState = true, bool preserveSelectedOption = false)
         {
             string recipeName = NormalizeRecipeName(selectedRecipeName);
             string activePipelineName = VisionPipelineStorage.LoadActivePipelineName(
@@ -5872,6 +6566,11 @@ namespace OpenVisionLab
                         NormalizedPreferredPipelineName = NormalizePipelineName(preferredPipelineName),
                         PreviousSelectedPipelineName = selectedPipelineOption?.PipelineName
                     });
+            if (preserveSelectedOption)
+            {
+                PipelineOptions = projection.Options.Select(option => string.Equals(option.PipelineName, selectedPipelineOption?.PipelineName, StringComparison.OrdinalIgnoreCase) ? selectedPipelineOption : option).ToList();
+                RefreshCommandState(); return;
+            }
             PipelineOptions = projection.Options;
             OpenVisionRecipePipelineOption selectedOption = projection.SelectedOption;
 
@@ -5969,6 +6668,141 @@ namespace OpenVisionLab
                     LayerCardProvider = layerCardProvider
                 });
             OnPropertyChanged(nameof(PipelineVariantComparisonReport));
+        }
+
+        private bool TryEnterRecipeManagerDetailContext(string recipeName, string pipelineName)
+        {
+            if (string.IsNullOrWhiteSpace(recipeName)
+                || !RecipeOptions.Contains(recipeName, StringComparer.OrdinalIgnoreCase))
+            {
+                StatusText = LocalText("조회할 레시피를 찾을 수 없습니다.", "The selected recipe could not be found.");
+                return false;
+            }
+
+            if (!TryLeaveSelectedStepEdit(
+                OpenVisionRecipePendingEditTransitionKind.Recipe,
+                recipeName))
+            {
+                return false;
+            }
+
+            isRecipeManagerDetailContextActive = true;
+            OnPropertyChanged(nameof(IsRecipeManagerDetailContextActive));
+            SetSelectedRecipeName(recipeName, refreshCommandState: false);
+            if (!string.IsNullOrWhiteSpace(pipelineName))
+            {
+                RefreshPipelineOptions(pipelineName, refreshCommandState: false);
+            }
+            RefreshValidationSetOptions(refreshCommandState: false);
+            RefreshCommandState();
+            return true;
+        }
+
+        private void RestoreRecipeManagerContextAfterDetail()
+        {
+            ClearSelectedStepEdit();
+            isRecipeManagerDetailContextActive = false;
+            OnPropertyChanged(nameof(IsRecipeManagerDetailContextActive));
+            SetSelectedRecipeName(
+                NormalizeRecipeName(currentRecipeProvider()),
+                refreshCommandState: false);
+            RefreshRecipeManagerSelectedSummary();
+            RefreshCommandState();
+        }
+
+        private static DataState ReadRecipeManagerData(string recipeName)
+        {
+            if (string.IsNullOrWhiteSpace(recipeName)) { return null; }
+            // 목록 조회는 LoadConfig의 손상 파일 복원과 저장을 실행하면 안 된다.
+            string path = RecipeWorkspaceService.GetContainedStoragePath(RecipeWorkspaceService.GetRecipeDirectoryPath(recipeName), "VISION.xml", "Recipe data");
+            return SerializeHelper.TryLoadFromXmlFile(path, out DataState data)
+                && data != null && (data.SavedRevision == 0 || !string.IsNullOrEmpty(data.SavedContentHash)) ? data : null;
+        }
+
+        private void RefreshRecipeManagerLibraryDetails()
+        {
+            Dictionary<string, string> details = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (string name in RecipeOptions)
+            {
+                DataState data = ReadRecipeManagerData(name);
+                string revision = data == null ? "-" : data.SavedRevision.ToString(CultureInfo.CurrentCulture);
+                string modified = RecipeWorkspaceService.GetRecipeLastWriteTime(name)?.ToString("yyyy-MM-dd HH:mm") ?? "-";
+                string sets = OpenVisionRecipeValidationSetStorage.TryLoad(name, out OpenVisionRecipeValidationSetDocument document, out _)
+                    ? document.Sets.Count.ToString(CultureInfo.CurrentCulture) : "-";
+                details[name] = string.Format(CultureInfo.CurrentCulture, OpenVisionLanguageService.T("Workbench.Manager.LibraryDetailFormat"),
+                    revision, modified, RecipeWorkspaceService.GetVisionPipelineNames(name).Length, sets);
+            }
+            recipeManagerLibraryDetails = details;
+            OnPropertyChanged(nameof(RecipeManagerLibraryDetails));
+        }
+
+        private void RefreshRecipeManagerStoredContents(string recipeName)
+        {
+            bool valid = OpenVisionRecipeValidationSetStorage.TryLoad(recipeName, out OpenVisionRecipeValidationSetDocument sets, out string error);
+            recipeManagerValidationSets = valid ? sets.Sets.Select(set => new OpenVisionRecipeValidationSetOption(set)).ToList() : Array.Empty<OpenVisionRecipeValidationSetOption>();
+            recipeManagerValidationReadStatus = valid
+                ? (recipeManagerValidationSets.Count == 0 ? OpenVisionLanguageService.T("Workbench.Manager.NoSets") : string.Empty)
+                : error;
+            recipeManagerRecentRuns = runHistoryOrchestrationOwner.BuildRecipeRunOptions(recipeName, RecipeManagerSelectedPipelineOptions);
+            OnPropertyChanged(nameof(RecipeManagerValidationSets));
+            OnPropertyChanged(nameof(RecipeManagerValidationReadStatus));
+            OnPropertyChanged(nameof(RecipeManagerRecentRuns));
+            OnPropertyChanged(nameof(RecipeManagerRecentSummary));
+            OnPropertyChanged(nameof(RecipeManagerTotalSteps));
+            OnPropertyChanged(nameof(RecipeManagerDescription));
+            OnPropertyChanged(nameof(RecipeManagerSavedVersion));
+        }
+
+        private void RefreshRecipeManagerSelectedSummary(bool refreshPipelineOptions = true)
+        {
+            string recipeName = NormalizeRecipeName(RecipeManagerSelectedRecipeName);
+            if (string.IsNullOrWhiteSpace(recipeName)
+                || string.IsNullOrWhiteSpace(RecipeManagerSelectedPipelineName))
+            {
+                RecipeManagerPipelineOptions = Array.Empty<OpenVisionRecipePipelineOption>();
+                RecipeManagerSelectedSummary = OpenVisionRecipeManagerSummary.Empty;
+                return;
+            }
+
+            IReadOnlyList<string> pipelineNames = RecipeWorkspaceService.GetVisionPipelineNames(recipeName);
+            string activePipelineName = VisionPipelineStorage.LoadActivePipelineName(
+                recipeName,
+                VisionPipelineAppendService.DefaultPipelineName);
+            string pipelinePath = RecipeWorkspaceService.GetVisionPipelinePath(
+                recipeName,
+                RecipeManagerSelectedPipelineName);
+            bool xmlValid = VisionPipelineStorage.TryLoadFromFile(
+                pipelinePath,
+                out VisionPipeline pipeline,
+                out string xmlMessage);
+            if (refreshPipelineOptions)
+            {
+                RecipeManagerPipelineOptions = recipePipelineOptionProjectionOwner.Project(
+                    new OpenVisionRecipePipelineOptionProjectionRequest
+                    {
+                        RecipeName = recipeName,
+                        PipelineNames = pipelineNames,
+                        ActivePipelineName = activePipelineName,
+                        PreferredPipelineName = RecipeManagerSelectedPipelineName,
+                        NormalizedPreferredPipelineName = RecipeManagerSelectedPipelineName,
+                        PreviousSelectedPipelineName = RecipeManagerSelectedPipelineName
+                    }).Options;
+            }
+            RefreshRecipeManagerStoredContents(recipeName);
+            RecipeManagerSelectedSummary = recipeManagerSummaryProjectionOwner.Project(
+                new OpenVisionRecipeManagerSummaryProjectionRequest
+                {
+                    RecipeName = recipeName,
+                    ActivePipelineName = activePipelineName,
+                    PreviewPipelineName = RecipeManagerSelectedPipelineName,
+                    PipelineCount = pipelineNames.Count,
+                    LastWriteTime = RecipeWorkspaceService.GetRecipeLastWriteTime(recipeName),
+                    XmlValid = xmlValid,
+                    XmlMessage = xmlMessage,
+                    PipelinePath = pipelinePath,
+                    Pipeline = xmlValid ? pipeline : null,
+                    LayerCardProvider = null
+                });
         }
 
         private void NavigateSelectedStepInputLayer()
@@ -6253,6 +7087,10 @@ namespace OpenVisionLab
         {
             if (!OpenVisionRecipeRunEvidence.TryCreate(
                     SelectedRecentBatchSampleResultOption,
+                    NormalizeRecipeName(selectedRecipeName),
+                    SelectedRecentBatchRunOption?.RunSummary?.PipelineName
+                        ?? SelectedPipelineOption?.PipelineName
+                        ?? string.Empty,
                     out OpenVisionRecipeRunEvidence evidence,
                     out string reason))
             {
@@ -6262,12 +7100,14 @@ namespace OpenVisionLab
 
             if (openSelectedBatchRunEvidence(evidence))
             {
-                StatusText = LocalText("저장된 원본/검출 도면을 열었습니다: ", "Opened the persisted source/detection drawing: ")
+                StatusText = LocalText("Pipeline Review에서 저장된 실행 결과를 열었습니다: ", "Opened the stored run result in Pipeline Review: ")
                     + evidence.SampleName;
             }
             else
             {
-                StatusText = LocalText("저장된 검출 도면 창을 열지 못했습니다.", "Could not open the persisted detection drawing window.");
+                StatusText = LocalText(
+                    "Pipeline Review 인계가 취소되었거나 열리지 않았습니다. 선택한 이력은 유지됩니다.",
+                    "Pipeline Review handoff was canceled or could not open. The selected history item is unchanged.");
             }
         }
 
@@ -6454,7 +7294,7 @@ namespace OpenVisionLab
                 SelectedStepEditObject);
         }
 
-        private bool TryApplySelectedStepParameters()
+        private bool TryApplySelectedStepParameters(bool prepareFullSave = false)
         {
             if (SelectedStepEditObject == null && !LoadSelectedStepParametersForEdit(updateStatus: true))
             {
@@ -6479,6 +7319,7 @@ namespace OpenVisionLab
             VisionPipeline pipeline = selectedStepLoad.Pipeline;
             VisionPipelineStep step = selectedStepLoad.Step;
 
+            if (prepareFullSave) { prepareRecipeSave(); }
             OpenVisionRecipeStepEditApplyResult applyResult = stepEditApplyOwner.Apply(
                 recipeName,
                 pipelineName,
@@ -6622,17 +7463,43 @@ namespace OpenVisionLab
             selectedStepEditSession.Clear();
         }
 
-        internal bool TryCloseRecipeManager()
+        internal bool TryCloseRecipeManager(bool restoreContextAfterClose = true)
         {
-            return TryLeaveSelectedStepEdit(
+            if (isOpeningRecipeManagerWork)
+            {
+                return true;
+            }
+
+            if (!TryLeaveSelectedStepEdit(
                 OpenVisionRecipePendingEditTransitionKind.RecipeManagerClose,
-                OpenVisionRecipeText.Local("Recipe Manager 닫기", "Close Recipe Manager"));
+                OpenVisionRecipeText.Local("Recipe Manager 닫기", "Close Recipe Manager")))
+            {
+                return false;
+            }
+
+            if (restoreContextAfterClose && isRecipeManagerDetailContextActive)
+            {
+                RestoreRecipeManagerContextAfterDetail();
+            }
+
+            return true;
         }
 
         private bool TryLeaveSelectedStepEdit(
             OpenVisionRecipePendingEditTransitionKind kind,
             string targetName)
         {
+            if (workbenchPipeline != null && !workbenchPipeline.TryLeave(new OpenVisionRecipePendingEditRequest
+            {
+                Kind = kind,
+                RecipeName = NormalizeRecipeName(selectedRecipeName),
+                PipelineName = selectedPipelineOption?.PipelineName ?? string.Empty,
+                TargetName = targetName ?? string.Empty
+            }))
+            {
+                return false;
+            }
+
             return pendingEditTransitionController.TryLeave(
                 selectedStepEditSession.IsDirty,
                 new OpenVisionRecipePendingEditRequest
@@ -6644,6 +7511,55 @@ namespace OpenVisionLab
                     TargetName = targetName ?? string.Empty
                 });
         }
+
+        internal void AttachWorkbenchPipeline(OpenVisionWorkbenchPipelineViewModel value)
+        {
+            workbenchPipeline = value;
+            workbenchPipeline.PropertyChanged += OnWorkbenchPipelineChanged;
+            OnPropertyChanged(nameof(WorkbenchPipeline));
+        }
+
+        internal void DetachWorkbenchPipeline(OpenVisionWorkbenchPipelineViewModel value)
+        {
+            if (!ReferenceEquals(workbenchPipeline, value)) { return; }
+            workbenchPipeline.PropertyChanged -= OnWorkbenchPipelineChanged;
+            workbenchPipeline = null;
+        }
+
+        private void OnWorkbenchPipelineChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            OnPropertyChanged(nameof(IsWorkbenchPipelineDirty));
+            CommandManager.InvalidateRequerySuggested();
+        }
+
+        internal VisionPipeline LoadWorkbenchPipeline()
+        {
+            string name = selectedPipelineOption?.PipelineName ?? VisionPipelineAppendService.DefaultPipelineName;
+            string path = RecipeWorkspaceService.GetVisionPipelinePath(NormalizeRecipeName(selectedRecipeName), name);
+            return VisionPipelineStorage.TryLoadFromFile(path, out VisionPipeline value, out _)
+                ? value : new VisionPipeline { Name = name };
+        }
+
+        internal bool SaveWorkbenchPipeline(VisionPipeline value)
+        {
+            try
+            {
+                prepareRecipeSave();
+                OpenVisionRecipeStepEditApplyResult result = stepEditApplyOwner.Apply(
+                    NormalizeRecipeName(selectedRecipeName), selectedPipelineOption?.PipelineName ?? value.Name, value, null, null, applyProperty: false);
+                if (!result.Succeeded) { HasRecipeSaveFailure = true; StatusText = result.Message; return false; }
+                return SaveRuntimeRecipe();
+            }
+            catch (Exception ex)
+            {
+                HasRecipeSaveFailure = true;
+                StatusText = string.Format(CultureInfo.CurrentCulture, LocalText("레시피 저장 실패: {0} / {1}", "Recipe save failed: {0} / {1}"),
+                    NormalizeRecipeName(selectedRecipeName), ex.GetBaseException().Message);
+                return false;
+            }
+        }
+
+        internal bool TryCloseWorkbench() => TryLeaveSelectedStepEdit(OpenVisionRecipePendingEditTransitionKind.RecipeManagerClose, string.Empty);
 
         private bool IsSamePipelinePreviewStep(
             OpenVisionRecipePipelineStepPreview left,
@@ -6883,12 +7799,16 @@ namespace OpenVisionLab
             selectedRecipeName = normalized;
             if (changed)
             {
+                HasRecipeSaveFailure = false;
                 SelectedPipelinePreviewStep = null;
                 llmXmlDraftImportReady = false;
                 validationSetSelectionOwner.ClearPinnedSelections();
                 PinArrayGapValidationStatusText = string.Empty;
                 IsPinArrayGapValidationIdentityFrozen = false;
                 OnPropertyChanged(nameof(SelectedRecipeName));
+                OnPropertyChanged(nameof(MainRecipeName));
+                OnPropertyChanged(nameof(RecipeManagerSelectionIsCurrentMain));
+                OnPropertyChanged(nameof(RecipeManagerApplyToMainEnabled));
                 OnPropertyChanged(nameof(PinArrayGapTrainValidationSetOption));
                 OnPropertyChanged(nameof(PinArrayGapValidationValidationSetOption));
                 OnPropertyChanged(nameof(PinArrayGapTestValidationSetOption));
@@ -6909,8 +7829,10 @@ namespace OpenVisionLab
 
         private void RefreshCommandState()
         {
+            OnPropertyChanged(nameof(IsLlmXmlDraftReady));
             OnPropertyChanged(nameof(RecipeEditValidationText));
             OnPropertyChanged(nameof(PipelineEditValidationText));
+            OnPropertyChanged(nameof(RecipeManagerCurrentWorkText));
             OnPropertyChanged(nameof(RecipeGuidedNextActionText));
             OnPropertyChanged(nameof(RunValidationSuiteText));
             OnPropertyChanged(nameof(StopValidationSuiteText));
@@ -7844,7 +8766,9 @@ namespace OpenVisionLab
             return ValidateLlmXmlDraftText(false);
         }
 
-        private void ImportLlmXmlDraft()
+        private void ImportLlmXmlDraft() => ImportLlmXmlDraft(null, activate: true);
+
+        private bool ImportLlmXmlDraft(string requestedPipelineName, bool activate)
         {
             if (!TryValidateLocatorEvidenceReviewDecisionForPromotion(out string reviewDecisionMessage))
             {
@@ -7856,7 +8780,7 @@ namespace OpenVisionLab
                     "현재 APPROVED review decision 없이는 locator Recipe를 가져올 수 없습니다.",
                     "A locator Recipe cannot be imported without a current APPROVED review decision.");
                 RefreshCommandState();
-                return;
+                return false;
             }
 
             if (!TryBuildLlmDraftPipeline(copyDependencies: true, out VisionPipeline pipeline, out string validationReport, out string dependencyReport))
@@ -7868,19 +8792,19 @@ namespace OpenVisionLab
                 LlmXmlDraftDiffReport = LocalText("변경점 검토 건너뜀: 검증 실패.", "Diff review skipped: validation failed.");
                 StatusText = LocalText("LLM XML 초안을 가져올 수 없습니다.", "LLM XML draft is not importable.");
                 RefreshCommandState();
-                return;
+                return false;
             }
 
             string recipeName = NormalizeRecipeName(selectedRecipeName);
             string basePipelineName = string.IsNullOrWhiteSpace(pipeline.Name)
                 ? "LLM_Draft_" + DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture)
                 : pipeline.Name.Trim();
-            pipeline.Name = CreateUniquePipelineName(recipeName, basePipelineName);
-            if (!TryLeaveSelectedStepEdit(
+            pipeline.Name = requestedPipelineName ?? CreateUniquePipelineName(recipeName, basePipelineName);
+            if (activate && !TryLeaveSelectedStepEdit(
                 OpenVisionRecipePendingEditTransitionKind.Pipeline,
                 pipeline.Name))
             {
-                return;
+                return false;
             }
 
             if (OpenVisionRecipeDependencyReviewService.TryCopyReferenceImageToRecipe(
@@ -7899,13 +8823,21 @@ namespace OpenVisionLab
             LlmXmlDraftReviewReport = review.ImportReviewText;
             LlmXmlDraftDiffReport = review.DiffReviewText;
             VisionPipelineStorage.Save(recipeName, pipeline);
-            VisionPipelineStorage.SaveActivePipelineName(recipeName, pipeline.Name);
+            if (activate) { VisionPipelineStorage.SaveActivePipelineName(recipeName, pipeline.Name); }
             LlmXmlDraftValidationReport = validationReport;
             LlmXmlDraftDependencyReport = dependencyReport;
             StatusText = LocalText("LLM XML 초안 가져오기 완료: ", "Imported LLM XML draft: ") + pipeline.Name;
-            RefreshPipelineOptions(pipeline.Name);
-            RefreshOptions();
-            refreshAfterSwitch();
+            if (activate)
+            {
+                RefreshPipelineOptions(pipeline.Name); RefreshOptions(); refreshAfterSwitch();
+            }
+            else
+            {
+                RefreshPipelineOptions(selectedPipelineOption?.PipelineName, preserveSelectedOption: true);
+                if (string.Equals(RecipeManagerSelectedRecipeName, recipeName, StringComparison.OrdinalIgnoreCase)) { RefreshRecipeManagerSelectedSummary(); }
+                RefreshRecipeManagerLibraryDetails();
+            }
+            return true;
         }
 
         private void UseSelectedSampleReference()
@@ -7945,6 +8877,9 @@ namespace OpenVisionLab
             LlmXmlDraftDiffReport = review?.DiffReviewText
                 ?? LocalText("변경점 검토 건너뜀: 검증 실패.", "Diff review skipped: validation failed.");
             llmXmlDraftImportReady = ok;
+            validatedLlmDraftName = ok ? pipeline.Name : string.Empty;
+            llmDraftReviewRows = review?.Steps ?? Array.Empty<KeyValuePair<OpenVisionRecipePipelineStepPreview, string>>();
+            OnPropertyChanged(nameof(LlmDraftReviewRows)); OnPropertyChanged(nameof(IsLlmXmlDraftReady));
             StatusText = ok ? LocalText("LLM XML 초안 검증 OK.", "LLM XML draft validation OK.") : LocalText("LLM XML 초안 검증 NG.", "LLM XML draft validation NG.");
             RefreshCommandState();
             return ok;
@@ -8097,6 +9032,140 @@ namespace OpenVisionLab
 
 
         #region Pipeline XML and review bundle exchange
+
+        private void ImportBrowsedPipelineXml()
+        {
+            string recipeName = RecipeManagerSelectedRecipeName;
+            string path = selectImportPipelineXmlPath();
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                StatusText = LocalText("XML 가져오기가 취소되었습니다.", "Import canceled.");
+                return;
+            }
+
+            ImportBrowsedPipelineXmlFromPath(recipeName, path);
+        }
+
+        public bool ImportBrowsedPipelineXmlFromPath(string recipeName, string path)
+        {
+            if (!CanUseBrowsedRecipe()
+                || !string.Equals(recipeName, RecipeManagerSelectedRecipeName, StringComparison.OrdinalIgnoreCase))
+            {
+                StatusText = LocalText("파일 작업 대상 레시피를 다시 선택하세요.", "Select the file-operation recipe again.");
+                return false;
+            }
+
+            if (IsReviewBundlePath(path))
+            {
+                return LoadReviewBundleForDryRun(path);
+            }
+
+            bool isCurrentMain = string.Equals(recipeName, MainRecipeName, StringComparison.OrdinalIgnoreCase);
+            if (isCurrentMain && !TryLeaveSelectedStepEdit(
+                OpenVisionRecipePendingEditTransitionKind.Pipeline,
+                Path.GetFileNameWithoutExtension(path)))
+            {
+                return false;
+            }
+
+            OpenVisionRecipePipelineExchangeResult result = pipelineExchangeUseCase.Import(recipeName, path);
+            OpenVisionRecipePipelineExchangeProjection projection = pipelineExchangeProjectionOwner.Project(
+                OpenVisionRecipePipelineExchangeOperation.Import,
+                result);
+            StatusText = projection.StatusText;
+            if (!projection.Succeeded)
+            {
+                RefreshRecipeManagerSelectedSummary();
+                return false;
+            }
+
+            if (isCurrentMain)
+            {
+                RefreshPipelineOptions(projection.PipelineName);
+            }
+
+            RecipeManagerSelectedPipelineOptions = RecipeWorkspaceService.GetVisionPipelineNames(recipeName);
+            RecipeManagerSelectedPipelineName = projection.PipelineName;
+            RefreshOptions();
+            EditRecipeName = recipeName;
+            if (isCurrentMain)
+            {
+                refreshAfterSwitch();
+            }
+
+            return true;
+        }
+
+        private void ExportBrowsedPipelineXml()
+        {
+            string recipeName = RecipeManagerSelectedRecipeName;
+            string pipelineName = RecipeManagerSelectedPipelineName;
+            string path = selectExportPipelineXmlPath(SanitizePathSegment(pipelineName) + ".xml");
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                StatusText = LocalText("XML 내보내기가 취소되었습니다.", "Export canceled.");
+                return;
+            }
+
+            ExportBrowsedPipelineXmlToPath(recipeName, pipelineName, path);
+        }
+
+        public bool ExportBrowsedPipelineXmlToPath(string recipeName, string pipelineName, string path)
+        {
+            if (!CanUseBrowsedRecipe()
+                || !string.Equals(recipeName, RecipeManagerSelectedRecipeName, StringComparison.OrdinalIgnoreCase)
+                || !string.Equals(pipelineName, RecipeManagerSelectedPipelineName, StringComparison.OrdinalIgnoreCase)
+                || !RecipeManagerSelectedPipelineOptions.Contains(pipelineName, StringComparer.OrdinalIgnoreCase))
+            {
+                StatusText = LocalText("파일 작업 대상을 다시 선택하세요.", "Select the file-operation target again.");
+                return false;
+            }
+
+            OpenVisionRecipePipelineExchangeResult result = pipelineExchangeUseCase.Export(recipeName, pipelineName, path);
+            OpenVisionRecipePipelineExchangeProjection projection = pipelineExchangeProjectionOwner.Project(
+                OpenVisionRecipePipelineExchangeOperation.Export,
+                result);
+            StatusText = projection.StatusText;
+            RefreshRecipeManagerSelectedSummary();
+            return projection.Succeeded;
+        }
+
+        private void ExportBrowsedReviewBundle()
+        {
+            string recipeName = RecipeManagerSelectedRecipeName;
+            string pipelineName = RecipeManagerSelectedPipelineName;
+            string path = selectExportReviewBundlePath(SanitizePathSegment(pipelineName) + ".review.zip");
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                StatusText = LocalText("검토 묶음 내보내기가 취소되었습니다.", "Review bundle export canceled.");
+                return;
+            }
+
+            ExportBrowsedReviewBundleToPath(recipeName, pipelineName, path);
+        }
+
+        public bool ExportBrowsedReviewBundleToPath(string recipeName, string pipelineName, string path)
+        {
+            if (!CanUseBrowsedRecipe()
+                || !string.Equals(recipeName, RecipeManagerSelectedRecipeName, StringComparison.OrdinalIgnoreCase)
+                || !string.Equals(pipelineName, RecipeManagerSelectedPipelineName, StringComparison.OrdinalIgnoreCase)
+                || !RecipeManagerSelectedPipelineOptions.Contains(pipelineName, StringComparer.OrdinalIgnoreCase))
+            {
+                StatusText = LocalText("파일 작업 대상을 다시 선택하세요.", "Select the file-operation target again.");
+                return false;
+            }
+
+            IReadOnlyList<OpenVisionRecipeReviewReference> references = string.Equals(
+                recipeName, MainRecipeName, StringComparison.OrdinalIgnoreCase)
+                ? BuildRecipeReviewReferences()
+                : Array.Empty<OpenVisionRecipeReviewReference>();
+            OpenVisionRecipePipelineExchangeResult result = pipelineExchangeUseCase.ExportReviewBundle(
+                recipeName, pipelineName, path, references);
+            OpenVisionRecipePipelineExchangeProjection projection = pipelineExchangeProjectionOwner.Project(
+                OpenVisionRecipePipelineExchangeOperation.ExportReviewBundle, result);
+            StatusText = projection.StatusText;
+            return projection.Succeeded;
+        }
 
         private void ImportPipelineXml()
         {
@@ -8286,6 +9355,84 @@ namespace OpenVisionLab
 
 
         #region Pipeline lifecycle
+
+        private bool CanManageBrowsedPipeline(string operation)
+        {
+            if (!CanExportBrowsedInspection())
+            {
+                return false;
+            }
+
+            return operation switch
+            {
+                "Activate" => RecipeManagerSelectedSummary.XmlValid
+                    && !string.Equals(RecipeManagerSelectedSummary.ActivePipelineName, RecipeManagerSelectedPipelineName, StringComparison.OrdinalIgnoreCase),
+                "Duplicate" => RecipeWorkspaceService.IsValidRecipeName(RecipeManagerPipelineEditName),
+                "Rename" => RecipeWorkspaceService.IsValidRecipeName(RecipeManagerPipelineEditName)
+                    && !RecipeManagerSelectedPipelineOptions.Contains(RecipeManagerPipelineEditName.Trim(), StringComparer.OrdinalIgnoreCase),
+                "Delete" => RecipeManagerSelectedPipelineOptions.Count > 1,
+                _ => false
+            };
+        }
+
+        private void ManageBrowsedPipeline(string operation)
+        {
+            if (!CanManageBrowsedPipeline(operation))
+            {
+                return;
+            }
+
+            string recipeName = RecipeManagerSelectedRecipeName;
+            string pipelineName = RecipeManagerSelectedPipelineName;
+            string requestedName = RecipeManagerPipelineEditName.Trim();
+            bool isMain = string.Equals(recipeName, MainRecipeName, StringComparison.OrdinalIgnoreCase);
+            bool changesWork = isMain
+                && string.Equals(pipelineName, SelectedPipelineOption?.PipelineName, StringComparison.OrdinalIgnoreCase)
+                && (operation == "Rename" || operation == "Delete");
+            if (operation == "Delete" && !confirmDeletePipeline(recipeName, pipelineName))
+            {
+                StatusText = LocalText("파이프라인 삭제가 취소되었습니다.", "Pipeline delete canceled.");
+                return;
+            }
+            if ((changesWork || (isMain && operation == "Activate"))
+                && !TryLeaveSelectedStepEdit(OpenVisionRecipePendingEditTransitionKind.Pipeline, requestedName))
+            {
+                return;
+            }
+
+            try
+            {
+                OpenVisionRecipePipelineLifecycleOperation kind = Enum.Parse<OpenVisionRecipePipelineLifecycleOperation>(operation);
+                OpenVisionRecipePipelineLifecycleResult result = kind switch
+                {
+                    OpenVisionRecipePipelineLifecycleOperation.Activate => pipelineLifecycleUseCase.Activate(recipeName, pipelineName),
+                    OpenVisionRecipePipelineLifecycleOperation.Duplicate => pipelineLifecycleUseCase.Duplicate(recipeName, pipelineName, requestedName, activateCopy: false),
+                    OpenVisionRecipePipelineLifecycleOperation.Rename => pipelineLifecycleUseCase.Rename(recipeName, pipelineName, requestedName),
+                    _ => pipelineLifecycleUseCase.Delete(recipeName, pipelineName)
+                };
+                OpenVisionRecipePipelineLifecycleProjection projection = pipelineLifecycleProjectionOwner.Project(kind, result);
+                StatusText = projection.StatusText;
+                if (!projection.Succeeded)
+                {
+                    return;
+                }
+
+                RecipeManagerSelectedPipelineOptions = RecipeWorkspaceService.GetVisionPipelineNames(recipeName);
+                RecipeManagerSelectedPipelineName = projection.PipelineName;
+                RecipeManagerPipelineEditName = projection.PipelineName;
+                RefreshRecipeManagerSelectedSummary();
+                if (isMain)
+                {
+                    RefreshPipelineOptions(changesWork ? projection.PipelineName : SelectedPipelineOption?.PipelineName);
+                    refreshAfterSwitch();
+                }
+                RefreshCommandState();
+            }
+            catch (Exception ex)
+            {
+                StatusText = LocalText("검사 관리 실패: ", "Inspection management failed: ") + ex.GetBaseException().Message;
+            }
+        }
 
         private void ActivateSelectedPipeline()
         {
@@ -9075,6 +10222,164 @@ namespace OpenVisionLab
 
         #region Recipe workspace lifecycle
 
+        public bool CanUseMainValidationSets => !IsSwitchingRecipe && WorkbenchPipeline != null && !WorkbenchPipeline.IsRunning && !executionSession.IsValidationSuiteRunning;
+
+        internal IReadOnlyList<OpenVisionRecipeValidationSetOption> GetMainValidationSets(out string error)
+        {
+            try
+            {
+                if (!OpenVisionRecipeValidationSetStorage.TryLoad(NormalizeRecipeName(currentRecipeProvider()), out OpenVisionRecipeValidationSetDocument document, out error)) { return Array.Empty<OpenVisionRecipeValidationSetOption>(); }
+                return document.Sets.Select(set => new OpenVisionRecipeValidationSetOption(set)).ToArray();
+            }
+            catch (Exception exception) { error = exception.GetBaseException().Message; return Array.Empty<OpenVisionRecipeValidationSetOption>(); }
+        }
+
+        internal bool TrySaveMainValidationSet(string name, IReadOnlyList<OpenVisionRecipeValidationSetImage> images, out string error)
+        {
+            error = string.Empty;
+            if (!CanUseMainValidationSets) { return false; }
+            name = name?.Trim() ?? string.Empty;
+            if (name.Length == 0) { error = OpenVisionLanguageService.T("Workbench.ValidationSet.NameRequired"); return false; }
+            if (name.Length > 60 || name.IndexOfAny("\\/:*?\"<>|".ToCharArray()) >= 0 || name.Any(char.IsControl)) { error = OpenVisionLanguageService.T("Workbench.ValidationSet.NameInvalid"); return false; }
+            if (images == null || images.Count == 0) { error = OpenVisionLanguageService.T("Workbench.ValidationSet.NoLabels"); return false; }
+            try
+            {
+                string recipeName = NormalizeRecipeName(currentRecipeProvider());
+                var owner = new OpenVisionRecipeValidationSetDocumentOwner();
+                if (!owner.TryLoad(recipeName, out error)) { return false; }
+                if (!owner.TryCreateSet(name)) { error = OpenVisionLanguageService.T("Workbench.ValidationSet.NameExists"); return false; }
+                foreach (var group in images.GroupBy(image => image.Expected))
+                {
+                    if (!owner.TryAddImages(name, group.Select(image => image.Path), group.Key, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, out int added, out int updated, out int skipped, out error) || skipped > 0 || added + updated != group.Count())
+                    {
+                        if (string.IsNullOrEmpty(error)) { error = OpenVisionLanguageService.T("Workbench.ValidationSet.FileRequired"); }
+                        return false;
+                    }
+                }
+                if (!owner.TryCaptureImageHashes(name, out error) || !owner.TrySave(recipeName, out error)) { return false; }
+                if (string.Equals(NormalizeRecipeName(selectedRecipeName), recipeName, StringComparison.OrdinalIgnoreCase)) { RefreshValidationSetOptions(name, refreshCommandState: false); }
+                if (string.Equals(RecipeManagerSelectedRecipeName, recipeName, StringComparison.OrdinalIgnoreCase)) { RefreshRecipeManagerSelectedSummary(); }
+                RefreshRecipeManagerLibraryDetails();
+                return true;
+            }
+            catch (Exception exception) { error = exception.GetBaseException().Message; return false; }
+        }
+
+        internal bool CanCreateMainPipeline => CanCreateMainRecipe(false);
+        internal bool CanRenameMainPipeline => CanCreateMainRecipe(false) && SelectedPipelineOption != null;
+
+        internal string NewMainPipelineName()
+        {
+            string[] names = RecipeWorkspaceService.GetVisionPipelineNames(MainRecipeName);
+            int index = names.Length + 1;
+            string prefix = OpenVisionLanguageService.T("Workbench.Pipeline.DefaultNamePrefix");
+            string name;
+            do { name = prefix + "_" + (index++).ToString(CultureInfo.InvariantCulture); } while (names.Contains(name, StringComparer.OrdinalIgnoreCase));
+            return name;
+        }
+
+        internal string ValidateMainPipelineName(string requestedName, string sourceName = null)
+        {
+            if (string.IsNullOrWhiteSpace(requestedName)) { return "Workbench.Pipeline.NameRequired"; }
+            if (requestedName.Trim().Length > 60 || !RecipeWorkspaceService.TryNormalizeStoragePathSegment(requestedName, VisionPipelineAppendService.DefaultPipelineName, "Pipeline name", out string name, out _)) { return "Workbench.Pipeline.NameInvalid"; }
+            return RecipeWorkspaceService.GetVisionPipelineNames(MainRecipeName).Any(existing => !string.Equals(existing, sourceName, StringComparison.OrdinalIgnoreCase) && string.Equals(existing, name, StringComparison.OrdinalIgnoreCase)) ? "Workbench.Pipeline.NameExists" : string.Empty;
+        }
+
+        internal (bool Succeeded, bool Canceled, string Error) CreateMainPipeline(string requestedName)
+        {
+            if (!CanCreateMainPipeline) { return (false, false, LocalText("현재 작업을 마친 뒤 다시 시도하세요.", "Finish the current operation and try again.")); }
+            string validation = ValidateMainPipelineName(requestedName);
+            if (!string.IsNullOrEmpty(validation)) { return (false, false, OpenVisionLanguageService.T(validation)); }
+            if (!TryLeaveSelectedStepEdit(OpenVisionRecipePendingEditTransitionKind.Pipeline, requestedName)) { return (false, true, string.Empty); }
+            validation = ValidateMainPipelineName(requestedName);
+            if (!string.IsNullOrEmpty(validation)) { return (false, false, OpenVisionLanguageService.T(validation)); }
+            OpenVisionRecipePipelineLifecycleResult result = pipelineLifecycleUseCase.CreateEmpty(MainRecipeName, requestedName);
+            if (!result.Succeeded) { return (false, false, OpenVisionLanguageService.T("Workbench.Pipeline.CreateFailed") + " " + result.Detail); }
+            SelectedPipelinePreviewStep = null;
+            RefreshPipelineOptions(result.PipelineName);
+            if (string.Equals(NormalizeRecipeName(RecipeManagerSelectedRecipeName), MainRecipeName, StringComparison.OrdinalIgnoreCase)) { RefreshRecipeManagerSelectedSummary(); }
+            refreshAfterSwitch();
+            return (string.Equals(SelectedPipelineOption?.PipelineName, result.PipelineName, StringComparison.OrdinalIgnoreCase), false, string.Empty);
+        }
+
+
+        internal (bool Succeeded, bool Canceled, string Error) ExportMainPipelineXml()
+        {
+            if (!CanRenameMainPipeline) { return (false, false, LocalText("현재 작업을 마친 뒤 다시 시도하세요.", "Finish the current operation and try again.")); }
+            string recipeName = MainRecipeName;
+            string pipelineName = SelectedPipelineOption.PipelineName;
+            try
+            {
+                string path = selectExportPipelineXmlPath(SanitizePathSegment(pipelineName) + ".xml");
+                if (string.IsNullOrWhiteSpace(path) || !CanRenameMainPipeline
+                    || !string.Equals(recipeName, MainRecipeName, StringComparison.OrdinalIgnoreCase)
+                    || !string.Equals(pipelineName, SelectedPipelineOption?.PipelineName, StringComparison.OrdinalIgnoreCase)) { return (false, true, string.Empty); }
+                OpenVisionRecipePipelineExchangeResult result = pipelineExchangeUseCase.ExportExisting(recipeName, pipelineName, path);
+                StatusText = pipelineExchangeProjectionOwner.Project(OpenVisionRecipePipelineExchangeOperation.Export, result).StatusText;
+                return (result.Succeeded, false, result.Detail);
+            }
+            catch (Exception exception) { return (false, false, exception.GetBaseException().Message); }
+        }
+
+        internal (bool Succeeded, bool Canceled, string Error) DuplicateMainPipeline()
+        {
+            if (!CanRenameMainPipeline) { return (false, false, OpenVisionLanguageService.T("Workbench.Pipeline.SelectionChanged")); }
+            string recipeName = MainRecipeName;
+            string sourceName = SelectedPipelineOption.PipelineName;
+            string requestedName = sourceName + " " + OpenVisionLanguageService.T("Workbench.Recipe.CopySuffix");
+            if (!TryLeaveSelectedStepEdit(OpenVisionRecipePendingEditTransitionKind.Pipeline, requestedName)) { return (false, true, string.Empty); }
+            if (!CanRenameMainPipeline || !string.Equals(MainRecipeName, recipeName, StringComparison.OrdinalIgnoreCase) || !string.Equals(SelectedPipelineOption?.PipelineName, sourceName, StringComparison.OrdinalIgnoreCase)) { return (false, false, OpenVisionLanguageService.T("Workbench.Pipeline.SelectionChanged")); }
+            OpenVisionRecipePipelineLifecycleResult result = pipelineLifecycleUseCase.Duplicate(recipeName, sourceName, requestedName, activateCopy: false);
+            if (!result.Succeeded) { return (false, false, result.Detail); }
+            RefreshPipelineOptions(sourceName);
+            if (string.Equals(NormalizeRecipeName(RecipeManagerSelectedRecipeName), MainRecipeName, StringComparison.OrdinalIgnoreCase)) { RefreshRecipeManagerSelectedSummary(); }
+            return (true, false, string.Empty);
+        }
+
+        internal (bool Succeeded, bool Canceled, string Error) RenameMainPipeline(string sourceName, string requestedName)
+        {
+            if (!CanRenameMainPipeline || !string.Equals(SelectedPipelineOption?.PipelineName, sourceName, StringComparison.OrdinalIgnoreCase)) { return (false, false, OpenVisionLanguageService.T("Workbench.Pipeline.SelectionChanged")); }
+            string validation = ValidateMainPipelineName(requestedName, sourceName);
+            if (!string.IsNullOrEmpty(validation)) { return (false, false, OpenVisionLanguageService.T(validation)); }
+            string name = requestedName.Trim();
+            if (string.Equals(sourceName, name, StringComparison.OrdinalIgnoreCase)) { return (true, false, string.Empty); }
+            if (!TryLeaveSelectedStepEdit(OpenVisionRecipePendingEditTransitionKind.Pipeline, name)) { return (false, true, string.Empty); }
+            validation = ValidateMainPipelineName(name, sourceName);
+            if (!string.IsNullOrEmpty(validation)) { return (false, false, OpenVisionLanguageService.T(validation)); }
+            OpenVisionRecipePipelineLifecycleResult result = pipelineLifecycleUseCase.Rename(MainRecipeName, sourceName, name);
+            if (!result.Succeeded) { return (false, false, OpenVisionLanguageService.T("Workbench.Pipeline.RenameFailed") + " " + result.Detail); }
+            SelectedPipelinePreviewStep = null;
+            RefreshPipelineOptions(result.PipelineName);
+            if (string.Equals(NormalizeRecipeName(RecipeManagerSelectedRecipeName), MainRecipeName, StringComparison.OrdinalIgnoreCase)) { RefreshRecipeManagerSelectedSummary(); }
+            refreshAfterSwitch();
+            return (string.Equals(SelectedPipelineOption?.PipelineName, result.PipelineName, StringComparison.OrdinalIgnoreCase), false, string.Empty);
+        }
+
+        public string MainRecipeDescription => recipeDescriptionProvider();
+        internal bool CanCreateMainRecipe(bool saveAs) => !IsSwitchingRecipe && !isRecipeManagerDetailContextActive
+            && workbenchPipeline != null && !workbenchPipeline.IsRunning && !executionSession.IsValidationSuiteRunning
+            && (!saveAs || saveRuntimeRecipeCopy != null);
+
+        internal string ValidateMainRecipe(string name, string description, string firstPipeline, bool saveAs)
+            => recipeWorkspaceUseCase.ValidateWorkbenchRecipe(name, description, firstPipeline, saveAs);
+
+        internal async Task<(bool Succeeded, bool Canceled, string Error)> CreateMainRecipeAsync(string name, string description, string firstPipeline, bool copyCurrent, bool saveAs)
+        {
+            if (!CanCreateMainRecipe(saveAs)) { return (false, false, LocalText("현재 작업을 마친 뒤 다시 시도하세요.", "Finish the current operation and try again.")); }
+            string validation = ValidateMainRecipe(name, description, firstPipeline, saveAs);
+            if (!string.IsNullOrEmpty(validation)) { return (false, false, OpenVisionLanguageService.T(validation)); }
+            if (!saveAs && !TryLeaveSelectedStepEdit(OpenVisionRecipePendingEditTransitionKind.Recipe, name)) { return (false, true, string.Empty); }
+            VisionPipeline pipeline = saveAs || copyCurrent ? workbenchPipeline.CopyWorkingPipeline() : new VisionPipeline();
+            if (!saveAs) { pipeline.Name = firstPipeline.Trim(); }
+            OpenVisionRecipeWorkspaceResult result = recipeWorkspaceUseCase.CreateWorkbenchRecipe(name, description, pipeline,
+                saveAs ? NormalizeRecipeName(currentRecipeProvider()) : null, saveAs || copyCurrent ? saveRuntimeRecipeCopy : null);
+            if (!result.Succeeded) { StatusText = LocalText("레시피 저장에 실패했습니다.", "Could not save the recipe."); return (false, false, StatusText + " " + result.Error); }
+            await CreateAndSwitchRecipeAsync(result);
+            bool selected = string.Equals(NormalizeRecipeName(currentRecipeProvider()), result.RecipeName, StringComparison.OrdinalIgnoreCase);
+            return selected ? (true, false, string.Empty) : (false, false, LocalText("레시피를 열지 못했습니다.", "Could not open the recipe."));
+        }
+
+
         private async void CreateRecipe()
         {
             if (!TryLeaveSelectedStepEdit(
@@ -9087,17 +10392,29 @@ namespace OpenVisionLab
             await CreateAndSwitchRecipeAsync(recipeWorkspaceUseCase.Create());
         }
 
-        private async void CreateNamedRecipe()
+        private void CreateNamedRecipe()
         {
             string requestedName = EditRecipeName?.Trim();
-            if (!TryLeaveSelectedStepEdit(
-                OpenVisionRecipePendingEditTransitionKind.Recipe,
-                requestedName))
+            if (!CanCreateNamedRecipe())
             {
+                StatusText = LocalText("새 레시피 이름을 확인하세요.", "Check the new recipe name.");
                 return;
             }
 
-            await CreateAndSwitchRecipeAsync(recipeWorkspaceUseCase.Create(requestedName));
+            OpenVisionRecipeWorkspaceResult result = recipeWorkspaceUseCase.Create(requestedName);
+            OpenVisionRecipeWorkspaceLifecycleProjection projection =
+                workspaceLifecycleProjectionOwner.Project(
+                    OpenVisionRecipeWorkspaceLifecycleOperation.Create,
+                    result);
+            if (!result.Succeeded)
+            {
+                StatusText = projection.StatusText;
+                return;
+            }
+
+            RefreshOptions();
+            RecipeManagerSelectedRecipeName = result.RecipeName;
+            StatusText = projection.StatusText;
         }
 
         private bool CanCreateNamedRecipe()
@@ -9108,15 +10425,8 @@ namespace OpenVisionLab
 
         private void DuplicateSelectedRecipe()
         {
-            string sourceName = NormalizeRecipeName(selectedRecipeName);
+            string sourceName = NormalizeRecipeName(RecipeManagerSelectedRecipeName);
             string requestedName = NormalizeRecipeName(EditRecipeName);
-            if (!TryLeaveSelectedStepEdit(
-                OpenVisionRecipePendingEditTransitionKind.Recipe,
-                requestedName))
-            {
-                return;
-            }
-
             OpenVisionRecipeWorkspaceResult result = recipeWorkspaceUseCase.Duplicate(sourceName, requestedName);
             OpenVisionRecipeWorkspaceLifecycleProjection projection =
                 workspaceLifecycleProjectionOwner.Project(
@@ -9128,30 +10438,33 @@ namespace OpenVisionLab
                 return;
             }
 
-            switchRecipe(result.RecipeName);
-            StatusText = projection.StatusText;
             RefreshOptions();
-            refreshAfterSwitch();
+            RecipeManagerSelectedRecipeName = result.RecipeName;
+            StatusText = projection.StatusText;
         }
 
         private bool CanDuplicateSelectedRecipe()
         {
-            string selected = NormalizeRecipeName(selectedRecipeName);
+            string selected = NormalizeRecipeName(RecipeManagerSelectedRecipeName);
             string requested = EditRecipeName?.Trim();
             return recipeWorkspaceUseCase.CanDuplicate(selected, requested, RecipeOptions);
         }
 
         private void RenameSelectedRecipe()
         {
-            string oldName = NormalizeRecipeName(selectedRecipeName);
+            string oldName = NormalizeRecipeName(RecipeManagerSelectedRecipeName);
             string newName = NormalizeRecipeName(EditRecipeName);
+            bool renamesCurrentMain = string.Equals(
+                oldName,
+                NormalizeRecipeName(currentRecipeProvider()),
+                StringComparison.OrdinalIgnoreCase);
             if (!CanRenameSelectedRecipe())
             {
                 StatusText = LocalText("이름을 변경할 수 없습니다.", "Cannot rename this recipe.");
                 return;
             }
 
-            if (!TryLeaveSelectedStepEdit(
+            if (renamesCurrentMain && !TryLeaveSelectedStepEdit(
                 OpenVisionRecipePendingEditTransitionKind.Recipe,
                 newName))
             {
@@ -9169,22 +10482,34 @@ namespace OpenVisionLab
                 return;
             }
 
-            switchRecipe(result.RecipeName);
-            StatusText = projection.StatusText;
+            long openVersion = mainRecipeOpenVersion;
+            if (renamesCurrentMain)
+            {
+                openVersion = ++mainRecipeOpenVersion;
+                switchRecipe(result.RecipeName);
+                refreshAfterSwitch();
+            }
+
             RefreshOptions();
-            refreshAfterSwitch();
+            RecipeManagerSelectedRecipeName = result.RecipeName;
+            StatusText = projection.StatusText;
+            if (renamesCurrentMain) { _ = ObserveMainRecipeOpenAsync(result.RecipeName, openVersion); }
         }
 
         private bool CanRenameSelectedRecipe()
         {
-            string oldName = NormalizeRecipeName(selectedRecipeName);
+            string oldName = NormalizeRecipeName(RecipeManagerSelectedRecipeName);
             string newName = NormalizeRecipeName(EditRecipeName);
             return recipeWorkspaceUseCase.CanRename(oldName, newName, RecipeOptions);
         }
 
         private void DeleteSelectedRecipe()
         {
-            string deletedName = NormalizeRecipeName(selectedRecipeName);
+            string deletedName = NormalizeRecipeName(RecipeManagerSelectedRecipeName);
+            bool deletesCurrentMain = string.Equals(
+                deletedName,
+                NormalizeRecipeName(currentRecipeProvider()),
+                StringComparison.OrdinalIgnoreCase);
             if (!CanDeleteSelectedRecipe())
             {
                 StatusText = LocalText("삭제할 수 없습니다.", "Cannot delete this recipe.");
@@ -9197,7 +10522,7 @@ namespace OpenVisionLab
                 return;
             }
 
-            if (!TryLeaveSelectedStepEdit(
+            if (deletesCurrentMain && !TryLeaveSelectedStepEdit(
                 OpenVisionRecipePendingEditTransitionKind.Recipe,
                 LocalText("Recipe 삭제: ", "Delete Recipe: ") + deletedName))
             {
@@ -9219,16 +10544,25 @@ namespace OpenVisionLab
                 return;
             }
 
-            switchRecipe(result.RecipeName);
-            StatusText = projection.StatusText;
+            long openVersion = mainRecipeOpenVersion;
+            if (deletesCurrentMain)
+            {
+                openVersion = ++mainRecipeOpenVersion;
+                switchRecipe(result.RecipeName);
+                refreshAfterSwitch();
+            }
+
             RefreshOptions();
-            refreshAfterSwitch();
+            RecipeManagerSelectedRecipeName = result.RecipeName;
+            StatusText = projection.StatusText;
+            if (deletesCurrentMain) { _ = ObserveMainRecipeOpenAsync(result.RecipeName, openVersion); }
         }
 
         private bool CanDeleteSelectedRecipe()
         {
-            string selected = NormalizeRecipeName(selectedRecipeName);
-            return recipeWorkspaceUseCase.CanDelete(selected, RecipeOptions);
+            string selected = NormalizeRecipeName(RecipeManagerSelectedRecipeName);
+            return !string.Equals(selected, MainRecipeName, StringComparison.OrdinalIgnoreCase)
+                && recipeWorkspaceUseCase.CanDelete(selected, RecipeOptions);
         }
 
         private async Task CreateAndSwitchRecipeAsync(OpenVisionRecipeWorkspaceResult result)
@@ -9246,9 +10580,11 @@ namespace OpenVisionLab
             {
                 BeginRecipeSwitchingState(result.RecipeName);
                 await yieldToUi();
+                long openVersion = ++mainRecipeOpenVersion;
                 switchRecipe(result.RecipeName);
                 RefreshAfterRecipeSwitchIfNeeded(result.RecipeName);
                 await waitForRecipeSwitchCompletion();
+                if (openVersion == mainRecipeOpenVersion && IsMainRecipeOpenComplete(result.RecipeName)) { MainRecipeOpened(this, result.RecipeName); }
                 StatusText = projection.StatusText;
             }
             finally
@@ -9257,40 +10593,43 @@ namespace OpenVisionLab
             }
         }
 
-        private void SaveSelectedRecipe()
+        private void SaveSelectedRecipe() => TrySaveSelectedRecipe();
+
+        internal bool TrySaveSelectedRecipe()
         {
-            string recipeName = NormalizeRecipeName(selectedRecipeName);
-            if (string.IsNullOrWhiteSpace(recipeName))
-            {
-                return;
-            }
-
-            if (selectedStepEditSession.IsDirty && !TryApplySelectedStepParameters())
-            {
-                return;
-            }
-
+            if (string.IsNullOrWhiteSpace(NormalizeRecipeName(selectedRecipeName))) { return false; }
             try
             {
-                bool saved = saveRecipe();
-                StatusText = saved
-                    ? string.Format(
-                        CultureInfo.CurrentCulture,
-                        LocalText("레시피 저장 완료: {0}", "Recipe saved: {0}"),
-                        recipeName)
-                    : string.Format(
-                        CultureInfo.CurrentCulture,
-                        LocalText("레시피 저장 실패: {0}", "Recipe save failed: {0}"),
-                        recipeName);
+                if (workbenchPipeline != null && (workbenchPipeline.IsRunning || !workbenchPipeline.TryCommitPendingToolEdits())) { HasRecipeSaveFailure = true; return false; }
+                if (selectedStepEditSession.IsDirty && !TryApplySelectedStepParameters(prepareFullSave: true)) { HasRecipeSaveFailure = true; return false; }
+                bool pipelineChanged = workbenchPipeline?.IsDirty == true;
+                if (workbenchPipeline != null && !workbenchPipeline.TrySave()) { HasRecipeSaveFailure = true; return false; }
+                return pipelineChanged || SaveRuntimeRecipe();
             }
             catch (Exception ex)
             {
-                StatusText = string.Format(
-                    CultureInfo.CurrentCulture,
-                    LocalText("레시피 저장 실패: {0} / {1}", "Recipe save failed: {0} / {1}"),
-                    recipeName,
-                    ex.GetBaseException().Message);
+                HasRecipeSaveFailure = true;
+                StatusText = string.Format(CultureInfo.CurrentCulture, LocalText("레시피 저장 실패: {0} / {1}", "Recipe save failed: {0} / {1}"),
+                    NormalizeRecipeName(selectedRecipeName), ex.GetBaseException().Message);
+                return false;
             }
+        }
+
+        private bool SaveRuntimeRecipe()
+        {
+            prepareRecipeSave();
+            bool saved = saveRecipe();
+            HasRecipeSaveFailure = !saved;
+            StatusText = string.Format(CultureInfo.CurrentCulture,
+                saved ? LocalText("레시피 저장 완료: {0}", "Recipe saved: {0}") : LocalText("레시피 저장 실패: {0}", "Recipe save failed: {0}"),
+                NormalizeRecipeName(selectedRecipeName));
+            if (saved)
+            {
+                saveActionKey = "Workbench.Action.RecipeSaved";
+                OnPropertyChanged(nameof(SavedRevision));
+                OnPropertyChanged(nameof(SaveActionKey));
+            }
+            return saved;
         }
 
 

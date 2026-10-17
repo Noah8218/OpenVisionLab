@@ -116,10 +116,11 @@ namespace OpenVisionLab
             InitializeComponent();
             parameterGuideView = new VisionToolParameterGuideView();
             parameterGuideSidecarController =
-                new VisionToolParameterGuideSidecarController(this, parameterGuideView);
+                new VisionToolParameterGuideSidecarController(this, parameterGuideView, () => IsDockedInspectorMode);
             layoutController = new DockedInspectorLayoutController(this);
             learnWindowController = new VisionToolLearnWindowController(() => Window.GetWindow(this));
             ApplyDockedInspectorMode();
+            ApplyParameterGuideLocalization();
         }
 
         public event EventHandler DockedInspectorModeChanged;
@@ -219,6 +220,8 @@ namespace OpenVisionLab
         public TextBlock RunPreviewText => txtRunPreviewText;
         public TextBlock StatusText => txtStatus;
         public TextBlock SummaryText => txtSummary;
+        public ContentControl WorkbenchAcceptanceHost => workbenchAcceptanceHost;
+        public ContentControl WorkbenchTemplateHost => workbenchTemplateHost;
         public Border SummaryHost => bdSummary;
         public Border StatusHost => bdStatus;
         public TextBlock TemplateStatusText => txtTemplateStatus;
@@ -247,8 +250,18 @@ namespace OpenVisionLab
         public Button RunPreviewButton => btnRunPreview;
         public Button AddPipelineButton => btnAddPipeline;
         public Button NImageVerificationButton => btnNImageVerification;
+        internal FrameworkElement WorkbenchStepActions => workbenchStepActions;
+        internal Button WorkbenchDefaultsButton => btnWorkbenchDefaults;
+        internal FrameworkElement WorkbenchRunShortcut => txtWorkbenchRunShortcut;
         public Border PropertyGridHost => propertyGridHost;
         public VisionToolParameterGuideView ParameterGuide => parameterGuideView;
+        public void ToggleParameterGuide() => parameterGuideSidecarController.Toggle();
+
+        internal void ApplyParameterGuideLocalization()
+        {
+            VisionToolChromePresenter.ApplyTooltip(btnParameterGuide, OpenVisionLanguageService.T("VisionTool.ParameterGuide.Header"));
+            parameterGuideSidecarController.RefreshTitle();
+        }
 
         private static void OnIsDockedInspectorModeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
@@ -289,7 +302,20 @@ namespace OpenVisionLab
 
         private void ParameterGuideButton_Click(object sender, RoutedEventArgs e)
         {
-            parameterGuideSidecarController.Toggle();
+            ToggleParameterGuide();
+        }
+
+        private void WorkbenchActions_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e) => layoutController?.Apply();
+
+        private void WorkbenchBody_SizeChanged(object sender, SizeChangedEventArgs e) => layoutController?.UpdateBodyBounds();
+
+        private void AddPipelineButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.ContextMenu is ContextMenu menu)
+            {
+                menu.PlacementTarget = button;
+                menu.IsOpen = true;
+            }
         }
 
         #region Docked Inspector Layout
@@ -305,6 +331,7 @@ namespace OpenVisionLab
             private const double FloatingPropertyGridMinHeight = 370D;
             private const double DockedPropertyGridMinHeight = 0D;
             private const double FloatingResultReviewMinHeight = 48D;
+            private const double FloatingResultReviewMaxHeight = 96D;
             private const double DockedResultReviewMinHeight = 34D;
             private const double DockedResultReviewMaxHeight = 64D;
             private const double DockedResultReviewChipsMaxHeight = 28D;
@@ -323,30 +350,47 @@ namespace OpenVisionLab
             public void Apply()
             {
                 bool docked = shell.IsDockedInspectorMode;
+                bool workbench = shell.btnWorkbenchDefaults.Visibility == Visibility.Visible || shell.workbenchStepActions.Visibility == Visibility.Visible;
+                bool inlineRoute = docked && workbench;
+                bool naturalParameters = workbench && shell.PropertyGridHostVisibility != Visibility.Visible;
+                shell.parameterBodyScrollViewer.VerticalScrollBarVisibility = workbench ? ScrollBarVisibility.Auto : ScrollBarVisibility.Disabled;
+                shell.parameterGroupRow.Height = naturalParameters ? GridLength.Auto : new GridLength(1D, GridUnitType.Star);
 
                 shell.MinWidth = docked ? 0D : 900D;
                 shell.MinHeight = docked ? 0D : 620D;
                 shell.shellRoot.Margin = docked ? new Thickness(8) : new Thickness(14);
                 shell.previewColumn.Width = docked ? new GridLength(1D, GridUnitType.Star) : new GridLength(390D);
-                shell.flowColumn.Width = docked ? new GridLength(8D) : new GridLength(16D);
+                shell.flowColumn.Width = new GridLength(inlineRoute ? 24D : docked ? 8D : 16D);
                 shell.parameterColumn.Width = new GridLength(1D, GridUnitType.Star);
+                shell.propertyGridHost.MinWidth = workbench && docked ? 0D : 480D;
                 shell.flowRail.Visibility = docked ? Visibility.Collapsed : Visibility.Visible;
                 Thickness previewPadding = new Thickness(docked ? DockedPreviewCardPadding : FloatingPreviewCardPadding);
                 shell.gbInputLayer.Padding = previewPadding;
                 shell.gbOutputLayer.Padding = previewPadding;
+                shell.bdTemplateStatus.Padding = workbench && shell.workbenchTemplateHost.Content != null ? new Thickness(10, 4, 10, 4)
+                    : docked ? new Thickness(12, 5, 12, 5) : new Thickness(12, 8, 12, 8);
 
                 shell.previewInputRow.Height = docked ? GridLength.Auto : new GridLength(1D, GridUnitType.Star);
                 shell.previewSpacerRow.Height = docked ? new GridLength(2D) : new GridLength(10D);
                 shell.previewOutputRow.Height = new GridLength(1D, GridUnitType.Star);
 
-                shell.inputPreviewRow.Height = docked ? new GridLength(DockedPreviewFrameHeight) : new GridLength(1D, GridUnitType.Star);
-                shell.inputPreviewSpacerRow.Height = docked ? new GridLength(4D) : new GridLength(8D);
+                shell.inputPreviewRow.Height = inlineRoute ? new GridLength(0D) : docked ? new GridLength(DockedPreviewFrameHeight) : new GridLength(1D, GridUnitType.Star);
+                shell.inputPreviewSpacerRow.Height = new GridLength(inlineRoute ? 0D : docked ? 4D : 8D);
                 shell.inputComboRow.Height = docked ? new GridLength(28D) : new GridLength(32D);
-                shell.outputPreviewRow.Height = docked ? new GridLength(DockedPreviewFrameHeight) : new GridLength(1D, GridUnitType.Star);
-                shell.outputPreviewSpacerRow.Height = docked ? new GridLength(4D) : new GridLength(8D);
+                shell.outputPreviewRow.Height = inlineRoute ? new GridLength(0D) : docked ? new GridLength(DockedPreviewFrameHeight) : new GridLength(1D, GridUnitType.Star);
+                shell.outputPreviewSpacerRow.Height = new GridLength(inlineRoute ? 0D : docked ? 4D : 8D);
                 shell.outputComboRow.Height = docked ? new GridLength(28D) : new GridLength(32D);
-                shell.bdInputPreview.Visibility = Visibility.Visible;
-                shell.bdOutputPreview.Visibility = Visibility.Visible;
+                shell.bdInputPreview.Visibility = shell.bdOutputPreview.Visibility = inlineRoute ? Visibility.Collapsed : Visibility.Visible;
+                shell.workbenchRouteArrow.Visibility = inlineRoute ? Visibility.Visible : Visibility.Collapsed;
+                shell.gbInputLayer.SetResourceReference(StyleProperty, inlineRoute ? "VisionTool.WorkbenchRouteStyle" : typeof(GroupBox));
+                shell.gbOutputLayer.SetResourceReference(StyleProperty, inlineRoute ? "VisionTool.WorkbenchRouteStyle" : typeof(GroupBox));
+                shell.gbInputLayer.Padding = shell.gbOutputLayer.Padding = inlineRoute ? new Thickness(0D) : previewPadding;
+                shell.cbInputLayer.MinWidth = shell.cbOutputLayer.MinWidth = inlineRoute ? 0D : 160D;
+                shell.cbInputLayer.SetResourceReference(StyleProperty, inlineRoute ? "VisionTool.WorkbenchRouteComboBoxStyle" : "VisionTool.LayerComboBoxStyle");
+                shell.cbOutputLayer.SetResourceReference(StyleProperty, inlineRoute ? "VisionTool.WorkbenchRouteComboBoxStyle" : "VisionTool.LayerComboBoxStyle");
+                shell.btnCreateOutputLayer.Visibility = inlineRoute ? Visibility.Collapsed : Visibility.Visible;
+                shell.outputActionGapColumn.Width = new GridLength(inlineRoute ? 0D : 8D);
+                shell.outputActionColumn.Width = new GridLength(inlineRoute ? 0D : 34D);
 
                 Grid.SetRow(shell.gbInputLayer, 0);
                 Grid.SetColumn(shell.gbInputLayer, 0);
@@ -365,13 +409,17 @@ namespace OpenVisionLab
 
                 shell.titleRow.Height = docked ? new GridLength(0D) : GridLength.Auto;
                 shell.titleGapRow.Height = docked ? new GridLength(0D) : new GridLength(6D);
-                shell.summaryGapRow.Height = docked ? new GridLength(4D) : new GridLength(6D);
+                shell.summaryGapRow.Height = workbench && shell.workbenchTemplateHost.Content != null ? new GridLength(0D)
+                    : docked ? new GridLength(4D) : new GridLength(6D);
                 shell.actionGapRow.Height = docked ? new GridLength(2D) : new GridLength(6D);
 
-                shell.gbInputLayer.MinHeight = docked ? DockedPreviewCardMinHeight : 0D;
-                shell.gbOutputLayer.MinHeight = docked ? DockedPreviewCardMinHeight : 0D;
-                shell.gbParameters.MinHeight = docked ? DockedParameterGroupMinHeight : FloatingParameterGroupMinHeight;
-                shell.propertyGridHost.MinHeight = docked ? DockedPropertyGridMinHeight : FloatingPropertyGridMinHeight;
+                shell.gbInputLayer.MinHeight = shell.gbOutputLayer.MinHeight = inlineRoute ? 28D : docked ? DockedPreviewCardMinHeight : 0D;
+                shell.gbParameters.MinHeight = docked || workbench ? DockedParameterGroupMinHeight : FloatingParameterGroupMinHeight;
+                double floatingWorkbenchPropertyGridMinHeight = 380D + shell.propertyGridHost.Padding.Top + shell.propertyGridHost.Padding.Bottom
+                    + shell.propertyGridHost.BorderThickness.Top + shell.propertyGridHost.BorderThickness.Bottom;
+                shell.propertyGridHost.MinHeight = workbench ? (docked ? 160D : floatingWorkbenchPropertyGridMinHeight)
+                    : docked ? DockedPropertyGridMinHeight : FloatingPropertyGridMinHeight;
+                shell.propertyGridScrollViewer.MinHeight = shell.propertyGridHost.MinHeight;
                 shell.parameterGuideView.SetCompactMode(docked);
                 ApplyPresetDensity(docked);
                 ApplySummaryStatusDensity(docked);
@@ -388,16 +436,62 @@ namespace OpenVisionLab
                 Grid.SetRow(shell.btnRunPreview, docked ? 0 : 2);
                 Grid.SetColumn(shell.btnRunPreview, docked ? 4 : 0);
                 Grid.SetColumnSpan(shell.btnRunPreview, docked ? 1 : 5);
+                bool testRow = shell.btnWorkbenchDefaults.Visibility == Visibility.Visible;
+                Grid.SetColumn(shell.btnAddPipeline, testRow ? 4 : 0);
+                Grid.SetColumnSpan(shell.btnAddPipeline, 1);
+                shell.actionPanel.ColumnDefinitions[5].Width = new GridLength(testRow ? 6D : 0D);
+                shell.actionPanel.ColumnDefinitions[6].Width = testRow ? GridLength.Auto : new GridLength(0D);
+                shell.btnRunPreview.Height = testRow ? 34D : double.NaN;
+                if (testRow)
+                {
+                    shell.actionPanel.ColumnDefinitions[0].Width = GridLength.Auto;
+                    shell.actionPanel.ColumnDefinitions[1].Width = new GridLength(6D);
+                    shell.actionPanel.ColumnDefinitions[2].Width = GridLength.Auto;
+                    shell.actionPanel.ColumnDefinitions[3].Width = new GridLength(1D, GridUnitType.Star);
+                    shell.actionPanel.ColumnDefinitions[4].Width = GridLength.Auto;
+                    shell.rowAddPipelineAction.Height = new GridLength(34D);
+                    shell.rowRunPreviewGap.Height = shell.rowRunPreviewAction.Height = new GridLength(0D);
+                    Grid.SetRow(shell.btnRunPreview, 0);
+                    Grid.SetColumn(shell.btnRunPreview, 6);
+                    Grid.SetColumnSpan(shell.btnRunPreview, 1);
+                }
+                else
+                {
+                    shell.addPipelineActionColumn.Width = new GridLength(1D, GridUnitType.Star);
+                    shell.addPipelineActionGapColumn.Width = new GridLength(4D);
+                    shell.nImageActionColumn.Width = new GridLength(1D, GridUnitType.Star);
+                }
+                UpdateBodyBounds();
+            }
+
+            public void UpdateBodyBounds()
+            {
+                bool workbench = shell.btnWorkbenchDefaults.Visibility == Visibility.Visible || shell.workbenchStepActions.Visibility == Visibility.Visible;
+                if (!workbench || shell.PropertyGridHostVisibility != Visibility.Visible)
+                {
+                    shell.parameterBodyGrid.ClearValue(HeightProperty);
+                    shell.parameterBodyGrid.ClearValue(MinHeightProperty);
+                    return;
+                }
+                if (shell.parameterBodyScrollViewer.ActualHeight <= 0D) { return; }
+                double horizontalScrollBarHeight = shell.propertyGridScrollViewer.ComputedHorizontalScrollBarVisibility == Visibility.Visible ? SystemParameters.HorizontalScrollBarHeight : 0D;
+                shell.propertyGridScrollViewer.MinHeight = shell.propertyGridHost.MinHeight + horizontalScrollBarHeight;
+                double chromeHeight = Math.Max(0D, shell.gbParameters.ActualHeight - shell.propertyGridScrollViewer.ActualHeight) + horizontalScrollBarHeight;
+                for (int row = 1; row < shell.parameterBodyGrid.RowDefinitions.Count; row++)
+                    chromeHeight += shell.parameterBodyGrid.RowDefinitions[row].ActualHeight;
+                shell.parameterBodyGrid.MinHeight = shell.propertyGridHost.MinHeight + chromeHeight;
+                shell.parameterBodyGrid.Height = shell.parameterBodyScrollViewer.ActualHeight;
             }
 
             private void ApplyPresetDensity(bool docked)
             {
-                shell.bdPresetHost.Padding = docked ? new Thickness(7, 4, 7, 4) : new Thickness(10, 8, 10, 8);
-                shell.txtPresetDetail.Visibility = docked ? Visibility.Collapsed : Visibility.Visible;
+                bool workbench = shell.WorkbenchStepActions.DataContext is OpenVisionWorkbenchToolViewModel;
+                shell.bdPresetHost.Padding = workbench ? new Thickness(0, 4, 0, 4) : docked ? new Thickness(7, 4, 7, 4) : new Thickness(10, 8, 10, 8);
+                shell.txtPresetDetail.Visibility = workbench || docked ? Visibility.Collapsed : Visibility.Visible;
                 shell.txtPresetDetail.FontSize = docked ? 10D : 11D;
-                shell.btnPresetBasic.Height = docked ? 24D : 28D;
-                shell.btnPresetFast.Height = docked ? 24D : 28D;
-                shell.btnPresetPrecise.Height = docked ? 24D : 28D;
+                shell.btnPresetBasic.Height = workbench ? 32D : docked ? 24D : 28D;
+                shell.btnPresetFast.Height = workbench ? 32D : docked ? 24D : 28D;
+                shell.btnPresetPrecise.Height = workbench ? 32D : docked ? 24D : 28D;
             }
 
             private void ApplySummaryStatusDensity(bool docked)
@@ -410,16 +504,16 @@ namespace OpenVisionLab
                 shell.bdStatus.Margin = docked ? new Thickness(0, 4, 0, 0) : new Thickness(0, 6, 0, 0);
                 shell.bdStatus.Padding = docked ? new Thickness(8, 3, 8, 3) : new Thickness(8, 4, 8, 4);
                 shell.txtStatus.MinHeight = docked ? 14D : 18D;
-                shell.txtStatus.TextTrimming = TextTrimming.CharacterEllipsis;
+                shell.txtStatus.TextTrimming = TextTrimming.None;
             }
 
             private void ApplyResultReviewDensity(bool docked)
             {
                 shell.bdResultReview.MinHeight = docked ? DockedResultReviewMinHeight : FloatingResultReviewMinHeight;
-                shell.bdResultReview.MaxHeight = docked ? DockedResultReviewMaxHeight : double.PositiveInfinity;
+                shell.bdResultReview.MaxHeight = docked ? DockedResultReviewMaxHeight : FloatingResultReviewMaxHeight;
                 shell.svResultReviewChips.MaxHeight = docked ? DockedResultReviewChipsMaxHeight : double.PositiveInfinity;
                 shell.svResultReviewChips.Margin = docked ? new Thickness(0, 3, 0, 0) : new Thickness(0, 4, 0, 0);
-                shell.svResultReviewChips.Visibility = docked ? Visibility.Collapsed : Visibility.Visible;
+                shell.svResultReviewChips.Visibility = docked || shell.workbenchResultHost.Content != null ? Visibility.Collapsed : Visibility.Visible;
                 shell.svResultReviewChips.VerticalScrollBarVisibility = docked
                     ? ScrollBarVisibility.Auto
                     : ScrollBarVisibility.Disabled;

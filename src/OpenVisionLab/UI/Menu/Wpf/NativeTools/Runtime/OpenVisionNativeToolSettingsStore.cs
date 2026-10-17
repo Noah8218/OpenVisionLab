@@ -164,6 +164,23 @@ namespace OpenVisionLab
             }
         }
 
+        public static TSettings LoadExisting<TSettings>(string configName, TSettings defaultSettings, string recipeName = null)
+            where TSettings : class
+        {
+            recipeName ??= PropertyGridEditorFactory.GetRecipeName();
+            string path = RecipeWorkspaceService.GetVisionConfigPath(recipeName, configName);
+            if (SerializeHelper.TryLoadFromXmlFile(path, out TSettings loaded, out Exception error)) { return loaded; }
+            if (error != null)
+            {
+                lock (syncRoot)
+                {
+                    failedLoads[CreateKey(recipeName, configName)] = new OpenVisionNativeToolSettingsLoadFailure(
+                        configName, ResolveToolName(configName), recipeName, error.Message, string.Empty);
+                }
+            }
+            return defaultSettings;
+        }
+
         public static bool TryGetLoadFailure(
             string configName,
             out OpenVisionNativeToolSettingsLoadFailure failure)

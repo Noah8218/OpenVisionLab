@@ -5,6 +5,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
+using System.Windows.Data;
 
 namespace OpenVisionLab
 {
@@ -42,6 +43,7 @@ namespace OpenVisionLab
             AttachButtons();
             shell.PresetMenuButton.Click += OnPresetMenuClicked;
             shell.DockedInspectorModeChanged += OnDockedInspectorModeChanged;
+            shell.WorkbenchStepActions.DataContextChanged += OnWorkbenchEditorChanged;
             ApplyLocalization();
         }
 
@@ -61,8 +63,9 @@ namespace OpenVisionLab
             }
 
             bool hasPreset = presets.Count > 0;
-            bool showBody = hasPreset && !shell.IsDockedInspectorMode;
-            bool showMenu = hasPreset && shell.IsDockedInspectorMode;
+            bool workbench = shell.WorkbenchStepActions.DataContext is OpenVisionWorkbenchToolViewModel;
+            bool showBody = hasPreset && (workbench || !shell.IsDockedInspectorMode);
+            bool showMenu = hasPreset && !workbench && shell.IsDockedInspectorMode;
             shell.PresetHost.Visibility = showBody ? Visibility.Visible : Visibility.Collapsed;
             shell.PresetGap.Visibility = showBody ? Visibility.Visible : Visibility.Collapsed;
             shell.PresetMenuButton.Visibility = showMenu ? Visibility.Visible : Visibility.Collapsed;
@@ -80,9 +83,22 @@ namespace OpenVisionLab
                 return;
             }
 
-            shell.PresetTitleText.Text = VisionToolVerificationText.T(
-                "VisionTool.Preset.Title",
-                "Recommended presets");
+            shell.PresetTitleText.Text = workbench ? OpenVisionLanguageService.T("Workbench.Tool.Presets")
+                : VisionToolVerificationText.T("VisionTool.Preset.Title", "Recommended presets");
+            shell.PresetDetailText.Visibility = workbench ? Visibility.Collapsed : Visibility.Visible;
+            if (shell.PresetHost.Child is Grid layout)
+            {
+                layout.ColumnDefinitions[0].Width = workbench ? GridLength.Auto : new GridLength(1D, GridUnitType.Star);
+                layout.ColumnDefinitions[1].Width = new GridLength(workbench ? 8D : 12D);
+                layout.HorizontalAlignment = workbench ? HorizontalAlignment.Left : HorizontalAlignment.Stretch;
+                ((FrameworkElement)shell.PresetTitleText.Parent).MinWidth = workbench ? 0D : 160D;
+            }
+            if (workbench)
+            {
+                shell.PresetHost.SetBinding(UIElement.IsEnabledProperty, new Binding(nameof(OpenVisionWorkbenchToolViewModel.CanEditParameters))
+                    { Source = shell.WorkbenchStepActions.DataContext });
+                shell.PresetHost.BorderThickness = new Thickness(0D);
+            }
             shell.PresetDetailText.Text = lastAppliedPreset == null
                 ? VisionToolVerificationText.T(
                     "VisionTool.Preset.Detail",
@@ -98,7 +114,7 @@ namespace OpenVisionLab
             foreach (KeyValuePair<string, Button> pair in buttons)
             {
                 VisionToolPreset<TProperty> preset = presets.FirstOrDefault(item => string.Equals(item.Id, pair.Key, StringComparison.OrdinalIgnoreCase));
-                ApplyButton(pair.Value, preset);
+                ApplyButton(pair.Value, preset, workbench);
             }
         }
 
@@ -111,6 +127,7 @@ namespace OpenVisionLab
 
             disposed = true;
             shell.DockedInspectorModeChanged -= OnDockedInspectorModeChanged;
+            shell.WorkbenchStepActions.DataContextChanged -= OnWorkbenchEditorChanged;
             shell.PresetMenuButton.Click -= OnPresetMenuClicked;
             foreach (Button button in buttons.Values)
             {
@@ -129,6 +146,8 @@ namespace OpenVisionLab
         {
             ApplyLocalization();
         }
+
+        private void OnWorkbenchEditorChanged(object sender, DependencyPropertyChangedEventArgs e) => ApplyLocalization();
 
         private void AttachButtons()
         {
@@ -171,7 +190,7 @@ namespace OpenVisionLab
             menu.Items.Clear();
         }
 
-        private static void ApplyButton(Button button, VisionToolPreset<TProperty> preset)
+        private static void ApplyButton(Button button, VisionToolPreset<TProperty> preset, bool workbench)
         {
             if (button == null)
             {
@@ -186,9 +205,16 @@ namespace OpenVisionLab
             }
 
             button.Content = preset.DisplayName;
-            button.ToolTip = preset.Description;
+            string tooltip = workbench ? OpenVisionLanguageService.T(preset.Id switch
+                { "basic" => "Workbench.Tool.PresetBasic", "fast" => "Workbench.Tool.PresetFast", _ => "Workbench.Tool.PresetPrecise" }) : preset.Description;
+            button.ToolTip = tooltip;
+            if (workbench)
+            {
+                button.SetResourceReference(FrameworkElement.StyleProperty, "OpenVision.Workbench.ButtonStyle");
+                button.FontSize = 12D;
+            }
             AutomationProperties.SetName(button, preset.DisplayName);
-            AutomationProperties.SetHelpText(button, preset.Description);
+            AutomationProperties.SetHelpText(button, tooltip);
         }
 
         private void OnPresetMenuClicked(object sender, RoutedEventArgs e)
@@ -230,8 +256,11 @@ namespace OpenVisionLab
 
         private void ApplyPresetAndRefresh(VisionToolPreset<TProperty> preset)
         {
+            OpenVisionWorkbenchToolViewModel workbench = shell.WorkbenchStepActions.DataContext as OpenVisionWorkbenchToolViewModel;
+            if (workbench != null && !workbench.CanEditParameters) { return; }
             applyPreset(preset);
             lastAppliedPreset = preset;
+            workbench?.NotifyPresetApplied(preset.DisplayNameKey);
             ApplyLocalization();
         }
     }

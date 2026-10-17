@@ -18,6 +18,16 @@ if (-not (Test-Path -LiteralPath $globalJsonPath)) {
     throw "global.json was not found. The required .NET SDK version cannot be verified."
 }
 
+$gitCommand = Get-Command git -ErrorAction SilentlyContinue
+if ($null -eq $gitCommand) {
+    throw "Git must be available on PATH for build identity. Install Git for Windows, restart your terminal/Visual Studio, and verify git --version. GitHub Desktop alone does not establish this prerequisite."
+}
+$candidateCommit = (& git -C $repoRoot rev-parse --verify HEAD 2>$null)
+if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($candidateCommit)) {
+    throw "A Git checkout with a valid HEAD is required. Clone the repository rather than downloading a source ZIP."
+}
+$commit = $candidateCommit.Trim()
+
 $sdkPolicy = (Get-Content -LiteralPath $globalJsonPath -Raw | ConvertFrom-Json).sdk
 $minimumSdk = $sdkPolicy.version
 $rollForward = $sdkPolicy.rollForward
@@ -89,14 +99,6 @@ function Invoke-NativeStep {
 }
 
 $startedAt = Get-Date
-$commit = "unavailable"
-$gitCommand = Get-Command git -ErrorAction SilentlyContinue
-if ($null -ne $gitCommand) {
-    $candidateCommit = (& git -C $repoRoot rev-parse HEAD 2>$null)
-    if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($candidateCommit)) {
-        $commit = $candidateCommit.Trim()
-    }
-}
 
 Invoke-NativeStep "Locked package restore" {
     & dotnet restore $solutionPath --locked-mode

@@ -161,8 +161,6 @@ included-angle gate failed closed.
 
 Evidence:
 
-- `artifacts/cvr09_line_fixture_20260728_r11`;
-- `docs/reports/OPENVISIONLAB_CVR09_LINE_FIXTURE_20260728.md`.
 
 ## Qualification Prerequisite And Boundary
 
@@ -189,6 +187,5 @@ Status: Complete
 Scope: Bounded LineFixture v1 runtime, validation, typed-result wiring, existing Fixture/NormalizeImage consumption, PropertyGrid editing, Pipeline Review quality presentation, XML round trip, and eight-case synthetic integration.
 Acceptance criteria: Two distinct accepted Line Segments publish one gated pixel fixture; existing NormalizeImage consumes it; fixed reference ROI survives translation/rotation/distractors; invalid angle and duplicate source fail closed; PropertyGrid apply has zero Preview/Run side effects.
 Verification: Debug solution and focused tool builds passed with zero warnings/errors; OpenVisionFixtureSmoke --cvr09-line-fixture passed 8/8 plus fail-closed and round-trip checks; cvr09_line_fixture_property_grid passed check/layout/text/internal guards.
-Evidence: artifacts/cvr09_line_fixture_20260728_r11 and docs/reports/OPENVISIONLAB_CVR09_LINE_FIXTURE_20260728.md
 Boundary / next dependency: Named physical-part qualification remains blocked on the operator packet and reviewed N-sample evidence listed above.
 ```

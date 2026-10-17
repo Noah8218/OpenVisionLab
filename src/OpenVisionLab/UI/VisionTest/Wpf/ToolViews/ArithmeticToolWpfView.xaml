@@ -4,7 +4,7 @@
                                                xmlns:local="clr-namespace:OpenVisionLab"
                                                MinWidth="920"
                                                MinHeight="620"
-                                               Background="#EEF2F6">
+                                               Background="{DynamicResource OpenVision.Workbench.PanelBrush}">
     <local:VisionToolDoubleInputCustomToolViewBase.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>

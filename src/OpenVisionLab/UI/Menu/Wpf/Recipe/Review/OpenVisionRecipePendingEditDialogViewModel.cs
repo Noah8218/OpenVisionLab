@@ -1,12 +1,48 @@
 using System;
 using System.Globalization;
+using System.Windows.Input;
+using OpenVisionLab.Mvvm;
 
 namespace OpenVisionLab
 {
-    public sealed class OpenVisionRecipePendingEditDialogViewModel
+    public sealed class OpenVisionRecipePendingEditDialogViewModel : ObservableObject
     {
-        private OpenVisionRecipePendingEditDialogViewModel()
+        private readonly OpenVisionRecipePendingEditRequest request;
+        private string errorText = string.Empty;
+
+        private OpenVisionRecipePendingEditDialogViewModel(OpenVisionRecipePendingEditRequest request)
         {
+            this.request = request;
+            SaveCommand = new RelayCommand(() => Choose(OpenVisionRecipePendingEditDecision.ApplyAndContinue));
+            DiscardCommand = new RelayCommand(() => Choose(OpenVisionRecipePendingEditDecision.Discard));
+            CancelCommand = new RelayCommand(() => Choose(OpenVisionRecipePendingEditDecision.Cancel));
+        }
+
+        public event Action<OpenVisionRecipePendingEditDecision> DecisionRequested = delegate { };
+
+        public ICommand SaveCommand { get; }
+        public ICommand DiscardCommand { get; }
+        public ICommand CancelCommand { get; }
+        public bool ShowLegacyContext => !request.IsWorkbenchCopy && !IsDeleteConfirmation;
+        public bool ShowDiscard => !IsDeleteConfirmation;
+        public bool IsStepDelete => request.IsStepDelete;
+        public bool IsRecipeDelete => request.IsRecipeDelete;
+        public bool IsDeleteConfirmation => request.IsStepDelete || request.IsRecipeDelete;
+        public bool IsApplyDefault => !request.IsRecipeDelete;
+        public bool IsCancelDefault => request.IsRecipeDelete;
+        public string ErrorText => errorText;
+        public bool HasError => !string.IsNullOrWhiteSpace(errorText);
+
+        private void Choose(OpenVisionRecipePendingEditDecision decision)
+        {
+            if (decision == OpenVisionRecipePendingEditDecision.ApplyAndContinue && request.IsWorkbenchCopy && request.TrySave?.Invoke() != true)
+            {
+                errorText = request.SaveError?.Invoke() ?? OpenVisionLanguageService.T("Workbench.Save.Failed");
+                OnPropertyChanged(nameof(ErrorText));
+                OnPropertyChanged(nameof(HasError));
+                return;
+            }
+            DecisionRequested(decision);
         }
 
         public string TitleText { get; private set; } = string.Empty;
@@ -28,11 +64,30 @@ namespace OpenVisionLab
         internal static OpenVisionRecipePendingEditDialogViewModel Create(
             OpenVisionRecipePendingEditRequest request)
         {
+            if (request.IsWorkbenchCopy || request.IsStepDelete || request.IsRecipeDelete)
+            {
+                bool deleting = request.IsStepDelete || request.IsRecipeDelete;
+                string titleKey = request.IsRecipeDelete ? "Workbench.Recipe.DeleteTitle" : deleting ? "Workbench.Menu.DeleteStep" : "Workbench.Pending.Title";
+                string bodyKey = request.IsRecipeDelete ? "Workbench.Recipe.DeleteConfirmFormat" : deleting ? "Workbench.Step.DeleteConfirmFormat" : "Workbench.Pending.BodyFormat";
+                return new OpenVisionRecipePendingEditDialogViewModel(request)
+                {
+                    TitleText = OpenVisionLanguageService.T(titleKey),
+                    HeadingText = string.Format(CultureInfo.CurrentCulture,
+                        OpenVisionLanguageService.T(bodyKey), request.IsStepDelete ? request.StepName : request.RecipeName),
+                    DetailText = request.IsRecipeDelete ? OpenVisionLanguageService.T("Workbench.Recipe.DeleteDetail")
+                        : deleting ? OpenVisionLanguageService.T("Workbench.Step.DeleteDetail")
+                        : string.Format(CultureInfo.CurrentCulture, OpenVisionLanguageService.T("Workbench.Pending.CountFormat"), request.ChangeCount),
+                    ApplyButtonText = OpenVisionLanguageService.T(deleting ? "Workbench.Menu.DeleteStep" : "Workbench.Pending.Save"),
+                    DiscardButtonText = OpenVisionLanguageService.T("Workbench.Pending.DontSave"),
+                    CancelButtonText = OpenVisionLanguageService.T("Workbench.Pending.Cancel")
+                };
+            }
+
             string transitionText = ResolveTransitionText(request.Kind);
             string target = string.IsNullOrWhiteSpace(request.TargetName)
                 ? OpenVisionRecipeText.Local("현재 화면 닫기", "Close the current view")
                 : request.TargetName.Trim();
-            return new OpenVisionRecipePendingEditDialogViewModel
+            return new OpenVisionRecipePendingEditDialogViewModel(request)
             {
                 TitleText = OpenVisionRecipeText.Local("적용하지 않은 Recipe 변경", "Unapplied recipe changes"),
                 HeadingText = OpenVisionRecipeText.Local(

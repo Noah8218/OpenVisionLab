@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using DrawingBitmap = System.Drawing.Bitmap;
 using DrawingColor = System.Drawing.Color;
 
@@ -20,10 +21,13 @@ namespace OpenVisionLab
         private readonly FrameworkElement eventSurface;
         private readonly Image image;
         private readonly Action<OpenVisionZoomableImageStatus> statusChanged;
+        private readonly bool usePixelZoomRange;
         private readonly ScaleTransform zoomTransform = new ScaleTransform(MinimumZoomScale, MinimumZoomScale);
         private readonly TranslateTransform panTransform = new TranslateTransform();
         private DrawingBitmap statusBitmap;
         private double zoomScale = MinimumZoomScale;
+        private double lastPixelZoomScale;
+        private bool isFitImage = true;
         private bool isPanning;
         private Point panStartPoint;
         private double panStartX;
@@ -33,11 +37,13 @@ namespace OpenVisionLab
         public OpenVisionZoomableImageController(
             FrameworkElement eventSurface,
             Image image,
-            Action<OpenVisionZoomableImageStatus> statusChanged = null)
+            Action<OpenVisionZoomableImageStatus> statusChanged = null,
+            bool usePixelZoomRange = false)
         {
             this.eventSurface = eventSurface ?? throw new ArgumentNullException(nameof(eventSurface));
             this.image = image ?? throw new ArgumentNullException(nameof(image));
             this.statusChanged = statusChanged;
+            this.usePixelZoomRange = usePixelZoomRange;
 
             TransformGroup transformGroup = new TransformGroup();
             transformGroup.Children.Add(zoomTransform);
@@ -46,30 +52,82 @@ namespace OpenVisionLab
             image.RenderTransformOrigin = new Point(0D, 0D);
             image.IsHitTestVisible = true;
 
-            eventSurface.PreviewMouseWheel += OnPreviewMouseWheel;
+            eventSurface.MouseWheel += OnMouseWheel;
             eventSurface.MouseDown += OnMouseDown;
             eventSurface.MouseMove += OnMouseMove;
             eventSurface.MouseUp += OnMouseUp;
             eventSurface.MouseLeave += OnMouseLeave;
+            image.SizeChanged += OnImageSizeChanged;
+        }
+
+        public event EventHandler ZoomChanged;
+        public event EventHandler ViewportChanged;
+        internal OpenVisionImageViewport? CaptureViewport()
+        {
+            if (disposed || statusBitmap == null || PixelZoomScale <= 0D || !TryTransformSurfaceToImage(new Point(eventSurface.ActualWidth / 2D, eventSurface.ActualHeight / 2D), out Point center)) { return null; }
+            Rect rect = GetDisplayedImageRect();
+            return new OpenVisionImageViewport(PixelZoomScale, (center.X - rect.Left) * statusBitmap.Width / rect.Width, (center.Y - rect.Top) * statusBitmap.Height / rect.Height, isFitImage);
+        }
+        internal bool TryMapImagePoint(Point sourcePoint, out Point surfacePoint)
+        {
+            surfacePoint = default;
+            if (disposed || statusBitmap == null || image.ActualWidth <= 0D || image.ActualHeight <= 0D || !double.IsFinite(sourcePoint.X) || !double.IsFinite(sourcePoint.Y)) { return false; }
+            Rect rect = GetDisplayedImageRect();
+            surfacePoint = TransformImageToSurface(new Point(rect.Left + sourcePoint.X * rect.Width / statusBitmap.Width, rect.Top + sourcePoint.Y * rect.Height / statusBitmap.Height));
+            return double.IsFinite(surfacePoint.X) && double.IsFinite(surfacePoint.Y);
+        }
+        internal bool ApplyViewport(OpenVisionImageViewport viewport)
+        {
+            double fit = GetFitPixelScale(image.RenderSize);
+            if (disposed || statusBitmap == null || fit <= 0D || !viewport.IsValid) { return false; }
+            if (viewport.Fit) { Reset(); return true; }
+            isFitImage = false;
+            zoomScale = Math.Clamp(viewport.Scale, 0.05D, 40D) / fit;
+            zoomTransform.ScaleX = zoomTransform.ScaleY = zoomScale;
+            panTransform.X = panTransform.Y = 0D;
+            Rect rect = GetDisplayedImageRect();
+            Point center = TransformImageToSurface(new Point(rect.Left + viewport.CenterX * rect.Width / statusBitmap.Width, rect.Top + viewport.CenterY * rect.Height / statusBitmap.Height));
+            ApplyPanDelta(eventSurface.ActualWidth / 2D - center.X, eventSurface.ActualHeight / 2D - center.Y);
+            lastPixelZoomScale = PixelZoomScale;
+            ZoomChanged?.Invoke(this, EventArgs.Empty);
+            ViewportChanged?.Invoke(this, EventArgs.Empty);
+            return true;
+        }
+
+        // Displayed WPF DIP per source pixel, matching the proposal's CSS logical-pixel scale.
+        public double PixelZoomScale => GetFitPixelScale(image.RenderSize) * zoomScale;
+
+        public void ZoomImage(double factor)
+        {
+            ApplyZoomAt(new Point(eventSurface.ActualWidth / 2D, eventSurface.ActualHeight / 2D), factor);
+        }
+
+        public void ShowOriginalSize()
+        {
+            double currentScale = PixelZoomScale;
+            if (currentScale > 0D) { ZoomImage(1D / currentScale); }
         }
 
         public void Reset()
         {
+            if (disposed) { return; }
+            isFitImage = true;
             zoomScale = MinimumZoomScale;
             zoomTransform.ScaleX = MinimumZoomScale;
             zoomTransform.ScaleY = MinimumZoomScale;
             panTransform.X = 0D;
             panTransform.Y = 0D;
             EndPan();
+            PublishEmptyStatus();
+            lastPixelZoomScale = PixelZoomScale;
+            ZoomChanged?.Invoke(this, EventArgs.Empty);
+            ViewportChanged?.Invoke(this, EventArgs.Empty);
         }
 
         public void SetStatusBitmap(DrawingBitmap bitmap)
         {
             statusBitmap = bitmap;
-            if (bitmap == null)
-            {
-                PublishEmptyStatus();
-            }
+            PublishEmptyStatus();
         }
 
         public bool UpdatePointerStatusForTest(Point surfacePoint)
@@ -105,16 +163,45 @@ namespace OpenVisionLab
             }
 
             disposed = true;
-            eventSurface.PreviewMouseWheel -= OnPreviewMouseWheel;
+            eventSurface.MouseWheel -= OnMouseWheel;
             eventSurface.MouseDown -= OnMouseDown;
             eventSurface.MouseMove -= OnMouseMove;
             eventSurface.MouseUp -= OnMouseUp;
             eventSurface.MouseLeave -= OnMouseLeave;
+            image.SizeChanged -= OnImageSizeChanged;
+            ZoomChanged = null;
+            ViewportChanged = null;
             statusBitmap = null;
             image.RenderTransform = null;
         }
 
-        private void OnPreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        private double GetFitPixelScale(Size size)
+        {
+            if (image.Source is not BitmapSource bitmap || image.Visibility != Visibility.Visible || size.Width <= 0D || size.Height <= 0D)
+            {
+                return 0D;
+            }
+            return Math.Min(size.Width / bitmap.PixelWidth, size.Height / bitmap.PixelHeight);
+        }
+
+        private void OnImageSizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (disposed) { return; }
+            double fitScale = GetFitPixelScale(e.NewSize);
+            if (usePixelZoomRange && !isFitImage && lastPixelZoomScale > 0D && fitScale > 0D)
+            {
+                // Retain the absolute scale and the image point at the centered viewport.
+                zoomScale = lastPixelZoomScale / fitScale;
+                zoomTransform.ScaleX = zoomScale;
+                zoomTransform.ScaleY = zoomScale;
+                panTransform.X += (e.NewSize.Width - e.PreviousSize.Width) / 2D;
+                panTransform.Y += (e.NewSize.Height - e.PreviousSize.Height) / 2D;
+            }
+            lastPixelZoomScale = PixelZoomScale;
+            ZoomChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void OnMouseWheel(object sender, MouseWheelEventArgs e)
         {
             if (image.Source == null || image.Visibility != Visibility.Visible)
             {
@@ -127,6 +214,12 @@ namespace OpenVisionLab
 
         private void OnMouseDown(object sender, MouseButtonEventArgs e)
         {
+            for (DependencyObject source = e.OriginalSource as DependencyObject; source != null && source != eventSurface;
+                source = source is Visual ? VisualTreeHelper.GetParent(source) : LogicalTreeHelper.GetParent(source))
+            {
+                if (source is ScrollViewer) { return; }
+            }
+
             if (image.Source != null
                 && image.Visibility == Visibility.Visible
                 && e.ChangedButton == MouseButton.Left
@@ -183,23 +276,31 @@ namespace OpenVisionLab
 
         private void ApplyZoomAt(Point anchorPoint, double factor)
         {
-            if (!TryTransformSurfaceToImage(anchorPoint, out Point imageAnchorPoint))
+            if (disposed || !(factor > 0D) || double.IsInfinity(factor) || image.Source == null || image.Visibility != Visibility.Visible
+                || !TryTransformSurfaceToImage(anchorPoint, out Point imageAnchorPoint))
             {
                 return;
             }
 
-            double nextZoom = Math.Max(MinimumZoomScale, Math.Min(MaximumZoomScale, zoomScale * factor));
-            if (Math.Abs(nextZoom - MinimumZoomScale) < 0.001D)
+            double fitScale = GetFitPixelScale(image.RenderSize);
+            if (usePixelZoomRange && fitScale <= 0D) { return; }
+            double minimum = usePixelZoomRange ? 0.05D / fitScale : MinimumZoomScale;
+            double maximum = usePixelZoomRange ? 40D / fitScale : MaximumZoomScale;
+            double nextZoom = Math.Max(minimum, Math.Min(maximum, zoomScale * factor));
+            if (!usePixelZoomRange && Math.Abs(nextZoom - MinimumZoomScale) < 0.001D)
             {
                 Reset();
                 return;
             }
 
+            isFitImage = false;
             zoomScale = nextZoom;
             zoomTransform.ScaleX = nextZoom;
             zoomTransform.ScaleY = nextZoom;
             Point shiftedAnchorPoint = TransformImageToSurface(imageAnchorPoint);
             ApplyPanDelta(anchorPoint.X - shiftedAnchorPoint.X, anchorPoint.Y - shiftedAnchorPoint.Y);
+            lastPixelZoomScale = PixelZoomScale;
+            ZoomChanged?.Invoke(this, EventArgs.Empty);
         }
 
         private void EndPan()
@@ -218,8 +319,10 @@ namespace OpenVisionLab
 
         private bool PublishPointerStatus(Point surfacePoint)
         {
-            if (statusChanged == null || !TryGetPixelStatus(surfacePoint, out OpenVisionZoomableImageStatus status))
+            if (statusChanged == null) { return false; }
+            if (!TryGetPixelStatus(surfacePoint, out OpenVisionZoomableImageStatus status))
             {
+                PublishEmptyStatus();
                 return false;
             }
 
@@ -251,6 +354,15 @@ namespace OpenVisionLab
             }
 
             Rect imageRect = GetDisplayedImageRect();
+            // Normalize in the pointer's surface coordinates to avoid inverse-transform
+            // cancellation at exact pixel boundaries under the viewer's scale/translation.
+            GeneralTransform imageToSurface = image.TransformToAncestor(eventSurface);
+            if (imageToSurface is Transform affine && affine.Value.M12 == 0D && affine.Value.M21 == 0D
+                && affine.Value.M11 > 0D && affine.Value.M22 > 0D)
+            {
+                imageRect = imageToSurface.TransformBounds(imageRect);
+                imagePoint = surfacePoint;
+            }
             if (!imageRect.Contains(imagePoint) || imageRect.Width <= 0D || imageRect.Height <= 0D)
             {
                 return false;
@@ -333,6 +445,7 @@ namespace OpenVisionLab
             double surfacePerPanY = GetSurfaceDeltaPerPanY();
             panTransform.X += Math.Abs(surfacePerPanX) > 0.0001D ? surfaceDeltaX / surfacePerPanX : surfaceDeltaX;
             panTransform.Y += Math.Abs(surfacePerPanY) > 0.0001D ? surfaceDeltaY / surfacePerPanY : surfaceDeltaY;
+            ViewportChanged?.Invoke(this, EventArgs.Empty);
         }
 
         private double GetSurfaceDeltaPerPanX()
@@ -354,6 +467,11 @@ namespace OpenVisionLab
             panTransform.Y = oldPan;
             return after.Y - before.Y;
         }
+    }
+
+    public readonly record struct OpenVisionImageViewport(double Scale, double CenterX, double CenterY, bool Fit)
+    {
+        public bool IsValid => double.IsFinite(Scale) && Scale > 0D && double.IsFinite(CenterX) && double.IsFinite(CenterY);
     }
 
     internal sealed class OpenVisionZoomableImageStatus

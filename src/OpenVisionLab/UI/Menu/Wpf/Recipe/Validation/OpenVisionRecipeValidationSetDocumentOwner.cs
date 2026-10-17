@@ -221,6 +221,19 @@ namespace OpenVisionLab
             return OpenVisionRecipeValidationSetStorage.TrySave(recipeName, document, out error);
         }
 
+        internal bool TryCaptureImageHashes(string setName, out string error)
+        {
+            error = string.Empty;
+            OpenVisionRecipeValidationSet set = FindSet(setName);
+            if (set == null) { return false; }
+            try
+            {
+                foreach (OpenVisionRecipeValidationSetImage image in set.Images) { image.Sha256 = OpenVisionRecipeValidationSetStorage.ComputeFileSha256(image.Path); }
+                return true;
+            }
+            catch (Exception exception) { error = exception.GetBaseException().Message; return false; }
+        }
+
         internal string CreateUniqueSetName()
         {
             const string baseName = "Local_Validation_Set";

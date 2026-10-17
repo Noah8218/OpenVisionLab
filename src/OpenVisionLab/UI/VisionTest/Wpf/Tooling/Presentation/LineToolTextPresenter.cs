@@ -16,6 +16,7 @@ namespace OpenVisionLab
         private readonly RadioButton lineBRadioButton;
         private readonly TextBlock purposeHintTextBlock;
         private readonly Button editSelectedRoiButton;
+        private readonly TextBlock editSelectedRoiTextBlock;
         private readonly Action<string> setSummaryText;
 
         public LineToolTextPresenter(
@@ -29,6 +30,7 @@ namespace OpenVisionLab
             RadioButton lineBRadioButton,
             TextBlock purposeHintTextBlock,
             Button editSelectedRoiButton,
+            TextBlock editSelectedRoiTextBlock,
             Action<string> setSummaryText)
         {
             this.presenter = presenter ?? throw new ArgumentNullException(nameof(presenter));
@@ -41,32 +43,35 @@ namespace OpenVisionLab
             this.lineBRadioButton = lineBRadioButton ?? throw new ArgumentNullException(nameof(lineBRadioButton));
             this.purposeHintTextBlock = purposeHintTextBlock ?? throw new ArgumentNullException(nameof(purposeHintTextBlock));
             this.editSelectedRoiButton = editSelectedRoiButton ?? throw new ArgumentNullException(nameof(editSelectedRoiButton));
+            this.editSelectedRoiTextBlock = editSelectedRoiTextBlock ?? throw new ArgumentNullException(nameof(editSelectedRoiTextBlock));
             this.setSummaryText = setSummaryText ?? throw new ArgumentNullException(nameof(setSummaryText));
         }
 
         public void ApplyLocalization(LineToolPurpose purpose)
         {
-            purposeLabel.Text = VisionToolVerificationText.LinePurposeLabel;
+            purposeLabel.Text = OpenVisionLanguageService.T("Workbench.Tool.LinePurpose");
             lineSelectorLabel.Text = VisionToolVerificationText.LineSettingLabel;
-            purposeEdgeRadioButton.Content = VisionToolVerificationText.LinePurposeEdge;
-            purposeMeasureRadioButton.Content = VisionToolVerificationText.LinePurposeMeasure;
-            purposeIntersectionRadioButton.Content = VisionToolVerificationText.LinePurposeIntersection;
+            purposeEdgeRadioButton.Content = OpenVisionLanguageService.T("Workbench.Tool.LineEdge");
+            purposeMeasureRadioButton.Content = OpenVisionLanguageService.T("Workbench.Tool.LineMeasure");
+            purposeIntersectionRadioButton.Content = OpenVisionLanguageService.T("Workbench.Tool.LineIntersection");
             lineARadioButton.Content = VisionToolVerificationText.LineA;
             lineBRadioButton.Content = VisionToolVerificationText.LineB;
-            RefreshPurposeHint(purpose);
-            VisionToolChromePresenter.ApplyTooltip(editSelectedRoiButton, VisionToolVerificationText.EditSelectedLineRoiTooltip);
         }
 
         public void RefreshSummary(LineToolPurpose purpose, bool isLineBSelected, string selectedLineName)
         {
             string purposeText = VisionToolVerificationText.CreateLinePurposeText(purpose.ToString());
             setSummaryText(presenter.CreateSummary(purpose, isLineBSelected, purposeText, selectedLineName));
-            RefreshPurposeHint(purpose);
         }
 
-        private void RefreshPurposeHint(LineToolPurpose purpose)
+        public void RefreshHeader(LineToolPurpose purpose, bool isLineBSelected)
         {
-            purposeHintTextBlock.Text = VisionToolVerificationText.CreateLinePurposeHint(purpose.ToString());
+            string line = isLineBSelected ? "B" : "A";
+            string noteKey = purpose == LineToolPurpose.Measure ? "Workbench.Tool.LineNoteMeasure"
+                : purpose == LineToolPurpose.Intersection ? "Workbench.Tool.LineNoteIntersection" : "Workbench.Tool.LineNoteEdge";
+            purposeHintTextBlock.Text = OpenVisionLanguageService.T(noteKey) + " · " + string.Format(OpenVisionLanguageService.T("Workbench.Tool.LineEditingFormat"), line);
+            editSelectedRoiTextBlock.Text = string.Format(OpenVisionLanguageService.T("Workbench.Tool.LineDrawRoiFormat"), line);
+            VisionToolChromePresenter.ApplyTooltip(editSelectedRoiButton, editSelectedRoiTextBlock.Text);
         }
     }
 }

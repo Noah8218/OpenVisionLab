@@ -4,6 +4,9 @@ using OpenVisionLab.Logging.Controls.Model;
 using OpenVisionLab.Logging.Model;
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Runtime.InteropServices;
+using System.Security;
 using System.Diagnostics;
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -35,6 +38,8 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
 
         private readonly RuntimeLogStream logBufferReader;
         private readonly LogPanelFileAccess fileAccess;
+        private readonly Action<string> copyText;
+        private string copyStatusKey;
         private readonly DispatcherTimer refreshTimer;
         private readonly DateTime sessionStartedAt = Process.GetCurrentProcess().StartTime.AddSeconds(-2);
         private string selectedLevel;
@@ -47,15 +52,27 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
         private string searchText = string.Empty;
         private string summaryText;
         private string latestSummaryText;
+        private int errorCount;
         private long droppedLogCount;
+        private bool updatingFilters;
+        private bool filterRebuildPending;
 
         public LogPanelViewModel() : this(new LogPanelFileAccess())
         {
         }
 
-        internal LogPanelViewModel(LogPanelFileAccess fileAccess)
+        public LogPanelViewModel(Action<string> copyText) : this(new LogPanelFileAccess(), copyText)
+        {
+        }
+
+        internal LogPanelViewModel(LogPanelFileAccess fileAccess) : this(fileAccess, null)
+        {
+        }
+
+        private LogPanelViewModel(LogPanelFileAccess fileAccess, Action<string> copyText)
         {
             this.fileAccess = fileAccess ?? throw new ArgumentNullException(nameof(fileAccess));
+            this.copyText = copyText;
             logBufferReader = new RuntimeLogStream();
             Levels = new ObservableCollection<string>(new[] { AnyFilter }.Concat(VisibleLevelNames));
             Types = new ObservableCollection<string>(
@@ -69,6 +86,8 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
 
             OpenDirectoryCommand = new UiCommand(this.fileAccess.OpenLogFolder);
             ResetCommand = new UiCommand(Reset);
+            CopyCommand = new UiCommand(CopyLogs, () => this.copyText != null && Logs.Count > 0);
+            Logs.CollectionChanged += Logs_CollectionChanged;
             ToggleDetailCommand = new UiCommand(ToggleDetailMode);
             LoadLatestLogFile();
 
@@ -90,6 +109,8 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
         public ICommand OpenDirectoryCommand { get; }
 
         public ICommand ResetCommand { get; }
+
+        public ICommand CopyCommand { get; }
 
         public ICommand ToggleDetailCommand { get; }
 
@@ -115,6 +136,12 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
         public string ActiveFilterText => BuildActiveFilterText();
 
         public string ClearText => T("Log.Clear");
+
+        public string CopyText => T("Log.Copy");
+
+        public string CopyToolTip => T("Log.Tooltip.Copy");
+
+        public string CopyStatusText => string.IsNullOrEmpty(copyStatusKey) ? string.Empty : T(copyStatusKey);
 
         public string FolderText => T("Log.Folder");
 
@@ -241,6 +268,25 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
             private set => SetProperty(ref latestSummaryText, value);
         }
 
+        public int ErrorCount
+        {
+            get => errorCount;
+            private set
+            {
+                if (SetProperty(ref errorCount, value))
+                {
+                    OnPropertyChanged(nameof(HasErrors));
+                    OnPropertyChanged(nameof(ErrorSummaryText));
+                }
+            }
+        }
+
+        public bool HasErrors => ErrorCount > 0;
+
+        public string ErrorSummaryText => HasErrors
+            ? LocalText($"오류 {ErrorCount}", $"Errors {ErrorCount}")
+            : LocalText("로그", "Log");
+
         public long DroppedLogCount
         {
             get => droppedLogCount;
@@ -266,6 +312,7 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
 
         public void Dispose()
         {
+            Logs.CollectionChanged -= Logs_CollectionChanged;
             QuickFilterRequested -= OnQuickFilterRequested;
             OpenVisionLanguageService.LanguageChanged -= OnLanguageChanged;
             refreshTimer.Stop();
@@ -279,6 +326,9 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
             OnPropertyChanged(nameof(HeaderText));
             OnPropertyChanged(nameof(ActiveFilterText));
             OnPropertyChanged(nameof(ClearText));
+            OnPropertyChanged(nameof(CopyText));
+            OnPropertyChanged(nameof(CopyToolTip));
+            OnPropertyChanged(nameof(CopyStatusText));
             OnPropertyChanged(nameof(FolderText));
             OnPropertyChanged(nameof(AutoScrollText));
             OnPropertyChanged(nameof(AllLogsText));
@@ -296,6 +346,7 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
             OnPropertyChanged(nameof(SearchToolTip));
             OnPropertyChanged(nameof(AllLogsToolTip));
             OnPropertyChanged(nameof(FilterComboToolTip));
+            OnPropertyChanged(nameof(ErrorSummaryText));
             UpdateSummaryText();
         }
 
@@ -317,13 +368,20 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
 
         private void ApplyQuickFilterCore(LogPanelQuickFilterRequest request)
         {
-            ShowEntireStream = request.ShowEntireStream;
-            SelectedType = NormalizeFilter(Types, request.Type);
-            SelectedLevel = NormalizeFilter(Levels, request.Level);
-            SearchText = request.SearchText ?? string.Empty;
-            IsDetailedMode = !request.ShowEntireStream
-                || !string.IsNullOrWhiteSpace(request.SearchText);
-            RebuildFilteredLogs();
+            updatingFilters = true;
+            try
+            {
+                ShowEntireStream = request.ShowEntireStream;
+                SelectedType = NormalizeFilter(Types, request.Type);
+                SelectedLevel = NormalizeFilter(Levels, request.Level);
+                SearchText = request.SearchText ?? string.Empty;
+                IsDetailedMode = !request.ShowEntireStream || !string.IsNullOrWhiteSpace(request.SearchText);
+            }
+            finally
+            {
+                updatingFilters = false;
+                if (filterRebuildPending) { filterRebuildPending = false; RebuildFilteredLogs(); }
+            }
         }
 
         private void RefreshTimer_Tick(object sender, EventArgs e)
@@ -370,6 +428,7 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
 
         private void RebuildFilteredLogs()
         {
+            if (updatingFilters) { filterRebuildPending = true; return; }
             FilteredLogs.Clear();
             FilteredLogs.AddRange(Logs.Where(ShouldDisplayLog));
             UpdateSummaryText();
@@ -480,6 +539,33 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
                 ?? AnyFilter;
         }
 
+        private void Logs_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            ((UiCommand)CopyCommand).RaiseCanExecuteChanged();
+        }
+
+        private void CopyLogs()
+        {
+            if (!CopyCommand.CanExecute(null))
+            {
+                return;
+            }
+
+            string text = string.Join("\n", Logs.Select(log => $"{log.DisplayTime}\t{log.Level}\t{log.Category}\t{log.Message}"));
+            try
+            {
+                copyText(text);
+                copyStatusKey = "Log.CopySucceeded";
+            }
+            catch (Exception exception) when (exception is ExternalException || exception is SecurityException)
+            {
+                copyStatusKey = "Log.CopyFailed";
+                Trace.TraceWarning("Log panel could not copy logs: {0}", exception);
+            }
+
+            OnPropertyChanged(nameof(CopyStatusText));
+        }
+
         private void Reset()
         {
             Logs.Clear();
@@ -491,12 +577,7 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
         {
             if (IsDetailedMode)
             {
-                ShowEntireStream = true;
-                SelectedType = AnyFilter;
-                SelectedLevel = AnyFilter;
-                SearchText = string.Empty;
-                IsDetailedMode = false;
-                RebuildFilteredLogs();
+                ApplyQuickFilterCore(new LogPanelQuickFilterRequest { ShowEntireStream = true, Type = AnyFilter, Level = AnyFilter, SearchText = string.Empty });
                 return;
             }
 
@@ -506,6 +587,7 @@ namespace OpenVisionLab.Logging.Controls.ViewModel
         private void UpdateSummaryText()
         {
             HasVisibleLogs = FilteredLogs.Count > 0;
+            ErrorCount = Logs.Count(entry => string.Equals(entry.Level, nameof(LogLevel.Error), StringComparison.OrdinalIgnoreCase));
             string countText = ShowEntireStream && string.IsNullOrWhiteSpace(SearchText)
                 ? FormatCount(Logs.Count)
                 : string.Format(CultureInfo.CurrentCulture, T("Log.FilteredCountFormat"), FilteredLogs.Count, Logs.Count);

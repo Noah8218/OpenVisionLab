@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
@@ -11,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using OpenVisionLab.Core.Integration;
+using OpenVisionLab.Integration.Contracts;
 
 namespace OpenVisionLab;
 
@@ -27,6 +29,14 @@ internal sealed class OpenVisionTcpIntegrationExeSmokeReport
     public int SourceImageWidth { get; init; }
     public int SourceImageHeight { get; init; }
     public string? RecipeSha256 { get; init; }
+    public int DelayBeforeResultMilliseconds { get; init; }
+    public bool CancellationRequested { get; init; }
+    public string? CancellationResultStatus { get; init; }
+    public bool ExecutionErrorExpected { get; init; }
+    public bool ExecutionErrorObserved { get; init; }
+    public bool RestartBoundaryReached { get; init; }
+    public bool RecoveredExistingTransaction { get; init; }
+    public bool ReopenedExistingResult { get; init; }
     public required IReadOnlyDictionary<string, bool> Checks { get; init; }
     public required IReadOnlyList<string> Failures { get; init; }
     public bool IsValid => Failures.Count == 0 && Checks.Values.All(value => value);
@@ -72,6 +82,59 @@ internal static class OpenVisionTcpIntegrationExeSmoke
             0,
             0,
             30000);
+        var delayBeforeResultMilliseconds = ParseIntArgument(
+            GetArgumentValue(args, "--smoke-integration-exe-delay-before-result-ms"),
+            0,
+            0,
+            30000);
+        var preInspectionCancellationWindowMilliseconds = ParseIntArgument(
+            GetArgumentValue(args, "--smoke-integration-exe-cancel-window-ms"),
+            0,
+            0,
+            30000);
+        var executionErrorExpected = HasFlag(
+            args,
+            "--smoke-integration-exe-expect-error");
+        var waitForNewTransaction = HasFlag(
+            args,
+            "--smoke-integration-exe-wait-for-new-transaction");
+        var stopAfterAcknowledgement = HasFlag(
+            args,
+            "--smoke-integration-exe-stop-after-ack");
+        var recoveryTransactionText = GetArgumentValue(
+            args,
+            "--smoke-integration-exe-recover-transaction-id");
+        var recoveryTransactionId = ParseOptionalGuid(
+            recoveryTransactionText,
+            "--smoke-integration-exe-recover-transaction-id");
+        var reopenExistingResultTransactionId = ParseOptionalGuid(
+            GetArgumentValue(args, "--smoke-integration-exe-reopen-result-transaction-id"),
+            "--smoke-integration-exe-reopen-result-transaction-id");
+        var resultReadyFilePath = GetArgumentValue(
+            args,
+            "--smoke-integration-exe-result-ready-file") is { Length: > 0 } resultReadyPath
+            ? Path.GetFullPath(resultReadyPath)
+            : null;
+        var listeningReadyFilePath = GetArgumentValue(
+            args,
+            "--smoke-integration-exe-listening-ready-file") is { Length: > 0 } listeningPath
+            ? Path.GetFullPath(listeningPath)
+            : null;
+        if ((stopAfterAcknowledgement || recoveryTransactionId.HasValue)
+            && reopenExistingResultTransactionId.HasValue)
+        {
+            throw new ArgumentException(
+                "The ACK-stop/recovery and read-only result-reopen modes cannot be combined.");
+        }
+        if (stopAfterAcknowledgement && recoveryTransactionId.HasValue)
+        {
+            throw new ArgumentException(
+                "The ACK-stop and recovery transaction modes cannot be combined.");
+        }
+        var restartBoundaryReached = false;
+        var recoveredExistingTransaction = recoveryTransactionId.HasValue;
+        var reopenedExistingResult = reopenExistingResultTransactionId.HasValue;
+        var reopenHoldCompleted = false;
 
         void Check(string name, bool passed)
         {
@@ -146,22 +209,67 @@ internal static class OpenVisionTcpIntegrationExeSmoke
             Check("consumerSettingsValid", controller.CanStart);
             await controller.StartAsync();
             Check("consumerListening", controller.IsListening);
+            if (listeningReadyFilePath is not null)
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(listeningReadyFilePath)!);
+                File.WriteAllText(listeningReadyFilePath, "ready");
+                Check("consumerListeningReadyFileWritten", true);
+            }
 
-            await controller.PingAsync();
-            Check(
-                "machinePingAccepted",
-                controller.LastTransferText.StartsWith(
-                    "Ping",
-                    StringComparison.OrdinalIgnoreCase));
+            if (!reopenExistingResultTransactionId.HasValue)
+            {
+                await controller.PingAsync();
+                Check(
+                    "machinePingAccepted",
+                    controller.LastTransferText.StartsWith(
+                        "Ping",
+                        StringComparison.OrdinalIgnoreCase));
+            }
+            else
+            {
+                Check("readOnlyReopenPeerPingNotRequired", true);
+            }
 
             await WaitForAsync(
                 () =>
                 {
                     controller.RefreshTransactions();
-                    return controller.Transactions.Count > 0;
+                    if (waitForNewTransaction)
+                    {
+                        var pending = controller.Transactions.FirstOrDefault(
+                            item => !item.HasAcknowledgement && !item.HasResult);
+                        if (pending is null)
+                        {
+                            return false;
+                        }
+
+                        controller.SelectedTransaction = pending;
+                        return true;
+                    }
+
+                    if (!recoveryTransactionId.HasValue
+                        && !reopenExistingResultTransactionId.HasValue)
+                    {
+                        return controller.Transactions.Count > 0;
+                    }
+
+                    var expectedTransactionId = recoveryTransactionId ?? reopenExistingResultTransactionId
+                        ?? throw new InvalidOperationException(
+                            "A recovery or result-reopen transaction ID was required.");
+                    var recovered = controller.Transactions.FirstOrDefault(
+                        item => item.TransactionId == expectedTransactionId);
+                    if (recovered is null)
+                    {
+                        return false;
+                    }
+
+                    controller.SelectedTransaction = recovered;
+                    return true;
                 },
                 TimeSpan.FromSeconds(30),
-                "2D consumer did not discover the pushed Machine transaction.");
+                recoveryTransactionId.HasValue
+                    ? "2D consumer did not rediscover the requested transaction after restart."
+                    : "2D consumer did not discover the pushed Machine transaction.");
             Check("handoffDiscovered", controller.Transactions.Count > 0);
 
             var selected = controller.SelectedTransaction
@@ -169,7 +277,25 @@ internal static class OpenVisionTcpIntegrationExeSmoke
                     "The 2D consumer did not select its discovered transaction.");
             transactionId = selected.TransactionId;
             Check("handoffTargetsTwoD", selected.IsTwoDTarget);
-            Check("handoffStartsWithoutAckOrResult", !selected.HasAcknowledgement && !selected.HasResult);
+            Check(
+                "handoffSelectionModeValid",
+                reopenExistingResultTransactionId.HasValue
+                    || recoveryTransactionId.HasValue
+                    || (!selected.HasAcknowledgement && !selected.HasResult));
+            if (recoveryTransactionId is Guid expectedId)
+            {
+                Check("recoveryTransactionIdentityMatches", selected.TransactionId == expectedId);
+                Check("recoveryAcknowledgementAlreadyPresent", selected.HasAcknowledgement);
+                Check("recoveryResultStillPending", !selected.HasResult);
+                Check("recoveryAcknowledgementAccepted", controller.AcknowledgementStatusText == "Accepted");
+            }
+            if (reopenExistingResultTransactionId is Guid reopenSelectionId)
+            {
+                Check("reopenResultTransactionIdentityMatches", selected.TransactionId == reopenSelectionId);
+                Check("reopenAcknowledgementPresent", selected.HasAcknowledgement);
+                Check("reopenResultPresent", selected.HasResult);
+                Check("reopenAcknowledgementAccepted", controller.AcknowledgementStatusText == "Accepted");
+            }
             var transactionRoot = Path.Combine(
                 root,
                 "transactions",
@@ -185,21 +311,157 @@ internal static class OpenVisionTcpIntegrationExeSmoke
                 Check("handoffRecipeHashPresent", !string.IsNullOrWhiteSpace(recipeSha256));
             }
 
-            await controller.AcknowledgeAsync();
-            controller.RefreshTransactions();
-            selected = controller.SelectedTransaction
-                ?? throw new InvalidOperationException("The 2D transaction disappeared after ACK.");
-            Check("acknowledgementCreated", selected.HasAcknowledgement);
-            Check("acknowledgementAccepted", controller.AcknowledgementStatusText == "Accepted");
+            if (controller.WindowForSmoke is { } sourceImageWindow)
+            {
+                Check("sourceImageViewerLoaded", sourceImageWindow.HasSourceImageForSmoke);
+            }
 
-            await controller.RunInspectionAsync();
+            if (reopenExistingResultTransactionId is Guid reopenId)
+            {
+                var reopenedResult = TwoDIntegrationExchange.ReadResult(root, reopenId);
+                var reopenedResultPath = Path.Combine(
+                    transactionRoot,
+                    IntegrationTransactionLayout.ResultFileName);
+                var resultHashBeforeHold = Convert.ToHexString(
+                    SHA256.HashData(File.ReadAllBytes(reopenedResultPath)));
+                var reopenRunRecordPath = reopenedResult.RunRecord is null
+                    ? null
+                    : Path.Combine(
+                        transactionRoot,
+                        reopenedResult.RunRecord.RelativePath.Replace('/', Path.DirectorySeparatorChar));
+                var runRecordReadable = false;
+                if (reopenRunRecordPath is not null && File.Exists(reopenRunRecordPath))
+                {
+                    try
+                    {
+                        using var runRecord = JsonDocument.Parse(File.ReadAllText(reopenRunRecordPath));
+                        runRecordReadable = string.Equals(
+                            runRecord.RootElement.GetProperty("runId").GetString(),
+                            reopenedResult.RunId,
+                            StringComparison.Ordinal);
+                    }
+                    catch (JsonException)
+                    {
+                        runRecordReadable = false;
+                    }
+                }
+                Check(
+                    "reopenResultCompletedPass",
+                    controller.ResultStatusText == "Completed"
+                    && controller.ResultOutcomeText == "Pass"
+                    && reopenedResult.Status == IntegrationResultStatus.Completed
+                    && reopenedResult.Outcome == IntegrationInspectionOutcome.Pass);
+                Check("reopenResultHasRunId", !string.IsNullOrWhiteSpace(reopenedResult.RunId));
+                Check("reopenRunRecordReadable", runRecordReadable);
+                Check("reopenResultFileReadable", File.Exists(reopenedResultPath));
+                Check("reopenAcknowledgeDisabled", !controller.CanAcknowledge);
+                Check("reopenRunDisabled", !controller.CanRun);
+                if (!string.IsNullOrWhiteSpace(screenshotPath)
+                    && controller.WindowForSmoke is { } reopenedWindow)
+                {
+                    CaptureWindow(reopenedWindow, screenshotPath);
+                    Check("integrationScreenshotCaptured", File.Exists(Path.GetFullPath(screenshotPath)));
+                }
+                if (resultReadyFilePath is not null)
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(resultReadyFilePath)!);
+                    File.WriteAllText(resultReadyFilePath, reopenId.ToString("D"));
+                    Check("consumerResultReadyFileWritten", true);
+                }
+                if (holdMilliseconds > 0)
+                {
+                    await Task.Delay(holdMilliseconds);
+                }
+                reopenHoldCompleted = true;
+                var resultHashAfterHold = Convert.ToHexString(
+                    SHA256.HashData(File.ReadAllBytes(reopenedResultPath)));
+                Check("reopenResultFileUnchanged", resultHashBeforeHold == resultHashAfterHold);
+                status = "Existing Result reopened read-only; no Acknowledge, Run, or Push was executed.";
+                return failures.Count == 0 && checks.Values.All(value => value);
+            }
+
+            if (!recoveryTransactionId.HasValue)
+            {
+                await controller.AcknowledgeAsync();
+                controller.RefreshTransactions();
+                selected = controller.SelectedTransaction
+                    ?? throw new InvalidOperationException("The 2D transaction disappeared after ACK.");
+                Check("acknowledgementCreated", selected.HasAcknowledgement);
+                Check("acknowledgementAccepted", controller.AcknowledgementStatusText == "Accepted");
+
+                await controller.PushAsync();
+                Check(
+                    "acknowledgementPushedToMachine",
+                    controller.LastTransferText.StartsWith(
+                        "Push",
+                        StringComparison.OrdinalIgnoreCase));
+
+                if (stopAfterAcknowledgement)
+                {
+                    Check("restartBoundaryHasAcknowledgement", selected.HasAcknowledgement);
+                    Check("restartBoundaryHasNoResult", !selected.HasResult);
+                    restartBoundaryReached = true;
+                    status = "ACK published; consumer exited before inspection for peer-restart recovery.";
+                    return failures.Count == 0 && checks.Values.All(value => value);
+                }
+            }
+
+            if (preInspectionCancellationWindowMilliseconds > 0)
+            {
+                var inspectionTask = controller.RunInspectionAsync(
+                    preInspectionCancellationWindowMilliseconds);
+                var resultPath = Path.Combine(
+                    transactionRoot,
+                    IntegrationTransactionLayout.ResultFileName);
+                await WaitForAsync(
+                    () => File.Exists(resultPath),
+                    TimeSpan.FromSeconds(120),
+                    "The 2D cancellation run did not publish a Result.");
+                await inspectionTask;
+                controller.RefreshTransactions();
+                selected = controller.SelectedTransaction
+                    ?? throw new InvalidOperationException("The 2D transaction disappeared after cancellation.");
+                Check("cancelledResultCreated", selected.HasResult);
+                Check("cancelledResultStatus", controller.ResultStatusText == "Cancelled");
+                Check("cancelledResultOutcome", controller.ResultOutcomeText == "Indeterminate");
+            }
+            else
+            {
+                if (delayBeforeResultMilliseconds > 0)
+                {
+                    await Task.Delay(delayBeforeResultMilliseconds);
+                }
+
+                await controller.RunInspectionAsync();
+            }
             controller.RefreshTransactions();
             selected = controller.SelectedTransaction
                 ?? throw new InvalidOperationException("The 2D transaction disappeared after Run.");
             Check("resultCreated", selected.HasResult);
-            Check("resultCompleted", controller.ResultStatusText == "Completed");
-            Check("resultHasRunId", !string.IsNullOrWhiteSpace(controller.ResultRunIdText)
-                && controller.ResultRunIdText != "-");
+            if (preInspectionCancellationWindowMilliseconds > 0)
+            {
+                Check("resultCancelled", controller.ResultStatusText == "Cancelled");
+            }
+            else if (executionErrorExpected)
+            {
+                var publishedResult = TwoDIntegrationExchange.ReadResult(root, transactionId.Value);
+                Check(
+                    "resultExecutionError",
+                    controller.ResultStatusText == "Failed"
+                    && controller.ResultOutcomeText == "ExecutionError"
+                    && publishedResult.Status == IntegrationResultStatus.Failed
+                    && publishedResult.Outcome == IntegrationInspectionOutcome.ExecutionError
+                    && publishedResult.RunId is null
+                    && publishedResult.RunRecord is null
+                    && publishedResult.Evidence.Count == 0
+                    && publishedResult.Error?.Code == IntegrationErrorCode.ExecutionFailed);
+            }
+            else
+            {
+                Check("resultCompleted", controller.ResultStatusText == "Completed");
+                Check("resultHasRunId", !string.IsNullOrWhiteSpace(controller.ResultRunIdText)
+                    && controller.ResultRunIdText != "-");
+            }
 
             var runRecordPath = Path.Combine(
                 transactionRoot,
@@ -219,6 +481,13 @@ internal static class OpenVisionTcpIntegrationExeSmoke
             {
                 CaptureWindow(integrationWindow, screenshotPath);
                 Check("integrationScreenshotCaptured", File.Exists(Path.GetFullPath(screenshotPath)));
+            }
+
+            if (resultReadyFilePath is not null && transactionId is Guid resultReadyTransactionId)
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(resultReadyFilePath)!);
+                File.WriteAllText(resultReadyFilePath, resultReadyTransactionId.ToString("D"));
+                Check("consumerResultReadyFileWritten", true);
             }
 
             await controller.PushAsync();
@@ -246,11 +515,23 @@ internal static class OpenVisionTcpIntegrationExeSmoke
                 SourceImageWidth = sourceImageWidth,
                 SourceImageHeight = sourceImageHeight,
                 RecipeSha256 = recipeSha256,
+                DelayBeforeResultMilliseconds = delayBeforeResultMilliseconds,
+                CancellationRequested = preInspectionCancellationWindowMilliseconds > 0,
+                CancellationResultStatus = preInspectionCancellationWindowMilliseconds > 0
+                    ? controller?.ResultStatusText
+                    : null,
+                ExecutionErrorExpected = executionErrorExpected,
+                ExecutionErrorObserved = executionErrorExpected
+                    && controller?.ResultStatusText == "Failed"
+                    && controller.ResultOutcomeText == "ExecutionError",
+                RestartBoundaryReached = restartBoundaryReached,
+                RecoveredExistingTransaction = recoveredExistingTransaction,
+                ReopenedExistingResult = reopenedExistingResult,
                 Checks = checks,
                 Failures = failures
             };
             report.Save(reportPath);
-            if (holdMilliseconds > 0)
+            if (holdMilliseconds > 0 && !reopenHoldCompleted)
             {
                 await Task.Delay(holdMilliseconds);
             }
@@ -305,7 +586,30 @@ internal static class OpenVisionTcpIntegrationExeSmoke
         if (!int.TryParse(value, out var parsed) || parsed < minimum || parsed > maximum)
         {
             throw new ArgumentException(
-                $"Integration smoke port/hold value must be between {minimum} and {maximum}.");
+                $"Integration smoke port/hold/delay value must be between {minimum} and {maximum}.");
+        }
+
+        return parsed;
+    }
+
+    private static bool HasFlag(
+        IReadOnlyList<string> args,
+        string name) =>
+        args.Any(argument => string.Equals(argument, name, StringComparison.OrdinalIgnoreCase));
+
+    private static Guid? ParseOptionalGuid(
+        string? value,
+        string argumentName)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        if (!Guid.TryParse(value, out var parsed) || parsed == Guid.Empty)
+        {
+            throw new ArgumentException(
+                $"Argument '{argumentName}' must contain a non-empty transaction ID.");
         }
 
         return parsed;

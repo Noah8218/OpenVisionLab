@@ -35,6 +35,7 @@ internal static class SimplePreprocessPartialBoundaryContract
         string previewExecutorSource = File.ReadAllText(previewExecutorPath);
         string registrySource = File.ReadAllText(registryPath);
         string baseViewSource = File.ReadAllText(baseViewPath);
+        string descriptorSource = File.ReadAllText(Path.Combine(Path.GetDirectoryName(documentFactoryPath)!, "OpenVisionNativeSimplePreprocessToolDescriptor.cs"));
         List<string> results = new();
 
         Check(
@@ -96,6 +97,32 @@ internal static class SimplePreprocessPartialBoundaryContract
                 && propertyFactorySource.Contains("CreateEdgeDetectionProperty(SimplePreprocessToolWpfView view)", StringComparison.Ordinal)
                 && propertyFactorySource.Contains("CreateRotateScaleProperty(SimplePreprocessToolWpfView view)", StringComparison.Ordinal)
                 && propertyFactorySource.Contains("CreateMeanProperty(SimplePreprocessToolWpfView view)", StringComparison.Ordinal),
+            results);
+        Check(
+            "Simple Preprocess descriptor forwards a per-run UI capture operation to the existing builder",
+            descriptorSource.Contains("Func<SimplePreprocessToolWpfView, OpenVisionNativePreviewOperation> CapturePreview", StringComparison.Ordinal)
+                && !descriptorSource.Contains("ExecutePreview", StringComparison.Ordinal)
+                && documentFactorySource.Contains("descriptor.CapturePreview", StringComparison.Ordinal)
+                && previewExecutorSource.Contains("view.Dispatcher.VerifyAccess();", StringComparison.Ordinal)
+                && !previewExecutorSource.Contains("view.Dispatcher.Invoke", StringComparison.Ordinal),
+            results);
+        foreach (string tool in new[] { "EdgeDetection", "RotateScale", "Mean", "Hsv", "Histogram" })
+        {
+            Check(
+                tool + " production registration uses capture rather than a live-View worker delegate",
+                documentFactorySource.Contains("OpenVisionNativeSimplePreprocessPreviewExecutor.Capture" + tool + "Preview", StringComparison.Ordinal)
+                    && previewExecutorSource.Contains("OpenVisionNativePreviewOperation Capture" + tool + "Preview(SimplePreprocessToolWpfView view)", StringComparison.Ordinal)
+                    && previewExecutorSource.Contains("private static VisionToolResult Execute" + tool + "Preview(", StringComparison.Ordinal)
+                    && !previewExecutorSource.Contains("Execute" + tool + "Preview(Mat source, SimplePreprocessToolWpfView view)", StringComparison.Ordinal),
+                results);
+        }
+        Check(
+            "Managed review and signal evidence are published by captured UI callbacks, including Mean native failure",
+            previewExecutorSource.Contains("() => { if (review.HasValue) view.ShowResultReview(review.Value); }", StringComparison.Ordinal)
+                && previewExecutorSource.Contains("publishEvidenceOnFailure: true", StringComparison.Ordinal)
+                && previewExecutorSource.Contains("if (evidence != null) view.ShowSignalEvidence(evidence);", StringComparison.Ordinal)
+                && previewExecutorSource.Contains("ExecuteMeanPreview(Mat source, MeanProperty property, out SimplePreprocessResultReview? review)", StringComparison.Ordinal)
+                && previewExecutorSource.Contains("out SimplePreprocessResultReview? review, out VisionToolSignalEvidence evidence)", StringComparison.Ordinal),
             results);
         Check(
             "XAML binding and public/test facade remain stable",

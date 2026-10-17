@@ -12,7 +12,7 @@ namespace OpenVisionLab
         private const double SplitterWidth = 6D;
 
         private readonly ContentControl contentHost;
-        private readonly TextBlock titleText;
+        private readonly FrameworkElement titleText;
         private readonly FrameworkElement panel;
         private readonly FrameworkElement splitter;
         private readonly ColumnDefinition splitterColumn;
@@ -26,7 +26,7 @@ namespace OpenVisionLab
 
         public OpenVisionDockedToolInspectorController(
             ContentControl contentHost,
-            TextBlock titleText,
+            FrameworkElement titleText,
             FrameworkElement panel,
             FrameworkElement splitter,
             ColumnDefinition splitterColumn,
@@ -44,7 +44,9 @@ namespace OpenVisionLab
 
         public FrameworkElement ActiveContent => content;
 
-        public string ActiveTitle => title;
+        public string ActiveTitle => HasTitleBinding ? (string)titleText.GetValue(TextBlock.TextProperty) : title;
+
+        private bool HasTitleBinding => titleText != null && System.Windows.Data.BindingOperations.IsDataBound(titleText, TextBlock.TextProperty);
 
         public bool IsVisible => panel?.Visibility == Visibility.Visible && contentHost?.Content != null;
 
@@ -64,15 +66,21 @@ namespace OpenVisionLab
             floatingWidth = nextFloatingWidth > 0D ? nextFloatingWidth : 900D;
             floatingHeight = nextFloatingHeight > 0D ? nextFloatingHeight : 620D;
 
-            if (titleText != null)
+            if (titleText != null && !HasTitleBinding)
             {
-                titleText.Text = title;
+                titleText.SetValue(TextBlock.TextProperty, title);
             }
 
             OpenVisionToolDockModeHelper.Apply(content, true);
             contentHost.Content = content;
             ShowChrome();
             return true;
+        }
+
+        public void SetTitle(string value)
+        {
+            title = value ?? string.Empty;
+            if (titleText != null && !HasTitleBinding) { titleText.SetValue(TextBlock.TextProperty, title); }
         }
 
         public bool CloseByUser()
@@ -97,7 +105,7 @@ namespace OpenVisionLab
                 return false;
             }
 
-            string currentTitle = title;
+            string currentTitle = ActiveTitle;
             double width = floatingWidth;
             double height = floatingHeight;
             ClearContent(resetMode: false);
@@ -126,20 +134,23 @@ namespace OpenVisionLab
             }
         }
 
+        private bool HasLayoutBinding => inspectorColumn != null
+            && System.Windows.Data.BindingOperations.IsDataBound(inspectorColumn, ColumnDefinition.WidthProperty);
+
         private void ShowChrome()
         {
-            if (splitterColumn != null)
+            if (splitterColumn != null && !HasLayoutBinding)
             {
                 splitterColumn.Width = new GridLength(SplitterWidth);
             }
 
-            if (inspectorColumn != null)
+            if (inspectorColumn != null && !HasLayoutBinding)
             {
                 inspectorColumn.Width = new GridLength(ClampWidth(inspectorWidth));
                 inspectorColumn.MinWidth = MinimumWidth;
             }
 
-            if (splitter != null)
+            if (splitter != null && !HasLayoutBinding)
             {
                 splitter.Visibility = Visibility.Visible;
             }
@@ -159,25 +170,25 @@ namespace OpenVisionLab
                 panel.Visibility = Visibility.Collapsed;
             }
 
-            if (splitter != null)
+            if (splitter != null && !HasLayoutBinding)
             {
                 splitter.Visibility = Visibility.Collapsed;
             }
 
-            if (splitterColumn != null)
+            if (splitterColumn != null && !HasLayoutBinding)
             {
                 splitterColumn.Width = new GridLength(0D);
             }
 
-            if (inspectorColumn != null)
+            if (inspectorColumn != null && !HasLayoutBinding)
             {
                 inspectorColumn.Width = new GridLength(0D);
                 inspectorColumn.MinWidth = 0D;
             }
 
-            if (titleText != null)
+            if (titleText != null && !HasTitleBinding)
             {
-                titleText.Text = string.Empty;
+                titleText.SetValue(TextBlock.TextProperty, string.Empty);
             }
         }
 

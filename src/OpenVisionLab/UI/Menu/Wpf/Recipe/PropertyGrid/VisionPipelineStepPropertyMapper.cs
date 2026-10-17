@@ -9,6 +9,9 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
+using System.Reflection;
+using System.IO;
+using System.Xml.Serialization;
 using System.Windows.Controls.WpfPropertyGrid;
 using static OpenVisionLab.Core.FormulaUtil;
 using static OpenVisionLab.PropertyGridEditorFactory;
@@ -66,6 +69,118 @@ namespace OpenVisionLab
         public static object CreateProperty(VisionPipelineStep step)
         {
             return CreateProperty(step, VisionPipelinePropertyContext.Empty);
+        }
+
+        internal static byte[] CaptureNativeParameters<TProperty>(TProperty property) where TProperty : OpenCvPropertyBase
+        {
+            using MemoryStream stream = new MemoryStream();
+            new XmlSerializer(typeof(TProperty)).Serialize(stream, property);
+            return stream.ToArray();
+        }
+
+        internal static void RestoreNativeParameters<TProperty>(byte[] snapshot, TProperty target) where TProperty : OpenCvPropertyBase
+        {
+            if (!SerializeHelper.TryLoadFromXmlBytes(snapshot, out TProperty source, out Exception error))
+            {
+                throw new InvalidOperationException("Could not restore native parameters.", error);
+            }
+            try { ApplyNativeParameters(source, target); }
+            finally { ReleaseNativeParameterResources(source); }
+        }
+
+        internal static void ReleaseNativeParameterResources(object property)
+        {
+            if (property is MatchingProperty matching) { matching.ImageTemplate?.Dispose(); }
+            else if (property is EdgeBasedMatchingProperty edge) { edge.ImageTemplate?.Dispose(); }
+            else if (property is FeatureMatchingProperty feature) { feature.ImageTemplate?.Dispose(); }
+        }
+
+        internal static void ApplyNativeParameters(object source, OpenCvPropertyBase target)
+        {
+            if (source == null || target == null || (!target.GetType().IsInstanceOfType(source)
+                && !(target is AffineTransformProperty && source is IAffineTransformToolProperty)))
+            {
+                throw new ArgumentException("Native parameter types must match.");
+            }
+            // Copy data on the native model, keeping the grid's instance and metadata type.
+            // Mat resources are internal; XML surrogates are excluded because the native ROI data is copied below.
+            foreach (PropertyInfo property in target.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public)
+                .Where(item => item.GetMethod?.IsPublic == true && item.SetMethod?.IsPublic == true && item.GetIndexParameters().Length == 0
+                    && item.Name != nameof(OpenCvPropertyBase.NAME) && !item.Name.EndsWith("Xml", StringComparison.Ordinal)))
+            {
+                PropertyInfo sourceProperty = source.GetType().GetProperty(property.Name);
+                if (sourceProperty?.CanRead != true || sourceProperty.PropertyType != property.PropertyType) { continue; }
+                object value = sourceProperty.GetValue(source);
+                if (value is List<Rect> rectangles) { value = new List<Rect>(rectangles); }
+                property.SetValue(target, value);
+            }
+        }
+
+        internal static ThresholdToolSettings CreateThresholdSettings(VisionPipelineStep step)
+        {
+            ThresholdToolProperty property = CreateProperty(step) as ThresholdToolProperty ?? throw new ArgumentException("Expected Threshold parameters.");
+            return new ThresholdToolSettings
+            {
+                Mode = property.Mode, Threshold = property.Threshold, MaxValue = property.MaxValue,
+                BasicInvert = property.ThresholdType == ThresholdTypes.BinaryInv,
+                RangeMin = property.RangeMin, RangeMax = property.RangeMax, RangeInvert = property.Invert,
+                AdaptiveGaussian = property.AdaptiveType == AdaptiveThresholdTypes.GaussianC,
+                AdaptiveInvert = property.AdaptiveThresholdType == ThresholdTypes.BinaryInv,
+                AdaptiveMaxValue = property.MaxValue, BlockSize = property.BlockSize, Weight = property.Weight
+            };
+        }
+
+        internal static FilterToolSettings CreateFilterSettings(VisionPipelineStep step)
+        {
+            FilterToolProperty property = CreateProperty(step) as FilterToolProperty ?? throw new ArgumentException("Expected Filter parameters.");
+            return new FilterToolSettings
+            {
+                FilterType = property.FilterType, KernelWidth = property.KernelWidth, KernelHeight = property.KernelHeight,
+                MedianKernelSize = property.MedianKernelSize, Diameter = property.Diameter,
+                SigmaColor = property.SigmaColor, SigmaSpace = property.SigmaSpace, BorderType = property.BorderType
+            };
+        }
+
+        internal static MorphologyToolSettings CreateMorphologySettings(VisionPipelineStep step)
+        {
+            MorphologyToolProperty property = CreateProperty(step) as MorphologyToolProperty ?? throw new ArgumentException("Expected Morphology parameters.");
+            return new MorphologyToolSettings
+            {
+                Operator = property.Operator, Shape = property.Shape, KernelWidth = property.KernelWidth,
+                KernelHeight = property.KernelHeight, Iterations = property.Iterations
+            };
+        }
+
+        internal static ArithmeticToolSettings CreateArithmeticSettings(VisionPipelineStep step)
+        {
+            return new ArithmeticToolSettings
+            {
+                SelectedOperation = GetString(step.Parameters, VisionPipelineArithmeticStep.ParameterOperation, "Bitwise_AND"),
+                UseConstantInput = GetBool(step.Parameters, VisionPipelineArithmeticStep.ParameterUseConstantInput, false),
+                UseColorConstant = GetBool(step.Parameters, VisionPipelineArithmeticStep.ParameterUseColorConstant, false),
+                UseOffsetMode = VisionPipelineArithmeticStep.IsOffsetMode(step),
+                Gray = GetInt(step.Parameters, VisionPipelineArithmeticStep.ParameterGray, 1),
+                B = GetInt(step.Parameters, VisionPipelineArithmeticStep.ParameterB, 1),
+                G = GetInt(step.Parameters, VisionPipelineArithmeticStep.ParameterG, 1),
+                R = GetInt(step.Parameters, VisionPipelineArithmeticStep.ParameterR, 1),
+                OffsetX = GetInt(step.Parameters, VisionPipelineArithmeticStep.ParameterOffsetX, 1),
+                OffsetY = GetInt(step.Parameters, VisionPipelineArithmeticStep.ParameterOffsetY, 1)
+            };
+        }
+
+        internal static SimplePreprocessToolSettings CreateSimplePreprocessSettings(VisionPipelineStep step, SimplePreprocessToolSettings defaults)
+        {
+            object property = CreateProperty(step) ?? throw new ArgumentException("Expected preprocess parameters.");
+            var names = new Dictionary<string, string> { ["MeanType"] = "MEAN_TYPES", ["MeanMin"] = "MEAN_MIN", ["MeanMax"] = "MEAN_MAX" };
+            return new SimplePreprocessToolSettings
+            {
+                Parameters = defaults.Parameters.Select(item =>
+                {
+                    string name = names.TryGetValue(item.Key, out string mapped) ? mapped : item.Key;
+                    object value = property.GetType().GetProperty(name)?.GetValue(property);
+                    return new ToolParameterValue { Key = item.Key, Value = value == null ? item.Value : Convert.ToString(value, CultureInfo.InvariantCulture) };
+                }).ToList()
+            };
         }
 
         public static object CreateProperty(VisionPipelineStep step, VisionPipelinePropertyContext context)
@@ -354,7 +469,17 @@ namespace OpenVisionLab
                 return false;
             }
 
+            // Public pipelines can use a Step name distinct from the Tool's Name parameter.
+            string originalStepName = target.Name;
+            bool preserveStepName = property is OpenCvPropertyBase editedOpenCvProperty
+                && target.Parameters.TryGetValue("Name", out string originalToolName)
+                && string.Equals(originalToolName, editedOpenCvProperty.NAME, StringComparison.Ordinal);
             CopyStep(target, mapped);
+            if (preserveStepName)
+            {
+                target.Name = originalStepName;
+            }
+
             target.Enabled = enabled;
             target.UseAcceptance = useAcceptance;
             target.ExpectedSuccess = expectedSuccess;

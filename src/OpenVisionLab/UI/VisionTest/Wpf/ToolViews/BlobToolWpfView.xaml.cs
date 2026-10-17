@@ -59,9 +59,14 @@ namespace OpenVisionLab
 
         public void SetResultReview(IEnumerable<BlobResult> results)
         {
+            SetResultReview(results, CurrentProperty);
+        }
+
+        internal void SetResultReview(IEnumerable<BlobResult> results, BlobProperty executedProperty)
+        {
             toolController.ShowAreaResultReview(
                 verificationGuidePresenter,
-                CurrentProperty,
+                executedProperty,
                 "Blob",
                 VisionToolVerificationText.T("VisionTool.Review.NoBlob", "no blob"),
                 results,

@@ -16,7 +16,7 @@ namespace OpenVisionLab
             PackIconMaterial toggleIcon,
             TextBlock toggleText)
         {
-            if (toolRailColumn != null)
+            if (toolRailColumn != null && !System.Windows.Data.BindingOperations.IsDataBound(toolRailColumn, ColumnDefinition.WidthProperty))
             {
                 toolRailColumn.Width = compact ? new GridLength(56) : new GridLength(220);
             }
@@ -31,14 +31,15 @@ namespace OpenVisionLab
                 toggleButton.Height = compact ? 36D : 30D;
                 toggleButton.Padding = compact ? new Thickness(0) : new Thickness(8, 0, 8, 0);
                 toggleButton.Margin = new Thickness(0, 0, 0, 8);
-                toggleButton.ToolTip = compact
-                    ? OpenVisionLanguageService.T("Shell.ToolRailExpand")
-                    : OpenVisionLanguageService.T("Shell.ToolRailCollapse");
+                if (!System.Windows.Data.BindingOperations.IsDataBound(toggleButton, FrameworkElement.ToolTipProperty))
+                {
+                    toggleButton.ToolTip = compact ? OpenVisionLanguageService.T("Shell.ToolRailExpand") : OpenVisionLanguageService.T("Shell.ToolRailCollapse");
+                }
             }
 
             if (toolRailScroll != null)
             {
-                toolRailScroll.Visibility = Visibility.Visible;
+                if (!System.Windows.Data.BindingOperations.IsDataBound(toolRailScroll, UIElement.VisibilityProperty)) { toolRailScroll.Visibility = Visibility.Visible; }
                 toolRailScroll.VerticalScrollBarVisibility = compact
                     ? ScrollBarVisibility.Hidden
                     : ScrollBarVisibility.Auto;
@@ -51,16 +52,17 @@ namespace OpenVisionLab
 
             if (toggleIcon != null)
             {
-                toggleIcon.Kind = compact
-                    ? PackIconMaterialKind.ChevronRight
-                    : PackIconMaterialKind.ChevronLeft;
+                if (!System.Windows.Data.BindingOperations.IsDataBound(toggleIcon, PackIconMaterial.KindProperty))
+                {
+                    toggleIcon.Kind = compact ? PackIconMaterialKind.ChevronRight : PackIconMaterialKind.ChevronLeft;
+                }
                 toggleIcon.Margin = compact ? new Thickness(0) : new Thickness(0, 0, 6, 0);
             }
 
             if (toggleText != null)
             {
                 toggleText.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
-                toggleText.Text = OpenVisionLanguageService.T("Shell.ToolRailCollapse");
+                if (!System.Windows.Data.BindingOperations.IsDataBound(toggleText, TextBlock.TextProperty)) { toggleText.Text = OpenVisionLanguageService.T("Shell.ToolRailCollapse"); }
             }
         }
     }

@@ -14,6 +14,8 @@ namespace OpenVisionLab
 {
     internal sealed class VisionToolNImageVerificationProgress
     {
+        public bool IsStarting { get; init; }
+        public string ImagePath { get; init; } = string.Empty;
         public int CompletedCount { get; init; }
         public int TotalCount { get; init; }
         public VisionToolNImageVerificationRow Row { get; init; }
@@ -21,6 +23,12 @@ namespace OpenVisionLab
 
     internal sealed class VisionToolNImageVerificationSession
     {
+        public string InputIdentity { get; init; } = string.Empty;
+        public IReadOnlyDictionary<string, string> AdditionalInputPaths { get; init; } = new Dictionary<string, string>();
+        public IReadOnlyDictionary<string, string> AdditionalInputSha256 { get; init; } = new Dictionary<string, string>();
+        public int PrefixCount { get; init; }
+        public int PlannedCount { get; init; }
+        public string EvidenceDirectory { get; init; } = string.Empty;
         public string ToolName { get; init; } = string.Empty;
         public string PipelineName { get; init; } = string.Empty;
         public string PipelineXml { get; init; } = string.Empty;
@@ -38,11 +46,13 @@ namespace OpenVisionLab
     {
         public int Index { get; init; }
         public string ImagePath { get; init; } = string.Empty;
-        public string FileName => Path.GetFileName(ImagePath);
+        public string DisplayName { get; init; } = string.Empty;
+        public string FileName => string.IsNullOrEmpty(DisplayName) ? Path.GetFileName(ImagePath) : DisplayName;
         public string Status { get; init; } = string.Empty;
         public bool Success { get; init; }
         public double TotalMilliseconds { get; init; }
         public string Message { get; init; } = string.Empty;
+        public VisionPipelineStepResultSummary TargetSummary { get; init; }
         public string MetricText { get; init; } = string.Empty;
         public string RunReportPath { get; init; } = string.Empty;
         public string SourceSnapshotPath { get; init; } = string.Empty;
@@ -70,32 +80,41 @@ namespace OpenVisionLab
             bool normalizeInputToGray,
             IReadOnlyList<string> imagePaths,
             IProgress<VisionToolNImageVerificationProgress> progress,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            VisionPipeline executionPipeline = null, string evidenceDirectory = null,
+            IReadOnlyDictionary<string, (string Path, string Name)> imageIdentities = null,
+            IReadOnlyDictionary<string, string> inputSnapshots = null, string inputIdentity = null)
         {
             if (createStep == null)
             {
                 throw new ArgumentNullException(nameof(createStep));
             }
 
-            List<string> paths = NormalizeImagePaths(imagePaths);
+            List<string> paths = NormalizeImagePaths(imagePaths, includeMissing: executionPipeline != null);
             if (paths.Count == 0)
             {
                 throw new InvalidOperationException("검증할 이미지가 없습니다.");
             }
 
-            VisionPipelineStep step = createStep()
-                ?? throw new InvalidOperationException("현재 Tool View 설정에서 Pipeline Step을 만들지 못했습니다.");
+            bool mainTrial = executionPipeline != null;
+            VisionPipeline pipeline = mainTrial ? VisionPipelineStepEditService.Copy(executionPipeline) : new VisionPipeline();
+            VisionPipelineStep step = mainTrial ? pipeline.Steps.LastOrDefault() : createStep();
+            if (step == null) { throw new InvalidOperationException("Current test step is unavailable."); }
             string resolvedToolName = NormalizeName(toolName, step.ToolType, "Tool");
             string pipelineName = "NImage_" + SanitizeName(resolvedToolName);
-            step.Name = NormalizeName(step.Name, resolvedToolName, "Tool");
-            step.InputLayer = "Main";
-            step.OutputLayer = "NImageResult";
-
-            VisionPipeline pipeline = new VisionPipeline { Name = pipelineName };
-            pipeline.Steps.Add(step);
+            pipeline.Name = pipelineName;
+            if (!mainTrial)
+            {
+                step.Name = NormalizeName(step.Name, resolvedToolName, "Tool");
+                step.InputLayer = "Main";
+                step.OutputLayer = "NImageResult";
+                pipeline.Steps.Add(step);
+            }
+            int prefixCount = pipeline.Steps.Count - 1;
             string pipelineXml = SerializePipeline(pipeline);
             string definitionSha256 = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(pipelineXml)));
             string resolvedRecipeName = string.IsNullOrWhiteSpace(recipeName) ? "Default" : recipeName.Trim();
+            var inputHashes = (inputSnapshots ?? new Dictionary<string, string>()).ToDictionary(input => input.Key, input => Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(input.Value))), StringComparer.OrdinalIgnoreCase);
             DateTime startedAt = DateTime.Now;
             List<VisionToolNImageVerificationRow> rows = new List<VisionToolNImageVerificationRow>(paths.Count);
             bool wasCancelled = false;
@@ -109,6 +128,10 @@ namespace OpenVisionLab
                 }
 
                 string path = paths[index];
+                if (mainTrial)
+                {
+                    progress?.Report(new VisionToolNImageVerificationProgress { IsStarting = true, ImagePath = path, CompletedCount = index, TotalCount = paths.Count });
+                }
                 VisionPipelineSampleCatalogItem sample = new VisionPipelineSampleCatalogItem
                 {
                     SampleName = $"{index + 1:0000} {Path.GetFileName(path)}",
@@ -122,9 +145,11 @@ namespace OpenVisionLab
                         sample,
                         pipelineXml,
                         resolvedRecipeName,
-                        normalizeInputToGray,
-                        cancellationToken);
-                VisionToolNImageVerificationRow row = CreateRow(index + 1, path, check, step.UseAcceptance);
+                        mainTrial && prefixCount > 0 ? false : normalizeInputToGray,
+                        mainTrial ? CancellationToken.None : cancellationToken,
+                        evidenceDirectory == null ? null : Path.Combine(evidenceDirectory, "reports"), inputSnapshots);
+                VisionToolNImageVerificationRow row = CreateRow(index + 1, path, check, step, prefixCount,
+                    imageIdentities?.TryGetValue(path, out var identity) == true ? identity : (path, string.Empty));
                 rows.Add(row);
                 progress?.Report(new VisionToolNImageVerificationProgress
                 {
@@ -146,11 +171,17 @@ namespace OpenVisionLab
                     startedAt,
                     finishedAt,
                     wasCancelled,
-                    normalizeInputToGray,
-                    step.UseAcceptance);
+                    mainTrial && prefixCount > 0 ? false : normalizeInputToGray,
+                    step.UseAcceptance, evidenceDirectory);
             ApplyReviewReasons(summaryPath, rows);
             return new VisionToolNImageVerificationSession
             {
+                InputIdentity = inputIdentity ?? string.Empty,
+                AdditionalInputPaths = new Dictionary<string, string>(inputSnapshots ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase),
+                AdditionalInputSha256 = inputHashes,
+                PrefixCount = prefixCount,
+                PlannedCount = paths.Count,
+                EvidenceDirectory = evidenceDirectory ?? string.Empty,
                 ToolName = resolvedToolName,
                 PipelineName = pipelineName,
                 PipelineXml = pipelineXml,
@@ -164,7 +195,7 @@ namespace OpenVisionLab
             };
         }
 
-        internal static List<string> NormalizeImagePaths(IEnumerable<string> paths)
+        internal static List<string> NormalizeImagePaths(IEnumerable<string> paths, bool includeMissing = false)
         {
             HashSet<string> seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             List<string> normalized = new List<string>();
@@ -188,7 +219,7 @@ namespace OpenVisionLab
                     continue;
                 }
 
-                if (!File.Exists(path)
+                if ((!includeMissing && !File.Exists(path))
                     || !IsSupportedImage(path)
                     || !seen.Add(path))
                 {
@@ -210,9 +241,24 @@ namespace OpenVisionLab
             int index,
             string imagePath,
             VisionPipelineSampleCheckResult check,
-            bool hasAcceptance)
+            VisionPipelineStep target, int prefixCount, (string Path, string Name) identity)
         {
+            bool hasAcceptance = target.UseAcceptance;
             VisionPipelineRunReport report = VisionPipelineRunReportStorage.Load(check?.RunReportPath);
+            VisionPipelineStepRunReport targetReport = report?.Steps?.LastOrDefault(item => item.Name == target.Name);
+            VisionPipelineStepResultSummary targetSummary = targetReport == null ? null : new VisionPipelineStepResultSummary
+            {
+                ToolType = target.ToolType,
+                Executed = targetReport.Executed,
+                Skipped = targetReport.Skipped,
+                Success = targetReport.ToolSuccess && (!targetReport.AcceptanceEvaluated || targetReport.AcceptancePassed),
+                IsAcceptanceNg = targetReport.ToolSuccess && targetReport.AcceptanceEvaluated && !targetReport.AcceptancePassed
+            };
+            if (targetSummary != null)
+            {
+                foreach (var metric in targetReport.Metrics ?? new List<VisionPipelineMetricRunReport>()) { targetSummary.Metrics[metric.Name] = metric.Value; }
+                targetSummary.Parameters = new Dictionary<string, string>(target.Parameters, StringComparer.OrdinalIgnoreCase);
+            }
             string reportDirectory = string.IsNullOrWhiteSpace(check?.RunReportPath)
                 ? string.Empty
                 : Path.GetDirectoryName(check.RunReportPath) ?? string.Empty;
@@ -227,17 +273,21 @@ namespace OpenVisionLab
                 !string.IsNullOrWhiteSpace(evidenceStep?.OverlayImageFile)
                     ? evidenceStep.OverlayImageFile
                     : evidenceStep?.ResultImageFile);
-            string metricText = BuildMetricText(report);
+            bool prefixFailed = report?.Steps?.Take(prefixCount).Any(item => item.Executed && !item.ToolSuccess) == true;
+            string metricText = prefixCount == 0 ? BuildMetricText(report) : string.Join("; ", (report?.Steps?.LastOrDefault()?.Metrics ?? new List<VisionPipelineMetricRunReport>())
+                .Select(metric => metric.Name + "=" + metric.Value.ToString("0.###", CultureInfo.InvariantCulture)));
             return new VisionToolNImageVerificationRow
             {
                 Index = index,
-                ImagePath = imagePath,
+                ImagePath = identity.Path,
+                DisplayName = identity.Name,
                 Status = ResolveStatus(check, hasAcceptance),
                 Success = check?.ExecutionCompleted == true
                     && check.HasToolError == false
                     && (!hasAcceptance || check.Success),
                 TotalMilliseconds = check?.TotalMilliseconds ?? 0D,
-                Message = check?.Message ?? string.Empty,
+                Message = (prefixFailed ? "Prefix execution failed. " : "") + (check?.Message ?? string.Empty),
+                TargetSummary = targetSummary,
                 MetricText = string.IsNullOrWhiteSpace(metricText) ? "-" : metricText,
                 RunReportPath = check?.RunReportPath ?? string.Empty,
                 SourceSnapshotPath = sourcePath,
@@ -273,7 +323,7 @@ namespace OpenVisionLab
             DateTime finishedAt,
             bool wasCancelled,
             bool normalizeInputToGray,
-            bool hasAcceptance)
+            bool hasAcceptance, string evidenceDirectory)
         {
             List<VisionPipelineBatchSampleRunResult> results = rows
                 .Select(row => new VisionPipelineBatchSampleRunResult
@@ -295,7 +345,7 @@ namespace OpenVisionLab
                     MetricReviewText = hasAcceptance
                         ? "Acceptance gate evaluated; operator drawing review retained."
                         : "No acceptance gate; operator drawing review required.",
-                    FinalLayer = "NImageResult",
+                    FinalLayer = pipeline.Steps.Last().OutputLayer,
                     OverlayCount = row.HasDrawing ? "retained" : "missing",
                     ActionSummary = wasCancelled ? "Partial run stopped by operator." : "Completed sequential run.",
                     RunReportPath = row.RunReportPath
@@ -321,7 +371,7 @@ namespace OpenVisionLab
                 suiteKind: wasCancelled ? "ToolViewNImagePartial" : "ToolViewNImage",
                 notes: notes,
                 pipelineSnapshot: pipeline,
-                executionProvenance: executionProvenance);
+                executionProvenance: executionProvenance, destinationRoot: evidenceDirectory == null ? null : Path.Combine(evidenceDirectory, "summary"));
         }
 
         private static void ApplyReviewReasons(
@@ -367,7 +417,7 @@ namespace OpenVisionLab
             return File.Exists(path) ? path : string.Empty;
         }
 
-        private static string SerializePipeline(VisionPipeline pipeline)
+        internal static string SerializePipeline(VisionPipeline pipeline)
         {
             using StringWriter writer = new StringWriter(CultureInfo.InvariantCulture);
             new XmlSerializer(typeof(VisionPipeline)).Serialize(writer, pipeline);

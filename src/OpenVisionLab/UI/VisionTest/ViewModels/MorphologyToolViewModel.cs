@@ -11,6 +11,7 @@ namespace OpenVisionLab.ViewModels
     internal sealed class MorphologyToolViewModel : ObservableObject, IMorphologyToolViewModel
     {
         private readonly string settingsConfigName;
+        private readonly Action<MorphologyToolSettings> settingsChanged;
         private bool suppressSettingsSave;
         private MorphTypes operation = MorphTypes.Erode;
         private MorphShapes shape = MorphShapes.Rect;
@@ -23,8 +24,9 @@ namespace OpenVisionLab.ViewModels
         {
         }
 
-        public MorphologyToolViewModel(string settingsConfigName)
+        public MorphologyToolViewModel(string settingsConfigName, Action<MorphologyToolSettings> settingsChanged = null)
         {
+            this.settingsChanged = settingsChanged;
             this.settingsConfigName = string.IsNullOrWhiteSpace(settingsConfigName)
                 ? OpenVisionNativeToolSettingsStore.CreateConfigName("Morphology")
                 : settingsConfigName;
@@ -146,7 +148,9 @@ namespace OpenVisionLab.ViewModels
                 return;
             }
 
-            OpenVisionNativeToolSettingsStore.Save(settingsConfigName, CaptureSettings());
+            MorphologyToolSettings settings = CaptureSettings();
+            if (settingsChanged != null) { settingsChanged(settings); }
+            else { OpenVisionNativeToolSettingsStore.Save(settingsConfigName, settings); }
         }
     }
 }

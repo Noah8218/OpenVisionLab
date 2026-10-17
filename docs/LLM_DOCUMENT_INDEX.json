@@ -1,16 +1,14 @@
 {
-  "schemaVersion": "1.1",
-  "updated": "2026-09-15",
-  "purpose": "Minimal machine-readable routing index. Read the common authority set and only one task route.",
+  "schemaVersion": "1.2",
+  "updated": "2026-10-13",
+  "purpose": "Find source owners, stable contracts, user guides and focused checks from one Start Here route.",
   "entrypoint": "docs/README.md",
-  "detailedRegistry": "docs/admin/OPENVISIONLAB_DOCUMENTATION_MAP.md",
+  "detailedRegistry": "docs/admin/CODEBASE_STRUCTURE.md",
   "rules": {
     "readMinimalSetFirst": true,
     "followRootRedirects": true,
-    "treatOldPercentagesAsHistorical": true,
-    "treatReportsAsScopedEvidence": true,
-    "doNotLoadFullChronologyUnlessNeeded": true,
-    "currentPrioritySource": "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md"
+    "authorityIsReadingBundle": false,
+    "largeDocumentReading": "Locate the relevant heading, then read the full affected section and required cross-references. Preserve every contract on the changed call path."
   },
   "authority": [
     {
@@ -20,193 +18,196 @@
       "role": "Repository boundary, product scope, ownership, verification, and completion rules."
     },
     {
-      "rank": 2,
+      "rank": 3,
       "id": "stable_contracts",
       "path": "docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md",
       "role": "Stable non-regression behavior."
-    },
-    {
-      "rank": 3,
-      "id": "product_target",
-      "path": "docs/roadmap/OPENVISIONLAB_PRODUCT_TARGET_AND_MAIN_VIEWS.md",
-      "role": "Product identity, workflow, and view ownership."
-    },
-    {
-      "rank": 4,
-      "id": "current_handoff",
-      "path": "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
-      "role": "Current status, evidence boundary, and next priority."
     }
   ],
   "routes": [
     {
       "id": "start_or_continue",
-      "intent": "Start or continue work with the minimum current context.",
-      "keywords": ["start", "continue", "handoff", "orientation", "current"],
+      "intent": "Open, build and navigate the current source.",
+      "keywords": [
+        "start",
+        "orientation",
+        "build"
+      ],
       "read": [
         "AGENTS.md",
-        "docs/README.md",
-        "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
-        "docs/roadmap/OPENVISIONLAB_PRODUCT_TARGET_AND_MAIN_VIEWS.md",
-        "docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md"
-      ]
-    },
-    {
-      "id": "status_and_next_priority",
-      "intent": "Assess current product maturity, completed scope, and next work.",
-      "keywords": ["status", "maturity", "priority", "what next"],
-      "read": [
-        "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
-        "docs/reports/OPENVISIONLAB_PREDEVELOPMENT_PRIORITIES_1_TO_5_20260915.md",
-        "docs/reports/OPENVISIONLAB_ARCHITECTURE_RELIABILITY_REVIEW_20260909.md"
+        "docs/README.md"
+      ],
+      "lookup": [
+        {
+          "path": "docs/admin/CODEBASE_STRUCTURE.md",
+          "when": "Find project roles, owners, callers and lifetime boundaries."
+        },
+        {
+          "path": "docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md",
+          "when": "Before behavior changes, read General Rules and complete affected sections."
+        }
       ]
     },
     {
       "id": "source_architecture",
       "intent": "Trace projects, owners, call paths, mutable state, lifetime, and refactor boundaries.",
-      "keywords": ["architecture", "owner", "module", "MVVM", "partial", "structure"],
+      "keywords": [
+        "architecture",
+        "owner",
+        "module",
+        "MVVM",
+        "partial",
+        "structure"
+      ],
       "read": [
-        "docs/admin/CODEBASE_STRUCTURE.md",
-        "docs/reports/OPENVISIONLAB_PREDEVELOPMENT_PRIORITIES_1_TO_5_20260915.md",
-        "docs/reports/OPENVISIONLAB_PARTIAL_RESPONSIBILITY_REVIEW_20260913.md"
-      ]
+        "docs/admin/CODEBASE_STRUCTURE.md"
+      ],
+      "lookup": []
     },
     {
       "id": "ui_and_operator_workflow",
       "intent": "Change WPF UI, navigation, visible state, input, layout, or operator workflow.",
-      "keywords": ["UI", "UX", "WPF", "workflow", "screen", "DPI"],
+      "keywords": [
+        "UI",
+        "UX",
+        "WPF",
+        "workflow",
+        "screen",
+        "DPI"
+      ],
       "read": [
-        "docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md",
-        "docs/reports/OPENVISIONLAB_USER_CENTERED_WORKFLOW_DIRECTION_20260729.md",
-        "docs/runbooks/UI_SCREENSHOT_SMOKE.md",
-        "docs/reports/OPENVISIONLAB_WPF_RUNTIME_ENVIRONMENT_MATRIX_20260911.md"
+        "docs/admin/CODEBASE_STRUCTURE.md"
+      ],
+      "lookup": [
+        {
+          "path": "docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md",
+          "when": "Required before behavior changes: read General Rules and every complete affected contract section and its required cross-references. Conditional reading does not waive contracts."
+        },
+        {
+          "path": "docs/admin/CODEBASE_STRUCTURE.md",
+          "when": "Locating existing UI owners, callers, state/lifetime responsibility and focused tests; confirm implementation in source."
+        },
+        {
+          "path": "docs/runbooks/UI_SCREENSHOT_SMOKE.md",
+          "when": "Selecting or running UI verification and interpreting screenshot or actual-EXE evidence."
+        }
       ]
     },
     {
       "id": "recipe_pipeline_and_tools",
       "intent": "Change Recipe, Pipeline, Tool parameters, Preview/Run, result, or XML behavior.",
-      "keywords": ["recipe", "pipeline", "tool", "parameter", "Preview", "Run", "XML"],
+      "keywords": [
+        "recipe",
+        "pipeline",
+        "tool",
+        "parameter",
+        "Preview",
+        "Run",
+        "XML"
+      ],
       "read": [
-        "docs/reports/OPENVISIONLAB_RECIPE_EXECUTION_STRUCTURE_20260908.md",
-        "docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md",
-        "docs/reports/OPENVISIONLAB_2D_PUBLIC_FILE_INPUT_BOUNDARY_AUDIT_20260915.md",
-        "docs/reports/OPENVISIONLAB_2D_VALIDATION_CONTENT_HASH_AUDIT_20260915.md",
-        "docs/reports/OPENVISIONLAB_2D_QUALIFICATION_IDENTITY_AUDIT_20260915.md",
-        "docs/reports/OPENVISIONLAB_2D_LLM_XML_BOUNDARY_20260916.md",
         "docs/admin/CODEBASE_STRUCTURE.md"
+      ],
+      "lookup": [
+        {
+          "path": "docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md",
+          "when": "Required before behavior changes: read General Rules and all affected Recipe, selected-Step editing, execution, routing and persistence contracts with their required cross-references."
+        },
+        {
+          "path": "docs/admin/CODEBASE_STRUCTURE.md",
+          "when": "Locating the existing owner and shortest reading path before code changes; source is authoritative for actual calls and state writes."
+        },
+        {
+          "path": "docs/runbooks/UI_SCREENSHOT_SMOKE.md",
+          "when": "The Recipe/Tool change affects rendered UI or user interaction; select matching focused checks and current-build evidence."
+        }
       ]
     },
     {
       "id": "image_canvas",
       "intent": "Change ImageCanvas, ROI, OpenGL rendering, input, dialogs, or image lifetime.",
-      "keywords": ["ImageCanvas", "ROI", "OpenGL", "Mat", "viewer", "canvas"],
+      "keywords": [
+        "ImageCanvas",
+        "ROI",
+        "OpenGL",
+        "Mat",
+        "viewer",
+        "canvas"
+      ],
       "read": [
-        "docs/reports/OPENVISIONLAB_PREDEVELOPMENT_PRIORITIES_1_TO_5_20260915.md",
         "docs/contracts/openvisionlab/OPENVISIONLAB_IMAGECANVAS_EXTERNAL_CONSUMER_MANIFEST.json",
-        "docs/reports/OPENVISIONLAB_ROI_IMAGE_CANVAS_PATH_POLICY_BOUNDARY_20260914.md",
-        "docs/reports/OPENVISIONLAB_OVL11_IMAGECANVAS_MOUSE_INPUT_20260908.md",
         "docs/admin/CODEBASE_STRUCTURE.md"
-      ]
+      ],
+      "lookup": []
     },
     {
       "id": "verification",
       "intent": "Run or modify headless contracts, WPF smoke, actual EXE smoke, or readiness gates.",
-      "keywords": ["test", "smoke", "contract", "verification", "readiness", "screenshot"],
+      "keywords": [
+        "test",
+        "smoke",
+        "contract",
+        "verification",
+        "readiness",
+        "screenshot"
+      ],
       "read": [
         "docs/runbooks/UI_SCREENSHOT_SMOKE.md",
-        "docs/reports/OPENVISIONLAB_WPF_RUNTIME_QUALIFICATION_20260908.md",
         "docs/admin/CODEBASE_STRUCTURE.md"
-      ]
+      ],
+      "lookup": []
     },
     {
       "id": "external_dependencies",
       "intent": "Inspect DLL provenance, dependency closure, platform support, or redistribution.",
-      "keywords": ["DLL", "SDK", "dependency", "license", "NOTICE", "x64"],
+      "keywords": [
+        "DLL",
+        "SDK",
+        "dependency",
+        "license",
+        "NOTICE",
+        "x64"
+      ],
       "read": [
         "docs/contracts/openvisionlab/OPENVISIONLAB_EXTERNAL_REFERENCE_POLICY.md",
         "docs/contracts/openvisionlab/OPENVISIONLAB_EXTERNAL_BINARY_MANIFEST.json",
         "dll/OpenVisionLab-Vision-SDK/sdk-manifest.json",
         "NOTICE"
-      ]
+      ],
+      "lookup": []
     },
     {
       "id": "documentation_maintenance",
       "intent": "Add, move, archive, index, or remove project documentation and assets.",
-      "keywords": ["documentation", "docs", "archive", "index", "redirect", "cleanup"],
+      "keywords": [
+        "documentation",
+        "docs",
+        "archive",
+        "index",
+        "redirect",
+        "cleanup"
+      ],
       "read": [
-        "docs/README.md",
-        "docs/admin/OPENVISIONLAB_DOCUMENTATION_MAP.md",
-        "docs/reports/OPENVISIONLAB_PREDEVELOPMENT_PRIORITIES_1_TO_5_20260915.md"
-      ]
+        "docs/README.md"
+      ],
+      "lookup": []
     },
     {
       "id": "beginner_tutorial_and_learn",
       "intent": "Change user manual, Learn content, screenshots, or first-use guidance.",
-      "keywords": ["manual", "tutorial", "Learn", "guide", "first use"],
+      "keywords": [
+        "manual",
+        "tutorial",
+        "Learn",
+        "guide",
+        "first use"
+      ],
       "read": [
         "docs/manual/README.md",
-        "docs/learn/README.md",
-        "docs/admin/OPENVISIONLAB_DOCUMENTATION_CAPTURE_GUIDE.md"
-      ]
-    },
-    {
-      "id": "commercial_comparison",
-      "intent": "Review commercial-tool lessons or the evidence-gated candidate backlog.",
-      "keywords": ["commercial", "competitor", "Cognex", "HALCON", "MERLIC", "CVR"],
-      "read": [
-        "docs/admin/OPENVISIONLAB_CURRENT_HANDOFF.md",
-        "docs/roadmap/OPENVISIONLAB_COMMERCIAL_VIDEO_DEVELOPMENT_BACKLOG_20260727.md",
-        "docs/research/OPENVISIONLAB_UX_COMPETITOR_REVIEW_20260701.md"
-      ]
-    },
-    {
-      "id": "historical_work_item",
-      "intent": "Investigate a specific P-number, past decision, failure, or superseded plan.",
-      "keywords": ["P-number", "history", "past decision", "failure", "chronology"],
-      "read": [
-        "docs/reports/OPENVISIONLAB_COMPLETED_TRACKER.md",
-        "docs/admin/archive/OPENVISIONLAB_CURRENT_HANDOFF_HISTORY_20260914.md",
-        "docs/admin/archive/CODEBASE_STRUCTURE_HISTORY_20260914.md"
-      ]
+        "docs/learn/README.md"
+      ],
+      "lookup": []
     }
   ],
-  "references": [
-    {
-      "id": "detailed_registry",
-      "path": "docs/admin/OPENVISIONLAB_DOCUMENTATION_MAP.md",
-      "role": "Detailed current and historical document registry."
-    },
-    {
-      "id": "historical_entrypoint",
-      "path": "docs/admin/archive/DOCUMENTATION_ENTRYPOINT_HISTORY_20260914.md",
-      "role": "Preserved pre-compaction documentation entrypoint."
-    },
-    {
-      "id": "historical_index",
-      "path": "docs/admin/archive/LLM_DOCUMENT_INDEX_HISTORY_20260914.json",
-      "role": "Preserved pre-compaction routing index."
-    },
-    {
-      "id": "historical_handoff",
-      "path": "docs/admin/archive/OPENVISIONLAB_CURRENT_HANDOFF_HISTORY_20260914.md",
-      "role": "Preserved cumulative handoff through the PL-0056 cycle."
-    },
-    {
-      "id": "historical_owner_registry",
-      "path": "docs/admin/archive/CODEBASE_STRUCTURE_HISTORY_20260914.md",
-      "role": "Preserved detailed owner registry through PL-0056."
-    }
-  ],
-  "discovery": {
-    "filenameSearch": "rg --files docs | rg \"<term>\"",
-    "contentSearch": "rg -n \"<term>\" AGENTS.md docs",
-    "pNumberSearchOrder": [
-      "docs/reports/OPENVISIONLAB_COMPLETED_TRACKER.md",
-      "docs/admin/archive/OPENVISIONLAB_CURRENT_HANDOFF_HISTORY_20260914.md",
-      "docs/admin/archive/CODEBASE_STRUCTURE_HISTORY_20260914.md",
-      "docs/reports",
-      "artifacts"
-    ],
-    "rootRedirectPolicy": "Files directly under docs other than README.md and LLM_DOCUMENT_INDEX.json are compatibility redirects. Follow the canonical target; do not delete them without an external-link decision."
-  }
+  "references": []
 }

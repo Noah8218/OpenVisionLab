@@ -187,6 +187,47 @@ namespace OpenVisionLab
                 SafeText(recipeName));
         }
 
+        internal void SetHistoricalRunContext(OpenVisionRecipeRunEvidence evidence)
+        {
+            if (evidence == null)
+            {
+                throw new ArgumentNullException(nameof(evidence));
+            }
+
+            string recipeName = SafeText(evidence.RecipeName);
+            string pipelineName = SafeText(evidence.PipelineName);
+            string recordId = SafeText(evidence.RunRecordId);
+            PipelineTitle = T("PipelineReview.Title", "Pipeline Review")
+                + " · "
+                + T("PipelineReview.StoredResult", "Stored result");
+            PipelineMeta = pipelineName + " / " + recordId
+                + (string.IsNullOrWhiteSpace(evidence.RunStartedAt) ? string.Empty : " / " + evidence.RunStartedAt);
+            RecipeContextText = T("PipelineReview.StoredContext", "Stored run")
+                + ": "
+                + recipeName
+                + " / "
+                + pipelineName
+                + " / "
+                + recordId;
+            ReviewProgressText = T(
+                "PipelineReview.StoredProgress",
+                "Historical result · no inspection rerun");
+            RunReviewButtonText = T("PipelineReview.StoredResult", "Stored result");
+            CanRunReview = false;
+            CanOpenReviewGuidePairAction = false;
+            CanSelectPreviousStep = false;
+            CanSelectNextStep = false;
+            CanSelectFirstIssueStep = false;
+            CanOpenSelectedToolLearn = false;
+            CanUseSelectedMatchingPose = false;
+            CanEditFixtureProducer = false;
+            CanEditFixtureMeasurement = false;
+            ReadinessSummaryText = T(
+                "PipelineReview.StoredReadiness",
+                "Read-only saved result; current recipe was not changed");
+            StatusText = ReadinessSummaryText;
+        }
+
         public void SetReviewProgress(string progressText)
         {
             ReviewProgressText = string.IsNullOrWhiteSpace(progressText)

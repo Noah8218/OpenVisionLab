@@ -14,35 +14,22 @@ namespace OpenVisionLab
             viewModel = OpenVisionRecipePendingEditDialogViewModel.Create(
                 request ?? new OpenVisionRecipePendingEditRequest());
             DataContext = viewModel;
+            viewModel.DecisionRequested += CloseWithDecision;
         }
 
         public OpenVisionRecipePendingEditDecision Decision { get; private set; } =
             OpenVisionRecipePendingEditDecision.Cancel;
 
-        private void Apply_Click(object sender, RoutedEventArgs e)
+        protected override void OnContentRendered(EventArgs e)
         {
-            CloseWithDecision(OpenVisionRecipePendingEditDecision.ApplyAndContinue);
+            base.OnContentRendered(e);
+            if (viewModel.IsRecipeDelete) { pendingCancelButton.Focus(); }
         }
 
-        private void Discard_Click(object sender, RoutedEventArgs e)
+        protected override void OnClosed(EventArgs e)
         {
-            CloseWithDecision(OpenVisionRecipePendingEditDecision.Discard);
-        }
-
-        private void Cancel_Click(object sender, RoutedEventArgs e)
-        {
-            CloseWithDecision(OpenVisionRecipePendingEditDecision.Cancel);
-        }
-
-        private void Window_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.Key != Key.Escape)
-            {
-                return;
-            }
-
-            CloseWithDecision(OpenVisionRecipePendingEditDecision.Cancel);
-            e.Handled = true;
+            viewModel.DecisionRequested -= CloseWithDecision;
+            base.OnClosed(e);
         }
 
         private void CloseWithDecision(OpenVisionRecipePendingEditDecision decision)

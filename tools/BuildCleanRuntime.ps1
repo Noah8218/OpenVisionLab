@@ -202,6 +202,14 @@ if ($Mode -eq "Release") {
     )
 }
 
+if ($Mode -eq "Dev") {
+    $requiredFiles += @(
+        "Tools\ImageCompare\OpenVisionLab.ImageCompare.exe",
+        "Tools\ImageCompare\OpenVisionLab.ImageCompare.dll",
+        "Tools\ImageCompare\OpenVisionLab.ImageCompare.runtimeconfig.json"
+    )
+}
+
 $missingFiles = @($requiredFiles | Where-Object {
     -not (Test-Path -LiteralPath (Join-Path $outputFullPath $_))
 })

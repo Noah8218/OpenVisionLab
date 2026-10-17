@@ -14,19 +14,8 @@ namespace OpenVisionLab
         private readonly MenuItem workspaceClearDockedLayersMenu;
         private readonly TextBlock workspaceEmptyTitleText;
         private readonly TextBlock workspaceEmptyDetailText;
-        private readonly TextBlock workspaceEmptyStepLoadTitleText;
-        private readonly TextBlock workspaceEmptyStepLoadDetailText;
-        private readonly TextBlock workspaceEmptyStepSelectTitleText;
-        private readonly TextBlock workspaceEmptyStepSelectDetailText;
-        private readonly TextBlock workspaceEmptyStepPipelineTitleText;
-        private readonly TextBlock workspaceEmptyStepPipelineDetailText;
-        private readonly TextBlock workspaceEmptyStepPreviewTitleText;
-        private readonly TextBlock workspaceEmptyStepPreviewDetailText;
         private readonly TextBlock workspaceLoadImageButtonText;
         private readonly TextBlock workspaceEmptySampleButtonText;
-        private readonly TextBlock workspaceEmptyGuideButtonText;
-        private readonly TextBlock workspaceEmptyPipelineButtonText;
-        private readonly TextBlock workspaceEmptyLogHintText;
         private readonly TextBlock openSelectedLayerWindowButtonText;
         private readonly TextBlock dockSelectedLayerButtonText;
         private readonly Button floatDockedToolButton;
@@ -43,19 +32,8 @@ namespace OpenVisionLab
             MenuItem workspaceClearDockedLayersMenu,
             TextBlock workspaceEmptyTitleText,
             TextBlock workspaceEmptyDetailText,
-            TextBlock workspaceEmptyStepLoadTitleText,
-            TextBlock workspaceEmptyStepLoadDetailText,
-            TextBlock workspaceEmptyStepSelectTitleText,
-            TextBlock workspaceEmptyStepSelectDetailText,
-            TextBlock workspaceEmptyStepPipelineTitleText,
-            TextBlock workspaceEmptyStepPipelineDetailText,
-            TextBlock workspaceEmptyStepPreviewTitleText,
-            TextBlock workspaceEmptyStepPreviewDetailText,
             TextBlock workspaceLoadImageButtonText,
             TextBlock workspaceEmptySampleButtonText,
-            TextBlock workspaceEmptyGuideButtonText,
-            TextBlock workspaceEmptyPipelineButtonText,
-            TextBlock workspaceEmptyLogHintText,
             TextBlock openSelectedLayerWindowButtonText,
             TextBlock dockSelectedLayerButtonText,
             Button floatDockedToolButton,
@@ -71,19 +49,8 @@ namespace OpenVisionLab
             this.workspaceClearDockedLayersMenu = workspaceClearDockedLayersMenu;
             this.workspaceEmptyTitleText = workspaceEmptyTitleText;
             this.workspaceEmptyDetailText = workspaceEmptyDetailText;
-            this.workspaceEmptyStepLoadTitleText = workspaceEmptyStepLoadTitleText;
-            this.workspaceEmptyStepLoadDetailText = workspaceEmptyStepLoadDetailText;
-            this.workspaceEmptyStepSelectTitleText = workspaceEmptyStepSelectTitleText;
-            this.workspaceEmptyStepSelectDetailText = workspaceEmptyStepSelectDetailText;
-            this.workspaceEmptyStepPipelineTitleText = workspaceEmptyStepPipelineTitleText;
-            this.workspaceEmptyStepPipelineDetailText = workspaceEmptyStepPipelineDetailText;
-            this.workspaceEmptyStepPreviewTitleText = workspaceEmptyStepPreviewTitleText;
-            this.workspaceEmptyStepPreviewDetailText = workspaceEmptyStepPreviewDetailText;
             this.workspaceLoadImageButtonText = workspaceLoadImageButtonText;
             this.workspaceEmptySampleButtonText = workspaceEmptySampleButtonText;
-            this.workspaceEmptyGuideButtonText = workspaceEmptyGuideButtonText;
-            this.workspaceEmptyPipelineButtonText = workspaceEmptyPipelineButtonText;
-            this.workspaceEmptyLogHintText = workspaceEmptyLogHintText;
             this.openSelectedLayerWindowButtonText = openSelectedLayerWindowButtonText;
             this.dockSelectedLayerButtonText = dockSelectedLayerButtonText;
             this.floatDockedToolButton = floatDockedToolButton;
@@ -101,21 +68,10 @@ namespace OpenVisionLab
             SetHeader(workspaceDockLayerMenu, OpenVisionLanguageService.T("Shell.DockLayer"));
             SetHeader(workspaceClearDockedLayersMenu, OpenVisionLanguageService.T("Shell.ClearDockedLayers"));
 
-            SetText(workspaceEmptyTitleText, OpenVisionLanguageService.T("Shell.WorkspaceEmptyTitle"));
-            SetText(workspaceEmptyDetailText, OpenVisionLanguageService.T("Shell.WorkspaceEmptyDetail"));
-            SetText(workspaceEmptyStepLoadTitleText, TOrFallback("Shell.WorkspaceEmptyStepLoadTitle", "1. Load image"));
-            SetText(workspaceEmptyStepLoadDetailText, TOrFallback("Shell.WorkspaceEmptyStepLoadDetail", "Open the image to inspect into the Main layer."));
-            SetText(workspaceEmptyStepSelectTitleText, TOrFallback("Shell.WorkspaceEmptyStepSelectTitle", "2. Select tool"));
-            SetText(workspaceEmptyStepSelectDetailText, TOrFallback("Shell.WorkspaceEmptyStepSelectDetail", "Choose Threshold, Matching, Line, or another tool from the left list."));
-            SetText(workspaceEmptyStepPipelineTitleText, TOrFallback("Shell.WorkspaceEmptyStepPipelineTitle", "3. Build pipeline"));
-            SetText(workspaceEmptyStepPipelineDetailText, TOrFallback("Shell.WorkspaceEmptyStepPipelineDetail", "Connect verified steps in inspection order."));
-            SetText(workspaceEmptyStepPreviewTitleText, TOrFallback("Shell.WorkspaceEmptyStepPreviewTitle", "4. Validate results"));
-            SetText(workspaceEmptyStepPreviewDetailText, TOrFallback("Shell.WorkspaceEmptyStepPreviewDetail", "Run explicitly, then compare output, metrics, and Good/Bad evidence."));
-            SetText(workspaceLoadImageButtonText, OpenVisionLanguageService.T("Shell.WorkspaceLoadImageButton"));
-            SetText(workspaceEmptySampleButtonText, TOrFallback("Shell.WorkspaceEmptySampleButton", "Open Sample"));
-            SetText(workspaceEmptyGuideButtonText, TOrFallback("Shell.WorkspaceEmptyGuideButton", "Open Learn"));
-            SetText(workspaceEmptyPipelineButtonText, TOrFallback("Shell.WorkspaceEmptyPipelineButton", "Open Pipeline"));
-            SetText(workspaceEmptyLogHintText, TOrFallback("Shell.WorkspaceEmptyLogHint", "After loading an image, use this area for zoom, pan, pixel values, and the Run Log for state tracking."));
+            SetText(workspaceEmptyTitleText, OpenVisionLanguageService.T("Workbench.Viewer.NoImage"));
+            SetText(workspaceEmptyDetailText, OpenVisionLanguageService.T("Workbench.Viewer.EmptyDetail"));
+            SetText(workspaceLoadImageButtonText, OpenVisionLanguageService.T("Workbench.Viewer.OpenImage"));
+            SetText(workspaceEmptySampleButtonText, OpenVisionLanguageService.T("Workbench.Viewer.OpenSamples"));
             SetText(openSelectedLayerWindowButtonText, OpenVisionLanguageService.T("Shell.OpenLayerWindowShort"));
             SetText(dockSelectedLayerButtonText, OpenVisionLanguageService.T("Shell.DockLayerShort"));
             ApplyDockedToolHeaderLocalization();
@@ -126,7 +82,7 @@ namespace OpenVisionLab
             string floatText = TOrFallback("Shell.FloatDockedTool", "Float tool window");
             string closeText = TOrFallback("Shell.CloseDockedTool", "Close tool");
 
-            SetButtonToolTipAndName(floatDockedToolButton, floatText);
+            SetButtonToolTipAndName(floatDockedToolButton, OpenVisionLanguageService.T("Workbench.Tool.Float"));
             SetButtonToolTipAndName(closeDockedToolButton, closeText);
             SetButtonToolTipAndName(floatDockedDocumentButton, floatText);
             SetButtonToolTipAndName(closeDockedDocumentButton, closeText);

@@ -35,6 +35,21 @@ namespace OpenVisionLab
         private string selectedEvidenceText = string.Empty;
         private bool isRunning;
         private bool disposed;
+        private Func<VisionPipeline> captureMainPipeline;
+        private Func<string, Dictionary<string, (string Path, string Name)>> captureMainImages;
+        private IReadOnlyList<string> mainImageNames;
+        private Func<IReadOnlyDictionary<string, string>> mainInputSnapshots;
+        private Func<string> mainInputIdentity;
+        private Func<bool> mainSessionActive;
+        private Action<bool, Action> mainRunning;
+        private Action<VisionToolNImageVerificationProgress> mainProgress;
+        private Func<VisionToolNImageVerificationSession, string, bool> mainFinished;
+        private Action mainStopping;
+        private string evidenceDirectory = string.Empty;
+        private bool evidenceTransferred;
+        private bool stopNotified;
+        private int runEpoch;
+
         private VisionToolNImageValidationPromotionResult lastPromotionResult;
         private readonly RelayCommand<Window> addFilesCommand;
         private readonly RelayCommand<Window> addFolderCommand;
@@ -71,6 +86,38 @@ namespace OpenVisionLab
             RefreshState();
         }
 
+        internal void ConfigureMain(IReadOnlyList<string> paths, Func<VisionPipeline> capture, Func<bool> active,
+            Action<bool, Action> running, Action<VisionToolNImageVerificationProgress> progress,
+            Func<VisionToolNImageVerificationSession, string, bool> finished, Action stopping,
+            Func<string, Dictionary<string, (string Path, string Name)>> captureImages = null, IReadOnlyList<string> names = null, Func<IReadOnlyDictionary<string, string>> inputSnapshots = null, Func<string> inputIdentity = null, VisionToolNImageVerificationSession retained = null)
+        {
+            captureMainImages = captureImages;
+            mainImageNames = names;
+            mainInputSnapshots = inputSnapshots;
+            mainInputIdentity = inputIdentity;
+            captureMainPipeline = capture ?? throw new ArgumentNullException(nameof(capture));
+            mainSessionActive = active ?? throw new ArgumentNullException(nameof(active));
+            mainRunning = running;
+            mainProgress = progress;
+            mainFinished = finished;
+            mainStopping = stopping;
+            foreach (string path in paths ?? Array.Empty<string>()) { ImagePaths.Add(path); }
+            StatusText = LocalText("Main 이미지 목록을 사용합니다. 실행 시 앞 단계와 테스트 설정을 고정합니다.", "Use the Main image list. Predecessors and test settings are frozen when you run.");
+            PopulatePendingRows();
+            if (retained != null)
+            {
+                session = retained;
+                evidenceDirectory = retained.EvidenceDirectory;
+                evidenceTransferred = true;
+                Rows.Clear();
+                foreach (var row in retained.Rows) { Rows.Add(row); }
+                SelectedRow = Rows.FirstOrDefault();
+                StatusText = LocalText("고정된 이전 테스트 결과입니다. 실행하면 새 결과로 바뀝니다.", "Retained frozen test results. Run to replace them.");
+            }
+            OnPropertyChanged(nameof(ScopeText));
+            RefreshState();
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         public ObservableCollection<string> ImagePaths { get; } = new ObservableCollection<string>();
@@ -86,6 +133,7 @@ namespace OpenVisionLab
         public ICommand RunCommand => runCommand;
 
         public ICommand StopCommand => stopCommand;
+        public ICommand MainStopCommand => captureMainPipeline == null ? null : stopCommand;
 
         public ICommand ExportHtmlCommand => exportHtmlCommand;
 
@@ -95,7 +143,9 @@ namespace OpenVisionLab
             toolName + " · N장 검증",
             toolName + " · N-image verification");
 
-        public string ScopeText => LocalText(
+        public string ScopeText => captureMainPipeline != null ? LocalText(
+            "Main 이미지 목록 · 앞 단계 판정 제외 · 테스트 판정 유지 · 현재 이미지 완료 후 중지",
+            "Main images · predecessor gates excluded · test gate retained · stop after the current image") : LocalText(
             "현재 Tool View 설정을 한 Step으로 고정해 순차 실행합니다. 레이어·라우팅·Preview/Run 상태는 바꾸지 않습니다.",
             "Freeze the current Tool View settings as one Step and run sequentially. Layers, routing, and Preview/Run state remain unchanged.");
 
@@ -160,14 +210,14 @@ namespace OpenVisionLab
             }
         }
 
-        public bool CanEditImages => !IsRunning;
-        public bool CanRun => !IsRunning && ImagePaths.Count > 0;
-        public bool CanStop => IsRunning;
+        public bool CanEditImages => !disposed && captureMainPipeline == null && !IsRunning;
+        public bool CanRun => !disposed && !IsRunning && ImagePaths.Count > 0 && (mainSessionActive?.Invoke() ?? true);
+        public bool CanStop => IsRunning && (captureMainPipeline == null || !stopNotified);
         public bool CanExport => !IsRunning
             && session != null
             && !string.IsNullOrWhiteSpace(session.BatchSummaryPath)
             && File.Exists(session.BatchSummaryPath);
-        public bool IsLocatorPromotionSupported => IsLocatorToolName(toolName);
+        public bool IsLocatorPromotionSupported => captureMainPipeline == null && IsLocatorToolName(toolName);
         public bool CanPromoteLocatorValidation => IsLocatorPromotionSupported
             && !IsRunning
             && session != null
@@ -299,11 +349,28 @@ namespace OpenVisionLab
                 return;
             }
 
+            string inputIdentity;
+            try { inputIdentity = mainInputIdentity?.Invoke(); }
+            catch (Exception ex) { StatusText = ex.GetBaseException().Message; return; }
+            VisionPipeline frozen = null;
+            try { frozen = captureMainPipeline?.Invoke(); }
+            catch (Exception ex) { StatusText = LocalText("검증 실패: ", "Verification failed: ") + ex.GetBaseException().Message; return; }
+            ReleaseEvidence();
+            if (captureMainPipeline != null) { evidenceDirectory = Path.Combine(Path.GetTempPath(), "OpenVisionLab", "NImage", Guid.NewGuid().ToString("N")); }
+            string runEvidenceDirectory = evidenceDirectory;
+            Dictionary<string, (string Path, string Name)> identities;
+            try { identities = captureMainImages?.Invoke(runEvidenceDirectory); }
+            catch (Exception ex) { ReleaseEvidence(); StatusText = LocalText("검증 실패: ", "Verification failed: ") + ex.GetBaseException().Message; return; }
+            IReadOnlyList<string> frozenPaths = identities?.Keys.ToArray() ?? ImagePaths.ToArray();
+            int epoch = ++runEpoch;
+            stopNotified = false;
             cancellationSource?.Dispose();
             cancellationSource = new CancellationTokenSource();
+            CancellationToken token = cancellationSource.Token;
             PopulatePendingRows();
             session = null;
             IsRunning = true;
+            mainRunning?.Invoke(true, Stop);
             StatusText = LocalText(
                 "현재 설정을 고정하고 순차 검증을 시작합니다.",
                 "Freezing current settings and starting sequential verification.");
@@ -311,6 +378,10 @@ namespace OpenVisionLab
             Progress<VisionToolNImageVerificationProgress> progress =
                 new Progress<VisionToolNImageVerificationProgress>(item =>
                 {
+                    if (epoch != runEpoch || !IsRunning) { return; }
+                    if (disposed || (mainSessionActive?.Invoke() == false)) { cancellationSource?.Cancel(); return; }
+                    mainProgress?.Invoke(item);
+                    if (item.IsStarting) { return; }
                     int rowIndex = item.CompletedCount - 1;
                     if (rowIndex >= 0 && rowIndex < Rows.Count)
                     {
@@ -324,6 +395,7 @@ namespace OpenVisionLab
                     NotifyResultCounts();
                 });
 
+            string failure = string.Empty;
             try
             {
                 session = await VisionToolNImageVerificationService.RunAsync(
@@ -331,9 +403,10 @@ namespace OpenVisionLab
                     recipeName,
                     createStep,
                     normalizeInputToGray,
-                    ImagePaths.ToList(),
+                    frozenPaths,
                     progress,
-                    cancellationSource.Token);
+                    token, frozen, runEvidenceDirectory, identities, mainInputSnapshots?.Invoke(), inputIdentity);
+                if (disposed) { return; }
                 Rows.Clear();
                 foreach (VisionToolNImageVerificationRow row in session.Rows)
                 {
@@ -356,11 +429,15 @@ namespace OpenVisionLab
             }
             catch (Exception ex)
             {
-                StatusText = LocalText("검증 실패: ", "Verification failed: ") + ex.GetBaseException().Message;
+                failure = ex.GetBaseException().Message;
+                if (!disposed) { StatusText = LocalText("검증 실패: ", "Verification failed: ") + failure; }
             }
             finally
             {
+                mainRunning?.Invoke(false, null);
+                if (mainSessionActive?.Invoke() == true) { evidenceTransferred = mainFinished?.Invoke(session, failure) == true; }
                 IsRunning = false;
+                if (disposed) { ReleaseEvidence(); }
                 int completedCount = Rows.Count(row => row.IsCompleted);
                 ProgressText = completedCount == 0 ? string.Empty : $"{completedCount:N0} / {ImagePaths.Count:N0}";
                 NotifyResultCounts();
@@ -369,12 +446,14 @@ namespace OpenVisionLab
 
         public void Stop()
         {
-            if (!IsRunning)
+            if (!CanStop)
             {
                 return;
             }
 
             cancellationSource?.Cancel();
+            if (!stopNotified) { stopNotified = true; mainStopping?.Invoke(); }
+            RefreshState();
             StatusText = LocalText(
                 "중지 요청을 받았습니다. 현재 이미지가 끝난 뒤 부분 결과를 저장합니다.",
                 "Stop requested. Partial results will be saved after the current image finishes.");
@@ -487,11 +566,25 @@ namespace OpenVisionLab
                 return;
             }
 
+            if (IsRunning) { Stop(); }
             disposed = true;
             cancellationSource?.Cancel();
             cancellationSource?.Dispose();
             cancellationSource = null;
             languageChangeController.Dispose();
+            if (!IsRunning) { ReleaseEvidence(); }
+        }
+
+        private void ReleaseEvidence()
+        {
+            string directory = evidenceDirectory;
+            evidenceDirectory = string.Empty;
+            bool retained = evidenceTransferred;
+            evidenceTransferred = false;
+            if (retained || string.IsNullOrEmpty(directory)) { return; }
+            try { if (Directory.Exists(directory)) { Directory.Delete(directory, true); } }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
         }
 
         private void ClearRetainedResults()
@@ -513,6 +606,7 @@ namespace OpenVisionLab
                 {
                     Index = ++index,
                     ImagePath = path,
+                    DisplayName = mainImageNames?.ElementAtOrDefault(index - 1) ?? string.Empty,
                     Status = LocalText("대기", "READY"),
                     IsCompleted = false
                 });

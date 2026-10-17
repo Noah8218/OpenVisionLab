@@ -7,7 +7,7 @@ namespace OpenVisionLab.Logging.Controls.Model
     {
         private static readonly Regex LogPattern = new Regex(
             @"^\[(?<time>[^\]]*)\]\s*\[(?<category>[^\]]*)\]\[(?<level>[^\]]*)\](?:\[(?<source>[^\]]*)\])?\s*(?<message>.*)$",
-            RegexOptions.Compiled);
+            RegexOptions.Compiled | RegexOptions.Singleline);
 
         public LogLine(
             DateTime timestamp,

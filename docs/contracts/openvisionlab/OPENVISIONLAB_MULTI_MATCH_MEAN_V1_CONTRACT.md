@@ -145,14 +145,12 @@ Focused commands:
 
 ```powershell
 dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"
-dotnet run --no-build --project tools\OpenVisionFixtureSmoke\OpenVisionFixtureSmoke.csproj -c Debug -- --cvr10-multi-match-mean artifacts\cvr10_multi_match_mean_20260728_r6
-dotnet run --no-build --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target cvr10_multi_match_mean_review artifacts\cvr10_multi_match_mean_20260728_r6\ui
+dotnet run --no-build --project tools\OpenVisionFixtureSmoke\OpenVisionFixtureSmoke.csproj -c Debug -- --cvr10-multi-match-mean <isolated-output>
+dotnet run --no-build --project tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -- --target cvr10_multi_match_mean_review <isolated-output>\ui
 ```
 
 Evidence:
 
-- `artifacts\cvr10_multi_match_mean_20260728_r6`;
-- `docs\reports\OPENVISIONLAB_CVR10_MULTI_MATCH_MEAN_20260728.md`.
 
 ## Durable Completion Record
 
@@ -170,7 +168,6 @@ Preview/Run path was added.
 Verification: Debug solution build passed with zero warnings/errors; focused
 runtime matrix and current-source Pipeline Review capture passed.
 
-Evidence: `artifacts\cvr10_multi_match_mean_20260728_r6`.
 
 Boundary / next dependency: another per-instance tool family or physical
 qualification requires a separately named operator task, representative data,

@@ -13,12 +13,17 @@
 
     <Grid>
         <avalonDock:DockingManager x:Name="layerDockingManager"
-                                   Background="#05090A"
-                                   Foreground="#D7ECEE"
-                                   BorderBrush="#157C86"
-                                   BorderThickness="1"
                                    AnchorablePaneControlStyle="{StaticResource DockedLayerAnchorablePaneControlStyle}"
                                    AnchorableHeaderTemplate="{StaticResource DockedLayerTabHeaderTemplate}">
+            <avalonDock:DockingManager.Style>
+                <Style TargetType="avalonDock:DockingManager">
+                    <Setter Property="Background" Value="#05090A"/><Setter Property="Foreground" Value="#D7ECEE"/><Setter Property="BorderBrush" Value="#157C86"/><Setter Property="BorderThickness" Value="1"/>
+                    <Style.Triggers><DataTrigger Binding="{Binding IsPresetLayout, RelativeSource={RelativeSource AncestorType=local:OpenVisionLayerDockWorkspaceView}}" Value="True">
+                        <Setter Property="Background" Value="{DynamicResource OpenVision.Workbench.CanvasBrush}"/><Setter Property="Foreground" Value="{DynamicResource OpenVision.Workbench.TextBrush}"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource OpenVision.Workbench.LineBrush}"/><Setter Property="BorderThickness" Value="0"/>
+                    </DataTrigger></Style.Triggers>
+                </Style>
+            </avalonDock:DockingManager.Style>
             <avalonDock:LayoutRoot>
                 <avalonDock:LayoutPanel Orientation="Horizontal">
                     <avalonDock:LayoutAnchorablePane x:Name="layerAnchorablePane" />

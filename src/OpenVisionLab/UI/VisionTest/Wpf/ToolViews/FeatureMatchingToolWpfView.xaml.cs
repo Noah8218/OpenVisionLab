@@ -45,5 +45,7 @@ namespace OpenVisionLab
         {
             toolController.SetResultReview(results, tactTime);
         }
+
+        internal Action<IEnumerable<MatchingResult>, TimeSpan?> CaptureResultReview() => toolController.CaptureResultReview();
     }
 }

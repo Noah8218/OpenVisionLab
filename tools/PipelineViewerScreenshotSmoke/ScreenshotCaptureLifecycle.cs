@@ -1,6 +1,8 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Windows;
+using OpenVisionLab;
 
 internal static class ScreenshotCaptureLifecycle
 {
@@ -30,21 +32,38 @@ internal static class ScreenshotCaptureLifecycle
 
         DateTime started = DateTime.UtcNow;
         window.Show();
-        window.Activate();
         try
         {
+            string monitorPlacement = SmokeWindowMonitorPlacement.PlaceOnLeftmostMonitor(window);
+            File.WriteAllText(Path.ChangeExtension(outputPath, ".monitor.txt"), monitorPlacement);
+            window.Activate();
             pump(initialPumpCount);
             verify();
             pump(12);
+            FrameworkElement? expectedToolView = content is OpenVisionShellHostView shell
+                && shell.IsNativeDocumentActive
+                && shell.IsActiveWpfToolWindowVisibleForTest
+                && !shell.IsDockedToolInspectorVisibleForTest
+                && !shell.IsDockedDocumentWorkspaceVisibleForTest
+                    ? shell.ActiveNativeDocumentForTest?.View
+                    : null;
             Window captureWindow = captureFloatingToolWindow
                 ? Application.Current.Windows
-                    .OfType<Window>()
-                    .LastOrDefault(item => item.IsVisible && item.GetType().Name == "OpenVisionFloatingToolWindow")
+                    .OfType<OpenVisionFloatingToolWindow>()
+                    .LastOrDefault(item => item.IsVisible
+                        && item.HostedContent is not VisionToolParameterGuideView
+                        && (expectedToolView == null || ReferenceEquals(item.HostedContent, expectedToolView)))
                     ?? window
                 : window;
+            if (captureFloatingToolWindow && expectedToolView != null
+                && (!ReferenceEquals(Window.GetWindow(expectedToolView), captureWindow)
+                    || !expectedToolView.IsVisible || expectedToolView.ActualWidth <= 0D || expectedToolView.ActualHeight <= 0D))
+            {
+                throw new InvalidOperationException("Tool capture did not resolve the active native Tool View: " + expectedToolView.GetType().Name);
+            }
             if (captureScreen)
             {
-                ScreenshotPngWriter.WriteScreenPng(captureWindow, outputPath);
+                ScreenshotPngWriter.WriteWindowScreenPng(captureWindow, outputPath);
             }
             else
             {

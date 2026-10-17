@@ -5,11 +5,15 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace OpenVisionLab
 {
     internal static class OpenVisionPipelineReviewResultPresenter
     {
+        private static readonly IReadOnlyList<OpenVisionLocalizationEntry> workbenchValidationTemplates =
+            OpenVisionLanguageService.GetDefaultEntries("Workbench.Validate.Detail.");
+
         public static string ResolvePairActionText(VisionPipelineSampleCatalogItem counterpartSample)
         {
             if (counterpartSample == null)
@@ -507,7 +511,7 @@ namespace OpenVisionLab
                 : string.Format(CultureInfo.CurrentCulture, "{0} {1}", FormatMetricName(metric.Key), FormatMetricValue(metric.Value));
         }
 
-        private static IEnumerable<KeyValuePair<string, double>> OrderResultMetrics(VisionPipelineStep step, IDictionary<string, double> metrics)
+        internal static IEnumerable<KeyValuePair<string, double>> OrderResultMetrics(VisionPipelineStep step, IDictionary<string, double> metrics)
         {
             if (metrics == null)
             {
@@ -542,6 +546,159 @@ namespace OpenVisionLab
                 && !string.Equals(metricName, VisionPipelineKnownMetrics.ResultImageWidth, StringComparison.OrdinalIgnoreCase)
                 && !string.Equals(metricName, VisionPipelineKnownMetrics.ResultImageHeight, StringComparison.OrdinalIgnoreCase)
                 && !string.Equals(metricName, VisionPipelineKnownMetrics.ResultImageChannels, StringComparison.OrdinalIgnoreCase);
+        }
+
+        internal static string FormatWorkbenchValidation(string error, VisionPipelineStep step = null, int index = -1)
+        {
+            string detail = error ?? string.Empty;
+            string namedPrefix = $"Step {index + 1} '{step?.Name}': ";
+            string prefix = $"Step {index + 1}: ";
+            if (detail.StartsWith(namedPrefix, StringComparison.Ordinal)) { detail = detail.Substring(namedPrefix.Length); }
+            else if (detail.StartsWith(prefix, StringComparison.Ordinal)) { detail = detail.Substring(prefix.Length); }
+            if ((detail.StartsWith("input layer B '", StringComparison.Ordinal) && detail.EndsWith("does not exist before this step.", StringComparison.Ordinal))
+                || detail.StartsWith("InputLayerB is required", StringComparison.Ordinal)) { return T("Workbench.Validate.InputBMissing", "No earlier step creates input B."); }
+            if ((detail.StartsWith("input layer '", StringComparison.Ordinal) && detail.EndsWith("does not exist before this step.", StringComparison.Ordinal))
+                || detail == "InputLayer is required.") { return TF("Workbench.Validate.InputMissingFormat", "No earlier step creates input ‘{0}’.", step?.InputLayer ?? string.Empty); }
+            if (detail == "OutputLayer is required." || detail == "output layer must not be Main.") { return T("Workbench.Validate.OutputInvalid", "The output name is empty or Main."); }
+            if (detail.StartsWith("output layer '", StringComparison.Ordinal) && detail.EndsWith("duplicates an earlier step.", StringComparison.Ordinal))
+            {
+                return TF("Workbench.Validate.OutputDuplicateFormat", "Output name ‘{0}’ is used by an earlier step.", step?.OutputLayer ?? string.Empty);
+            }
+            if (detail == "ToolType is required." || detail.StartsWith("unsupported ToolType '", StringComparison.Ordinal)) { return T("Workbench.Validate.ToolNotInPipeline", "This tool cannot run in a pipeline."); }
+            foreach (OpenVisionLocalizationEntry template in workbenchValidationTemplates)
+            {
+                string pattern = Regex.Replace(Regex.Escape(template.English), @"\\\{(\d+)\}", match => "(?<p" + match.Groups[1].Value + ">.+?)");
+                Match matched = Regex.Match(detail, "\\A" + pattern + "\\z", RegexOptions.CultureInvariant | RegexOptions.Singleline, TimeSpan.FromMilliseconds(100));
+                if (!matched.Success) { continue; }
+                int count = Regex.Matches(template.English, @"\{\d+\}").Count;
+                object[] args = Enumerable.Range(0, count).Select(number => (object)matched.Groups["p" + number].Value).ToArray();
+                return string.Format(CultureInfo.CurrentCulture, OpenVisionLanguageService.T(template.Key), args);
+            }
+            return detail;
+        }
+
+        internal static string FormatWorkbenchSummary(VisionPipelineStepResultSummary summary)
+        {
+            if (summary == null || !summary.Executed || summary.Skipped || (!summary.Success && !summary.IsAcceptanceNg)) { return string.Empty; }
+            string Parameter(string name) => summary.Parameters.TryGetValue(name, out string value) ? value : string.Empty;
+            if (string.Equals(summary.ToolType, "Threshold", StringComparison.OrdinalIgnoreCase) && summary.Parameters.ContainsKey("Mode"))
+            {
+                string mode = Parameter("Mode");
+                if (mode == "Range")
+                {
+                    return T("Threshold.ModeRange", "Range") + " · " + Parameter("RangeMin") + "–" + Parameter("RangeMax")
+                        + (Parameter("Invert") == "True" ? " · " + T("Threshold.Invert", "Invert") : string.Empty);
+                }
+                if (mode == "Adaptive")
+                {
+                    return T("Threshold.ModeAdaptive", "Adaptive") + " · " + T("Threshold.BlockSize", "Block size") + " " + Parameter("BlockSize")
+                        + " · " + T("Threshold.Weight", "Correction (C)") + " " + Parameter("Weight");
+                }
+                return Parameter("ThresholdType") + " · " + T("PropertyGrid.Property.THRESHOLD.DisplayName", "Threshold") + " " + Parameter("Threshold");
+            }
+            if (string.Equals(summary.ToolType, VisionPipelineArithmeticStep.ToolType, StringComparison.OrdinalIgnoreCase)
+                && Parameter(VisionPipelineArithmeticStep.ParameterMode) == VisionPipelineArithmeticStep.ModeOffset)
+            {
+                return T("Arithmetic.OffsetMode", "Offset") + " · X " + Parameter(VisionPipelineArithmeticStep.ParameterOffsetX)
+                    + " · Y " + Parameter(VisionPipelineArithmeticStep.ParameterOffsetY);
+            }
+            string metrics = string.Join(" · ", OrderResultMetrics(new VisionPipelineStep { ToolType = summary.ToolType }, summary.Metrics)
+                .OrderBy(metric => OpenVisionLanguageService.T("Workbench.Metric." + metric.Key) == "Workbench.Metric." + metric.Key ? 1 : 0).Take(2)
+                .Select(metric => WorkbenchMetricName(metric.Key) + " " + WorkbenchMetricValue(metric.Key, metric.Value)));
+            return !string.IsNullOrEmpty(metrics) ? metrics : summary.HasResultImage ? summary.ResultImageWidth + " × " + summary.ResultImageHeight + " px" : string.Empty;
+        }
+
+        internal static string FormatWorkbenchNextAction(VisionPipelineStepResultSummary summary)
+        {
+            if ((summary?.Success != true && summary?.IsAcceptanceNg != true) || (summary.ToolType != "Blob" && summary.ToolType != "Contour")) { return string.Empty; }
+            return !summary.IsAcceptanceNg && summary.Metrics.TryGetValue(VisionPipelineKnownMetrics.ResultCount, out double count) && count > 0
+                ? VisionToolVerificationText.CheckResultThenAddPipeline : VisionToolVerificationText.AdjustAreaThreshold;
+        }
+
+        internal static string FormatWorkbenchElapsed(double milliseconds) => milliseconds.ToString(milliseconds < 10 ? "N1" : "N0", CultureInfo.CurrentCulture) + " ms";
+
+        internal static string WorkbenchResultKind(VisionPipelineStep step, VisionPipelineStepResultSummary summary) => summary == null ? "NotRun"
+            : summary.ExecutionState == VisionPipelineResultSummaryService.NotRunAfterFailureState ? "NotRun"
+            : summary.ExecutionState == VisionPipelineResultSummaryService.CancelledState ? "Cancelled"
+            : summary.Skipped ? "Disabled" : summary.IsAcceptanceNg ? "Ng" : !summary.Success ? "Error" : step?.UseAcceptance == true ? "Ok" : "Done";
+
+        internal static string FormatWorkbenchAcceptance(VisionPipelineStep step)
+        {
+            if (!step.UseAcceptance) { return string.Empty; }
+            string metric = WorkbenchMetricName(step.AcceptanceMetricName);
+            string minimum = WorkbenchMetricValue(step.AcceptanceMetricName, step.AcceptanceMetricMinimum);
+            string maximum = WorkbenchMetricValue(step.AcceptanceMetricName, step.AcceptanceMetricMaximum);
+            return metric + " " + (step.UseAcceptanceMetricMinimum && step.UseAcceptanceMetricMaximum
+                ? WorkbenchMetricValue(step.AcceptanceMetricName, step.AcceptanceMetricMinimum, false) + "~" + maximum
+                : step.UseAcceptanceMetricMinimum ? TF("Workbench.Acc.MinimumFormat", "{0} or more", minimum)
+                : step.UseAcceptanceMetricMaximum ? TF("Workbench.Acc.MaximumFormat", "{0} or less", maximum) : string.Empty);
+        }
+
+        internal static string FormatWorkbenchFailure(VisionPipelineStep step, VisionPipelineStepResultSummary summary)
+        {
+            if (!summary.IsAcceptanceNg)
+            {
+                return summary.ErrorName == "MatchingTemplateMissing" || summary.ErrorName == "FeatureTemplateMissing" || summary.ErrorName == "TemplateImageMissing"
+                    ? T("Workbench.Tool.TemplateMissing", "No template") : summary.Message;
+            }
+            bool intrinsicMean = !step.UseAcceptance && string.Equals(step.ToolType, "Mean", StringComparison.OrdinalIgnoreCase);
+            string metricName = step.AcceptanceMetricName ?? string.Empty;
+            bool useMinimum = step.UseAcceptanceMetricMinimum, useMaximum = step.UseAcceptanceMetricMaximum;
+            double minimum = step.AcceptanceMetricMinimum, maximum = step.AcceptanceMetricMaximum;
+            if (intrinsicMean)
+            {
+                metricName = "MeanValueAvg";
+                useMinimum = useMaximum = true;
+                minimum = step.Parameters.TryGetValue("MEAN_MIN", out string minimumText) && int.TryParse(minimumText, NumberStyles.Integer, CultureInfo.InvariantCulture, out int meanMinimum) ? meanMinimum : 100;
+                maximum = step.Parameters.TryGetValue("MEAN_MAX", out string maximumText) && int.TryParse(maximumText, NumberStyles.Integer, CultureInfo.InvariantCulture, out int meanMaximum) ? meanMaximum : 240;
+            }
+            List<string> reasons = new List<string>();
+            if (!intrinsicMean && step.MaxElapsedMilliseconds > 0 && summary.ElapsedMilliseconds > step.MaxElapsedMilliseconds)
+            {
+                reasons.Add(TF("Workbench.Acc.TimeOverFormat", "Time {0} · over {1} ms", FormatWorkbenchElapsed(summary.ElapsedMilliseconds),
+                    step.MaxElapsedMilliseconds.ToString(step.MaxElapsedMilliseconds < 10 ? "N1" : "N0", CultureInfo.CurrentCulture)));
+            }
+            if (summary.Metrics.TryGetValue(metricName, out double value))
+            {
+                string actual = WorkbenchMetricName(metricName) + " " + WorkbenchMetricValue(metricName, value);
+                bool equal = useMinimum && useMaximum && minimum == maximum;
+                if (useMinimum && value < minimum)
+                {
+                    reasons.Add(TF("Workbench.Acc.BelowFormat", "{0} · below {1} {2}", actual, T(equal ? "Workbench.Acc.Target" : "Workbench.Acc.Lower", "Lower"),
+                        WorkbenchMetricValue(metricName, minimum)));
+                }
+                if (useMaximum && value > maximum)
+                {
+                    reasons.Add(TF("Workbench.Acc.AboveFormat", "{0} · above {1} {2}", actual, T(equal ? "Workbench.Acc.Target" : "Workbench.Acc.Upper", "Upper"),
+                        WorkbenchMetricValue(metricName, maximum)));
+                }
+            }
+            return reasons.Count > 0 ? string.Join(" · ", reasons) : summary.AcceptanceMessage;
+        }
+
+        internal static string WorkbenchMetricName(string name) => T("Workbench.Metric." + name, name ?? string.Empty);
+
+        internal static (string Unit, int Digits) WorkbenchMetricFormat(string name) => name switch
+        {
+                "ResultCount" or "EdgeCount" or "DistanceCount" => ("count", 0),
+                "AreaMax" or "AreaMin" or "AreaAvg" => ("px²", 0),
+                "BoundsWidthMax" or "BoundsHeightMax" or "MaskPixelCount" or "ResultImageWidth" => ("px", 0),
+                "ScoreMax" or "MaskPixelRatio" => (string.Empty, 3),
+                "LineLengthMax" or "IntersectionX" or "IntersectionY" => ("px", 1),
+                "LineAngleAvg" => ("°", 2),
+                "DistancePxAvg" => ("px", 2),
+                "DistanceMmAvg" or "DistanceMmRange" => ("mm", 3),
+                "MeanValueAvg" or "MeanStdDev" => ("GV", 1),
+                "ForegroundRatio" => ("%", 2),
+                _ => (string.Empty, 3)
+        };
+
+        internal static string WorkbenchMetricValue(string name, double value, bool includeUnit = true)
+        {
+            (string unit, int digits) = WorkbenchMetricFormat(name);
+            string number = value.ToString("N" + digits.ToString(CultureInfo.InvariantCulture), CultureInfo.CurrentCulture);
+            return !includeUnit || string.IsNullOrEmpty(unit) ? number : unit == "count"
+                ? TF("Workbench.Unit.CountFormat", "{0} items", number) : number + " " + unit;
         }
 
         private static string FormatMetricName(string metricName)

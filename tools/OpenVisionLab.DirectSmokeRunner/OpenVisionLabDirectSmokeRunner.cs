@@ -250,6 +250,18 @@ namespace OpenVisionLab
                     return true;
                 }
 
+                if (string.Equals(scenario, "recipe-pipeline-legacy-roundtrip", StringComparison.OrdinalIgnoreCase))
+                {
+                    RunLegacyRecipePipelineRoundtrip(args, outputDirectory);
+                    return true;
+                }
+
+                if (string.Equals(scenario, "recipe-step-main-handoff", StringComparison.OrdinalIgnoreCase))
+                {
+                    RunRecipeStepMainHandoff(outputDirectory);
+                    return true;
+                }
+
                 if (string.Equals(
                     scenario,
                     "recipe-pipeline-persistence-feedback",
@@ -3231,15 +3243,7 @@ namespace OpenVisionLab
                 Pump(24);
                 shellHost.SelectToolForTest(VISION_MENU.Blob);
                 Pump(40);
-                AssertToolWindowState(shellHost, "BlobToolWpfView", false, 1, "Blob initial floating");
-
-                if (!shellHost.DockActiveWpfToolWindowForTest())
-                {
-                    throw new InvalidOperationException("Blob floating tool did not accept the dock-to-right request.");
-                }
-
-                Pump(40);
-                AssertToolWindowState(shellHost, "BlobToolWpfView", true, 0, "Blob after dock");
+                AssertToolWindowState(shellHost, "BlobToolWpfView", true, 0, "Blob initial docked");
 
                 shellHost.SetDockedToolInspectorWidthForTest(680D);
                 Pump(8);
@@ -4233,7 +4237,413 @@ namespace OpenVisionLab
             OpenCvSharp.Cv2.ImWrite(outputPath, result.ResultImage);
         }
 
+        private static void RunRecipeStepMainHandoff(string outputDirectory)
+        {
+            Directory.CreateDirectory(outputDirectory);
+            CleanupKnownSmokeRecipeWorkspaces("Smoke_StepMainHandoff_");
+            string recipeName = "Smoke_StepMainHandoff_" + Guid.NewGuid().ToString("N").Substring(0, 12);
+            const string pipelineName = "Direct_Step_Main_Handoff";
+            VisionPipelineStorage.Save(recipeName, CreateDirectSmokePipeline(pipelineName, 2));
+            VisionPipelineStorage.SaveActivePipelineName(recipeName, pipelineName);
+
+            Application app = Application.Current ?? new Application();
+            app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+            OpenVisionShellHostWindow window = null;
+            try
+            {
+                window = new OpenVisionShellHostWindow(ApplicationRuntimeContext.CreateDefault())
+                {
+                    Width = 1600,
+                    Height = 900,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                    Topmost = true
+                };
+                app.MainWindow = window;
+                window.Show();
+                string monitorEvidence = PlaceWindowOnLeftmostMonitor(window);
+                window.Activate();
+                Pump(36);
+
+                OpenVisionShellHostView shellHost = window.ShellHostForSmoke
+                    ?? throw new InvalidOperationException("OpenVision shell host was not created.");
+                shellHost.SwitchRecipeContextForTest(recipeName);
+                using (Bitmap mainImage = new Bitmap(160, 120))
+                {
+                    using Graphics graphics = Graphics.FromImage(mainImage);
+                    graphics.Clear(System.Drawing.Color.White);
+                    graphics.FillRectangle(System.Drawing.Brushes.Black, 24, 24, 48, 56);
+                    shellHost.SetMainLayerImageForTest(mainImage);
+                }
+                Pump(60);
+
+                int nativeRunsBefore = shellHost.NativePreviewRunCount;
+                int layerCountBefore = shellHost.LayerDocumentCount;
+                string activeLayerBefore = shellHost.ActiveHostLayerTitle;
+                shellHost.RecipeCommands.OpenPipelineReviewCommand.Execute(null);
+                Pump(80);
+                OpenVisionPipelineReviewView review = FindVisualChildren<OpenVisionPipelineReviewView>(shellHost)
+                    .FirstOrDefault(item => item.IsVisible)
+                    ?? throw new InvalidOperationException("Main Pipeline Review document was not visible.");
+                if (!string.Equals(shellHost.PipelineReviewRecipeContextNameForTest, recipeName, StringComparison.Ordinal)
+                    || !string.Equals(shellHost.PipelineReviewRecipeContextPipelineNameForTest, pipelineName, StringComparison.Ordinal)
+                    || shellHost.NativePreviewRunCount != nativeRunsBefore)
+                {
+                    throw new InvalidOperationException("Main Pipeline Review changed recipe, pipeline, or executed Preview on entry.");
+                }
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "01_main_pipeline_review_wpf.png"));
+                SaveWindowScreenScreenshot(window, Path.Combine(outputDirectory, "01_main_pipeline_review.png"));
+
+                shellHost.SelectPipelineReviewStepForTest(1, OpenVisionLab.Pipeline.Controls.PipelineFlowPreviewMode.Output);
+                Pump(24);
+                System.Windows.Controls.Primitives.ToggleButton detailsToggle =
+                    FindNamedVisualChild<System.Windows.Controls.Primitives.ToggleButton>(review, "btnReviewDetailsToggle", "Main Step handoff");
+                detailsToggle.IsChecked = true;
+                Pump(40);
+                TabItem stepDetailsTab = FindNamedVisualChild<TabItem>(review, "stepDetailsTab", "Main Step handoff");
+                stepDetailsTab.IsSelected = true;
+                Pump(40);
+                Button editButton = FindNamedVisualChild<Button>(review, "btnEditSelectedStep", "Main Step handoff");
+                editButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, editButton));
+                Pump(160);
+
+                TabItem stepTab = FindNamedVisualChild<TabItem>(shellHost, "tabRecipePipelineStepSettings", "Main Step handoff");
+                ScrollViewer stepScroll = FindNamedVisualChild<ScrollViewer>(shellHost, "recipePipelineStepSettingsScrollViewer", "Main Step handoff");
+                Border propertyGridHost = FindNamedVisualChild<Border>(shellHost, "recipeStepPropertyGridHost", "Main Step handoff");
+                Rect gridBounds = propertyGridHost.TransformToAncestor(stepScroll)
+                    .TransformBounds(new Rect(new System.Windows.Size(propertyGridHost.ActualWidth, propertyGridHost.ActualHeight)));
+                OpenVisionRecipePipelineStepPreview selectedStep = shellHost.RecipeCommands.SelectedPipelinePreviewStep;
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "02_main_current_step_wpf.png"));
+                List<string> brightSurfaces = new List<string>();
+                foreach (FrameworkElement element in FindVisualChildren<FrameworkElement>(propertyGridHost))
+                {
+                    System.Windows.Media.Brush background = element is Control control ? control.Background
+                        : element is Border border ? border.Background
+                        : element is Panel panel ? panel.Background : null;
+                    if (element.IsVisible && background is SolidColorBrush solid && solid.Color.A > 0 && solid.Color.R > 220
+                        && solid.Color.G > 220 && solid.Color.B > 220)
+                    {
+                        Rect bounds = element.TransformToAncestor(propertyGridHost).TransformBounds(new Rect(element.RenderSize));
+                        brightSurfaces.Add($"{element.GetType().FullName} Name={element.Name} Bg={solid.Color} Bounds={bounds}");
+                    }
+                }
+                File.WriteAllLines(Path.Combine(outputDirectory, "theme-bright-surfaces.txt"), brightSurfaces);
+                if (brightSurfaces.Any(surface => surface.Contains("PART_SearchIconBorder", StringComparison.Ordinal)
+                    || surface.Contains("ThresholdEditorBase", StringComparison.Ordinal)
+                    || surface.Contains("MetricRangeEditorBase", StringComparison.Ordinal)
+                    || surface.Contains("RepeatButton", StringComparison.Ordinal)
+                    || surface.Contains("Thumb", StringComparison.Ordinal)
+                    || surface.Contains("PART_Border", StringComparison.Ordinal)))
+                {
+                    throw new InvalidOperationException("Dark PropertyGrid still contains a bright search or editor surface.");
+                }
+                FrameworkElement thresholdEditor = FindVisualChildren<FrameworkElement>(propertyGridHost)
+                    .FirstOrDefault(element => element.GetType().Name == "ThresholdEditorBase")
+                    ?? throw new InvalidOperationException("Threshold PropertyGrid editor was not rendered.");
+                Slider thresholdSlider = FindVisualChildren<Slider>(thresholdEditor).FirstOrDefault();
+                System.Windows.Controls.Primitives.Track sliderTrack =
+                    FindVisualChildren<System.Windows.Controls.Primitives.Track>(thresholdSlider).FirstOrDefault();
+                Border filledTrack = FindVisualChildren<Border>(sliderTrack?.DecreaseRepeatButton).FirstOrDefault();
+                Border sliderThumb = FindVisualChildren<Border>(sliderTrack?.Thumb).FirstOrDefault();
+                if (filledTrack?.Background is not SolidColorBrush filledBrush
+                    || filledBrush.Color != System.Windows.Media.Color.FromRgb(37, 183, 194)
+                    || filledTrack.ActualWidth < 20D
+                    || sliderThumb?.ActualWidth < 10D)
+                {
+                    throw new InvalidOperationException("Dark Threshold slider track or thumb is not visibly rendered.");
+                }
+                if (!stepTab.IsSelected
+                    || !stepTab.IsKeyboardFocusWithin
+                    || gridBounds.Height <= 0D
+                    || gridBounds.Top < 0D
+                    || gridBounds.Top >= stepScroll.ActualHeight
+                    || selectedStep?.Index != 2
+                    || !string.Equals(selectedStep.ToolType, "Threshold", StringComparison.OrdinalIgnoreCase)
+                    || shellHost.RecipeCommands.SelectedStepEditObject == null
+                    || shellHost.NativePreviewRunCount != nativeRunsBefore
+                    || shellHost.LayerDocumentCount != layerCountBefore
+                    || !string.Equals(shellHost.ActiveHostLayerTitle, activeLayerBefore, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "Main Step handoff did not expose the focused PropertyGrid without execution/layer changes. "
+                        + $"StepTab={stepTab.IsSelected}, Focus={stepTab.IsKeyboardFocusWithin}, "
+                        + $"Grid={gridBounds.Top:F1},{gridBounds.Bottom:F1}/{stepScroll.ActualHeight:F1}, "
+                        + $"Step={selectedStep?.Index}:{selectedStep?.ToolType}, "
+                        + $"Runs={shellHost.NativePreviewRunCount}/{nativeRunsBefore}, Layers={shellHost.LayerDocumentCount}/{layerCountBefore}");
+                }
+                if (gridBounds.Bottom > stepScroll.ActualHeight)
+                {
+                    stepScroll.ScrollToVerticalOffset(stepScroll.ScrollableHeight);
+                    Pump(24);
+                    Rect scrolledBounds = propertyGridHost.TransformToAncestor(stepScroll)
+                        .TransformBounds(new Rect(new System.Windows.Size(propertyGridHost.ActualWidth, propertyGridHost.ActualHeight)));
+                    if (stepScroll.ScrollableHeight <= 0D || scrolledBounds.Bottom > stepScroll.ActualHeight)
+                    {
+                        throw new InvalidOperationException(
+                            $"Main Step PropertyGrid bottom was unreachable. Grid={scrolledBounds.Top:F1},{scrolledBounds.Bottom:F1}/{stepScroll.ActualHeight:F1}, Scroll={stepScroll.VerticalOffset:F1}/{stepScroll.ScrollableHeight:F1}");
+                    }
+                    stepScroll.ScrollToTop();
+                    Pump(24);
+                }
+                SaveWindowScreenScreenshot(window, Path.Combine(outputDirectory, "02_main_current_step.png"));
+                Button imageSpaceButton = FindVisualChildren<Button>(shellHost)
+                    .FirstOrDefault(item => string.Equals(
+                        System.Windows.Automation.AutomationProperties.GetAutomationId(item),
+                        "HostRecipeStepImageSpaceButton", StringComparison.Ordinal))
+                    ?? throw new InvalidOperationException("Main Step image-space action was not visible.");
+                Border workspaceFrame = FindNamedVisualChild<Border>(shellHost, "hostWorkspaceFrame", "Main Step handoff");
+                double workspaceWidthBefore = workspaceFrame.ActualWidth;
+                if (imageSpaceButton.Command?.CanExecute(imageSpaceButton.CommandParameter) != true)
+                {
+                    throw new InvalidOperationException("Main Step image-space command was disabled.");
+                }
+                imageSpaceButton.Command.Execute(imageSpaceButton.CommandParameter);
+                Pump(40);
+                if (!shellHost.IsToolRailCompactForTest || workspaceFrame.ActualWidth < workspaceWidthBefore + 150D
+                    || shellHost.NativePreviewRunCount != nativeRunsBefore || shellHost.LayerDocumentCount != layerCountBefore)
+                {
+                    throw new InvalidOperationException(
+                        "Main Step image-space action did not widen the image without execution or layer changes. "
+                        + $"Compact={shellHost.IsToolRailCompactForTest}, Width={workspaceWidthBefore:F1}->{workspaceFrame.ActualWidth:F1}, "
+                        + $"Runs={nativeRunsBefore}->{shellHost.NativePreviewRunCount}, Layers={layerCountBefore}->{shellHost.LayerDocumentCount}");
+                }
+                SaveWindowScreenshot(window, Path.Combine(outputDirectory, "03_main_current_step_wide_image_wpf.png"));
+                File.WriteAllText(
+                    Path.Combine(outputDirectory, "report.txt"),
+                    "Result: PASS" + Environment.NewLine
+                    + "Scenario: recipe-step-main-handoff" + Environment.NewLine
+                    + "Executable: " + (Environment.ProcessPath ?? "-") + Environment.NewLine
+                    + monitorEvidence + Environment.NewLine
+                    + "Recipe: " + recipeName + Environment.NewLine
+                    + "Pipeline: " + pipelineName + Environment.NewLine
+                    + "Step: " + selectedStep.Index.ToString(CultureInfo.InvariantCulture) + " / " + selectedStep.ToolType + Environment.NewLine
+                    + "PropertyGrid: " + gridBounds.Top.ToString("F1", CultureInfo.InvariantCulture) + ".."
+                    + gridBounds.Bottom.ToString("F1", CultureInfo.InvariantCulture) + "/"
+                    + stepScroll.ActualHeight.ToString("F1", CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "NativePreviewRuns: " + shellHost.NativePreviewRunCount.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
+                    + "LayerCount: " + shellHost.LayerDocumentCount.ToString(CultureInfo.InvariantCulture) + Environment.NewLine,
+                    Encoding.UTF8);
+            }
+            finally
+            {
+                if (window != null)
+                {
+                    window.Close();
+                }
+                app.Shutdown();
+                RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+            }
+        }
+
         private static void RunRecipePipelineRoundtrip(string[] args, string outputDirectory)
+        {
+            Directory.CreateDirectory(outputDirectory);
+            string requestedRecipeName = ResolveOptionalTextOption(args, "--recipe-name");
+            string requestedPipelineName = ResolveOptionalTextOption(args, "--pipeline-name");
+            bool usesOperatorName = !string.IsNullOrWhiteSpace(requestedRecipeName);
+            string recipeName = usesOperatorName ? requestedRecipeName : "Smoke_RecipeRoundtrip_" + Guid.NewGuid().ToString("N").Substring(0, 12);
+            string pipelineName = string.IsNullOrWhiteSpace(requestedPipelineName) ? "Direct_Recipe_Roundtrip" : requestedPipelineName;
+            if (!RecipeWorkspaceService.IsValidRecipeName(recipeName) || !RecipeWorkspaceService.IsValidRecipeName(pipelineName))
+            {
+                throw new ArgumentException("Recipe Pipeline roundtrip received an invalid recipe or pipeline name.");
+            }
+            if (RecipeWorkspaceService.GetRecipeNames().Contains(recipeName, StringComparer.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Recipe Pipeline roundtrip will not overwrite an existing recipe: " + recipeName);
+            }
+
+            VisionPipeline source = CreateDirectSmokePipeline(pipelineName, 2);
+            VisionPipelineStorage.Save(recipeName, source);
+            VisionPipelineStorage.SaveActivePipelineName(recipeName, pipelineName);
+            string pipelinePath = RecipeWorkspaceService.GetVisionPipelinePath(recipeName, pipelineName);
+            byte[] originalXml = File.ReadAllBytes(pipelinePath);
+            string imagePath = Path.Combine(outputDirectory, "input.png");
+            using (Bitmap input = new Bitmap(160, 120))
+            {
+                using Graphics graphics = Graphics.FromImage(input);
+                graphics.Clear(System.Drawing.Color.White);
+                graphics.FillRectangle(System.Drawing.Brushes.Black, 24, 24, 48, 56);
+                input.Save(imagePath, System.Drawing.Imaging.ImageFormat.Png);
+            }
+
+            Application app = Application.Current ?? new Application();
+            app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            OpenVisionLanguageService.SetLanguage(OpenVisionLanguage.Korean, false);
+            OpenVisionShellHostWindow window = null;
+            OpenVisionShellHostView host = null;
+            DisplayManagerService reopenedDisplay = null;
+            List<string> evidence = new List<string>();
+            try
+            {
+                window = new OpenVisionShellHostWindow(ApplicationRuntimeContext.CreateDefault())
+                {
+                    Width = 1920, Height = 1032, WindowStartupLocation = WindowStartupLocation.CenterScreen
+                };
+                app.MainWindow = window;
+                window.Show();
+                evidence.Add(PlaceWindowOnLeftmostMonitor(window));
+                WaitForTaskWithPump(window.StartupPreparationTask, "Workbench roundtrip startup");
+                host = window.ShellHostForSmoke;
+                host.SwitchRecipeContextForTest(recipeName);
+                Pump(40);
+                OpenVisionWorkbenchPipelineViewModel model = host.Workbench.Pipeline;
+                ListBox list = FindVisualChildren<ListBox>(host).Single(item => System.Windows.Automation.AutomationProperties.GetAutomationId(item) == "WorkbenchPipelineSteps");
+                int layersBefore = host.LayerDocumentCount;
+                string activeLayerBefore = host.ActiveHostLayerTitle;
+                if (model.RunCommand.CanExecute(null) || !model.Rows[0].IsInputMissing || model.ResultCountForTest != 0 || host.NativePreviewRunCount != 0)
+                {
+                    throw new InvalidOperationException("Workbench roundtrip must start with missing Main input and no implicit execution.");
+                }
+                if (!host.LoadMainImageFromFileForTest(imagePath)) { throw new InvalidOperationException("Workbench roundtrip image load failed."); }
+                Pump(40);
+                if (!model.RunCommand.CanExecute(null) || model.Rows[1].ReadinessText != "WAIT" || model.ResultCountForTest != 0 || host.NativePreviewRunCount != 0)
+                {
+                    throw new InvalidOperationException("Workbench input load must enable explicit execution and leave an upstream-produced input in WAIT.");
+                }
+                layersBefore = host.LayerDocumentCount;
+                activeLayerBefore = host.ActiveHostLayerTitle;
+                SaveWindowScreenScreenshot(window, Path.Combine(outputDirectory, "Workbench_Input_WAIT.png"));
+
+                list.SelectedIndex = 1;
+                Pump(8);
+                model.RenameCommand.Execute(null);
+                Pump(8);
+                TextBox editor = FindVisualChildren<TextBox>(host).Single(item => item.IsVisible && System.Windows.Automation.AutomationProperties.GetAutomationId(item) == "WorkbenchStepRenameEditor");
+                const string editedName = "검사 영역의 긴 이름 0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+                editor.Text = editedName;
+                editor.GetBindingExpression(TextBox.TextProperty).UpdateSource();
+                model.CommitRenameCommand.Execute(null);
+                Pump(8);
+                if (!model.IsDirty || model.SelectedRow?.Index != 1 || model.Rows[1].Name != editedName || !model.Rows[1].IsDirty
+                    || !File.ReadAllBytes(pipelinePath).SequenceEqual(originalXml) || model.ResultCountForTest != 0)
+                {
+                    throw new InvalidOperationException("Workbench inline editing must change only the working copy and retain visible selection without execution.");
+                }
+                model.MoveUpCommand.Execute(null);
+                Pump(8);
+                if (model.ValidationSucceeded || model.RunCommand.CanExecute(null) || !model.Rows[0].HasError || list.SelectedIndex != 0)
+                {
+                    throw new InvalidOperationException("Moved producer references must fail closed in the rendered main panel.");
+                }
+                model.UndoCommand.Execute(null);
+                model.DuplicateCommand.Execute(null);
+                Pump(8);
+                if (model.ValidationSucceeded || model.RunCommand.CanExecute(null) || !model.Rows[2].HasError)
+                {
+                    throw new InvalidOperationException("Duplicate output names must block execution.");
+                }
+                model.UndoCommand.Execute(null);
+                model.ToggleEnabledCommand.Execute(null);
+                Pump(8);
+                if (model.Rows[1].IsEnabled || model.Rows[1].StatusText != OpenVisionLanguageService.T("Workbench.Status.Disabled"))
+                {
+                    throw new InvalidOperationException("Disabled steps must be visibly identified.");
+                }
+                model.UndoCommand.Execute(null);
+                host.QueuePendingRecipeEditDecisionForTest(OpenVisionRecipePendingEditDecision.Cancel);
+                model.DeleteCommand.Execute(null);
+                if (model.Rows.Count != 2 || list.SelectedIndex != 1) { throw new InvalidOperationException("Cancelling deletion must preserve steps and selection."); }
+                host.QueuePendingRecipeEditDecisionForTest(OpenVisionRecipePendingEditDecision.ApplyAndContinue);
+                model.DeleteCommand.Execute(null);
+                Pump(8);
+                if (model.Rows.Count != 1 || list.SelectedIndex != 0) { throw new InvalidOperationException("Confirmed deletion must select the remaining step."); }
+                model.UndoCommand.Execute(null);
+                Pump(8);
+                if (list.SelectedIndex != 1 || model.Rows.Count != 2 || host.NativePreviewRunCount != 0 || model.ResultCountForTest != 0
+                    || host.LayerDocumentCount != layersBefore || host.ActiveHostLayerTitle != activeLayerBefore)
+                {
+                    throw new InvalidOperationException("Editing and Undo must retain routing, layers, and no-run state.");
+                }
+                host.QueuePendingRecipeEditDecisionForTest(OpenVisionRecipePendingEditDecision.Cancel);
+                window.Close();
+                if (!window.IsVisible || !model.IsDirty) { throw new InvalidOperationException("Cancelling close must retain the unsaved working copy."); }
+
+                Menu menu = FindVisualChildren<Menu>(window).Single(item => System.Windows.Automation.AutomationProperties.GetAutomationId(item) == "WorkbenchMainMenu");
+                MenuItem runMenu = menu.Items.OfType<MenuItem>().Single(item => item.Header?.ToString() == OpenVisionLanguageService.T("Workbench.Menu.Run"));
+                MenuItem runItem = runMenu.Items.OfType<MenuItem>().Single(item => item.Header?.ToString() == OpenVisionLanguageService.T("Workbench.Command.RunPipelineCurrent"));
+                if (!ReferenceEquals(runItem.Command, model.RunCommand) || !runItem.Command.CanExecute(null))
+                {
+                    throw new InvalidOperationException("The main Run menu must use the same explicit execution command as the toolbar.");
+                }
+                runItem.Command.Execute(null);
+                Stopwatch runWait = Stopwatch.StartNew();
+                while ((model.IsRunning || model.ResultCountForTest != 2) && runWait.Elapsed < TimeSpan.FromSeconds(20)) { Pump(4); }
+                if (model.IsRunning || model.ResultCountForTest != 2 || model.VerdictKind != "Done"
+                    || model.VerdictDetail != OpenVisionLanguageService.T("Workbench.Status.NoVerdict") || model.Rows.Any(row => row.StatusKind != "Done"))
+                {
+                    throw new InvalidOperationException("Explicit execution without acceptance must show Done/no verdict for both steps and the final card.");
+                }
+                list.SelectedIndex = 0;
+                WaitForTaskWithPump(model.RunForTestAsync(prefix: true), "Workbench explicit prefix run");
+                if (!model.IsVerdictPrevious || model.Rows[1].StatusKind != "Previous")
+                {
+                    throw new InvalidOperationException("Prefix execution must retain the prior final verdict and mark downstream results stale.");
+                }
+                if (!host.LoadMainImageFromFileForTest(imagePath)) { throw new InvalidOperationException("Workbench replacement image load failed."); }
+                Pump(16);
+                if (!model.IsVerdictPrevious || model.Rows.Any(row => row.StatusKind != "Previous") || host.NativePreviewRunCount != 0
+                    || host.LayerDocumentCount != layersBefore || host.ActiveHostLayerTitle != activeLayerBefore)
+                {
+                    throw new InvalidOperationException("Replacing input must stale results without executing or changing routing/layers.");
+                }
+                WaitForTaskWithPump(model.RunForTestAsync(), "Workbench recovery run");
+                host.FailNextRecipeStepSaveForTest();
+                host.RecipeCommands.SaveRecipeCommand.Execute(null);
+                if (!model.IsDirty || !File.ReadAllBytes(pipelinePath).SequenceEqual(originalXml)) { throw new InvalidOperationException("Save failure must retain working copy and original XML."); }
+                host.FailNextRecipeStepRoundTripValidationForTest();
+                host.RecipeCommands.SaveRecipeCommand.Execute(null);
+                if (!model.IsDirty || !File.ReadAllBytes(pipelinePath).SequenceEqual(originalXml)) { throw new InvalidOperationException("Roundtrip failure must restore original XML and retain edits."); }
+                host.RecipeCommands.SaveRecipeCommand.Execute(null);
+                Pump(12);
+                VisionPipeline saved = VisionPipelineStorage.Load(recipeName, pipelineName);
+                if (model.IsDirty || model.Rows.Any(row => row.IsDirty) || saved.Steps[1].Name != editedName || !VisionPipelineStorage.TryValidateRoundTrip(recipeName, saved, out _))
+                {
+                    throw new InvalidOperationException("Explicit save must preserve the edited XML and validate its roundtrip.");
+                }
+                SaveWindowScreenScreenshot(window, Path.Combine(outputDirectory, "Workbench_Saved_Wide.png"));
+                window.Close();
+                host = null;
+                reopenedDisplay = new DisplayManagerService();
+                ApplicationRuntimeContext reopenedContext = new ApplicationRuntimeContext(new GlobalState(), reopenedDisplay);
+                window = new OpenVisionShellHostWindow(reopenedContext) { Width = 1280, Height = 760, WindowStartupLocation = WindowStartupLocation.CenterScreen };
+                app.MainWindow = window;
+                window.Show();
+                evidence.Add(PlaceWindowOnLeftmostMonitor(window));
+                WaitForTaskWithPump(window.StartupPreparationTask, "Workbench reopen startup");
+                host = window.ShellHostForSmoke;
+                host.SwitchRecipeContextForTest(recipeName);
+                Pump(40);
+                model = host.Workbench.Pipeline;
+                if (model.IsDirty || model.Rows.Count != 2 || model.Rows[1].Name != editedName || model.ResultCountForTest != 0
+                    || model.VerdictValue != "—" || model.RunCommand.CanExecute(null) || host.NativePreviewRunCount != 0)
+                {
+                    throw new InvalidOperationException("Reopen must restore edited names with no results or implicit execution.");
+                }
+                SaveWindowScreenScreenshot(window, Path.Combine(outputDirectory, "Workbench_Reopened_Compact.png"));
+                evidence.Insert(0, "Result: PASS");
+                evidence.Add("Scenario: recipe-pipeline-roundtrip / K3 main workbench");
+                evidence.Add("Executable: " + (Environment.ProcessPath ?? "-"));
+                evidence.Add("Recipe: " + recipeName + " / Pipeline: " + pipelineName);
+                evidence.Add("RecipeNameMode: " + (usesOperatorName ? "operator-supplied" : "generated-smoke"));
+                evidence.Add("Cases: missing Main, file load WAIT, inline edit, move/duplicate fail-closed, disable, delete cancel/confirm/Undo, close cancel, explicit menu run/no-verdict, prefix previous, input replacement no-run, save/roundtrip failure recovery, XML save, actual host reopen");
+                evidence.Add("Native Preview runs: " + host.NativePreviewRunCount.ToString(CultureInfo.InvariantCulture));
+                evidence.Add("Boundary: legacy Review/PropertyGrid handoff remains available under recipe-pipeline-legacy-roundtrip; Tool panel parameters Phase5, complete result tab Phase7.");
+                File.WriteAllLines(Path.Combine(outputDirectory, "report.txt"), evidence, Encoding.UTF8);
+            }
+            finally
+            {
+                if (window != null)
+                {
+                    host?.QueuePendingRecipeEditDecisionForTest(OpenVisionRecipePendingEditDecision.Discard);
+                    window.Close();
+                }
+                app.Shutdown();
+                reopenedDisplay?.Dispose();
+                RecipeWorkspaceService.DeleteVisionWorkspace(recipeName);
+            }
+        }
+
+        private static void RunLegacyRecipePipelineRoundtrip(string[] args, string outputDirectory)
         {
             Directory.CreateDirectory(outputDirectory);
             CleanupKnownSmokeRecipeWorkspaces("Smoke_RecipeRoundtrip_");
@@ -4280,6 +4690,7 @@ namespace OpenVisionLab
 
                 app.MainWindow = window;
                 window.Show();
+                string monitorEvidence = PlaceWindowOnLeftmostMonitor(window);
                 window.Activate();
                 Pump(36);
 
@@ -4346,10 +4757,9 @@ namespace OpenVisionLab
 
                 shellHost.RecipeCommands.OpenPipelineReviewCommand.Execute(null);
                 Pump(80);
-                Window pipelineReviewWindow = Application.Current.Windows
-                    .OfType<Window>()
-                    .FirstOrDefault(item => item.IsVisible && IsFloatingToolWindow(item));
-                if (pipelineReviewWindow == null
+                OpenVisionPipelineReviewView pipelineReview = FindVisualChildren<OpenVisionPipelineReviewView>(shellHost)
+                    .FirstOrDefault(item => item.IsVisible);
+                if (pipelineReview == null
                     || recipeManagerButton.IsChecked == true
                     || !string.Equals(shellHost.PipelineReviewRecipeContextNameForTest, recipeName, StringComparison.Ordinal)
                     || !string.Equals(shellHost.PipelineReviewRecipeContextPipelineNameForTest, pipelineName, StringComparison.Ordinal)
@@ -4357,7 +4767,7 @@ namespace OpenVisionLab
                 {
                     throw new InvalidOperationException(
                         "Recipe Pipeline roundtrip did not open Pipeline Review with the selected recipe and no native Preview. "
-                        + $"Window={pipelineReviewWindow != null}, ManagerOpen={recipeManagerButton.IsChecked}, "
+                        + $"Review={pipelineReview != null}, ManagerOpen={recipeManagerButton.IsChecked}, "
                         + $"Recipe='{shellHost.PipelineReviewRecipeContextNameForTest}', "
                         + $"Pipeline='{shellHost.PipelineReviewRecipeContextPipelineNameForTest}', "
                         + $"Runs={shellHost.NativePreviewRunCount}/{nativeRunsBefore}");
@@ -4380,7 +4790,7 @@ namespace OpenVisionLab
                 string pendingInputState = shellHost.PipelineReviewSelectedStatusText + " / " + shellHost.PipelineReviewGuideNextActionText;
 
                 AssertVisibleAutomationIds(
-                    pipelineReviewWindow,
+                    pipelineReview,
                     "Recipe Pipeline roundtrip Pipeline Review header",
                     "PipelineReviewReturnToRecipeButton",
                     "PipelineReviewRecipeContext",
@@ -4394,7 +4804,7 @@ namespace OpenVisionLab
                     "PipelineReviewReadinessCalibration");
                 string pipelineReviewText = string.Join(
                     " | ",
-                    FindVisualChildren<TextBlock>(pipelineReviewWindow)
+                    FindVisualChildren<TextBlock>(pipelineReview)
                         .Where(item => item.IsVisible && !string.IsNullOrWhiteSpace(item.Text))
                         .Select(item => item.Text));
                 if (!pipelineReviewText.Contains(recipeName, StringComparison.Ordinal))
@@ -4420,19 +4830,21 @@ namespace OpenVisionLab
                 string reviewResult = shellHost.PipelineReviewResultSummaryText;
 
                 SaveWindowScreenScreenshot(
-                    pipelineReviewWindow,
+                    window,
                     Path.Combine(outputDirectory, "OpenVisionLab_PipelineReview_Roundtrip.png"));
                 Button returnToRecipeButton = FindNamedVisualChild<Button>(
-                    pipelineReviewWindow,
+                    pipelineReview,
                     "btnReturnToRecipe",
                     "Recipe Pipeline roundtrip return");
                 returnToRecipeButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, returnToRecipeButton));
                 Pump(80);
 
+                TabItem pipelineTab = FindNamedVisualChild<TabItem>(
+                    shellHost, "tabRecipePipeline", "Recipe Pipeline roundtrip Step edit handoff");
                 if (recipeManagerButton.IsChecked != true
                     || shellHost.IsActiveWpfToolWindowVisibleForTest
-                    || !overviewTab.IsSelected
                     || advancedReviewToggle.IsChecked == true
+                    || !overviewTab.IsSelected
                     || !string.Equals(shellHost.SelectedRecipeNameForTest, recipeName, StringComparison.Ordinal)
                     || !string.Equals(shellHost.ActiveRecipeContextNameForTest, recipeName, StringComparison.Ordinal)
                     || !string.Equals(shellHost.ActiveRecipeContextPipelineNameForTest, pipelineName, StringComparison.Ordinal)
@@ -4444,150 +4856,72 @@ namespace OpenVisionLab
                     || shellHost.RecipeCommands.RecipeOverviewLastResultValueText.Contains(workSampleName, StringComparison.OrdinalIgnoreCase))
                 {
                     throw new InvalidOperationException(
-                        "Recipe Pipeline roundtrip return changed recipe, layer, routing, or native Preview state. "
-                        + $"ManagerOpen={recipeManagerButton.IsChecked}, ToolVisible={shellHost.IsActiveWpfToolWindowVisibleForTest}, "
-                        + $"Overview={overviewTab.IsSelected}, Advanced={advancedReviewToggle.IsChecked}, "
-                        + $"SelectedRecipe='{shellHost.SelectedRecipeNameForTest}', Context='{shellHost.ActiveRecipeContextNameForTest}', "
-                        + $"Pipeline='{shellHost.ActiveRecipeContextPipelineNameForTest}', "
-                        + $"RecipeLayer='{shellHost.ActiveRecipeContextLayerNameForTest}/{recipeLayerBefore}', "
+                        "Recipe Pipeline roundtrip return changed manager summary, recipe, layer, routing, or Preview state. "
+                        + $"ManagerOpen={recipeManagerButton.IsChecked}, Overview={overviewTab.IsSelected}, "
+                        + $"Recipe='{shellHost.ActiveRecipeContextNameForTest}/{recipeName}', "
+                        + $"Pipeline='{shellHost.ActiveRecipeContextPipelineNameForTest}/{pipelineName}', "
                         + $"Layers={shellHost.LayerDocumentCount}/{layerCountBefore}, "
-                        + $"ActiveLayer='{shellHost.ActiveHostLayerTitle}/{activeLayerBefore}', "
-                        + $"Runs={shellHost.NativePreviewRunCount}/{nativeRunsBefore}, "
-                        + $"SampleExecution={shellHost.RecipeCommands.HasCurrentRecipeSampleExecution}, "
-                        + $"SampleResult='{shellHost.RecipeCommands.RecipeOverviewLastResultValueText}'");
+                        + $"Runs={shellHost.NativePreviewRunCount}/{nativeRunsBefore}");
                 }
 
                 AssertVisibleAutomationIds(
-                    shellHost,
-                    "Recipe Pipeline roundtrip returned summary",
-                    "HostRecipeOverviewPanel",
-                    "HostRecipeOverviewName",
-                    "HostRecipeOverviewSelectedSample",
-                    "HostRecipeOverviewSampleContext",
-                    "HostRecipeOverviewLastResult",
-                    "HostRecipeOpenPipelineReviewButton",
-                    "HostRecipeAdvancedReviewToggle");
+                    shellHost, "Recipe Pipeline roundtrip manager return", "HostRecipeOverviewPanel");
                 SaveWindowScreenScreenshot(
-                    window,
-                    Path.Combine(outputDirectory, "OpenVisionLab_RecipeManager_Roundtrip_Return.png"));
-
-                advancedReviewToggle.IsChecked = true;
-                Pump(60);
-                TabItem pipelineTab = FindNamedVisualChild<TabItem>(
-                    shellHost,
-                    "tabRecipePipeline",
-                    "Recipe Pipeline roundtrip advanced review");
-                if (!pipelineTab.IsSelected
-                    || overviewTab.IsSelected
-                    || !string.Equals(shellHost.SelectedRecipeNameForTest, recipeName, StringComparison.Ordinal)
-                    || shellHost.NativePreviewRunCount != nativeRunsBefore
-                    || shellHost.LayerDocumentCount != layerCountBefore
-                    || !string.Equals(shellHost.ActiveHostLayerTitle, activeLayerBefore, StringComparison.Ordinal)
-                    || !string.Equals(shellHost.ActiveRecipeContextLayerNameForTest, recipeLayerBefore, StringComparison.Ordinal))
-                {
-                    throw new InvalidOperationException(
-                        "Recipe Pipeline roundtrip advanced review changed execution, layer, or recipe state. "
-                        + $"Pipeline={pipelineTab.IsSelected}, Overview={overviewTab.IsSelected}, "
-                        + $"Recipe='{shellHost.SelectedRecipeNameForTest}/{recipeName}', "
-                        + $"Runs={shellHost.NativePreviewRunCount}/{nativeRunsBefore}, "
-                        + $"Layers={shellHost.LayerDocumentCount}/{layerCountBefore}, "
-                        + $"Active='{shellHost.ActiveHostLayerTitle}/{activeLayerBefore}', "
-                        + $"RecipeLayer='{shellHost.ActiveRecipeContextLayerNameForTest}/{recipeLayerBefore}'");
-                }
-
-                AssertVisibleAutomationIds(
-                    shellHost,
-                    "Recipe Pipeline roundtrip advanced review",
-                    "HostRecipeAdvancedTransferCommands",
-                    "HostRecipePipelineTab");
-                AssertNotVisibleAutomationIds(
-                    shellHost,
-                    "Recipe Pipeline roundtrip advanced review",
-                    "HostRecipeManagerLibraryPane",
-                    "HostRecipeManagerCommandStrip",
-                    "HostRecipeOverviewPanel");
-                SaveWindowScreenScreenshot(
-                    window,
-                    Path.Combine(outputDirectory, "OpenVisionLab_RecipeManager_Operator_Advanced.png"));
-
-                advancedReviewToggle.IsChecked = false;
-                Pump(60);
-                if (!overviewTab.IsSelected
-                    || advancedReviewToggle.IsChecked == true
-                    || !string.Equals(shellHost.SelectedRecipeNameForTest, recipeName, StringComparison.Ordinal)
-                    || shellHost.NativePreviewRunCount != nativeRunsBefore
-                    || shellHost.LayerDocumentCount != layerCountBefore
-                    || !string.Equals(shellHost.ActiveHostLayerTitle, activeLayerBefore, StringComparison.Ordinal)
-                    || !string.Equals(shellHost.ActiveRecipeContextLayerNameForTest, recipeLayerBefore, StringComparison.Ordinal))
-                {
-                    throw new InvalidOperationException(
-                        "Recipe Pipeline roundtrip summary return changed execution, layer, or recipe state. "
-                        + $"Overview={overviewTab.IsSelected}, Advanced={advancedReviewToggle.IsChecked}, "
-                        + $"Recipe='{shellHost.SelectedRecipeNameForTest}/{recipeName}', "
-                        + $"Runs={shellHost.NativePreviewRunCount}/{nativeRunsBefore}, "
-                        + $"Layers={shellHost.LayerDocumentCount}/{layerCountBefore}, "
-                        + $"Active='{shellHost.ActiveHostLayerTitle}/{activeLayerBefore}', "
-                        + $"RecipeLayer='{shellHost.ActiveRecipeContextLayerNameForTest}/{recipeLayerBefore}'");
-                }
-
-                AssertVisibleAutomationIds(
-                    shellHost,
-                    "Recipe Pipeline roundtrip summary return",
-                    "HostRecipeManagerLibraryPane",
-                    "HostRecipeManagerCommandStrip",
-                    "HostRecipeOverviewPanel");
-                AssertNotVisibleAutomationIds(
-                    shellHost,
-                    "Recipe Pipeline roundtrip summary return",
-                    "HostRecipeAdvancedTransferCommands");
-                SaveWindowScreenScreenshot(
-                    window,
-                    Path.Combine(outputDirectory, "OpenVisionLab_RecipeManager_Operator_Summary_Return.png"));
+                    window, Path.Combine(outputDirectory, "OpenVisionLab_RecipeManager_Roundtrip_Return.png"));
 
                 shellHost.RecipeCommands.OpenPipelineReviewCommand.Execute(null);
                 Pump(80);
-                pipelineReviewWindow = Application.Current.Windows
-                    .OfType<Window>()
-                    .FirstOrDefault(item => item.IsVisible && IsFloatingToolWindow(item));
-                if (pipelineReviewWindow == null)
+                pipelineReview = FindVisualChildren<OpenVisionPipelineReviewView>(shellHost)
+                    .FirstOrDefault(item => item.IsVisible);
+                if (pipelineReview == null)
                 {
-                    throw new InvalidOperationException("Recipe Pipeline roundtrip could not reopen Pipeline Review for Step edit handoff.");
+                    throw new InvalidOperationException("Recipe Pipeline roundtrip could not reopen main Pipeline Review for Step edit handoff.");
                 }
+
 
                 shellHost.SelectPipelineReviewStepForTest(1, OpenVisionLab.Pipeline.Controls.PipelineFlowPreviewMode.Output);
                 Pump(24);
+                System.Windows.Controls.Primitives.ToggleButton detailsToggle =
+                    FindNamedVisualChild<System.Windows.Controls.Primitives.ToggleButton>(
+                        pipelineReview, "btnReviewDetailsToggle", "Recipe Pipeline roundtrip Step edit handoff");
+                detailsToggle.IsChecked = true;
+                Pump(40);
+                TabItem stepDetailsTab = FindNamedVisualChild<TabItem>(
+                    pipelineReview, "stepDetailsTab", "Recipe Pipeline roundtrip Step edit handoff");
+                stepDetailsTab.IsSelected = true;
+                Pump(40);
                 Button editSelectedStepButton = FindNamedVisualChild<Button>(
-                    pipelineReviewWindow,
+                    pipelineReview,
                     "btnEditSelectedStep",
                     "Recipe Pipeline roundtrip Step edit handoff");
                 editSelectedStepButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, editSelectedStepButton));
                 Pump(160);
 
-                TabItem xmlStepsTab = FindNamedVisualChild<TabItem>(
+                TabItem stepSettingsTab = FindNamedVisualChild<TabItem>(
                     shellHost,
-                    "tabRecipePipelineXmlSteps",
+                    "tabRecipePipelineStepSettings",
                     "Recipe Pipeline roundtrip Step edit handoff");
-                ScrollViewer pipelineScrollViewer = FindNamedVisualChild<ScrollViewer>(
+                ScrollViewer stepScrollViewer = FindNamedVisualChild<ScrollViewer>(
                     shellHost,
-                    "recipePipelineTabScrollViewer",
+                    "recipePipelineStepSettingsScrollViewer",
                     "Recipe Pipeline roundtrip Step edit handoff");
                 Border propertyGridHost = FindNamedVisualChild<Border>(
                     shellHost,
                     "recipeStepPropertyGridHost",
                     "Recipe Pipeline roundtrip Step edit handoff");
                 Rect propertyGridBounds = propertyGridHost
-                    .TransformToAncestor(pipelineScrollViewer)
+                    .TransformToAncestor(stepScrollViewer)
                     .TransformBounds(new Rect(new System.Windows.Size(propertyGridHost.ActualWidth, propertyGridHost.ActualHeight)));
                 bool propertyGridVisible = propertyGridBounds.Height > 0D
-                    && propertyGridBounds.Bottom > 0D
-                    && propertyGridBounds.Top < pipelineScrollViewer.ActualHeight;
+                    && propertyGridBounds.Top >= 0D
+                    && propertyGridBounds.Bottom <= stepScrollViewer.ActualHeight;
                 OpenVisionRecipePipelineStepPreview selectedEditStep = shellHost.RecipeCommands.SelectedPipelinePreviewStep;
 
-                if (recipeManagerButton.IsChecked != true
+                if (recipeManagerButton.IsChecked == true
                     || shellHost.IsActiveWpfToolWindowVisibleForTest
                     || advancedReviewToggle.IsChecked != true
                     || !pipelineTab.IsSelected
-                    || !xmlStepsTab.IsSelected
+                    || !stepSettingsTab.IsSelected
                     || selectedEditStep?.Index != 2
                     || !string.Equals(selectedEditStep.ToolType, "Threshold", StringComparison.OrdinalIgnoreCase)
                     || shellHost.RecipeCommands.SelectedStepEditObject == null
@@ -4605,10 +4939,10 @@ namespace OpenVisionLab
                     throw new InvalidOperationException(
                         "Recipe Pipeline roundtrip Step edit handoff did not expose the authoritative PropertyGrid without execution or layer changes. "
                         + $"Manager={recipeManagerButton.IsChecked}, ToolVisible={shellHost.IsActiveWpfToolWindowVisibleForTest}, "
-                        + $"Advanced={advancedReviewToggle.IsChecked}, PipelineTab={pipelineTab.IsSelected}, XmlStepTab={xmlStepsTab.IsSelected}, "
+                        + $"Advanced={advancedReviewToggle.IsChecked}, PipelineTab={pipelineTab.IsSelected}, StepTab={stepSettingsTab.IsSelected}, "
                         + $"Step='{selectedEditStep?.Index}:{selectedEditStep?.ToolType}', Property='{shellHost.RecipeCommands.SelectedStepEditObject?.GetType().Name}', "
                         + $"WorkSample='{shellHost.RecipeCommands.SelectedSampleOption?.SampleName}/{workSampleName}', "
-                        + $"PropertyGrid={propertyGridBounds.Top:F1},{propertyGridBounds.Bottom:F1}/{pipelineScrollViewer.ActualHeight:F1}, "
+                        + $"PropertyGrid={propertyGridBounds.Top:F1},{propertyGridBounds.Bottom:F1}/{stepScrollViewer.ActualHeight:F1}, "
                         + $"Runs={shellHost.NativePreviewRunCount}/{nativeRunsBefore}, Preview={shellHost.HasNativePreviewResult}, "
                         + $"Layers={shellHost.LayerDocumentCount}/{layerCountBefore}, Active='{shellHost.ActiveHostLayerTitle}/{activeLayerBefore}', "
                         + $"RecipeLayer='{shellHost.ActiveRecipeContextLayerNameForTest}/{recipeLayerBefore}'");
@@ -4617,7 +4951,7 @@ namespace OpenVisionLab
                 AssertVisibleAutomationIds(
                     shellHost,
                     "Recipe Pipeline roundtrip Step edit handoff destination",
-                    "HostRecipePipelineXmlStepsTab",
+                    "HostRecipePipelineStepSettingsTab",
                     "HostRecipeLoadSelectedStepParametersButton",
                     "HostRecipeApplySelectedStepParametersButton",
                     "HostRecipeSelectedStepPropertyGridHost");
@@ -4629,10 +4963,11 @@ namespace OpenVisionLab
                     "Result: PASS" + Environment.NewLine
                     + "Scenario: recipe-pipeline-roundtrip" + Environment.NewLine
                     + "Executable: " + (Environment.ProcessPath ?? "-") + Environment.NewLine
+                    + monitorEvidence + Environment.NewLine
                     + "Recipe: " + recipeName + Environment.NewLine
                     + "Pipeline: " + pipelineName + Environment.NewLine
                     + "RecipeNameMode: " + (usesOperatorName ? "operator-supplied" : "generated-smoke") + Environment.NewLine
-                    + "SummaryAdvancedRoundtrip: no Preview/Run, layer, active-layer, or recipe-routing changes" + Environment.NewLine
+                    + "ManagerMainReviewRoundtrip: no implicit Preview/Run, layer, active-layer, or recipe-routing changes" + Environment.NewLine
                     + "PendingProducedInput: " + pendingInputState + Environment.NewLine
                     + "ReviewResult: " + reviewResult + Environment.NewLine
                     + "ReviewResultShowsInspectionNotEvaluated: " + reviewResult.Contains("미평가", StringComparison.OrdinalIgnoreCase) + Environment.NewLine
@@ -6284,6 +6619,19 @@ namespace OpenVisionLab
                     "HostRecipePipelineValidationIssueList",
                     "HostRecipePipelineStepComparisonGrid",
                     "HostRecipePipelineInlinePreviewStepList",
+                    "HostRecipeBranchOutputComparisonPanel",
+                    "HostRecipeBranchOutputComparisonText",
+                    "HostRecipeBranchOutputComparisonList");
+                TabItem stepSettingsTab = FindNamedVisualChild<TabItem>(
+                    shellHost,
+                    "tabRecipePipelineStepSettings",
+                    "Recipe manager direct smoke");
+                stepSettingsTab.IsSelected = true;
+                Pump(40);
+                AssertVisibleAutomationIds(
+                    shellHost,
+                    "Recipe current Step tab",
+                    "HostRecipePipelineStepSettingsTab",
                     "HostRecipePipelineSelectedStepDetailPanel",
                     "HostRecipePipelineSelectedStepOperatorContext",
                     "HostRecipePipelineSelectedStepRoute",
@@ -6295,9 +6643,6 @@ namespace OpenVisionLab
                     "HostRecipePipelineSelectedStepRoiTemplate",
                     "HostRecipeOpenSelectedStepToolButton",
                     "HostRecipePipelineSelectedStepParameters",
-                    "HostRecipeBranchOutputComparisonPanel",
-                    "HostRecipeBranchOutputComparisonText",
-                    "HostRecipeBranchOutputComparisonList",
                     "HostRecipeLoadSelectedStepParametersButton",
                     "HostRecipeApplySelectedStepParametersButton",
                     "HostRecipeSelectedStepEditStatus",
@@ -7995,6 +8340,11 @@ namespace OpenVisionLab
                         throw new InvalidOperationException("Pipeline loading overlay remained visible after completion.");
                     }
 
+                    if (shellHost.NativePreviewRunCount != 0)
+                    {
+                        throw new InvalidOperationException("Startup or layout restore executed a native Preview.");
+                    }
+
                     if (shellHost.HasMainLayer || shellHost.HasWorkspaceLayerPreview)
                     {
                         throw new InvalidOperationException("Startup empty workspace must not create or preview a seeded Main image.");
@@ -8039,6 +8389,7 @@ namespace OpenVisionLab
                         + "Scenario: workspace-startup-empty" + Environment.NewLine
                         + "Screenshots: OpenVisionLab_PipelineLoadingFeedback.png; OpenVisionLab_StartupEmptyWorkspace.png" + Environment.NewLine
                         + "PipelineLoadingOverlayVerified: True" + Environment.NewLine
+                        + "NativePreviewRuns: " + shellHost.NativePreviewRunCount.ToString(CultureInfo.InvariantCulture) + Environment.NewLine
                         + "SingleWorkspaceVisible: " + shellHost.IsSingleWorkspaceVisibleForTest + Environment.NewLine
                         + "DockedWorkspaceVisible: " + shellHost.IsDockedWorkspaceVisibleForTest + Environment.NewLine
                         + "WorkspaceEmptyPromptVisible: " + shellHost.IsWorkspaceEmptyPromptVisible + Environment.NewLine

@@ -50,12 +50,12 @@
                                    Text="Recipe는 Step 순서, 파라미터, acceptance gate, 샘플 검증 결과를 함께 저장해 다시 검토할 수 있게 합니다." />
 
                         <Grid Margin="0,14,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="12" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0"
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="12" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0"
                                     Style="{StaticResource LearnPanelStyle}">
                                 <StackPanel>
                                     <TextBlock Text="Layer 흐름"
@@ -68,7 +68,7 @@
                                                  Rows="1" />
                                 </StackPanel>
                             </Border>
-                            <Border Grid.Column="2"
+                            <Border Grid.Row="2"
                                     Style="{StaticResource LearnPanelStyle}">
                                 <StackPanel>
                                     <TextBlock Text="Pipeline Step 연결"

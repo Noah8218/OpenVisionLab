@@ -4,50 +4,25 @@
              xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
              xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
              Height="42"
-             Background="#30383B"
+             Background="{DynamicResource OpenVision.Workbench.ChromeBrush}"
              SnapsToDevicePixels="True">
     <UserControl.Resources>
-        <Style x:Key="ChromeButtonStyle" TargetType="Button">
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="../../../Wpf/OpenVisionLabWpfTheme.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        <Style x:Key="ChromeButtonStyle" TargetType="Button" BasedOn="{StaticResource OpenVision.Workbench.ButtonStyle}">
             <Setter Property="Width" Value="42" />
-            <Setter Property="Height" Value="42" />
+            <Setter Property="Height" Value="{Binding ActualHeight, RelativeSource={RelativeSource AncestorType=UserControl}}" />
             <Setter Property="Padding" Value="0" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Foreground" Value="#EAF5F7" />
+            <Setter Property="Foreground" Value="{DynamicResource OpenVision.Workbench.TextBrush}" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="shell:WindowChrome.IsHitTestVisibleInChrome" Value="True" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="buttonChrome"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="Transparent"
-                                BorderThickness="1">
-                            <ContentPresenter x:Name="buttonContent"
-                                              HorizontalAlignment="Center"
-                                              VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="buttonChrome" Property="Background" Value="#405057" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="buttonChrome" Property="Background" Value="#157C86" />
-                                <Setter TargetName="buttonContent" Property="RenderTransform">
-                                    <Setter.Value>
-                                        <TranslateTransform X="1" Y="1" />
-                                    </Setter.Value>
-                                </Setter>
-                            </Trigger>
-                            <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="buttonChrome" Property="BorderBrush" Value="#8AD7DA" />
-                                <Setter TargetName="buttonChrome" Property="BorderThickness" Value="2" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
         </Style>
+
+        </ResourceDictionary>
     </UserControl.Resources>
 
     <Grid x:Name="titleBar"
@@ -64,18 +39,22 @@
                                         Kind="Tune"
                                         Width="18"
                                         Height="18"
-                                        Foreground="#8AD7DA"
+                                        Foreground="{DynamicResource OpenVision.Workbench.AccentBrush}"
                                         VerticalAlignment="Center" />
             <TextBlock x:Name="txtTitle"
                        Text="OpenVisionLab"
-                       Foreground="#F5FAFC"
-                       FontFamily="Segoe UI"
+                       Foreground="{DynamicResource OpenVision.Workbench.TextBrush}"
+                       FontFamily="{DynamicResource OpenVision.Workbench.FontFamily}"
                        FontWeight="SemiBold"
                        FontSize="13"
                        Margin="9,0,0,0"
                        VerticalAlignment="Center"
                        TextTrimming="CharacterEllipsis" />
         </StackPanel>
+
+        <ContentPresenter Grid.Column="1" Margin="16,0,8,0" VerticalAlignment="Stretch"
+                          Content="{Binding HeaderContent, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                          shell:WindowChrome.IsHitTestVisibleInChrome="True" />
 
         <StackPanel Grid.Column="2" Orientation="Horizontal">
             <Button x:Name="btnDock"

@@ -2,6 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Input;
 using System.Windows.Media;
 
 namespace OpenVisionLab
@@ -284,6 +285,17 @@ namespace OpenVisionLab
             DockRequested(
                 this,
                 new OpenVisionFloatingToolDockRequestedEventArgs(content, window.Title, window.Width, window.Height));
+
+            Window dockedOwner = Window.GetWindow(content);
+            if (dockedOwner?.IsVisible == true)
+            {
+                dockedOwner.Activate();
+                content.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    if (dockedOwner.IsActive && ReferenceEquals(Window.GetWindow(content), dockedOwner) && content.IsVisible && content.IsEnabled)
+                        content.MoveFocus(new TraversalRequest(FocusNavigationDirection.First));
+                }), System.Windows.Threading.DispatcherPriority.Input);
+            }
         }
 
         private void AttachWindowEvents(OpenVisionFloatingToolWindow window)

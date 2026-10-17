@@ -52,6 +52,7 @@
         </Style>
 
         <Style x:Key="ViewerToolButtonStyle" TargetType="{x:Type Button}">
+            <Setter Property="Foreground" Value="#F5F9FC" />
             <Setter Property="Width" Value="35" />
             <Setter Property="Height" Value="34" />
             <Setter Property="Padding" Value="0" />
@@ -217,26 +218,88 @@
                 ToolBarTray.IsLocked="True">
                 <Button
                     Command="{Binding TeachingCommand}"
-                    Style="{StaticResource ViewerToolButtonStyle}"
-                    ToolTip="ROI">
-                    <Path
-                        Width="21"
-                        Height="21"
-                        Data="{StaticResource IconRoiSelect}"
-                        Fill="{Binding DataContext.IsTeachingMode, Converter={StaticResource booleanToColorConverter}, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                        Stretch="Uniform" />
+                    AutomationProperties.AutomationId="ImageCanvasRoiModeButton"
+                    AutomationProperties.Name="{DynamicResource ImageCanvas.RoiModeName}"
+                    ToolTip="{DynamicResource ImageCanvas.RoiModeName}">
+                    <Button.Style>
+                        <Style TargetType="{x:Type Button}" BasedOn="{StaticResource ViewerToolButtonStyle}">
+                            <Setter Property="AutomationProperties.ItemStatus" Value="{DynamicResource ImageCanvas.ModeOff}" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsTeachingMode}" Value="True">
+                                    <Setter Property="AutomationProperties.ItemStatus" Value="{DynamicResource ImageCanvas.ModeOn}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                    <Grid Width="35" Height="34" Background="Transparent" IsHitTestVisible="False">
+                        <Path
+                            Width="21"
+                            Height="21"
+                            Margin="0,1,0,0"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Top"
+                            Data="{StaticResource IconRoiSelect}"
+                            Fill="{Binding DataContext.IsTeachingMode, Converter={StaticResource booleanToColorConverter}, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            Stretch="Uniform" />
+                        <Path
+                            AutomationProperties.AutomationId="ImageCanvasRoiModeCheckedMark"
+                            Width="10"
+                            Height="8"
+                            Margin="0,0,2,2"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Bottom"
+                            Data="M1,4 L4,7 L9,1"
+                            Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                            StrokeThickness="2"
+                            StrokeStartLineCap="Round"
+                            StrokeEndLineCap="Round"
+                            StrokeLineJoin="Round"
+                            Stretch="Uniform"
+                            Visibility="{Binding IsTeachingMode, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                    </Grid>
                 </Button>
 
                 <Button
                     Command="{Binding MeasureCommand}"
-                    Style="{StaticResource ViewerToolButtonStyle}"
-                    ToolTip="Measure">
-                    <Path
-                        Width="22"
-                        Height="22"
-                        Data="{StaticResource IconStraighten}"
-                        Fill="{Binding DataContext.IsShowMeasure, Converter={StaticResource booleanToColorConverter}, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                        Stretch="Uniform" />
+                    AutomationProperties.AutomationId="ImageCanvasMeasureModeButton"
+                    AutomationProperties.Name="{DynamicResource ImageCanvas.MeasureModeName}"
+                    ToolTip="{DynamicResource ImageCanvas.MeasureModeName}">
+                    <Button.Style>
+                        <Style TargetType="{x:Type Button}" BasedOn="{StaticResource ViewerToolButtonStyle}">
+                            <Setter Property="AutomationProperties.ItemStatus" Value="{DynamicResource ImageCanvas.ModeOff}" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsShowMeasure}" Value="True">
+                                    <Setter Property="AutomationProperties.ItemStatus" Value="{DynamicResource ImageCanvas.ModeOn}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                    <Grid Width="35" Height="34" Background="Transparent" IsHitTestVisible="False">
+                        <Path
+                            Width="22"
+                            Height="22"
+                            Margin="0,1,0,0"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Top"
+                            Data="{StaticResource IconStraighten}"
+                            Fill="{Binding DataContext.IsShowMeasure, Converter={StaticResource booleanToColorConverter}, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            Stretch="Uniform" />
+                        <Path
+                            AutomationProperties.AutomationId="ImageCanvasMeasureModeCheckedMark"
+                            Width="10"
+                            Height="8"
+                            Margin="0,0,2,2"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Bottom"
+                            Data="M1,4 L4,7 L9,1"
+                            Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                            StrokeThickness="2"
+                            StrokeStartLineCap="Round"
+                            StrokeEndLineCap="Round"
+                            StrokeLineJoin="Round"
+                            Stretch="Uniform"
+                            Visibility="{Binding IsShowMeasure, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                    </Grid>
                 </Button>
 
             </ToolBar>

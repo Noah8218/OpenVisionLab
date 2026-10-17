@@ -1,5 +1,6 @@
 using OpenVisionLab.Vision2D;
 using OpenVisionLab.Vision2D.Property;
+using OpenVisionLab.Vision2D.Pipeline;
 using OpenCvSharp;
 using System;
 
@@ -38,12 +39,15 @@ namespace OpenVisionLab
             };
         }
 
-        public static MeanProperty CreateMeanProperty(SimplePreprocessToolWpfView view)
+        public static MeanProperty CreateMeanProperty(SimplePreprocessToolWpfView view, VisionPipelineStep workbenchStep = null)
         {
-            MeanProperty property = new MeanProperty("Mean")
+            MeanProperty property = new MeanProperty("Mean");
+            if (workbenchStep != null)
             {
-                MEAN_TYPES = view.Parameters.GetEnum("MeanType", MeanType.Mean)
-            };
+                MeanProperty source = VisionPipelineStepPropertyMapper.CreateProperty(workbenchStep) as MeanProperty;
+                if (source != null) { VisionPipelineStepPropertyMapper.ApplyNativeParameters(source, property); }
+            }
+            property.MEAN_TYPES = view.Parameters.GetEnum("MeanType", MeanType.Mean);
             int min = view.Parameters.GetInt("MeanMin", property.MEAN_MIN);
             int max = view.Parameters.GetInt("MeanMax", property.MEAN_MAX);
             property.MEAN_MIN = Math.Min(min, max);

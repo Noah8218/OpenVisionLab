@@ -4,7 +4,8 @@
         xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
         Title="OpenVisionLab"
         Width="520"
-        Height="250"
+        MinHeight="250"
+        SizeToContent="Height"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
         ResizeMode="NoResize"
@@ -44,6 +45,7 @@
                        Margin="0,22,0,0"
                        HorizontalAlignment="Center"
                        Foreground="#F5FAFC"
+                       TextWrapping="Wrap"
                        FontSize="18"
                        FontWeight="SemiBold"
                        TextAlignment="Center" />

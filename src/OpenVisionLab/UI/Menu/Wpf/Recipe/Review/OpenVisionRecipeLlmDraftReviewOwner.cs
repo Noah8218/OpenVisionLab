@@ -1,5 +1,7 @@
 using OpenVisionLab.Vision2D.Pipeline;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace OpenVisionLab
 {
@@ -26,7 +28,10 @@ namespace OpenVisionLab
                     draftPipeline),
                 OpenVisionRecipePipelineComparisonPresenter.BuildDraftDiffReview(
                     activePipeline,
-                    draftPipeline));
+                    draftPipeline),
+                (draftPipeline?.Steps ?? new List<VisionPipelineStep>()).Select((step, index) => new KeyValuePair<OpenVisionRecipePipelineStepPreview, string>(
+                    new OpenVisionRecipePipelineStepPreview(index + 1, step, null),
+                    OpenVisionRecipePipelineComparisonPresenter.FormatDetailedStepDiff(index < (activePipeline?.Steps?.Count ?? 0) ? activePipeline.Steps[index] : null, step, showUnchanged: true))).ToList());
         }
     }
 
@@ -34,11 +39,15 @@ namespace OpenVisionLab
     {
         internal OpenVisionRecipeLlmDraftReview(
             string importReviewText,
-            string diffReviewText)
+            string diffReviewText,
+            IReadOnlyList<KeyValuePair<OpenVisionRecipePipelineStepPreview, string>> steps = null)
         {
             ImportReviewText = importReviewText ?? string.Empty;
             DiffReviewText = diffReviewText ?? string.Empty;
+            Steps = steps ?? Array.Empty<KeyValuePair<OpenVisionRecipePipelineStepPreview, string>>();
         }
+
+        internal IReadOnlyList<KeyValuePair<OpenVisionRecipePipelineStepPreview, string>> Steps { get; }
 
         internal string ImportReviewText { get; }
 

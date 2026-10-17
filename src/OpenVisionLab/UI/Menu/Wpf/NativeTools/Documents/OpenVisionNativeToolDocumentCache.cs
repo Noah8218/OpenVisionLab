@@ -45,7 +45,7 @@ namespace OpenVisionLab
                 return true;
             }
 
-            if (!OpenVisionNativeToolDocumentFactory.TryCreate(menu, displayManager, out document))
+            if (!OpenVisionNativeToolDocumentFactory.TryCreate(menu, displayManager, out document, forWorkbench: true))
             {
                 return false;
             }

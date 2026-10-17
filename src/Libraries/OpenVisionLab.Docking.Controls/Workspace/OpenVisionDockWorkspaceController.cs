@@ -15,20 +15,19 @@ namespace OpenVisionLab.Docking.Controls
         private const double MinimumComparisonPaneWidth = 280D;
         private const double MinimumComparisonPaneHeight = 180D;
 
+        private readonly Func<bool> usePresetLayout;
         private readonly DockingManager dockingManager;
         private readonly EventHandler documentClosedHandler;
         private readonly Predicate<object> documentContentPredicate;
         private LayoutAnchorablePane primaryPane;
 
-        public OpenVisionDockWorkspaceController(
-            OpenVisionDockWorkspaceHandle workspaceHandle,
-            EventHandler documentClosedHandler,
-            Predicate<object> documentContentPredicate)
-            : this(
-                workspaceHandle?.NativeWorkspace as DockingManager,
-                workspaceHandle?.NativePrimaryPane as LayoutAnchorablePane,
-                documentClosedHandler,
-                documentContentPredicate)
+        public OpenVisionDockWorkspaceController(OpenVisionDockWorkspaceHandle workspaceHandle, EventHandler documentClosedHandler, Predicate<object> documentContentPredicate)
+            : this(workspaceHandle, documentClosedHandler, documentContentPredicate, null)
+        {
+        }
+
+        public OpenVisionDockWorkspaceController(OpenVisionDockWorkspaceHandle workspaceHandle, EventHandler documentClosedHandler, Predicate<object> documentContentPredicate, Func<bool> usePresetLayout)
+            : this(workspaceHandle?.NativeWorkspace as DockingManager, workspaceHandle?.NativePrimaryPane as LayoutAnchorablePane, documentClosedHandler, documentContentPredicate, usePresetLayout)
         {
         }
 
@@ -36,13 +35,18 @@ namespace OpenVisionLab.Docking.Controls
             DockingManager dockingManager,
             LayoutAnchorablePane initialPane,
             EventHandler documentClosedHandler,
-            Predicate<object> documentContentPredicate)
+            Predicate<object> documentContentPredicate,
+            Func<bool> usePresetLayout)
         {
+            this.usePresetLayout = usePresetLayout;
             this.dockingManager = dockingManager;
             primaryPane = initialPane;
             this.documentClosedHandler = documentClosedHandler;
             this.documentContentPredicate = documentContentPredicate;
         }
+
+        private double MinimumPaneWidth => usePresetLayout?.Invoke() == true ? 0D : MinimumComparisonPaneWidth;
+        private double MinimumPaneHeight => usePresetLayout?.Invoke() == true ? 120D : MinimumComparisonPaneHeight;
 
         public bool HasRootPanel => dockingManager?.Layout?.RootPanel != null;
 
@@ -942,30 +946,30 @@ public bool NormalizeComparisonPaneSizes()
                 .Any(document => IsDocumentContent(document.Content)) == true;
         }
 
-        private static bool EnsurePaneMinimums(LayoutAnchorablePane pane)
+        private bool EnsurePaneMinimums(LayoutAnchorablePane pane)
         {
             bool changed = false;
-            if (pane.DockMinWidth < MinimumComparisonPaneWidth)
+            if (pane.DockMinWidth < MinimumPaneWidth || (usePresetLayout?.Invoke() == true && pane.DockMinWidth != MinimumPaneWidth))
             {
-                pane.DockMinWidth = MinimumComparisonPaneWidth;
+                pane.DockMinWidth = MinimumPaneWidth;
                 changed = true;
             }
 
-            if (pane.DockMinHeight < MinimumComparisonPaneHeight)
+            if (pane.DockMinHeight < MinimumPaneHeight || (usePresetLayout?.Invoke() == true && pane.DockMinHeight != MinimumPaneHeight))
             {
-                pane.DockMinHeight = MinimumComparisonPaneHeight;
+                pane.DockMinHeight = MinimumPaneHeight;
                 changed = true;
             }
 
-            if (pane.DockWidth.IsAbsolute && pane.DockWidth.Value < MinimumComparisonPaneWidth)
+            if (pane.DockWidth.IsAbsolute && pane.DockWidth.Value < MinimumPaneWidth)
             {
-                pane.DockWidth = new GridLength(MinimumComparisonPaneWidth);
+                pane.DockWidth = new GridLength(MinimumPaneWidth);
                 changed = true;
             }
 
-            if (pane.DockHeight.IsAbsolute && pane.DockHeight.Value < MinimumComparisonPaneHeight)
+            if (pane.DockHeight.IsAbsolute && pane.DockHeight.Value < MinimumPaneHeight)
             {
-                pane.DockHeight = new GridLength(MinimumComparisonPaneHeight);
+                pane.DockHeight = new GridLength(MinimumPaneHeight);
                 changed = true;
             }
 
@@ -974,7 +978,7 @@ public bool NormalizeComparisonPaneSizes()
 
         private bool IsPaneTooNarrowForComparison(LayoutAnchorablePane pane)
         {
-            if (pane.DockWidth.IsAbsolute && pane.DockWidth.Value < MinimumComparisonPaneWidth)
+            if (pane.DockWidth.IsAbsolute && pane.DockWidth.Value < MinimumPaneWidth)
             {
                 return true;
             }
@@ -987,7 +991,7 @@ public bool NormalizeComparisonPaneSizes()
 
         private bool IsPaneTooShortForComparison(LayoutAnchorablePane pane)
         {
-            if (pane.DockHeight.IsAbsolute && pane.DockHeight.Value < MinimumComparisonPaneHeight)
+            if (pane.DockHeight.IsAbsolute && pane.DockHeight.Value < MinimumPaneHeight)
             {
                 return true;
             }
@@ -1003,7 +1007,7 @@ public bool NormalizeComparisonPaneSizes()
             return IsDocumentContent(content)
                 && content is FrameworkElement element
                 && element.ActualWidth > 0D
-                && element.ActualWidth < MinimumComparisonPaneWidth;
+                && element.ActualWidth < MinimumPaneWidth;
         }
 
         private bool IsContentTooShortForComparison(object content)
@@ -1011,7 +1015,7 @@ public bool NormalizeComparisonPaneSizes()
             return IsDocumentContent(content)
                 && content is FrameworkElement element
                 && element.ActualHeight > 0D
-                && element.ActualHeight < MinimumComparisonPaneHeight;
+                && element.ActualHeight < MinimumPaneHeight;
         }
 
         #endregion

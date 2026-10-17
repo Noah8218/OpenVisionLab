@@ -53,6 +53,11 @@ namespace OpenVisionLab
             canvasPresenter.RefreshCanvas();
         }
 
+        public void FitImageToView()
+        {
+            canvasPresenter.FitImageToView();
+        }
+
         public bool SaveCurrentImage(string path)
         {
             return canvasPresenter.SaveCurrentImage(path);

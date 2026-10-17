@@ -1,5 +1,6 @@
 using OpenVisionLab.Vision2D.Result;
 using OpenVisionLab.Vision2D.Tool;
+using OpenVisionLab.Contracts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -39,6 +40,30 @@ namespace OpenVisionLab
                 interactionController.GetSelectedLineProperty());
         }
 
+        internal Action<IEnumerable<LineGaugeResult>, VisionToolResult> CaptureResultReview(LineToolPurpose purpose, string lineName, LineGaugeProperty property)
+        {
+            return (lines, result) =>
+            {
+                if (purpose == LineToolPurpose.Measure)
+                {
+                    resultReviewPresenter.ShowDistance(result);
+                    verificationGuidePresenter.ShowDistanceResult(result, purpose, lineName, property);
+                }
+                else if (purpose == LineToolPurpose.Intersection)
+                {
+                    resultReviewPresenter.ShowIntersection(result);
+                    bool crosses = result?.Success == true && result.Metrics.TryGetValue("IntersectionCross", out double value) && value >= 0.5D;
+                    verificationGuidePresenter.ShowIntersectionResult(crosses, purpose, lineName, property);
+                }
+                else
+                {
+                    List<LineGaugeResult> resultList = lines?.Where(item => item != null).ToList() ?? new List<LineGaugeResult>();
+                    resultReviewPresenter.Show(resultList, purpose, property);
+                    verificationGuidePresenter.ShowLineResult(resultList, purpose, lineName, property);
+                }
+            };
+        }
+
         public void ShowDistanceResult(VisionToolResult result)
         {
             resultReviewPresenter.ShowDistance(result);
@@ -75,6 +100,7 @@ namespace OpenVisionLab
 
         public void RefreshTeachingSummary()
         {
+            textPresenter.RefreshHeader(interactionController.SelectedPurpose, interactionController.IsLineBSelected);
             if (!string.IsNullOrWhiteSpace(toolController.ResultReviewText.Text))
             {
                 return;

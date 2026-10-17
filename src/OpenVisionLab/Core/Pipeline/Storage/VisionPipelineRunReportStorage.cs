@@ -202,11 +202,13 @@ namespace OpenVisionLab
             DateTime startedAt,
             DateTime finishedAt,
             string runLabel = null,
-            Mat sourceImage = null)
+            Mat sourceImage = null,
+            string reportRoot = null)
         {
             string pipelineName = string.IsNullOrWhiteSpace(pipeline?.Name) ? "Pipeline" : pipeline.Name;
-            string runName = CreateUniqueRunName(recipeName, pipelineName, startedAt, runLabel);
-            string directory = RecipeWorkspaceService.GetVisionPipelineRunDirectory(recipeName, pipelineName, runName);
+            string runName = CreateUniqueRunName(recipeName, pipelineName, startedAt, runLabel, reportRoot);
+            string directory = reportRoot == null ? RecipeWorkspaceService.GetVisionPipelineRunDirectory(recipeName, pipelineName, runName)
+                : RecipeWorkspaceService.GetContainedStoragePath(Path.GetFullPath(reportRoot), runName, "Transient run directory");
 
             VisionPipeline originalPipeline = pipeline ?? new VisionPipeline { Name = pipelineName };
             VisionPipeline effectivePipeline = result?.EffectivePipeline ?? originalPipeline;
@@ -297,7 +299,7 @@ namespace OpenVisionLab
             return persisted;
         }
 
-        private static string CreateUniqueRunName(string recipeName, string pipelineName, DateTime startedAt, string runLabel)
+        private static string CreateUniqueRunName(string recipeName, string pipelineName, DateTime startedAt, string runLabel, string reportRoot = null)
         {
             string baseName = startedAt.ToString("yyyyMMdd_HHmmssfff");
             if (!string.IsNullOrWhiteSpace(runLabel))
@@ -305,7 +307,7 @@ namespace OpenVisionLab
                 baseName = $"{baseName}_{SanitizeFileName(runLabel)}";
             }
 
-            string rootDirectory = RecipeWorkspaceService.GetVisionPipelineRunRootDirectory(recipeName, pipelineName);
+            string rootDirectory = reportRoot ?? RecipeWorkspaceService.GetVisionPipelineRunRootDirectory(recipeName, pipelineName);
             string candidate = baseName;
             int suffix = 2;
             while (Directory.Exists(

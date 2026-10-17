@@ -25,6 +25,114 @@ namespace OpenVisionLab
         private static readonly Dictionary<string, DefaultCatalogMigration> DefaultCatalogMigrations = new Dictionary<string, DefaultCatalogMigration>(StringComparer.OrdinalIgnoreCase)
         {
             {
+                "Workbench.Action.ImagesOpeningFormat",
+                new DefaultCatalogMigration("이미지 {0}장을 여는 중…", "Opening {0} images…")
+            },
+            {
+                "Workbench.Action.ImagesAddedFormat",
+                new DefaultCatalogMigration("이미지 {0}장 추가", "Added {0} images")
+            },
+            {
+                "Workbench.Run.ImageCountFormat",
+                new DefaultCatalogMigration("{0}장", "{0} images")
+            },
+            {
+                "Workbench.Batch.LabelSummary",
+                new DefaultCatalogMigration("판정 일치 {0}/{1} · 과검 {2} · 미검 {3}", "Label agreement {0}/{1} · Over-rejection {2} · Misses {3}")
+            },
+            {
+                "PropertyGrid.Search.NoResults",
+                new DefaultCatalogMigration("'{0}'\uC5D0 \uD574\uB2F9\uD558\uB294 \uD30C\uB77C\uBBF8\uD130\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4. Esc \uD0A4\uB85C \uAC80\uC0C9\uC744 \uC9C0\uC6B8 \uC218 \uC788\uC2B5\uB2C8\uB2E4.", "No properties match '{0}'. Press Esc to clear the search.")
+            },
+            {
+                "PropertyGrid.Type.ContourProperty.EPSILON.DisplayName",
+                new DefaultCatalogMigration("\uADFC\uC0AC \uD5C8\uC6A9 \uC624\uCC28", "Approximation epsilon")
+            },
+            {
+                "PropertyGrid.Property.COARSE_ANGLE_TOP_K.DisplayName",
+                new DefaultCatalogMigration("1\uCC28 \uD6C4\uBCF4 \uAC01\uB3C4 \uC218", "Coarse angle candidates")
+            },
+            {
+                "PropertyGrid.Property.PYRAMID_POSITION_MIN_SCORE.DisplayName",
+                new DefaultCatalogMigration("\uC704\uCE58 \uD6C4\uBCF4 \uCD5C\uC18C \uC810\uC218", "Minimum position candidate score")
+            },
+            {
+                "PropertyGrid.Property.ALLOW_GLOBAL_POLARITY_REVERSAL.DisplayName",
+                new DefaultCatalogMigration("\uC804\uCCB4 \uADF9\uC131 \uBC18\uC804 \uD5C8\uC6A9", "Allow global polarity reversal")
+            },
+            {
+                "PropertyGrid.Type.EdgeBasedMatchingProperty.AUTO_MPOINT_MIN_REPRESENTATIVE_IMAGES.DisplayName",
+                new DefaultCatalogMigration("\uCD5C\uC18C \uB300\uD45C \uC774\uBBF8\uC9C0 \uC218", "Min representative images")
+            },
+            {
+                "PropertyGrid.Type.EdgeBasedMatchingProperty.AUTO_MPOINT_MIN_REPRESENTATIVE_SUCCESS_RATE.DisplayName",
+                new DefaultCatalogMigration("\uCD5C\uC18C \uB300\uD45C \uC131\uACF5\uB960", "Min representative success")
+            },
+            {
+                "PropertyGrid.Property.CONTOUR_APPROXIMATION_MODE.DisplayName",
+                new DefaultCatalogMigration("\uC724\uACFD\uC810 \uADFC\uC0AC \uBC29\uC2DD", "Contour approximation mode")
+            },
+            {
+                "PropertyGrid.Property.MIN_GRADIENT_MAGNITUDE.DisplayName",
+                new DefaultCatalogMigration("\uCD5C\uC18C \uAE30\uC6B8\uAE30 \uD06C\uAE30", "Minimum gradient magnitude")
+            },
+            {
+                "PropertyGrid.Property.HYBRID_VERIFY_TOP_N.DisplayName",
+                new DefaultCatalogMigration("\uD558\uC774\uBE0C\uB9AC\uB4DC \uAC80\uC99D \uD6C4\uBCF4 \uC218", "Hybrid verification candidates")
+            },
+            {
+                "PropertyGrid.Property.HYBRID_VERIFY_IMAGE_WEIGHT.DisplayName",
+                new DefaultCatalogMigration("\uC601\uC0C1 \uC720\uC0AC\uB3C4 \uAC00\uC911\uCE58", "Image similarity weight")
+            },
+            {
+                "PropertyGrid.Property.MinimumValidPixelRatio.DisplayName",
+                new DefaultCatalogMigration("\uCD5C\uC18C \uC720\uD6A8 \uD53D\uC140 \uBE44\uC728", "Minimum valid pixel ratio")
+            },
+            {
+                "ToolView.NoOutputImageDetail",
+                new DefaultCatalogMigration(
+                    "\uBBF8\uB9AC\uBCF4\uAE30\uB97C \uC2E4\uD589\uD558\uBA74 \uACB0\uACFC \uC774\uBBF8\uC9C0\uAC00 \uD45C\uC2DC\uB429\uB2C8\uB2E4.",
+                    "Run Preview to display a result image.")
+            },
+            {
+                "PropertyGrid.Property.USE_ADAPTIVE_THRESHOLD.DisplayName",
+                new DefaultCatalogMigration(
+                    "\uC801\uC751\uD615 \uC774\uC9C4\uD654 \uC0AC\uC6A9",
+                    "Use adaptive threshold")
+            },
+            {
+                "PropertyGrid.Type.ContourProperty.USE_APPROXPOLYDP.DisplayName",
+                new DefaultCatalogMigration("\uB2E4\uAC01\uD615 \uCD94\uAC00 \uADFC\uC0AC", "Additional polygon approximation")
+            },
+            {
+                "PropertyGrid.Type.ContourProperty.ApproximationModes.DisplayName",
+                new DefaultCatalogMigration("\uC724\uACFD\uC810 \uADFC\uC0AC \uBC29\uC2DD", "Contour approximation mode")
+            },
+            {
+                "PropertyGrid.Property.USE_COARSE_TO_FINE_ANGLE_SEARCH.DisplayName",
+                new DefaultCatalogMigration("\uB2E8\uACC4\uC801 \uAC01\uB3C4 \uD0D0\uC0C9", "Coarse-to-fine angle search")
+            },
+            {
+                "PropertyGrid.Property.USE_PYRAMID_POSITION_PROPOSAL.DisplayName",
+                new DefaultCatalogMigration("\uD53C\uB77C\uBBF8\uB4DC \uC704\uCE58 \uD6C4\uBCF4 \uC0AC\uC6A9", "Use pyramid position proposals")
+            },
+            {
+                "PropertyGrid.Property.ShowAdvancedSettings.DisplayName",
+                new DefaultCatalogMigration("\uACE0\uAE09 \uC124\uC815 \uD45C\uC2DC", "Show advanced settings")
+            },
+            {
+                "PropertyGrid.Property.PATTERN_PATH.DisplayName",
+                new DefaultCatalogMigration("\uD328\uD134 \uACBD\uB85C", "Pattern path")
+            },
+            {
+                "PropertyGrid.Property.USE_CANNY.DisplayName",
+                new DefaultCatalogMigration("Canny \uC0AC\uC6A9", "Use canny")
+            },
+            {
+                "VisionTool.Line.SettingLabel",
+                new DefaultCatalogMigration("\uB77C\uC778", "Setting")
+            },
+            {
                 "PipelineReview.Validation",
                 new DefaultCatalogMigration(
                     "\uAC80\uC99D",
@@ -76,19 +184,22 @@ namespace OpenVisionLab
                 "PropertyGrid.Property.MinimumSourceTriangleArea.DisplayName",
                 new DefaultCatalogMigration(
                     "\uCD5C\uC18C \uC18C\uC2A4 \uC0BC\uAC01\uD615 \uBA74\uC801",
-                    "Minimum source triangle area")
+                    "Minimum source triangle area",
+                    ("\uC18C\uC2A4 \uC0BC\uAC01\uD615 \uCD5C\uC18C\uAC12", "Source triangle minimum"))
             },
             {
                 "PropertyGrid.Property.MinimumDestinationTriangleArea.DisplayName",
                 new DefaultCatalogMigration(
                     "\uCD5C\uC18C \uBAA9\uD45C \uC0BC\uAC01\uD615 \uBA74\uC801",
-                    "Minimum destination triangle area")
+                    "Minimum destination triangle area",
+                    ("\uBAA9\uD45C \uC0BC\uAC01\uD615 \uCD5C\uC18C\uAC12", "Target triangle minimum"))
             },
             {
                 "PropertyGrid.Property.USE_AVERAGE_FILTER.DisplayName",
                 new DefaultCatalogMigration(
                     "\uD3C9\uADE0 \uD544\uD130 \uC0AC\uC6A9",
-                    "Use average filter")
+                    "Use average filter",
+                    ("\uD638\uD658(\uBBF8\uC801\uC6A9) \u00B7 \uD3C9\uADE0 \uD544\uD130", "Compatibility (inactive) \u00B7 Average filter"))
             },
             {
                 "PropertyGrid.Property.AVERAGE_FILTER_TYPE.DisplayName",
@@ -100,13 +211,15 @@ namespace OpenVisionLab
                 "PropertyGrid.Property.SHOW_VERTICAL_LINE.DisplayName",
                 new DefaultCatalogMigration(
                     "\uC2A4\uCE94 \uB77C\uC778 \uD45C\uC2DC",
-                    "Show scan line")
+                    "Show scan line",
+                    ("\uB808\uAC70\uC2DC \uD45C\uC2DC \u00B7 \uC2A4\uCE94 \uB77C\uC778", "Legacy draw \u00B7 Scan line"))
             },
             {
                 "PropertyGrid.Property.SHOW_EDGE.DisplayName",
                 new DefaultCatalogMigration(
                     "\uC5E3\uC9C0 \uD45C\uC2DC",
-                    "Show edge")
+                    "Show edge",
+                    ("\uB808\uAC70\uC2DC \uD45C\uC2DC \u00B7 \uC5E3\uC9C0", "Legacy draw \u00B7 Edge"))
             },
             {
                 "PropertyGrid.Property.SHOW_CONTOUR.DisplayName",
@@ -450,6 +563,180 @@ namespace OpenVisionLab
                 new DefaultCatalogMigration(
                     "\uD30C\uC774\uD504\uB77C\uC778 \uCD94\uAC00",
                     "Add Pipeline")
+            },
+            {
+                "VisionMenu.Threshold",
+                new DefaultCatalogMigration(
+                    "\uc2a4\ub808\uc2dc\ud640\ub4dc",
+                    "Threshold")
+            },
+            {
+                "VisionMenu.Blob",
+                new DefaultCatalogMigration(
+                    "\ube14\ub78d",
+                    "Blob")
+            },
+            {
+                "VisionMenu.EdgeDetection",
+                new DefaultCatalogMigration(
+                    "\uc5e3\uc9c0 \uac80\ucd9c",
+                    "Edge Detection")
+            },
+            {
+                "VisionMenu.EdgeBasedMatching",
+                new DefaultCatalogMigration(
+                    "\uc5e3\uc9c0 \uae30\ubc18 \ub9e4\uce6d",
+                    "Edge Based Matching")
+            },
+            {
+                "VisionMenu.Matching",
+                new DefaultCatalogMigration(
+                    "\ub9e4\uce6d",
+                    "Matching")
+            },
+            {
+                "VisionMenu.FeatureMatching",
+                new DefaultCatalogMigration(
+                    "\ud2b9\uc9d5 \ub9e4\uce6d",
+                    "Feature Matching")
+            },
+            {
+                "VisionMenu.AffineTransform",
+                new DefaultCatalogMigration(
+                    "\uc5b4\ud30c\uc778 \ubcc0\ud658",
+                    "Affine Transform")
+            },
+            {
+                "VisionMenu.Arithmetic",
+                new DefaultCatalogMigration(
+                    "\uc0b0\uc220 \uc5f0\uc0b0",
+                    "Arithmetic")
+            },
+            {
+                "VisionMenu.RotateAndScale",
+                new DefaultCatalogMigration(
+                    "\ud68c\uc804 / \uc2a4\ucf00\uc77c",
+                    "Rotate / Scale")
+            },
+            {
+                "VisionMenu.Line",
+                new DefaultCatalogMigration(
+                    "\ub77c\uc778",
+                    "Line")
+            },
+            {
+                "VisionMenu.Mean",
+                new DefaultCatalogMigration(
+                    "\ud3c9\uade0",
+                    "Mean")
+            },
+            {
+                "VisionMenu.Histogram",
+                new DefaultCatalogMigration(
+                    "\ud788\uc2a4\ud1a0\uadf8\ub7a8",
+                    "Histogram")
+            },
+            {
+                "VisionMenu.HSV",
+                new DefaultCatalogMigration(
+                    "HSV",
+                    "HSV")
+            },
+            {
+                "PropertyGrid.Property.PIXELPERMM.DisplayName",
+                new DefaultCatalogMigration(
+                    "Pixel / mm",
+                    "Pixel / mm")
+            },
+            {
+                "PropertyGrid.Property.THRESHOLD.DisplayName",
+                new DefaultCatalogMigration(
+                    "\uae30\uc900\uac12",
+                    "Threshold")
+            },
+            {
+                "PropertyGrid.Property.CannyThresholdLow.DisplayName",
+                new DefaultCatalogMigration(
+                    "Low \uae30\uc900\uac12",
+                    "Low threshold")
+            },
+            {
+                "PropertyGrid.Property.CannyThresholdHigh.DisplayName",
+                new DefaultCatalogMigration(
+                    "High \uae30\uc900\uac12",
+                    "High threshold")
+            },
+            {
+                "PropertyGrid.Property.NUM_MATCH.DisplayName",
+                new DefaultCatalogMigration(
+                    "\ub9e4\uce6d \uac1c\uc218",
+                    "Match count")
+            },
+            {
+                "PropertyGrid.Property.AUTO_PREVIEW.DisplayName",
+                new DefaultCatalogMigration(
+                    "\uc790\ub3d9 \ubbf8\ub9ac\ubcf4\uae30",
+                    "Auto preview")
+            },
+            {
+                "PropertyGrid.Property.EdgeType.DisplayName",
+                new DefaultCatalogMigration(
+                    "\uc5e3\uc9c0 \ud0c0\uc785",
+                    "Edge type")
+            },
+            {
+                "PropertyGrid.Property.Weight.DisplayName",
+                new DefaultCatalogMigration(
+                    "\uac00\uc911\uce58",
+                    "Weight")
+            },
+            {
+                "PropertyGrid.Property.CANNY_HIGH.DisplayName",
+                new DefaultCatalogMigration(
+                    "Canny High",
+                    "Canny high")
+            },
+            {
+                "Threshold.BlockSize",
+                new DefaultCatalogMigration(
+                    "Block size",
+                    "Block size")
+            },
+            {
+                "Threshold.Weight",
+                new DefaultCatalogMigration(
+                    "Weight",
+                    "Weight")
+            },
+            {
+                "PropertyGrid.Type.ThresholdToolProperty.Threshold.DisplayName",
+                new DefaultCatalogMigration(
+                    "\uae30\uc900 \ubc1d\uae30",
+                    "Threshold value")
+            },
+            {
+                "PropertyGrid.Type.ThresholdToolProperty.BlockSize.DisplayName",
+                new DefaultCatalogMigration(
+                    "\ub85c\uceec \ube14\ub85d \ud06c\uae30",
+                    "Local block size")
+            },
+            {
+                "PropertyGrid.Type.ThresholdToolProperty.Weight.DisplayName",
+                new DefaultCatalogMigration(
+                    "\ub85c\uceec \ubcf4\uc815\uac12",
+                    "Local correction")
+            },
+            {
+                "PropertyGrid.Category.Blob_Parameter",
+                new DefaultCatalogMigration(
+                    "\ube14\ub78d",
+                    "Blob")
+            },
+            {
+                "PropertyGrid.Category.Edge",
+                new DefaultCatalogMigration(
+                    "\uc5e3\uc9c0",
+                    "Edge")
             }
         };
         private static bool loaded;
@@ -589,6 +876,14 @@ namespace OpenVisionLab
             }
         }
 
+        public static IReadOnlyList<OpenVisionLocalizationEntry> GetDefaultEntries(string keyPrefix)
+        {
+            return ParseCatalogText(ReadEmbeddedCatalog()).Values
+                .Where(entry => entry.Key.StartsWith(keyPrefix, StringComparison.Ordinal))
+                .OrderBy(entry => entry.Key, StringComparer.Ordinal)
+                .ToList();
+        }
+
         public static void SaveEntries(IEnumerable<OpenVisionLocalizationEntry> entries)
         {
             if (entries == null)
@@ -673,8 +968,7 @@ namespace OpenVisionLab
                 return false;
             }
 
-            if (!string.Equals(currentEntry.Korean, migration.OldKorean, StringComparison.Ordinal)
-                || !string.Equals(currentEntry.English, migration.OldEnglish, StringComparison.Ordinal))
+            if (!migration.IsDefaultPair(currentEntry.Korean, currentEntry.English))
             {
                 return false;
             }
@@ -907,14 +1201,21 @@ namespace OpenVisionLab
 
     internal sealed class DefaultCatalogMigration
     {
-        public DefaultCatalogMigration(string oldKorean, string oldEnglish)
+        private readonly (string Korean, string English)[] additionalDefaults;
+
+        public DefaultCatalogMigration(string oldKorean, string oldEnglish, params (string Korean, string English)[] additionalDefaults)
         {
             OldKorean = oldKorean ?? string.Empty;
             OldEnglish = oldEnglish ?? string.Empty;
+            this.additionalDefaults = additionalDefaults ?? Array.Empty<(string Korean, string English)>();
         }
 
         public string OldKorean { get; }
 
         public string OldEnglish { get; }
+
+        public bool IsDefaultPair(string korean, string english) =>
+            string.Equals(korean, OldKorean, StringComparison.Ordinal) && string.Equals(english, OldEnglish, StringComparison.Ordinal)
+                || additionalDefaults.Any(pair => string.Equals(korean, pair.Korean, StringComparison.Ordinal) && string.Equals(english, pair.English, StringComparison.Ordinal));
     }
 }

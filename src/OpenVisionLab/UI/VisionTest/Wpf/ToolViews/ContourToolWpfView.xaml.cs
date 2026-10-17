@@ -57,9 +57,14 @@ namespace OpenVisionLab
 
         public void SetResultReview(IEnumerable<ContourResult> results)
         {
+            SetResultReview(results, CurrentProperty);
+        }
+
+        internal void SetResultReview(IEnumerable<ContourResult> results, ContourProperty executedProperty)
+        {
             toolController.ShowAreaResultReview(
                 verificationGuidePresenter,
-                CurrentProperty,
+                executedProperty,
                 "Contour",
                 VisionToolVerificationText.T("VisionTool.Review.NoContour", "no contour"),
                 results,

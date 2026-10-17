@@ -33,6 +33,8 @@ namespace OpenVisionLab
                 return;
             }
 
+            Action<string> editAction = PropertyGridEditorFactory.GetEditActionCallback(ownerElement);
+            using IDisposable imageEditScope = PropertyGridEditorFactory.BeginImageEditWriteScope(ownerElement);
             string inputLayer = resolveInputLayer();
             Bitmap source = displayManager.GetLayerImage(inputLayer);
             if (source == null)
@@ -41,22 +43,31 @@ namespace OpenVisionLab
                 return;
             }
 
-            lineView.EnsureDefaultRoi(source.Width, source.Height);
+            string selectedLine = lineView.SelectedLineName;
             LineGaugeProperty selected = lineView.CreateProperty();
-            Rectangle initialRoi = new Rectangle(
-                selected.CvROI.X,
-                selected.CvROI.Y,
-                selected.CvROI.Width,
-                selected.CvROI.Height);
+            Rectangle initialRoi = selected.CvROI.Width > 0 && selected.CvROI.Height > 0
+                ? new Rectangle(
+                    selected.CvROI.X,
+                    selected.CvROI.Y,
+                    selected.CvROI.Width,
+                    selected.CvROI.Height)
+                : new Rectangle(0, 0, source.Width, source.Height);
 
-            using RoiEditorWindow editor = new RoiEditorWindow(source, initialRoi, "ROI");
-            editor.Owner = Window.GetWindow(ownerElement);
-            if (((IPropertyGridImageEditView)editor).ShowDialog())
+            try
             {
-                // Keep ROI editing scoped to the selected line; layer routing stays owned by the document.
-                lineView.ApplySelectedLineRoi(editor.SelectedRegion);
-                setStatus("ROI updated / " + lineView.SelectedLineName);
+                using RoiEditorWindow editor = new RoiEditorWindow(source, initialRoi, "ROI");
+                editor.Owner = Window.GetWindow(ownerElement);
+                editAction?.Invoke("Workbench.Action.RoiEditing");
+                if (PropertyGridEditorFactory.ShowImageEdit(editor, ownerElement) && lineView.SelectedLineName == selectedLine)
+                {
+                    // Keep ROI editing scoped to the selected line; layer routing stays owned by the document.
+                    lineView.ApplySelectedLineRoi(editor.SelectedRegion);
+                    setStatus("ROI updated / " + lineView.SelectedLineName);
+                    editAction?.Invoke("Workbench.Action.RoiApplied");
+                }
+                else { editAction?.Invoke("Workbench.Action.RoiEditCanceled"); }
             }
+            catch { editAction?.Invoke("Workbench.Status.Error"); throw; }
         }
     }
 }

@@ -1,12 +1,14 @@
 using OpenVisionLab.Core;
 using System;
+using System.Linq;
 using System.Reflection;
 
 namespace OpenVisionLab
 {
     public static class AppVersion
     {
-        public static string VERSION { get; set; } = "2.2.0-dev.5";
+        public static string VERSION { get; set; } = typeof(AppVersion).Assembly.GetCustomAttributes<AssemblyMetadataAttribute>()
+            .Single(attribute => attribute.Key == "OpenVisionApplicationVersion").Value;
         public static string DATETIME_UPDATED { get; set; } = "2026/06/08 /*18:00*/";
         public static string MANAGER { get; set; } = "NOAH";
     }

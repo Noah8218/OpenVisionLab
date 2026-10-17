@@ -70,6 +70,7 @@
                          BorderThickness="0"
                          Background="Transparent"
                          DisplayMemberPath="."
+                         ItemContainerStyle="{StaticResource LearnTopicItemStyle}"
                          SelectedIndex="2"
                          SelectionChanged="TopicList_SelectionChanged">
                 </ListBox>
@@ -127,17 +128,32 @@
                                TextWrapping="Wrap"
                                Text="실습: 샘플에서 입력 이미지와 결과 지표를 확인한 뒤 관련 Tool View에서 같은 파라미터를 찾아보세요." />
                     <Expander x:Name="practiceWorkflowExpander"
+                              Background="{DynamicResource OpenVision.Workbench.RaisedBrush}"
+                              Foreground="{DynamicResource OpenVision.Workbench.TextBrush}"
+                              BorderBrush="{DynamicResource OpenVision.Workbench.FieldBorderBrush}"
                               Margin="0,8,0,0"
                               Header="실습 순서"
                               FontWeight="SemiBold"
                               IsExpanded="False"
                               AutomationProperties.AutomationId="OpenVisionLearnPracticeWorkflowPanel">
+                        <Expander.Resources>
+                            <SolidColorBrush x:Key="ExpanderContentBackground" Color="{DynamicResource OpenVision.Workbench.PanelAltBrush.Color}" />
+                            <SolidColorBrush x:Key="ExpanderHeaderBorderPointerOverBrush" Color="{DynamicResource OpenVision.Workbench.AccentBrush.Color}" />
+                            <SolidColorBrush x:Key="ExpanderHeaderDisabledForeground" Color="{DynamicResource OpenVision.Workbench.MutedTextBrush.Color}" />
+                            <SolidColorBrush x:Key="ExpanderHeaderDisabledBorderBrush" Color="{DynamicResource OpenVision.Workbench.FieldBorderBrush.Color}" />
+                            <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}" Color="{DynamicResource OpenVision.Workbench.RaisedBrush.Color}" />
+                            <SolidColorBrush x:Key="{x:Static SystemColors.ControlLightBrushKey}" Color="{DynamicResource OpenVision.Workbench.RaisedBrush.Color}" />
+                            <SolidColorBrush x:Key="{x:Static SystemColors.ControlDarkBrushKey}" Color="{DynamicResource OpenVision.Workbench.FieldBorderBrush.Color}" />
+                            <SolidColorBrush x:Key="{x:Static SystemColors.ControlTextBrushKey}" Color="{DynamicResource OpenVision.Workbench.TextBrush.Color}" />
+                            <SolidColorBrush x:Key="{x:Static SystemColors.GrayTextBrushKey}" Color="{DynamicResource OpenVision.Workbench.MutedTextBrush.Color}" />
+                        </Expander.Resources>
+
                         <StackPanel Margin="0,4,0,0">
-                            <TextBlock Style="{StaticResource LearnMutedTextStyle}"
+                            <TextBlock Style="{StaticResource LearnMutedTextStyle}" Foreground="{DynamicResource OpenVision.Workbench.SecondaryTextBrush}"
                                        TextWrapping="Wrap"
                                        Text="실습 샘플 열기 → Good/Bad 쌍 선택 → 관련 도구 열기 → Preview 또는 Pipeline Review 실행 → 오버레이와 지표 비교 → 레시피 저장" />
                             <TextBlock Margin="0,2,0,0"
-                                       Style="{StaticResource LearnMutedTextStyle}"
+                                       Style="{StaticResource LearnMutedTextStyle}" Foreground="{DynamicResource OpenVision.Workbench.SecondaryTextBrush}"
                                        TextWrapping="Wrap"
                                        Text="결과를 판단할 때는 입력 이미지, 출력 이미지, 핵심 지표가 같은 검사 목적을 설명하는지 함께 확인하세요." />
                         </StackPanel>

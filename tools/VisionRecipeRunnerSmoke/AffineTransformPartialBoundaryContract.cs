@@ -93,10 +93,12 @@ internal static class AffineTransformPartialBoundaryContract
             results);
         Check(
             "Preview execution and overlay drawing remain outside the View Partial",
-            previewSource.Contains("ExecuteAffineTransformPreview(Mat source, AffineTransformToolWpfView view)", StringComparison.Ordinal)
+            previewSource.Contains("CaptureAffineTransformPreview(AffineTransformToolWpfView view)", StringComparison.Ordinal)
+                && previewSource.Contains("ExecuteAffineTransformPreview(Mat source, AffineTransformProperty property)", StringComparison.Ordinal)
                 && previewSource.Contains("new AffineTransformTool()", StringComparison.Ordinal)
                 && previewSource.Contains("OpenVisionNativeToolPreviewOverlayRenderer.CreateAffineTransformPreviewImage", StringComparison.Ordinal)
-                && previewSource.Contains("view.SetResultReview(result)", StringComparison.Ordinal)
+                && previewSource.Contains("view.SetResultReview(review)", StringComparison.Ordinal)
+                && factorySource.Contains("capturePreview: OpenVisionNativeToolPreviewExecutor.CaptureAffineTransformPreview", StringComparison.Ordinal)
                 && !viewSource.Contains("OpenVisionNativeToolPreviewExecutor", StringComparison.Ordinal),
             results);
         Check(

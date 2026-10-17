@@ -12,6 +12,7 @@ namespace OpenVisionLab.Logging.Controls.Converter
         {
             string levelName = value as string;
             LogLevel level = ParseLevel(levelName);
+            if (parameter is string expected && Enum.TryParse(expected, true, out LogLevel expectedLevel)) return level == expectedLevel;
             return GetBrush(level);
         }
 

@@ -18,6 +18,10 @@ namespace OpenVisionLab.Docking.Controls
 
     private static readonly Thickness DefaultPaneGuideMargin = new Thickness(22D);
 
+        public static readonly DependencyProperty IsPresetLayoutProperty = DependencyProperty.Register(nameof(IsPresetLayout), typeof(bool), typeof(OpenVisionLayerDockWorkspaceView), new PropertyMetadata(false));
+
+        public bool IsPresetLayout { get => (bool)GetValue(IsPresetLayoutProperty); set => SetValue(IsPresetLayoutProperty, value); }
+
         public static readonly DependencyProperty IsWorkspaceDropEnabledProperty =
             DependencyProperty.Register(
                 nameof(IsWorkspaceDropEnabled),

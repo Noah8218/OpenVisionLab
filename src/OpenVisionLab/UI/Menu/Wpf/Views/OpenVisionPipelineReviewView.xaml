@@ -24,6 +24,10 @@
             <SolidColorBrush x:Key="PipelineReview.OkBrush" Color="#0D7A55" />
             <SolidColorBrush x:Key="PipelineReview.DarkPreviewBrush" Color="#05090A" />
             <BooleanToVisibilityConverter x:Key="PipelineReview.BooleanToVisibilityConverter" />
+            <Style TargetType="Button" BasedOn="{StaticResource OpenVision.ControlButtonStyle}" />
+            <Style TargetType="ComboBox" BasedOn="{StaticResource OpenVision.ControlComboBoxStyle}" />
+            <Style TargetType="DataGrid" BasedOn="{StaticResource OpenVision.ResultGridStyle}" />
+
 
             <Style TargetType="TextBlock">
                 <Setter Property="Foreground" Value="{StaticResource PipelineReview.TextBrush}" />
@@ -100,7 +104,7 @@
                 </Style.Triggers>
             </Style>
 
-            <Style x:Key="ReviewGuideToggleStyle" TargetType="ToggleButton">
+            <Style x:Key="ReviewGuideToggleStyle" TargetType="ToggleButton" BasedOn="{StaticResource OpenVision.ControlToggleStyle}">
                 <Setter Property="Background" Value="{StaticResource PipelineReview.AccentSoftBrush}" />
                 <Setter Property="BorderBrush" Value="{StaticResource PipelineReview.LineBrush}" />
                 <Setter Property="BorderThickness" Value="1" />
@@ -108,44 +112,12 @@
                 <Setter Property="Height" Value="32" />
                 <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                 <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="ToggleButton">
-                            <Border x:Name="Chrome"
-                                    Background="{TemplateBinding Background}"
-                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                    BorderThickness="{TemplateBinding BorderThickness}">
-                                <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                                  VerticalAlignment="Center" />
-                            </Border>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="Chrome" Property="Background" Value="#CBE5E8" />
-                                    <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource PipelineReview.AccentBrush}" />
-                                </Trigger>
-                                <Trigger Property="IsPressed" Value="True">
-                                    <Setter TargetName="Chrome" Property="Background" Value="#B6DADF" />
-                                </Trigger>
-                                <Trigger Property="IsChecked" Value="True">
-                                    <Setter TargetName="Chrome" Property="Background" Value="#CBE5E8" />
-                                    <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource PipelineReview.AccentBrush}" />
-                                </Trigger>
-                                <Trigger Property="IsKeyboardFocused" Value="True">
-                                    <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource PipelineReview.AccentBrush}" />
-                                    <Setter TargetName="Chrome" Property="BorderThickness" Value="2" />
-                                </Trigger>
-                                <Trigger Property="IsEnabled" Value="False">
-                                    <Setter TargetName="Chrome" Property="Opacity" Value="0.55" />
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
             </Style>
 
             <Style x:Key="StepFlowToggleStyle"
                    TargetType="ToggleButton"
                    BasedOn="{StaticResource ReviewGuideToggleStyle}">
+                <Setter Property="MinHeight" Value="0" />
                 <Setter Property="Width" Value="26" />
                 <Setter Property="Height" Value="26" />
                 <Setter Property="Padding" Value="0" />
@@ -1186,12 +1158,12 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="4" />
-                                <RowDefinition Height="34" />
+                                <RowDefinition Height="Auto" />
                                 <RowDefinition Height="6" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="4" />
-                                <RowDefinition Height="36" />
+                                <RowDefinition Height="Auto" />
                                 <RowDefinition Height="6" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="*" />

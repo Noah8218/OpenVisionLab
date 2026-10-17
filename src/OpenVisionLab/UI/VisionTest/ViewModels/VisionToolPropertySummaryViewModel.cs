@@ -55,12 +55,12 @@ namespace OpenVisionLab.ViewModels
                     imageTemplate.Width,
                     imageTemplate.Height,
                     Path.GetFileName(path));
-                return new VisionToolTemplateStatus(text, true);
+                return new VisionToolTemplateStatus(text, true, path, imageTemplate.Width, imageTemplate.Height);
             }
 
             return new VisionToolTemplateStatus(
                 hasPath ? "Template file missing / " + path : "Template not selected",
-                false);
+                false, path);
         }
 
         public static void DisableImagePreprocessDefaults(OpenCvPropertyBase property, bool includeCanny)

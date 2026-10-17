@@ -23,8 +23,9 @@ namespace OpenVisionLab
                 defaultOutputLayer,
                 presenter,
                 createView,
-                (source, view) => ExecutePropertyTool(source, view, createProperty, createTool),
-                (view, inputLayer, outputLayer) => createStep(createProperty(view), inputLayer, outputLayer))
+                null,
+                (view, inputLayer, outputLayer) => createStep(createProperty(view), inputLayer, outputLayer),
+                view => CapturePropertyTool(view, createProperty, createTool))
         {
         }
 
@@ -34,13 +35,19 @@ namespace OpenVisionLab
             TPresenter presenter,
             Func<TPresenter, TView> createView,
             Func<Mat, TView, VisionToolResult> executePreview,
-            Func<TView, string, string, VisionPipelineStep> createStep)
+            Func<TView, string, string, VisionPipelineStep> createStep,
+            Func<TView, OpenVisionNativePreviewOperation> capturePreview = null)
         {
             ToolName = string.IsNullOrWhiteSpace(toolName) ? throw new ArgumentException("Tool name is required.", nameof(toolName)) : toolName;
             DefaultOutputLayer = string.IsNullOrWhiteSpace(defaultOutputLayer) ? ToolName + "_Preview" : defaultOutputLayer;
             Presenter = presenter ?? throw new ArgumentNullException(nameof(presenter));
             CreateView = createView ?? throw new ArgumentNullException(nameof(createView));
-            ExecutePreview = executePreview ?? throw new ArgumentNullException(nameof(executePreview));
+            if (executePreview == null && capturePreview == null)
+            {
+                throw new ArgumentNullException(nameof(executePreview));
+            }
+            ExecutePreview = executePreview;
+            CapturePreview = capturePreview;
             CreateStep = createStep ?? throw new ArgumentNullException(nameof(createStep));
         }
 
@@ -54,10 +61,11 @@ namespace OpenVisionLab
 
         public Func<Mat, TView, VisionToolResult> ExecutePreview { get; }
 
+        public Func<TView, OpenVisionNativePreviewOperation> CapturePreview { get; }
+
         public Func<TView, string, string, VisionPipelineStep> CreateStep { get; }
 
-        private static VisionToolResult ExecutePropertyTool(
-            Mat source,
+        private static OpenVisionNativePreviewOperation CapturePropertyTool(
             TView view,
             Func<TView, TProperty> createProperty,
             Func<TProperty, IVisionTool> createTool)
@@ -72,7 +80,13 @@ namespace OpenVisionLab
                 throw new ArgumentNullException(nameof(createTool));
             }
 
+            view.Dispatcher.VerifyAccess();
             TProperty property = createProperty(view);
+            return new OpenVisionNativePreviewOperation(source => ExecutePropertyTool(source, property, createTool));
+        }
+
+        private static VisionToolResult ExecutePropertyTool(Mat source, TProperty property, Func<TProperty, IVisionTool> createTool)
+        {
             IVisionTool tool = createTool(property);
             try
             {
@@ -106,7 +120,8 @@ namespace OpenVisionLab
                 descriptor.ToolName,
                 descriptor.DefaultOutputLayer,
                 descriptor.ExecutePreview,
-                descriptor.CreateStep);
+                descriptor.CreateStep,
+                capturePreview: descriptor.CapturePreview);
         }
     }
 }

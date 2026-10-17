@@ -208,6 +208,22 @@ namespace OpenVisionLab
             }
         }
 
+        internal static TProperty LoadExisting<TProperty>(string toolKey, TProperty defaultProperty, string recipeName = null)
+            where TProperty : OpenCvPropertyBase
+        {
+            recipeName ??= PropertyGridEditorFactory.GetRecipeName();
+            string path = RecipeWorkspaceService.GetVisionConfigPath(recipeName, toolKey);
+            if (SerializeHelper.TryLoadFromXmlFile(path, out TProperty loaded, out Exception error)) { return loaded; }
+            if (error != null)
+            {
+                lock (syncRoot)
+                {
+                    failedLoads[CreateKey(toolKey, recipeName)] = new OpenVisionNativeToolPropertyLoadFailure(toolKey, recipeName, error.Message, string.Empty);
+                }
+            }
+            return defaultProperty;
+        }
+
         public static bool TryGetLoadFailure(
             string toolKey,
             out OpenVisionNativeToolPropertyLoadFailure failure)
@@ -361,9 +377,9 @@ namespace OpenVisionLab
             }
         }
 
-        private static string CreateKey(string toolKey)
+        private static string CreateKey(string toolKey, string recipeName = null)
         {
-            string recipeName = PropertyGridEditorFactory.GetRecipeName();
+            recipeName = recipeName ?? PropertyGridEditorFactory.GetRecipeName();
             return (recipeName ?? string.Empty).Trim() + "|" + (toolKey ?? string.Empty).Trim();
         }
     }

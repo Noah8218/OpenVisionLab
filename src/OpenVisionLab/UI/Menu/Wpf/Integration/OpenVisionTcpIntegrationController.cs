@@ -54,14 +54,15 @@ namespace OpenVisionLab
         private string peerPortText;
         private string validationMessageText = string.Empty;
         private string keyStatusText = string.Empty;
-        private string sessionStatusText = string.Empty;
-        private string operationStatusText = string.Empty;
+        private Func<string> sessionStatusTextProvider = () => string.Empty;
+        private Func<string> operationStatusTextProvider = () => string.Empty;
         private string lastTransferText = string.Empty;
         private string acknowledgementStatusText = "-";
         private string resultStatusText = "-";
         private string resultOutcomeText = "-";
         private string resultRunIdText = "-";
         private string resultErrorText = "-";
+        private string selectedSourceImagePath = string.Empty;
         private OpenVisionTcpIntegrationTransactionRow selectedTransaction;
         private bool isConfigurationValid;
         private bool isKeyValid;
@@ -90,12 +91,12 @@ namespace OpenVisionLab
             OpenVisionTcpIntegrationSettings settings =
                 OpenVisionTcpIntegrationSettingsStore.Load(out string warning);
             ApplySettings(settings);
-            SessionStatusText = LocalText("중지됨", "Stopped");
-            OperationStatusText = string.IsNullOrWhiteSpace(warning)
+            SetSessionStatus(() => LocalText("중지됨", "Stopped"));
+            SetOperationStatus(() => string.IsNullOrWhiteSpace(warning)
                 ? LocalText(
                     "설정을 복원했습니다. 수신은 시작되지 않았습니다.",
                     "Settings restored. Listening was not started.")
-                : warning;
+                : warning);
             RefreshValidation();
         }
 
@@ -192,16 +193,12 @@ namespace OpenVisionLab
             private set => SetField(ref keyStatusText, value);
         }
 
-        public string SessionStatusText
-        {
-            get => sessionStatusText;
-            private set => SetField(ref sessionStatusText, value);
-        }
+        public string SessionStatusText => sessionStatusTextProvider();
 
         public string OperationStatusText
         {
-            get => operationStatusText;
-            private set => SetField(ref operationStatusText, value);
+            get => operationStatusTextProvider();
+            private set => SetOperationStatus(() => value);
         }
 
         public string LastTransferText
@@ -238,6 +235,14 @@ namespace OpenVisionLab
         {
             get => resultErrorText;
             private set => SetField(ref resultErrorText, value);
+        }
+
+        public string SourceImageTitleText => LocalText("원본 이미지 뷰어", "Source image viewer");
+
+        public string SelectedSourceImagePath
+        {
+            get => selectedSourceImagePath;
+            private set => SetField(ref selectedSourceImagePath, value ?? string.Empty);
         }
 
         public OpenVisionTcpIntegrationTransactionRow SelectedTransaction
@@ -367,23 +372,21 @@ namespace OpenVisionLab
 
         internal void ReportStopRequiredBeforeClose()
         {
-            OperationStatusText = LocalText(
+            SetOperationStatus(() => LocalText(
                 "수신 중에는 창을 닫을 수 없습니다. 먼저 '수신 중지'를 선택하십시오.",
-                "The window cannot close while listening. Select 'Stop listening' first.");
+                "The window cannot close while listening. Select 'Stop listening' first."));
         }
 
         internal Task StartAsync()
         {
-            string error = string.Empty;
+            Func<string> error = null;
             if (!CanStart || !TryValidateSettings(out ValidatedSettings settings, out error))
             {
-                OperationStatusText = string.IsNullOrWhiteSpace(error)
-                    ? LocalText("연결 설정과 공유키를 확인하십시오.", "Check the connection settings and shared key.")
-                    : error;
+                SetOperationStatus(error ?? (() => LocalText("연결 설정과 공유키를 확인하십시오.", "Check the connection settings and shared key.")));
                 return Task.CompletedTask;
             }
 
-            return RunOperationAsync(LocalText("수신 시작", "Start listening"), async cancellationToken =>
+            return RunOperationAsync(() => LocalText("수신 시작", "Start listening"), async cancellationToken =>
             {
                 byte[] key = ReadSharedKey();
                 TwoDIntegrationTcpExchange candidate = null;
@@ -399,13 +402,13 @@ namespace OpenVisionLab
                     exchange = candidate;
                     candidate = null;
                     IsListening = true;
-                    SessionStatusText = string.Format(
-                        LocalText("수신 중 · {0}:{1}", "Listening · {0}:{1}"),
-                        settings.ListenAddress,
-                        settings.ListenPort);
-                    OperationStatusText = LocalText(
+                    string listenEndpoint = string.Format("{0}:{1}", settings.ListenAddress, settings.ListenPort);
+                    SetSessionStatus(() => string.Format(
+                        LocalText("수신 중 · {0}", "Listening · {0}"),
+                        listenEndpoint));
+                    SetOperationStatus(() => LocalText(
                         "수신을 시작했습니다. 거래 수신만으로 ACK 또는 검사는 실행되지 않습니다.",
-                        "Listening started. Receiving a transaction does not create an ACK or run an inspection.");
+                        "Listening started. Receiving a transaction does not create an ACK or run an inspection."));
                     RefreshTransactionsCore(null);
                 }
                 finally
@@ -454,13 +457,13 @@ namespace OpenVisionLab
                 }
 
                 IsListening = false;
-                SessionStatusText = LocalText("중지됨", "Stopped");
-                OperationStatusText = LocalText("TCP 수신을 중지했습니다.", "TCP listening stopped.");
+                SetSessionStatus(() => LocalText("중지됨", "Stopped"));
+                SetOperationStatus(() => LocalText("TCP 수신을 중지했습니다.", "TCP listening stopped."));
             }
             catch (Exception exception)
             {
                 IsListening = false;
-                SessionStatusText = LocalText("중지 오류", "Stop error");
+                SetSessionStatus(() => LocalText("중지 오류", "Stop error"));
                 OperationStatusText = exception.GetBaseException().Message;
             }
             finally
@@ -471,7 +474,7 @@ namespace OpenVisionLab
         }
 
         internal Task PingAsync() => RunSessionOperationAsync(
-            "Ping",
+            () => "Ping",
             async (current, transaction, peer, cancellationToken) =>
             {
                 TcpIntegrationTransferReceipt receipt = await current.PingPeerAsync(peer, cancellationToken);
@@ -481,7 +484,7 @@ namespace OpenVisionLab
             requireSelection: false);
 
         internal Task PushAsync() => RunSessionOperationAsync(
-            "Push",
+            () => "Push",
             async (current, transaction, peer, cancellationToken) =>
             {
                 TcpIntegrationTransferReceipt receipt = await current.PushTransactionAsync(
@@ -489,12 +492,12 @@ namespace OpenVisionLab
                     transaction.TransactionId,
                     cancellationToken);
                 ApplyReceipt(receipt);
-                OperationStatusText = LocalText("거래 Push 완료", "Transaction push complete");
+                SetOperationStatus(() => LocalText("거래 Push 완료", "Transaction push complete"));
             },
             requireSelection: true);
 
         internal Task PullAsync() => RunSessionOperationAsync(
-            "Pull",
+            () => "Pull",
             async (current, transaction, peer, cancellationToken) =>
             {
                 TcpIntegrationTransferReceipt receipt = await current.PullTransactionAsync(
@@ -503,32 +506,36 @@ namespace OpenVisionLab
                     cancellationToken);
                 ApplyReceipt(receipt);
                 RefreshTransactionsCore(transaction.TransactionId);
-                OperationStatusText = LocalText("거래 Pull 완료", "Transaction pull complete");
+                SetOperationStatus(() => LocalText("거래 Pull 완료", "Transaction pull complete"));
             },
             requireSelection: true);
 
         internal Task AcknowledgeAsync() => RunSessionOperationAsync(
-            "ACK",
+            () => "ACK",
             (current, transaction, peer, cancellationToken) =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 current.AcknowledgeHandoff(transaction.TransactionId);
                 RefreshTransactionsCore(transaction.TransactionId);
-                OperationStatusText = LocalText("ACK Accepted를 생성했습니다.", "Created an Accepted ACK.");
+                SetOperationStatus(() => LocalText("ACK Accepted를 생성했습니다.", "Created an Accepted ACK."));
                 return Task.CompletedTask;
             },
             requireSelection: true);
 
-        internal Task RunInspectionAsync() => RunSessionOperationAsync(
-            LocalText("검사 실행", "Run inspection"),
+        internal Task RunInspectionAsync() => RunInspectionAsync(preInspectionDelayMilliseconds: 0);
+
+        internal Task RunInspectionAsync(int preInspectionDelayMilliseconds) => RunSessionOperationAsync(
+            () => LocalText("검사 실행", "Run inspection"),
             async (current, transaction, peer, cancellationToken) =>
             {
                 IntegrationResultV2 result = await current.RunAcceptedHandoffAsync(
                     transaction.TransactionId,
-                    cancellationToken: cancellationToken);
+                    stepTimeoutMilliseconds: 60000,
+                    preInspectionDelayMilliseconds,
+                    cancellationToken);
                 ApplyResult(result);
                 RefreshTransactionsCore(transaction.TransactionId);
-                OperationStatusText = LocalText("2D 검사와 결과 기록을 완료했습니다.", "2D inspection and result recording complete.");
+                SetOperationStatus(() => LocalText("2D 검사와 결과 기록을 완료했습니다.", "2D inspection and result recording complete."));
             },
             requireSelection: true);
 
@@ -542,7 +549,7 @@ namespace OpenVisionLab
             try
             {
                 RefreshTransactionsCore(SelectedTransaction?.TransactionId);
-                OperationStatusText = LocalText("거래 목록을 새로 고쳤습니다.", "Transaction list refreshed.");
+                SetOperationStatus(() => LocalText("거래 목록을 새로 고쳤습니다.", "Transaction list refreshed."));
             }
             catch (Exception exception)
             {
@@ -651,7 +658,7 @@ namespace OpenVisionLab
         }
 
         private Task RunSessionOperationAsync(
-            string operationName,
+            Func<string> operationName,
             Func<TwoDIntegrationTcpExchange, OpenVisionTcpIntegrationTransactionRow, TcpIntegrationEndpoint, CancellationToken, Task> operation,
             bool requireSelection)
         {
@@ -662,9 +669,9 @@ namespace OpenVisionLab
 
             TwoDIntegrationTcpExchange current = exchange;
             OpenVisionTcpIntegrationTransactionRow transaction = SelectedTransaction;
-            if (!TryValidateSettings(out ValidatedSettings settings, out string error))
+            if (!TryValidateSettings(out ValidatedSettings settings, out Func<string> error))
             {
-                OperationStatusText = error;
+                SetOperationStatus(error);
                 return Task.CompletedTask;
             }
 
@@ -673,7 +680,7 @@ namespace OpenVisionLab
                 cancellationToken => operation(current, transaction, settings.Peer, cancellationToken));
         }
 
-        private async Task RunOperationAsync(string operationName, Func<CancellationToken, Task> operation)
+        private async Task RunOperationAsync(Func<string> operationName, Func<CancellationToken, Task> operation)
         {
             CancellationTokenSource source = new CancellationTokenSource();
             Task task = Task.CompletedTask;
@@ -689,7 +696,7 @@ namespace OpenVisionLab
 
                     activeOperationSource = source;
                     IsBusy = true;
-                    OperationStatusText = operationName + "...";
+                    SetOperationStatus(() => operationName() + "...");
                     started = true;
                     task = operation(source.Token) ?? Task.CompletedTask;
                     activeOperationTask = task;
@@ -699,7 +706,7 @@ namespace OpenVisionLab
             }
             catch (OperationCanceledException)
             {
-                OperationStatusText = LocalText("작업을 취소했습니다.", "Operation cancelled.");
+                SetOperationStatus(() => LocalText("작업을 취소했습니다.", "Operation cancelled."));
             }
             catch (Exception exception)
             {
@@ -731,9 +738,9 @@ namespace OpenVisionLab
 
         private void SaveSettings()
         {
-            if (!TryValidateSettings(out ValidatedSettings settings, out string error))
+            if (!TryValidateSettings(out ValidatedSettings settings, out Func<string> error))
             {
-                OperationStatusText = error;
+                SetOperationStatus(error);
                 return;
             }
 
@@ -750,9 +757,9 @@ namespace OpenVisionLab
                 };
                 OpenVisionTcpIntegrationSettingsStore.Save(saved);
                 ApplySettings(saved);
-                OperationStatusText = LocalText(
+                SetOperationStatus(() => LocalText(
                     "설정을 저장했습니다. 공유키와 수신 상태는 저장하지 않았습니다.",
-                    "Settings saved. The shared key and listening state were not saved.");
+                    "Settings saved. The shared key and listening state were not saved."));
             }
             catch (Exception exception)
             {
@@ -770,9 +777,9 @@ namespace OpenVisionLab
                 Transactions.Clear();
                 SelectedTransaction = null;
                 RefreshValidation();
-                OperationStatusText = LocalText(
+                SetOperationStatus(() => LocalText(
                     "TCP 설정을 기본값으로 되돌렸습니다. 수신은 시작되지 않았습니다.",
-                    "TCP settings reset to defaults. Listening was not started.");
+                    "TCP settings reset to defaults. Listening was not started."));
             }
             catch (Exception exception)
             {
@@ -796,8 +803,8 @@ namespace OpenVisionLab
 
         private void RefreshValidation()
         {
-            isConfigurationValid = TryValidateSettings(out _, out string configurationError);
-            ValidationMessageText = configurationError;
+            isConfigurationValid = TryValidateSettings(out _, out Func<string> configurationError);
+            ValidationMessageText = configurationError();
             byte[] key = null;
             try
             {
@@ -825,17 +832,17 @@ namespace OpenVisionLab
             RefreshCommandState();
         }
 
-        private bool TryValidateSettings(out ValidatedSettings settings, out string error)
+        private bool TryValidateSettings(out ValidatedSettings settings, out Func<string> error)
         {
             settings = null;
-            error = string.Empty;
+            error = () => string.Empty;
             string root;
             try
             {
                 string candidate = (LocalExchangeRoot ?? string.Empty).Trim().Trim('"');
                 if (!Path.IsPathFullyQualified(candidate) || candidate.StartsWith("\\\\", StringComparison.Ordinal))
                 {
-                    error = LocalText("로컬 교환 Root는 UNC가 아닌 절대 로컬 경로여야 합니다.", "Local exchange root must be an absolute local path, not UNC.");
+                    error = () => LocalText("로컬 교환 Root는 UNC가 아닌 절대 로컬 경로여야 합니다.", "Local exchange root must be an absolute local path, not UNC.");
                     return false;
                 }
 
@@ -843,32 +850,33 @@ namespace OpenVisionLab
             }
             catch (Exception exception)
             {
-                error = exception.GetBaseException().Message;
+                string message = exception.GetBaseException().Message;
+                error = () => message;
                 return false;
             }
 
             if (!IPAddress.TryParse((ListenAddress ?? string.Empty).Trim(), out IPAddress ipAddress))
             {
-                error = LocalText("수신 IP 주소가 올바르지 않습니다.", "Listen IP address is invalid.");
+                error = () => LocalText("수신 IP 주소가 올바르지 않습니다.", "Listen IP address is invalid.");
                 return false;
             }
 
             if (!TryParsePort(ListenPortText, out int listenPort))
             {
-                error = LocalText("수신 Port는 1~65535여야 합니다.", "Listen port must be between 1 and 65535.");
+                error = () => LocalText("수신 Port는 1~65535여야 합니다.", "Listen port must be between 1 and 65535.");
                 return false;
             }
 
             string host = (PeerHost ?? string.Empty).Trim();
             if (string.IsNullOrWhiteSpace(host))
             {
-                error = LocalText("상대 Host가 필요합니다.", "Peer host is required.");
+                error = () => LocalText("상대 Host가 필요합니다.", "Peer host is required.");
                 return false;
             }
 
             if (!TryParsePort(PeerPortText, out int peerPort))
             {
-                error = LocalText("상대 Port는 1~65535여야 합니다.", "Peer port must be between 1 and 65535.");
+                error = () => LocalText("상대 Port는 1~65535여야 합니다.", "Peer port must be between 1 and 65535.");
                 return false;
             }
 
@@ -954,6 +962,7 @@ namespace OpenVisionLab
 
         private void RefreshSelectedTransactionDetails()
         {
+            SelectedSourceImagePath = string.Empty;
             selectedAcknowledgementAccepted = false;
             AcknowledgementStatusText = "-";
             ResultStatusText = "-";
@@ -967,6 +976,7 @@ namespace OpenVisionLab
 
             try
             {
+                SelectedSourceImagePath = ResolveSelectedSourceImagePath();
                 if (SelectedTransaction.HasAcknowledgement)
                 {
                     IntegrationAcknowledgementV2 acknowledgement =
@@ -984,6 +994,48 @@ namespace OpenVisionLab
             catch (Exception exception)
             {
                 ResultErrorText = exception.GetBaseException().Message;
+            }
+        }
+
+        private string ResolveSelectedSourceImagePath()
+        {
+            if (!SelectedTransaction.IsTwoDTarget || exchange == null)
+            {
+                return string.Empty;
+            }
+
+            try
+            {
+                IntegrationHandoffV2 handoff = exchange.ReadHandoff(SelectedTransaction.TransactionId);
+                IntegrationArtifactReference source = handoff.Context.Artifacts.SingleOrDefault(artifact =>
+                    string.Equals(artifact.Role, IntegrationArtifactRoles.InspectionSource, StringComparison.Ordinal));
+                if (source == null)
+                {
+                    return string.Empty;
+                }
+
+                string transactionRoot = Path.Combine(
+                    exchange.LocalExchangeRoot,
+                    IntegrationTransactionLayout.TransactionsDirectoryName,
+                    SelectedTransaction.TransactionId.ToString("D"));
+                string fullRoot = Path.GetFullPath(transactionRoot)
+                    .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                    + Path.DirectorySeparatorChar;
+                string fullPath = Path.GetFullPath(Path.Combine(
+                    transactionRoot,
+                    source.RelativePath.Replace('/', Path.DirectorySeparatorChar)));
+                return fullPath.StartsWith(fullRoot, StringComparison.OrdinalIgnoreCase)
+                    && File.Exists(fullPath)
+                    ? fullPath
+                    : string.Empty;
+            }
+            catch (Exception exception) when (exception is IOException
+                or UnauthorizedAccessException
+                or ArgumentException
+                or InvalidOperationException
+                or IntegrationContractException)
+            {
+                return string.Empty;
             }
         }
 
@@ -1029,9 +1081,9 @@ namespace OpenVisionLab
                     try
                     {
                         RefreshTransactionsCore(receipt.TransactionId);
-                        OperationStatusText = LocalText(
+                        SetOperationStatus(() => LocalText(
                             "TCP 요청을 수신했습니다. 검토 후 ACK와 검사를 명시적으로 실행하십시오.",
-                            "TCP request received. Review it, then explicitly ACK and run inspection.");
+                            "TCP request received. Review it, then explicitly ACK and run inspection."));
                     }
                     catch (Exception exception)
                     {
@@ -1101,10 +1153,18 @@ namespace OpenVisionLab
         {
             OnPropertyChanged(string.Empty);
             RefreshValidation();
-            if (!IsListening)
-            {
-                SessionStatusText = LocalText("중지됨", "Stopped");
-            }
+        }
+
+        private void SetOperationStatus(Func<string> textProvider)
+        {
+            operationStatusTextProvider = textProvider;
+            OnPropertyChanged(nameof(OperationStatusText));
+        }
+
+        private void SetSessionStatus(Func<string> textProvider)
+        {
+            sessionStatusTextProvider = textProvider;
+            OnPropertyChanged(nameof(SessionStatusText));
         }
 
         private static string LocalText(string korean, string english) =>

@@ -69,6 +69,13 @@ namespace OpenVisionLab
             previewScheduler.Cancel();
         }
 
+        public void ApplyPreset(VisionToolPreset<LineGaugeProperty> preset)
+        {
+            CancelAutoPreview();
+            try { if (interactionController.ApplyPreset(preset)) { UpdateInputRoiOverlay(); } }
+            finally { CancelAutoPreview(); }
+        }
+
         public void Dispose()
         {
             previewScheduler.Dispose();

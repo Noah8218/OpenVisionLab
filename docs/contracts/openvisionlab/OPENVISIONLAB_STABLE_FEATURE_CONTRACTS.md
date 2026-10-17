@@ -1,6 +1,6 @@
 # OpenVisionLab Stable Feature Contracts
 
-Last updated: 2026-07-29
+Last updated: 2026-10-08
 
 This document protects restored and verified behavior. Future LLM or developer work must read this before changing WPF shell, tool view, layer routing, viewer, or PropertyGrid code.
 
@@ -55,6 +55,16 @@ When a feature below is marked stable, do not refactor, simplify, replace, or re
 - Deleting a layer must also remove stale docked-layer documents for that layer and fall back to an existing layer, normally `Main`, without leaving blank white panes or dead tabs.
 - Renaming a layer must preserve the layer image and refresh host/docked titles. `Main` is the stable default layer name and must not be renamed through the operator-facing rename command.
 - Keep completed behavior covered by focused smoke tests. Run the smallest target that covers the changed path.
+- Workbench V2 presets reuse VisionToolPresetCatalog and its existing PropertyGrid/custom-editor values.
+  Docked and separated Workbench tools show Basic/Fast/Precise without an explanation line;
+  localization follows development spec Appendix C. Applying a preset cancels any pending
+  preview before and after changing values, preserves the input/output route and property
+  instance, and updates only the working copy. It must not run, create layers, or write recipe XML.
+  The current asynchronous execution disables preset editing; failure restores the controls.
+  Line commits pending editor input before applying catalog values and refreshing the grid.
+  Focused gates: wpf_workbench_tool_presets / _compact and the existing area/matching/line
+  preset targets. Parameter forms, order, editors and existing minimum-size guards remain protected.
+
 - Do not replace a PropertyGrid tool with hand-written controls unless a separate design explicitly says that tool is no longer PropertyGrid based.
 - Large-corpus recipe evidence must not equate execution success with semantic correctness. Preserve source/result hashes and current-run drawings, select the review queue deterministically, and stop per-image tuning according to `OPENVISIONLAB_SCALABLE_SKILL_VALIDATION_PROTOCOL.md`.
 - MainView image-ready guidance is display-only. Showing a next-action bar, quick tool buttons, or top status banner state must not auto-open a tool, run Preview, create an output layer, or change the selected input layer.
@@ -63,7 +73,7 @@ When a feature below is marked stable, do not refactor, simplify, replace, or re
 - Arithmetic second-input readiness must reuse `VisionPipelineArithmeticStep.RequiresInputLayerB` and the persisted `ArithmeticToolSettings`. When the current setting requires B and fewer than two non-placeholder image layers exist, the Tool rail may show `B 입력 필요`. This is an advisory setup state, not proof that the eventual A/B routes or image sizes are compatible, and settings/layer refresh must not execute a tool or mutate layer or routing state.
 - Tool rail search filters the existing tool/group visibility only. It may match canonical bilingual tool names, inspection intents, PropertyGrid terms, and result metrics, but typing or clearing a query must not open tools, run Preview/Run, create layers, change the visible workspace layer, or change input/output routing. Compact icon mode hides the search row and keeps every tool icon clickable.
 - A found Tool rail item may expose explicit Learn and public-sample shortcuts only when canonical existing destinations are available. Learn must reuse the Learn window and select the mapped topic. Samples must open the existing Sample Picker at the mapped Learn path; opening or cancelling the Picker must not load a sample, select/open the Tool View, run Preview/Run, create layers, or change workspace/input/output routing. Loading remains a separate explicit Picker confirmation.
-- A found Tool rail item may expose Guided Setup only for the five existing starter-intent contracts: Line -> pin gap/pitch, Blob -> count, Contour -> shape/count, Matching -> target presence, and Mean -> brightness. The shortcut must only open Recipe Manager, select the existing Guided Setup tab, and select the mapped intent. It must not create Starter XML, open the Tool View, run Preview/Run, create layers, or change workspace/input/output routing. Unsupported tools must not show a Guided Setup shortcut.
+- A found Tool rail item may expose Guided Setup only for existing starter-intent contracts: Line -> pin gap/pitch, Blob -> count, Contour -> shape/count, Matching -> target presence, FeatureMatching -> feature matching, EdgeBasedMatching -> edge matching, and Mean -> brightness. The shortcut must only open the Main Build inspection (Builder) section and select the existing Guided Setup tab and mapped intent. It must not create Starter XML, open the Tool View, run Preview/Run, create layers, or change workspace/input/output routing. Unsupported tools must not show a Guided Setup shortcut.
 - Do not label a generic Tool View as `ROI needed` merely because its property model exposes `USE_ROI`. Blob/Contour support full-image execution, Line supplies its full-image default on explicit Preview, and Matching-family tools have a template prerequisite. A fixture-consuming pipeline Step remains the proven required-ROI case and must fail closed through pipeline validation.
 - ROI meaning is explicit at the Pipeline boundary. `USE_ROI=false` is intentional full-image/unset state and ignores stale `CvROI` text. `USE_ROI=true` requires one valid in-image `CvROI` or a valid `CvROIS` list; malformed, empty, non-positive, negative-coordinate, overflow, and out-of-bounds entries are rejected rather than silently converted to unset or clipped. Definition syntax is rejected by `VisionPipelineValidator`, image bounds are rejected at execution, and save/reopen preserves the authored ROI text.
 - Recipe Manager review-bundle export is an explicit command separate from XML export. Schema v1 contains only `pipeline.xml` and `review-manifest.json`; the manifest records application version, validation, ToolTypes, Step routes, acceptance metrics, and referenced dependency/sample path status, size, and SHA-256. It must not copy referenced/private files, import a recipe, run Preview/Run, create layers, or change workspace/input/output routing. Any later asset-copy or import workflow must remain a separate explicit operator action with a review step.
@@ -74,8 +84,10 @@ When a feature below is marked stable, do not refactor, simplify, replace, or re
   `width × height × element-bytes` overflow before SDK/native execution. The
   existing Affine `32768` per-dimension limit remains authoritative. This
   boundary does not infer a product RAM cap, auto-downscale, cache eviction, or
-  parallel execution from measurement data; any operational memory budget needs
-  a separate product decision and contract. Direct Preview adapters must capture
+  parallel execution from measurement data. 사용자 결정(2026-10-15)에 따라 이번 제품 범위에
+  별도 RAM cap·설정·cap 전용 오류/복구 정책을 추가하지 않는다. 기존 산술/차원 guard와
+  이전 성공 결과 보존은 유지하며 무제한 할당이나 low-memory 복구를 보증하지 않는다.
+  Direct Preview adapters must capture
   View-backed properties on the View dispatcher before background native work;
   any WPF result-review update must return to that dispatcher.
 - Public repository material must preserve `LICENSE`, `NOTICE`, copyright text, and attribution to `최노아(Noah-Choi)`. Do not remove or obscure these notices in README, package metadata, or redistributed source copies.
@@ -129,7 +141,7 @@ When a feature below is marked stable, do not refactor, simplify, replace, or re
   leaves caller input ownership with the caller. Allocating `ToMat`/`ToBitmap`
   results are independent caller-owned outputs; disposed inputs and unsupported
   pixel formats fail closed before an output is returned. The focused 2D-028
-  contract and the PL-0006 regression contract are the evidence gate; this does
+  contract and focused regression checks are the evidence gate; this does
   not claim 16-bit normalization or actual WPF/runtime qualification.
 - The inspection sample-check path preserves source image depth with
   `ImreadModes.Unchanged` before constructing the legacy `Bitmap` adapter.
@@ -169,21 +181,11 @@ When a feature below is marked stable, do not refactor, simplify, replace, or re
 
 ### LLM Maintenance-Mode Boundary
 
-- Planned LLM feature expansion is frozen by P196. Existing LLM Assistant, Guided Setup, XML prompt/guide/catalog, validation, correction display, and explicit import behavior remain supported compatibility surfaces.
+- Existing LLM Assistant, Guided Setup, XML prompt/guide/catalog, validation, correction display, and explicit import behavior remain supported compatibility surfaces.
 - Do not add a provider, consumer-web automation, API credential dependency, prompt family, intent skill, or transcript campaign without an explicit user decision to reopen the track.
-- Maintenance changes require a concrete regression, unsafe XML acceptance/import behavior, data-loss risk, or compatibility break. Cosmetic or speculative LLM improvements are not current priorities.
-- LLM draft creation, paste, validation, diff/dependency review, and import must never run Preview/Run, create or select layers, change routing, or silently accept a recipe.
-- The workbench must remain fully operable without an LLM account, provider session, API key, transcript, or generated XML.
-- Historical incomplete LLM gates, including the missing natural Pin Phase 3 failure and frozen P169 Test replay, are deferred evidence rather than active blockers. Preserve them unchanged; do not manufacture a failure or execute reserved evidence early.
+- Maintenance changes require a concrete regression, unsafe XML acceptance/import behavior, data-loss risk, or compatibility break. Preserve them unchanged; do not manufacture a failure or execute reserved evidence early.
 - Reopening requires an explicit user decision after the equivalent non-LLM workflow and deterministic N-sample evidence exist.
-- The 2026-09-16 `2D-052` maintenance-mode review confirms the existing draft/
-  validation/review/diff/explicit-import boundary and its no-auto-Preview/Run,
-  layer, and routing rules. Import creates a new Pipeline rather than replacing
-  the active one. Atomic failed-persistence rollback and an LLM Import Undo
-  command are not part of this compatibility contract; adding them requires an
-  explicit reopen decision and a new focused transaction owner. See
-  `docs/reports/OPENVISIONLAB_2D_LLM_XML_BOUNDARY_20260916.md` and
-  `.proofline/issues/PL-0106.json` for the evidence and exact limits.
+- The 2026-09-16 `2D-052` maintenance-mode review confirms the existing draft/   validation/review/diff/explicit-import boundary and its no-auto-Preview/Run,   layer, and routing rules. Import creates a new Pipeline rather than replacing   the active one. Atomic failed-persistence rollback and an LLM Import Undo   command are not part of this compatibility contract; adding them requires an   explicit reopen decision and a new focused transaction owner. See    and    for the evidence and exact limits.
 
 ## Stable Contracts
 
@@ -262,49 +264,68 @@ Do not:
 Relevant smoke:
 - `wpf_property_grid_matching_combo`
 - `wpf_shell_host_blob_tool`
-  - Covers Blob PropertyGrid rows, no auto-preview from threshold/adaptive/masking visibility toggles, compact verification guide, result guidance, and docked inspector preservation through the alias target `wpf_shell_host_blob_tool_docked_verification`.
+
+- Covers Blob PropertyGrid rows, no auto-preview from threshold/adaptive/masking visibility toggles, compact verification guide, result guidance, and docked inspector preservation through the alias target `wpf_shell_host_blob_tool_docked_verification`.
 - `wpf_shell_host_blob_tool_docked_verification`
 - `wpf_shell_host_contour_tool`
-  - Covers Contour PropertyGrid rows, no auto-preview from visibility/display toggles, compact verification guide, result guidance, and docked inspector preservation through the alias target `wpf_shell_host_contour_tool_docked_verification`.
+
+- Covers Contour PropertyGrid rows, no auto-preview from visibility/display toggles, compact verification guide, result guidance, and docked inspector preservation through the alias target `wpf_shell_host_contour_tool_docked_verification`.
 - `wpf_shell_host_contour_tool_docked_verification`
 - `wpf_shell_host_line_measure_tool`
 - `wpf_shell_host_line_tool_docked_verification`
-  - Covers Line PropertyGrid rows, no auto-preview from Line visibility switches, compact summary-strip verification guidance, result guidance, and docked inspector preservation.
+
+- Covers Line PropertyGrid rows, no auto-preview from Line visibility switches, compact summary-strip verification guidance, result guidance, and docked inspector preservation.
 - `wpf_shell_host_line_pins_measure_tool`
-- Direct EXE: `bin\x64\Debug\OpenVisionLab.exe --smoke line-pins-measure --output .\.codex\smoke-output\actual-exe-line-pins-measure`
+- Direct EXE: `bin\x64\Debug\OpenVisionLab.exe --smoke line-pins-measure --output <isolated-output>\actual-exe-line-pins-measure`
 - `wpf_shell_host_line_intersection_tool`
 - `wpf_line_signal_profile`
-  - Covers four projection directions, current public Good/Bad same-parameter replay, intensity/signed response, first-stable runtime correspondence, exact source-image coordinates, distinct alternative, result drawing, provenance TSV, stale input clear, and no review-control Preview/layer/route side effects.
+
+- Covers four projection directions, current public Good/Bad same-parameter replay, intensity/signed response, first-stable runtime correspondence, exact source-image coordinates, distinct alternative, result drawing, provenance TSV, stale input clear, and no review-control Preview/layer/route side effects.
 - `cvr04_circle_residual_review`
-  - Covers unchanged frozen CircleGauge Good/Bad execution, all radial sample states and exact reject reasons, residual and selected intensity/signed-response series, source/result identity, row/plot/drawing two-way selection, and zero Run Review/layer/route side effects.
+
+- Covers unchanged frozen CircleGauge Good/Bad execution, all radial sample states and exact reject reasons, residual and selected intensity/signed-response series, source/result identity, row/plot/drawing two-way selection, and zero Run Review/layer/route side effects.
 - `cvr05_object_metric_distribution`
-  - Covers Blob Area/Width/Height and Contour Area distributions, exact existing range markers, accepted/rejected series, shared TSV provenance, row/plot/drawing selection, legacy unbounded maximum behavior, and zero Run Review requests.
+
+- Covers Blob Area/Width/Height and Contour Area distributions, exact existing range markers, accepted/rejected series, shared TSV provenance, row/plot/drawing selection, legacy unbounded maximum behavior, and zero Run Review requests.
 - `wpf_shell_host_workspace_sample_pipeline_review_metrics`
-  - Covers the actual public Blob Good current-Run Area distribution.
+
+- Covers the actual public Blob Good current-Run Area distribution.
 - `wpf_shell_host_workspace_sample_pipeline_review_blob_ng_metrics`
-  - Covers the actual public Blob Bad object rows, Area distribution, table/image selection, report persistence, and no Preview/layer/route side effects.
+
+- Covers the actual public Blob Bad object rows, Area distribution, table/image selection, report persistence, and no Preview/layer/route side effects.
 - `wpf_shell_host_workspace_sample_pipeline_review_bentpin_ng_metrics`
-  - Covers the actual public Contour Bad object rows, Area distribution, table/image selection, report persistence, and no Preview/layer/route side effects.
+
+- Covers the actual public Contour Bad object rows, Area distribution, table/image selection, report persistence, and no Preview/layer/route side effects.
 - `wpf_preprocess_output_preview_flow`
-  - Covers SimplePreprocess output routing, parameter-triggered preview behavior, Mean/HSV/Histogram result-review explanations, Histogram signal-evidence replacement, plot navigation, provenance-preserving TSV export, and no reset/export layer/route/run side effects.
+
+- Covers SimplePreprocess output routing, parameter-triggered preview behavior, Mean/HSV/Histogram result-review explanations, Histogram signal-evidence replacement, plot navigation, provenance-preserving TSV export, and no reset/export layer/route/run side effects.
 - `wpf_simple_preprocess_result_review`
-  - Covers the current-build Histogram Signal Inspector presentation, source/result series and SHA-256 provenance, stale-evidence blocking, and read-only plot/export behavior.
+
+- Covers the current-build Histogram Signal Inspector presentation, source/result series and SHA-256 provenance, stale-evidence blocking, and read-only plot/export behavior.
 - `wpf_shell_host_threshold_basic_tool`
-  - Covers Basic `T` marker presentation, release-to-existing-model synchronization, stale-evidence clear/replacement through the existing debounced Preview, full-image provenance, overlay navigation, TSV export, and unchanged layers/active layer/routes.
+
+- Covers Basic `T` marker presentation, release-to-existing-model synchronization, stale-evidence clear/replacement through the existing debounced Preview, full-image provenance, overlay navigation, TSV export, and unchanged layers/active layer/routes.
 - `wpf_shell_host_threshold_tool`
-  - Covers Range `Lower`/`Upper` marker synchronization, `Lower <= Upper`, Adaptive no-global-chart behavior, and preservation of the docked Threshold parameter controls.
+
+- Covers Range `Lower`/`Upper` marker synchronization, `Lower <= Upper`, Adaptive no-global-chart behavior, and preservation of the docked Threshold parameter controls.
 - `wpf_threshold_signal_good_bad_replay`
-  - Covers the unchanged public `T=130` Binary Pipeline identity, current Good `ResultCount=4`, expected-NG Bad `ResultCount=1`, full-image signal provenance, and separate 256-bin TSV evidence for both source images.
+
+- Covers the unchanged public `T=130` Binary Pipeline identity, current Good `ResultCount=4`, expected-NG Bad `ResultCount=1`, full-image signal provenance, and separate 256-bin TSV evidence for both source images.
 - `wpf_shell_host_matching_tool`
-  - Covers Matching `FIND_ANGLE_MAX` RangeEditor endpoint adjustment and transient clear/retype behavior for angle TextBoxes.
+
+- Covers Matching `FIND_ANGLE_MAX` RangeEditor endpoint adjustment and transient clear/retype behavior for angle TextBoxes.
 - `wpf_shell_host_matching_presets`
-  - Covers floating Matching-family Basic/Fast/Precise preset UI, docked `Parameters` header preset menu, exact PropertyGrid-backed model updates, generated-row visibility refresh, and no Preview/Run execution even when `AUTO_PREVIEW=true` was enabled before applying a preset.
+
+- Covers floating Matching-family Basic/Fast/Precise preset UI, docked `Parameters` header preset menu, exact PropertyGrid-backed model updates, generated-row visibility refresh, and no Preview/Run execution even when `AUTO_PREVIEW=true` was enabled before applying a preset.
 - `wpf_shell_host_area_tool_presets`
-  - Covers Blob and Contour Basic/Fast/Precise preset UI, docked preset menu behavior for Blob, exact PropertyGrid-backed model updates, generated-row visibility refresh, and no Preview/Run execution.
+
+- Covers Blob and Contour Basic/Fast/Precise preset UI, docked preset menu behavior for Blob, exact PropertyGrid-backed model updates, generated-row visibility refresh, and no Preview/Run execution.
 - `wpf_shell_host_line_presets`
-  - Covers Line Basic/Fast/Precise preset UI, selected Line A/B model isolation, generated-row visibility refresh, docked preset menu behavior, and no Preview/Run execution.
+
+- Covers Line Basic/Fast/Precise preset UI, selected Line A/B model isolation, generated-row visibility refresh, docked preset menu behavior, and no Preview/Run execution.
 - `wpf_shell_host_edge_based_matching_tool`
-  - Covers EdgeBasedMatching template-ready state, compact edge verification guide text, Canny/search/point criteria, Preview OK/NG result guidance, and Add Pipeline validation.
+
+- Covers EdgeBasedMatching template-ready state, compact edge verification guide text, Canny/search/point criteria, Preview OK/NG result guidance, and Add Pipeline validation.
 - `wpf_shell_host_feature_matching_tool`
 - `wpf_roi_editor`
 
@@ -348,7 +369,7 @@ Do not:
 #### Matching Tool Addendum
 
 Stable behavior:
-- Matching opens as a native WPF floating tool window and keeps the PropertyGrid-driven parameter editor. Do not replace the Matching property grid with a hand-coded parameter panel.
+- Matching opens in the right tool panel by default (V2 K1). The explicit Float action moves the same native Tool View to the existing floating window. Keep the PropertyGrid-driven parameter editor; do not replace it with a hand-coded parameter panel.
 - The template status row remains visible and must show whether a template is selected/ready. A valid template registration updates `PATTERN_PATH` and the status text without hiding the editor.
 - The template editor/registration window must open with the active input image visible, not a blank canvas. It must keep ROI/template selection handles interactive for position and size adjustment.
 - The template editor ROI supports rotation teaching. Clicking/dragging the rotation handle changes the ROI angle, and the pattern preview shows the exact zero-degree template that will be saved.
@@ -390,21 +411,11 @@ Do not:
 
 Relevant smoke:
 - `wpf_shell_host_matching_tool`
-  - Covers docked Matching result guidance through the alias target `wpf_shell_host_matching_tool_docked_verification`.
-  - Covers compact Matching verification guide text: verification flow, Preview OK/NG, pass criteria, and next action.
+
+- Covers docked Matching result guidance through the alias target `wpf_shell_host_matching_tool_docked_verification`.
+
+- Covers compact Matching verification guide text: verification flow, Preview OK/NG, pass criteria, and next action.
 - `wpf_template_editor_opengl`
-- `artifacts\ui_precheck_matching_template_image_fixed_20260626_final`
-- `artifacts\ui_precheck_matching_rotated_overlay_20260626`
-- `artifacts\ui_precheck_matching_tact_label_ui_20260626`
-- `artifacts\ui_precheck_matching_auto_preview_option_20260626`
-- `artifacts\ui_precheck_matching_angle_max_range_20260626_visual_hidden`
-- `artifacts\ui_precheck_matching_range_text_transient_20260626`
-- `artifacts\ui_precheck_matching_text_commit_20260626_rerun`
-- `artifacts\ui_precheck_matching_coarse_angle_20260626_diag`
-- `artifacts\ui_precheck_matching_rotated_template_cache_20260626_final`
-- `artifacts\matching_scale_pyramid_comparison_20260628`
-- `artifacts\actual_exe_matching_pyramid_scale_20260628`
-- `artifacts\ui_precheck_matching_pyramid_property_grid_20260628`
 
 #### Affine Transform v1 Addendum
 
@@ -443,7 +454,7 @@ Stable behavior:
   industrial-accuracy, unseen-robustness, or field-qualification evidence.
 - The frozen DLL identity is assembly `2.1.0.0`, file `2.8.0.0`, SHA-256
   `B128CA282C0CD02C36F5CCF0C78C69C6F4834C3376158E8667EEAA7DE494A08B`.
-- Missing `USE_DETECTED_SOURCE_POINTS` keeps the fixed numeric P218 behavior.
+- Missing `USE_DETECTED_SOURCE_POINTS` keeps the fixed numeric behavior.
   When the flag is true, `SOURCE_POINT_1_FEATURE` through
   `SOURCE_POINT_3_FEATURE` must name three distinct earlier accepted typed
   `Point` results in the same input coordinate layer and image size.
@@ -467,7 +478,6 @@ Relevant smoke:
 - `wpf_shell_host_affine_transform_tool`
 - `wpf_openvision_learn_geometry`
 - `wpf_shell_host_rotate_scale_tool`
-- `artifacts\p218_affine_transform_v1_20260723`
 
 ### 2. Layer Selection And Routing
 
@@ -488,11 +498,14 @@ Do not:
 Relevant smoke:
 - `wpf_layer_selection_all_native_tools`
 - `wpf_layer_selection_existing_output_write`
-  - Covers selecting an existing operator output layer, Preview writing into that layer, preserving `Main` as the input route, avoiding generated default output creation, and avoiding host active-layer side effects.
+
+- Covers selecting an existing operator output layer, Preview writing into that layer, preserving `Main` as the input route, avoiding generated default output creation, and avoiding host active-layer side effects.
 - `wpf_layer_selection_algorithm_existing_output_write`
-  - Covers Blob, Contour, Matching, EdgeBasedMatching, and FeatureMatching writing explicit Preview results into selected existing operator output layers, preserving `Main` as input, avoiding generated default `{Tool}_Preview` layers, and avoiding host active-layer side effects.
+
+- Covers Blob, Contour, Matching, EdgeBasedMatching, and FeatureMatching writing explicit Preview results into selected existing operator output layers, preserving `Main` as input, avoiding generated default `{Tool}_Preview` layers, and avoiding host active-layer side effects.
 - `wpf_layer_selection_preprocess_existing_output_write`
-  - Covers Filter, Morphology, EdgeDetection, RotateScale, HSV, Mean, and Histogram writing explicit Preview results into selected existing operator output layers, preserving `Main` as input, avoiding generated default `{Tool}_Preview` layers, and avoiding host active-layer side effects.
+
+- Covers Filter, Morphology, EdgeDetection, RotateScale, HSV, Mean, and Histogram writing explicit Preview results into selected existing operator output layers, preserving `Main` as input, avoiding generated default `{Tool}_Preview` layers, and avoiding host active-layer side effects.
 - `wpf_layer_selection_threshold_tool`
 - `wpf_layer_selection_arithmetic_tool`
 - `wpf_shell_host_blob_tool`
@@ -501,8 +514,12 @@ Relevant smoke:
 
 Stable behavior:
 - Starting the Shell with no loaded image shows the localized `이미지 없음` / image-load prompt in the main workspace.
-- The no-image main workspace prompt includes a beginner workflow for loading an image, selecting a tool, and checking Preview; it remains display-only except for explicit command buttons.
-- The no-image main workspace prompt points operators to the bottom Run Log, and the empty Run Log shows a compact waiting card instead of a bare placeholder line.
+- The no-image main workspace prompt follows the compact empty-state contract in Workbench V2 spec §6.5.2/§6.6. Image and sample entry points reuse the existing explicit commands; showing or restoring the prompt must not run Preview/Run or modify layers, routing or recipe settings.
+- Help/Learn, pipeline selection and the bottom Log tab retain their existing entry points outside the compact image prompt. The existing log control keeps its waiting card, levels, areas, filters, retention and lifetime contract.
+- The Shell bottom panel exposes `이미지` / `Images`, `결과` / `Results` and `로그` / `Log` tabs; its status-bar Log action opens the Log tab. Tab selection, collapse, layout restoration and reset must not execute Preview/Run, create/delete layers or change pipeline routing.
+- The log control stays attached for the Shell lifetime while tab visibility changes. A tab round trip preserves filter state and continues receiving events; final Shell unload releases the existing reader.
+- User layout preferences persist through the existing SYSTEM.xml owner. Missing, invalid or unsupported values use the responsive defaults with the existing status message; restoring them does not execute or rewrite unrelated recipe/tool settings.
+- `log_panel_contract_check`, `wpf_workbench_layout` and `wpf_workbench_layout_compact` protect K7 and the layout round trip. The remaining V2 contract changes keep their own implementation gates.
 - The no-image main workspace sample button must use a real command. When multiple runnable catalog samples exist, it opens a sample catalog picker that shows sample goal, tool flow, expected metrics, benchmark OK/NG reference state, Learn Mode guidance, recommended start, result interpretation, failure-cause summary, check guidance, NG fix guidance, image/pipeline paths, and Good/Bad pair context.
 - The sample catalog picker may expose task-oriented Learn paths such as Matching, Blob, Contour, Line, Mean, and Good/Bad. Selecting a Learn path only filters the catalog list and selected sample; it must not open a sample, run Preview/Run, open tools, create output layers, change routing, or rewrite recipe values.
 - Operator-facing sample catalogs and Recipe Manager sample selectors show only public-safe and product sample sources. Keep `LocalLegacy` loading available for old recipe/history compatibility, but do not expose Local Legacy as a new-user catalog source.
@@ -529,7 +546,7 @@ Stable behavior:
 - Pipeline `LineDistance` keeps raw edge-point intersections as the default. When both paired gauges carry the existing `USE_EXTEND_FIT_LINE=true`, distance samples are intersections against the two fitted edges; every reported endpoint must remain inside the source image and its configured gauge ROI. The runtime evidence must retain the measurement ROI, both fitted edges, and the final distance lines. `EXTEND_FIT_LINE_VALUE` continues to control the displayed fit-line extent; it is not a tolerance, calibration, or acceptance value.
 - Pipeline `LineDistance` drawing evidence must represent both configured gauge ROIs. Equal Line A/B ROIs retain one compact `Measurement ROI` overlay; distinct ROIs retain separately labelled `Line A ROI` and `Line B ROI` overlays. This drawing rule must not change edge detection, paired-distance values, acceptance, output routing, or explicit Preview/Run behavior.
 - Recipe Manager selected-Step PropertyGrid must preserve Line A/B identity. ROI/use-ROI, primary and vertical projection direction, polarity, and manual-angle fields are independently labelled and independently serialized. Applying an unchanged edit object must not collapse unrepresented per-line values to Line A; changing an explicitly shared compact field may continue to apply that field to both lines. Load/apply/save/reload must not trigger Preview/Run or change layer routing.
-- General `LineDistance` orientation/polarity teaching must use the actual projection-direction contract, not ROI rotation alone. Horizontal opposing edges use `X_LTOR/X_RTOL`; the exact 90-degree clockwise equivalent uses `Y_TTOB/Y_BTOT`, transformed A/B ROIs, and the corresponding scan-angle frame. Bright/dark inversion changes polarity but must retain the same physical boundary and distance distribution. P200 is the frozen public synthetic reference for this contract; it does not establish calibration or general industrial robustness.
+- General `LineDistance` orientation/polarity teaching must use the actual projection-direction contract, not ROI rotation alone. Horizontal opposing edges use `X_LTOR/X_RTOL`; the exact 90-degree clockwise equivalent uses `Y_TTOB/Y_BTOT`, transformed A/B ROIs, and the corresponding scan-angle frame. Bright/dark inversion changes polarity but must retain the same physical boundary and distance distribution. 해당 기능 is the frozen public synthetic reference for this contract; it does not establish calibration or general industrial robustness.
 - `PinArrayGap` measurement semantics must remain explicit. Missing `MeasurementMode` and `MeasurementMode=EdgeGap` measure adjacent empty clearance and publish `DistancePx*`; `MeasurementMode=CenterPitch` measures adjacent detected dark-pin centers and publishes `PitchCount` plus `PitchPxMin/Max/Avg/Range`. CenterPitch must not publish mm pitch without a separately verified calibration contract, and the frozen LLM Pin Guided Setup v1 must remain EdgeGap-only until explicitly reopened. Recipe Manager PropertyGrid load/apply/save must preserve mode, row ROI, detection values, unrepresented parameters, and zero Preview/Run side effects. Exact drawings must show the reviewed row ROI, detected pins, center points, and `P#` center-to-center lines.
 - The `Dark band thickness / Gap (LineDistance)` intent is a separate measurement-only contract. It requires exactly one operator-reviewed coarse ROI and one `LineDistance` Step with `USE_GAP_EDGE_PAIR=true` and `PIXELPERMM=0`; it must not silently add Matching, locator, normalization, template dependencies, acceptance, or calibration. The selected lower edge must be fitted from the nearest sustained bright transition after the dark core below a supported upper edge; a farther Hough line is not an eligible substitute. Explicit Run evidence must retain the coarse ROI, all candidate lines, selected upper/lower edges, five Gap samples, named PASS/REJECT state, and distance/stage/support/dark-coverage/ambiguity metrics.
 - Blob density Bad references may be controlled NG references when the shared pipeline measures particle count. `Public_Blob_Particles.pipeline.xml` gates acceptance on `ResultCount` in the normal dense-particle range, so sparse-density samples can still produce Blob result images while Pipeline Review reports metric NG.
@@ -566,58 +583,93 @@ Do not:
 
 Relevant smoke:
 - `wpf_shell_host_workspace_empty`
-  - Covers the localized empty prompt, beginner workflow, empty/start top status banner, Korean/English language refresh, and no auto tool open.
+
+- Covers the localized empty prompt, beginner workflow, empty/start top status banner, Korean/English language refresh, and no auto tool open.
 - `wpf_shell_host_learn_entry`
-  - Covers Shell-backed Learn actions opening Foundation and Color/HSV related Tool Views without Preview/Run, layer creation, or routing side effects.
+
+- Covers Shell-backed Learn actions opening Foundation and Color/HSV related Tool Views without Preview/Run, layer creation, or routing side effects.
 - `wpf_openvision_learn_color_hsv`
-  - Covers actual one-pixel BGR Split/Merge values and channel order, the Color/HSV animation, BGR-to-HSV data mapping, HSV parameter-location guide, and Shell-only HSV Tool View action contract.
+
+- Covers actual one-pixel BGR Split/Merge values and channel order, the Color/HSV animation, BGR-to-HSV data mapping, HSV parameter-location guide, and Shell-only HSV Tool View action contract.
 - `wpf_shell_host_workspace_sample_picker`
-  - Covers runnable sample search/list/detail UI, Learn path entry grouping, selected sample image, tool flow, expected metrics, benchmark strip, Learn Mode guidance, Good/Bad or single-sample reference state, and explicit no-auto Preview/Run guidance.
+
+- Covers runnable sample search/list/detail UI, Learn path entry grouping, selected sample image, tool flow, expected metrics, benchmark strip, Learn Mode guidance, Good/Bad or single-sample reference state, and explicit no-auto Preview/Run guidance.
 - `wpf_shell_host_workspace_sample_learn_paths`
-  - Covers task-oriented Learn path filtering for representative paths and verifies selecting a path only filters the list/selected sample.
+
+- Covers task-oriented Learn path filtering for representative paths and verifies selecting a path only filters the list/selected sample.
 - `wpf_shell_host_workspace_sample_pair_picker`
-  - Covers the selected Good/Bad pair path, pair-comparison strip, pair decision guide with separating metrics, compact validation checklist, opposite reference summary, Learn Mode guidance, and explicit no-auto Preview/Run guidance.
+
+- Covers the selected Good/Bad pair path, pair-comparison strip, pair decision guide with separating metrics, compact validation checklist, opposite reference summary, Learn Mode guidance, and explicit no-auto Preview/Run guidance.
 - `wpf_shell_host_workspace_sample_pair_coverage`
-  - Covers sample catalog Good/Bad pair metadata across representative pair groups, shared baseline pipelines, bounded expected metrics, shared Good/Bad metric names, and actual recipe-run metric checks for selected OK/NG references.
+
+- Covers sample catalog Good/Bad pair metadata across representative pair groups, shared baseline pipelines, bounded expected metrics, shared Good/Bad metric names, and actual recipe-run metric checks for selected OK/NG references.
 - `wpf_shell_host_workspace_sample_bad_reference_audit`
-  - Covers every runnable Bad reference, classifies it as controlled NG or comparative Bad, verifies expected metric/result behavior, and guards against blindly converting all Bad references to `ExpectedFailure`.
+
+- Covers every runnable Bad reference, classifies it as controlled NG or comparative Bad, verifies expected metric/result behavior, and guards against blindly converting all Bad references to `ExpectedFailure`.
 - `wpf_shell_host_workspace_sample_open`
-  - Covers the display-only sample workflow strip, sample-ready top status banner, and no auto-open/no auto-preview behavior.
+
+- Covers the display-only sample workflow strip, sample-ready top status banner, and no auto-open/no auto-preview behavior.
 - `wpf_shell_host_workspace_sample_actions`
-  - Covers explicit sample next-action buttons for Pipeline Review and first-step tool open without auto Preview/Run.
+
+- Covers explicit sample next-action buttons for Pipeline Review and first-step tool open without auto Preview/Run.
 - `wpf_shell_host_workspace_sample_pipeline_review_metrics`
-  - Covers opening public-safe `Public_Blob_Particles_Good`, verifying catalog baseline metrics, binding Pipeline Review to the active `Sample_` pipeline, explicit Run Review, OK decision text, primary result metric, run log, output preview, and no native Preview side effects before explicit review.
+
+- Covers opening public-safe `Public_Blob_Particles_Good`, verifying catalog baseline metrics, binding Pipeline Review to the active `Sample_` pipeline, explicit Run Review, OK decision text, primary result metric, run log, output preview, and no native Preview side effects before explicit review.
 - `wpf_shell_host_workspace_sample_pipeline_review_ng_metrics`
-  - Covers opening public-safe `Public_Mean_Brightness_Dark_Bad`, verifying controlled `MeanValueAvg` NG baseline behavior, binding Pipeline Review to the active `Sample_` pipeline, explicit Run Review, beginner NG next action, metric detail, run log, output preview, and no native Preview side effects before explicit review.
+
+- Covers opening public-safe `Public_Mean_Brightness_Dark_Bad`, verifying controlled `MeanValueAvg` NG baseline behavior, binding Pipeline Review to the active `Sample_` pipeline, explicit Run Review, beginner NG next action, metric detail, run log, output preview, and no native Preview side effects before explicit review.
 - `wpf_shell_host_workspace_sample_pipeline_review_feature_ng_metrics`
-  - Covers opening public-safe `Public_Feature_Card_Wrong_Bad`, verifying controlled `ScoreMax` NG baseline behavior, binding Pipeline Review to the active `Sample_` pipeline, explicit Run Review, beginner NG next action, score metric detail, run log, output preview, and no native Preview side effects before explicit review.
+
+- Covers opening public-safe `Public_Feature_Card_Wrong_Bad`, verifying controlled `ScoreMax` NG baseline behavior, binding Pipeline Review to the active `Sample_` pipeline, explicit Run Review, beginner NG next action, score metric detail, run log, output preview, and no native Preview side effects before explicit review.
 - `wpf_shell_host_workspace_sample_pipeline_review_line_ng_metrics`
-  - Covers opening public-safe `Public_Line_Pins_WidePin_Bad`, verifying controlled `DistanceMmAvg` NG baseline behavior, binding Pipeline Review to the active `Sample_` pipeline, explicit Run Review, beginner NG next action, distance metric detail, run log, output preview, and no native Preview side effects before explicit review.
+
+- Covers opening public-safe `Public_Line_Pins_WidePin_Bad`, verifying controlled `DistanceMmAvg` NG baseline behavior, binding Pipeline Review to the active `Sample_` pipeline, explicit Run Review, beginner NG next action, distance metric detail, run log, output preview, and no native Preview side effects before explicit review.
 - `wpf_shell_host_workspace_sample_pipeline_review_blob_ng_metrics`
-  - Covers opening public-safe `Public_Blob_Particles_Sparse_Bad`, verifying controlled `ResultCount` NG baseline behavior, binding Pipeline Review to the active `Sample_` pipeline, explicit Run Review, beginner NG next action, Blob count metric detail, run log, output preview, and no native Preview side effects before explicit review.
+
+- Covers opening public-safe `Public_Blob_Particles_Sparse_Bad`, verifying controlled `ResultCount` NG baseline behavior, binding Pipeline Review to the active `Sample_` pipeline, explicit Run Review, beginner NG next action, Blob count metric detail, run log, output preview, and no native Preview side effects before explicit review.
 - `wpf_shell_host_workspace_sample_pipeline_review_bentpin_ng_metrics`
-  - Legacy-named target retained for compatibility; covers opening public-safe `Public_Contour_Shapes_Missing_Bad`, verifying controlled `ResultCount` NG baseline behavior, binding Pipeline Review to the active `Sample_` pipeline, explicit Run Review, beginner NG next action, result-count metric detail, run log, output preview, and no native Preview side effects before explicit review.
+
+- Legacy-named target retained for compatibility; covers opening public-safe `Public_Contour_Shapes_Missing_Bad`, verifying controlled `ResultCount` NG baseline behavior, binding Pipeline Review to the active `Sample_` pipeline, explicit Run Review, beginner NG next action, result-count metric detail, run log, output preview, and no native Preview side effects before explicit review.
 - `wpf_shell_host_workspace_sample_pipeline_review_film_ng_metrics`
-  - Legacy-named target retained for compatibility; covers opening public-safe `Public_Threshold_BandPads_Missing_Bad`, verifying controlled `ResultCount` NG baseline behavior, binding Pipeline Review to the active `Sample_` pipeline, explicit Run Review, beginner NG next action, result-count metric detail, run log, output preview, and no native Preview side effects before explicit review.
+
+- Legacy-named target retained for compatibility; covers opening public-safe `Public_Threshold_BandPads_Missing_Bad`, verifying controlled `ResultCount` NG baseline behavior, binding Pipeline Review to the active `Sample_` pipeline, explicit Run Review, beginner NG next action, result-count metric detail, run log, output preview, and no native Preview side effects before explicit review.
 - `wpf_shell_host_recipe_context_switch`
-  - Covers explicit recipe A/B context switching, active pipeline display/source resolution, no auto tool open/no auto Preview behavior, native Tool View Add Pipeline appending only to the active recipe/pipeline context, Blob PropertyGrid parameters loading from each recipe's persisted `Blob_1` model after recipe switches, and Threshold custom WPF mode/value state loading from each recipe's `Threshold_ToolState`.
+
+- Covers explicit recipe A/B context switching, active pipeline display/source resolution, no auto tool open/no auto Preview behavior, native Tool View Add Pipeline appending only to the active recipe/pipeline context, Blob PropertyGrid parameters loading from each recipe's persisted `Blob_1` model after recipe switches, and Threshold custom WPF mode/value state loading from each recipe's `Threshold_ToolState`.
 - `wpf_shell_host_recipe_output_route_isolation`
-  - Covers selecting different Threshold output write layers in recipe A/B, Add Pipeline writing each selected output only into the active recipe pipeline, recipe switching not leaking the previous recipe's selected output route into the next recipe, and no Preview/Run side effects.
+
+- Covers selecting different Threshold output write layers in recipe A/B, Add Pipeline writing each selected output only into the active recipe pipeline, recipe switching not leaking the previous recipe's selected output route into the next recipe, and no Preview/Run side effects.
 - `wpf_shell_host_recipe_language_controls`
-  - Covers readable Shell language selector text, Korean/English selector-driven language switching, recipe selector listing existing workspaces, recipe selection, new recipe creation, and no tool/Preview side effects.
+
+- Covers readable Shell language selector text, Korean/English selector-driven language switching, recipe selector listing existing workspaces, recipe selection, new recipe creation, and no tool/Preview side effects.
 - `wpf_shell_host_layer_management_commands`
-  - Covers explicit layer create, image load into an operator layer, docked-layer deletion synchronization, and no tool/Preview side effects.
+
+- Covers explicit layer create, image load into an operator layer, docked-layer deletion synchronization, and no tool/Preview side effects.
 - `wpf_shell_host_layer_rename_command`
-  - Covers explicit operator-layer rename, preserved image data, host/docked title refresh, `Main`/duplicate rename rejection, live layer selector refresh, and no tool/Preview side effects.
+
+- Covers explicit operator-layer rename, preserved image data, host/docked title refresh, `Main`/duplicate rename rejection, live layer selector refresh, and no tool/Preview side effects.
 - `wpf_shell_host_workspace_image_load`
-  - Covers the localized image-ready next-action strip, quick action labels, top status banner, Korean/English language refresh, zoom/pan/pointer status, and no auto-open/no auto-preview behavior.
+
+- Covers the localized image-ready next-action strip, quick action labels, top status banner, Korean/English language refresh, zoom/pan/pointer status, and no auto-open/no auto-preview behavior.
 - `wpf_shell_host_workspace_quick_actions`
-  - Covers MainView Threshold/Matching/Line quick action commands opening the expected WPF Tool View against `Main` without running Preview.
+
+- Covers MainView Threshold/Matching/Line quick action commands opening the expected WPF Tool View against `Main` without running Preview.
 - `wpf_shell_host_workspace`
 - `wpf_shell_host_large_image`
 - Direct EXE: `OpenVisionLab.exe --smoke workspace-startup-empty`
 
 ### 3A. Pipeline Review Beginner Loop
+
+메인 파이프라인 패널은 단계·입력 상태·참조 오류와 판정을 표시한다. 기존 Review의 명령과 이미지 보관 계약도 유지한다.
+
+- 메인 단계 목록의 이름·이동·복제·삭제·사용 여부는 작업본에 반영한다. Undo/Redo도 디스크 저장과   실행을 하지 않는다. 삭제는 확인하며 취소하면 선택·작업본을 유지한다.
+- `VisionPipelineStepEditService`는 삽입/교체/이동/삭제/복제/이름/사용 여부를 복사본으로 처리하고   검증 결과를 반환한다. 고유 이름 규칙은 기존 Append owner를 공유한다. IO/UI/실행을 소유하거나   InputLayer/InputLayerB/fixture/Affine 참조를 자동 수정하지 않는다.
+- 실행 전 원시 작업본을 검증한다. 깨진 참조·설정은 실행을 차단하며 유효한 표시용 복사본의   기존 NormalizeForRun이 원시 XML을 바꾸어서는 안 된다. 한글/영문 오류는 UI 투영으로만 처리하고   Core Validator/Runner의 기존 오류 문자열·예외 계약은 유지한다.
+- 전체 실행(F5), 선택 단계까지 실행(Ctrl+F5), 중지(Shift+F5)는 명시 명령이다. 중지는 현재 단계   완료 뒤 적용한다. 실행 중 편집·대상 전환·중복 실행은 차단한다. 선택·로드·표시·언어 전환은 실행하지 않는다.
+- 결과는 실행 당시 단계 인덱스로 대응한다. 첫 NG/오류 뒤 미실행, 사용 안 함, 취소, 판정 없는 완료를   구분한다. 판정이 없는 완료를 OK로 세지 않으며 Mean은 기존 판정 규칙을 따른다.
+- 입력·작업본 변경 뒤 영향을 받는 결과와 부분 실행 뒤 남은 최종 판정은 `이전 결과`다. Undo/저장/표시 복원으로 최신 판정이 되지 않는다. 이전 출력은 새 외부 입력으로 사용하지 않는다.
+- Main의 전체 레시피 명시 저장과 전환 확인창의 Save는 같은 성공 경계를 사용한다. 기존 CData의 저장 revision은 legacy r0부터 시작하고 마지막 전체 성공 fingerprint와 실제 설정 내용이 다른 저장 성공에만 증가한다. 변경 후 Undo로 내용이 같아지거나 Preview/Run·unchanged 저장·실패는 증가시키지 않으며 재열기와 실패 뒤 재시도에도 마지막 성공 기준을 유지한다. Pipeline의 내부 실행 revision과 결과 invalidation은 별도다. Pipeline/Tools의 선출판 뒤 CData 실패는 전체 트랜잭션으로 보장하지 않는다.
+- 사용자 승인 Compact 외곽480과 기존 PG 내용480·editor 최소 보호를 함께 유지하며 부족한 viewport는 해당 PG 구역의 수평 접근으로 제공한다. 기존 내부 세로/검색·유한 높이와 footer 접근을 유지한다. 표시 제한은 기본0·저장된 사용자 요청값을 덮어쓰지 않으며 모델/양식/순서·Enter/LostFocus/Slider binding을 바꾸지 않는다. 부모 surface 크기만 바뀌어도 같은 source 좌표의 ROI/result를 기존 View overlay 큐에서 갱신하며 viewport/geometry/명시 실행·layer/route·수명 owner는 유지한다. 저장 실패 시 작업본·현재 대상·확인 창을 유지한다. 저장 성공 뒤 제목과 행의 변경 표시를 지운다. Workbench native Tool 경로는 파라미터 편집과 툴 추가를 같은 작업본에 연결한다. 테스트 초안은 레시피·파이프라인·툴 문맥별 메모리에 두며 추가 전에는 단계를 바꾸지 않는다. 단계 편집과 추가는 디스크에 저장하지 않는다. 기존 레시피 저장 owner를 통해 명시적으로 저장한다. 새 테스트의 기본값 복원은 파라미터만 바꾸고 경로·판정 값을 보존하며 실행·레이어 변경·저장을 하지 않는다. 추가 버튼은 위치 메뉴를 열고, 선택 단계 앞/뒤 또는 맨 끝 명령이 작업본을 삽입한다. 선택이 없으면   앞 추가는 비활성이고 기본 추가는 맨 끝이다. 템플릿/출력/지원 툴/실행 중 가드를 유지한다.   native 비동기 실행 중에는 기본값·추가·기존 N장 진입·실행을 비활성으로 표시하고 강제 중복 명령도   거부한다. 실패와 결과 폐기 후 실행 슬롯이 해제되면 활성 세션의 명령 표시를 복구한다. 판정 조건은 기존 파라미터 양식 밖에서 작업본의 `UseAcceptance`와 지표/범위/시간을 편집한다. 끄기는 값과 `ExpectedSuccess`·기존 추가 조건을 보존하며 편집을 막는다. 선택지는 현재 툴이   생산하는 화면 지표로 제한하고 임의의 수치를 새 기본값으로 채택하지 않는다. 잘못된 숫자·비유한값·음수 시간·역전 범위는 입력 오류로 표시하며 미완성 숫자는 작업본에   기록하지 않는다. 오류 입력 중 native 실행/추가와 해당 단계의 파이프라인 실행/저장을 차단한다. 유효 입력 또는 Esc 복구 후 명시 명령을 다시 사용할 수 있다. 판정 편집 자체는 실행/저장하지 않는다. 단계의 `되돌리기`는 작업본의 같은 단계 식별에 대응하는 마지막 성공 저장 값 전체를 복원한다. 이동/이름 변경/Undo/Redo는 식별을 유지하고 새 삽입/복제는 첫 저장 전 복원 대상이 없다. 복원은 현재 위치를 유지하며 기존 검증을 적용한다. 실행/저장/레이어 변경과 다른 참조의 자동 수정은 없다. 저장 실패는 baseline을 갱신하지 않으며 복원 뒤 결과도 명시 재실행 전에는 `이전 결과`다. `되돌리기`와 `이 단계까지`는 기존 Tool VM 명령에 바인딩하고 native 툴 실행 중에는 차단한다. Workbench 밖의 기존 Recipe Manager 적용·독립 Tool factory/Append 저장 경로는 별도로 유지한다. 집중 검사: `wpf_workbench_tool_working_copy`, `VisionRecipeRunnerSmoke --pipeline-step-edit-contract`. 저장 단계 복원 집중 검사: `wpf_workbench_tool_revert`, `wpf_workbench_tool_revert_compact`. 판정 입력 집중 검사: `wpf_workbench_tool_acceptance`, `wpf_workbench_tool_acceptance_compact`. Workbench 도킹 경로는 기존 파라미터 양식 밖의 입력→출력 행으로 둔다. 이미지 연산은 입력 A/B와   출력 경로를 제공하며 명시 로드 경로를 유지한다. 표시 `원본`/`Original`은 SDK/XML 키 `Main`을 바꾸지 않는다. 분리하면 기존 floating 배치를 복원하며 도킹 전환 자체는 실행·레이어 생성·저장을 하지 않는다. 입력/출력 행과 툴 전환 뒤 실제 판정 항목 표시는 `wpf_workbench_tool_test_footer`와 Compact 대상으로   검사한다. 직접 출력 이름은 빈 값 또는 `Main`이면 이전 이름으로 복원하며 작업본·표시를 같은 값으로   유지한다. 집중 대상은 `wpf_workbench_tool_route_edit`와 Compact다. 기존 입력/출력 충돌 검사는   독립 레이어로 publish 전 거부와 정상 복구를 유지하며 Main은 편집 시 거부한다. 입력 후보는 원본, 앞선 사용 단계 출력,   열린 레이어와 없는 현재 참조를 중복 없이 표시한다. `01 · 출력 이름`과 `(사용할 수 없음)`은   표시값이며 SDK/XML 키를 바꾸지 않는다. 사용 안 함/언어/목록 복원은 현재 참조와 파라미터를   유지하고 기존 검증을 적용한다. 새 테스트 입력은 최초 열 때 정한 뒤 다시 열어도 보존한다. 집중 대상은 `wpf_workbench_tool_route_candidates`와 Compact다. 선택·목록 갱신과 도킹 전환은   실행·레이어 생성·디스크 저장을 하지 않는다. Matching-family 템플릿 카드는 기존 등록/파일 선택 editor를 재사용한다. 취소/손상 입력은 기존 템플릿을   보존하고 정상 입력은 기존 파라미터를 유지하며 교체한다. pending 자동 실행은 취소하며 등록/교체 자체는   실행하지 않는다. 기존 editor의 BMP/ROI asset 저장과 Recipe XML 저장은 별도다. 원본 파일명 표시 정책은   사용자 답변 전 확정하지 않는다. 프리셋 세 버튼과 적용도   기존 값/owner를 유지하고 pending 실행을 취소한다. 해당 집중/legacy 검사는 같은 기록을 따른다. 프리셋 적용 상태는 부록C 문구를 현재 언어로 표시한다. 실행 중 클릭은 값을 바꾸지 않으며   툴 전환·기본값·되돌리기·새 결과에서 표시를 갱신한다. Line 상단은 현재 목적/A·B에 부록C의 ROI 문구·설명을 표시하며 남은 결과가 현재 선택을 가리지 않는다. 표시/선택·기존 번역 복원은 실행하지 않는다. 분리 창의 기존 PropertyGrid viewport 가드와 도킹160px을   유지한다. 저장 단계의 하단은 되돌리기/이 단계까지/단계 실행이며 같은 단계 편집 중 새 테스트 추가를 거부한다. Line 기존 회귀는 명시 입력과 이 모드별 명령, managed SDK 근거/current 결과 카드를 함께 검사한다. 결과 카드는 실제 SDK 결과를 해제 전에 기존 managed summary로 복사해 표시한다. 판정 없음은 완료, acceptance 실패는 NG, 실행 실패는 오류이며 편집/경로/판정 변경은 이전 결과를 유지한다. 명시 재실행 또는 지원 툴의 활성 자동 실행 옵션에 따른 파라미터 편집 실행만 현재 결과로 갱신한다. 사용자 자동 실행은 기본 켬이며 기존 사용자 설정에 저장한다. OFF는 pending 지연 실행도 취소하고   ON/OFF 전환·선택·이미지 교체·복원 자체는 실행하지 않는다. 기존90/120ms scheduler와 Matching AUTO_PREVIEW opt-in을 유지한다. 실제 입력 확정 후 작업본과 결과 설정 snapshot을 읽어 SDK 입력/요약을 일치시킨다. 테스트 추가는 같은 결과와 stale 상태를 단계에 인계하며 디스크에 저장하지 않는다. F8·단계 실행 메뉴·툴 버튼은 같은 Tool VM.RunCommand를 사용한다. 결과의 설정 요약은 실제 실행 snapshot이며   편집 중인 값과 혼동하지 않는다. 생략된 저장 기본값은 결과 snapshot에만 포함하고 작업본/XML에 보충하지 않는다. 실제 clipped 편집 공간과 결과 카드 위치는 같은 결과/하단 focused smoke로 확인한다.
 
 Stable behavior:
 - Pipeline Review shows the active pipeline step flow, selected step route, input/output previews, validation state, result summary, and run-log context.
@@ -642,42 +694,68 @@ Stable behavior:
 - `PIXELPERMM` keeps its public legacy XML name and its runtime meaning is millimeters per pixel (`mm/px`). A positive finite scale converts pixel metrics by `px × mm/px`; `0` remains intentional pixel-only state. `NaN`, either infinity, negative values, malformed values, and products that overflow finite `double` must not publish millimeter metrics. The shared Validator rejects non-finite/negative scale parameters before execution, while the existing Line/Bounds/Circle/Geometry/Distance/Curve conversion owners fail closed at the conversion boundary. A positive configured scale is configuration evidence only, not physical calibration certification.
 
 Relevant smoke:
+- `--pipeline-step-edit-contract`: 순수 Core 복사본 편집·참조 파손·XML 왕복과 원본 불변.
+- `wpf_workbench_pipeline_editing` / `_compact`: 표시와 양방향 선택, 작업본/Undo/저장 실패·복구,
+  legacy Main/명시 분기, ko/en 라벨 전환과 실행 0.
+- `wpf_workbench_pipeline_validation`: 잘못된 이름·툴·숫자·불리언·판정 범위·시간·ROI·B 입력·fixture와
+  전체 사용 안 함의 한·영 오류 표시, 실제 실행 버튼 차단과 원시 XML/결과 불변.
+- `wpf_workbench_pipeline_execution`과 새 EXE `recipe-pipeline-roundtrip`: 단계별 판정/미실행/이전 결과,
+  명시 실행·메뉴, 저장 실패·XML 저장·독립 host 재열기. 기존 native handoff 검사는
+  `recipe-pipeline-legacy-roundtrip`에 보존하며 그 통과를 새 경로의 통과로 대신 주장하지 않는다.
 - `wpf_shell_host_pipeline_review`
-  - Covers selected step flow, previous/next navigation, branch input explanation, localized guide text, input/output preview modes, explicit Run Review, validation/result/run-log context, and the guide strip's pre-run/completed decision state.
+
+- Covers selected step flow, previous/next navigation, branch input explanation, localized guide text, input/output preview modes, explicit Run Review, validation/result/run-log context, and the guide strip's pre-run/completed decision state.
 - `--pipeline-prevalidation-contract` in `VisionRecipeRunnerSmoke`
-  - Covers a valid object/XML Runner path plus unsupported ToolType, missing layer, invalid parameter, and invalid acceptance rejection against the shared Validator error list.
+
+- Covers a valid object/XML Runner path plus unsupported ToolType, missing layer, invalid parameter, and invalid acceptance rejection against the shared Validator error list.
 - `--pipeline-review-duplicate-step-identity-contract` in `VisionRecipeRunnerSmoke`
-  - Covers duplicate Name/Tool/InputLayer/OutputLayer with different parameters and acceptance NG, same-route intermediate images, reorder, disabled-step mapping, and the legacy layer-only preview fallback.
+
+- Covers duplicate Name/Tool/InputLayer/OutputLayer with different parameters and acceptance NG, same-route intermediate images, reorder, disabled-step mapping, and the legacy layer-only preview fallback.
 - `--pipeline-review-run-input-isolation-contract` in `VisionRecipeRunnerSmoke`
-  - Covers a retained A Run output after producer deletion, disablement, and reorder, plus explicit `ALLOW_BRANCH_INPUT` recovery; the B Run must fail closed instead of consuming the stale layer.
+
+- Covers a retained A Run output after producer deletion, disablement, and reorder, plus explicit `ALLOW_BRANCH_INPUT` recovery; the B Run must fail closed instead of consuming the stale layer.
 - `--pipeline-not-run-tail-status-contract` in `VisionRecipeRunnerSmoke`
-  - Covers a five-Step fail-fast acceptance NG with disabled and unexecuted tail rows, cancellation of the current Step with a cancelled tail, Review flow/progress exclusion of synthetic tail rows from NG, and preservation of image/object ownership.
+
+- Covers a five-Step fail-fast acceptance NG with disabled and unexecuted tail rows, cancellation of the current Step with a cancelled tail, Review flow/progress exclusion of synthetic tail rows from NG, and preservation of image/object ownership.
 - `--preview-run-reopen-equivalence-contract [evidenceDirectory]` in `VisionRecipeRunnerSmoke`
-  - Covers the public Mean, Blob, Contour, Matching, and Line samples through the shared Preview controller, headless Runner, XML save/reopen, missing-input/invalid-acceptance and finite/missing-metric gates, plus en-US/ko-KR locale stability. It is a deterministic core/transport baseline; rendered WPF pixels, EXE monitor placement, theme/DPI, and hardware remain separate evidence.
+
+- Covers the public Mean, Blob, Contour, Matching, and Line samples through the shared Preview controller, headless Runner, XML save/reopen, missing-input/invalid-acceptance and finite/missing-metric gates, plus en-US/ko-KR locale stability. It is a deterministic core/transport baseline; rendered WPF pixels, EXE monitor placement, theme/DPI, and hardware remain separate evidence.
 - `--pixelpermm-finite-unit-contract [evidenceDirectory]` in `VisionRecipeRunnerSmoke`
-  - Covers the 100 px → 1 mm (`0.01 mm/px`) Line/Bounds/Circle/Geometry/Distance/Curve conversions, `NaN`/infinity/zero/negative and overflow fail-closed cases, shared Validator rejection, and legacy `PIXELPERMM` XML save/reopen.
+
+- Covers the 100 px → 1 mm (`0.01 mm/px`) Line/Bounds/Circle/Geometry/Distance/Curve conversions, `NaN`/infinity/zero/negative and overflow fail-closed cases, shared Validator rejection, and legacy `PIXELPERMM` XML save/reopen.
 - `--pipeline-roi-meaning-contract` in `VisionRecipeRunnerSmoke`
-  - Covers intentional full-image unset, valid ROI/multi-ROI definitions, malformed/zero-size/negative definitions, overflow and out-of-bounds execution rejection, and direct EdgeDetection/HsvMask rejection without clipping.
+
+- Covers intentional full-image unset, valid ROI/multi-ROI definitions, malformed/zero-size/negative definitions, overflow and out-of-bounds execution rejection, and direct EdgeDetection/HsvMask rejection without clipping.
 - `wpf_shell_host_pipeline_review_ng`
-  - Covers acceptance NG after successful tool execution, metric target guidance, populated run-log context, and retained failed-step output preview.
+
+- Covers acceptance NG after successful tool execution, metric target guidance, populated run-log context, and retained failed-step output preview.
 - `wpf_shell_host_workspace_sample_pipeline_review_metrics`
-  - Covers a real catalog sample opening into Pipeline Review, active `Sample_` pipeline binding, explicit Review execution, OK decision, primary result metric, run log, output preview, and no native Preview side effects before explicit review.
+
+- Covers a real catalog sample opening into Pipeline Review, active `Sample_` pipeline binding, explicit Review execution, OK decision, primary result metric, run log, output preview, and no native Preview side effects before explicit review.
 - `wpf_shell_host_workspace_sample_fixture_review`
-  - Covers the real three-Step `Public_Matching_FixturePad` flow with Step 2 selected and verifies one non-duplicated Step identity, Blob tool, branch route, both previews, Fixture ROI/frame parameters, result metrics, elapsed time, and no first-issue state.
+
+- Covers the real three-Step `Public_Matching_FixturePad` flow with Step 2 selected and verifies one non-duplicated Step identity, Blob tool, branch route, both previews, Fixture ROI/frame parameters, result metrics, elapsed time, and no first-issue state.
 - `wpf_shell_host_workspace_sample_normalize_fixture_review`
-  - Covers the public non-LLM five-Step `Matching -> RotateScale NormalizeImage -> Threshold -> Blob datum + Blob pad` flow. It verifies the Good and controlled missing-pad catalog contracts, explicit Review execution, reference-sized `DeviceAligned` output, immutable datum `CvROI=210,240,55,55` and pad `CvROI=320,180,60,50`, distinct per-consumer status/evidence, both previews, and no first-issue state. This is one synthetic-pair workflow contract, not a general fixture-robustness claim.
+
+- Covers the public non-LLM five-Step `Matching -> RotateScale NormalizeImage -> Threshold -> Blob datum + Blob pad` flow. It verifies the Good and controlled missing-pad catalog contracts, explicit Review execution, reference-sized `DeviceAligned` output, immutable datum `CvROI=210,240,55,55` and pad `CvROI=320,180,60,50`, distinct per-consumer status/evidence, both previews, and no first-issue state. This is one synthetic-pair workflow contract, not a general fixture-robustness claim.
 - `wpf_shell_host_workspace_sample_pipeline_review_ng_metrics`
-  - Covers a real catalog Bad sample opening into Pipeline Review, active `Sample_` pipeline binding, explicit Review execution, controlled metric NG, beginner next action, metric detail, run log, output preview, and no native Preview side effects before explicit review.
+
+- Covers a real catalog Bad sample opening into Pipeline Review, active `Sample_` pipeline binding, explicit Review execution, controlled metric NG, beginner next action, metric detail, run log, output preview, and no native Preview side effects before explicit review.
 - `wpf_shell_host_workspace_sample_pipeline_review_feature_ng_metrics`
-  - Covers a real FeatureMatching Bad sample opening into Pipeline Review, active `Sample_` pipeline binding, explicit Review execution, controlled `ScoreMax` NG, beginner next action, score metric detail, run log, output preview, and no native Preview side effects before explicit review.
+
+- Covers a real FeatureMatching Bad sample opening into Pipeline Review, active `Sample_` pipeline binding, explicit Review execution, controlled `ScoreMax` NG, beginner next action, score metric detail, run log, output preview, and no native Preview side effects before explicit review.
 - `wpf_shell_host_workspace_sample_pipeline_review_line_ng_metrics`
-  - Covers a public-safe Line Bad sample opening into Pipeline Review, active `Sample_` pipeline binding, explicit Review execution, controlled `DistanceMmAvg` NG, beginner next action, distance metric detail, run log, output preview, and no native Preview side effects before explicit review.
+
+- Covers a public-safe Line Bad sample opening into Pipeline Review, active `Sample_` pipeline binding, explicit Review execution, controlled `DistanceMmAvg` NG, beginner next action, distance metric detail, run log, output preview, and no native Preview side effects before explicit review.
 - `wpf_shell_host_workspace_sample_pipeline_review_blob_ng_metrics`
-  - Covers a real Blob Bad sample opening into Pipeline Review, active `Sample_` pipeline binding, explicit Review execution, controlled `ResultCount` NG, beginner next action, Blob count metric detail, run log, output preview, and no native Preview side effects before explicit review.
+
+- Covers a real Blob Bad sample opening into Pipeline Review, active `Sample_` pipeline binding, explicit Review execution, controlled `ResultCount` NG, beginner next action, Blob count metric detail, run log, output preview, and no native Preview side effects before explicit review.
 - `wpf_shell_host_workspace_sample_pipeline_review_bentpin_ng_metrics`
-  - Legacy-named target retained for compatibility; covers a public-safe Contour Bad sample opening into Pipeline Review, active `Sample_` pipeline binding, explicit Review execution, controlled `ResultCount` NG, beginner next action, result-count metric detail, run log, output preview, and no native Preview side effects before explicit review.
+
+- Legacy-named target retained for compatibility; covers a public-safe Contour Bad sample opening into Pipeline Review, active `Sample_` pipeline binding, explicit Review execution, controlled `ResultCount` NG, beginner next action, result-count metric detail, run log, output preview, and no native Preview side effects before explicit review.
 - `wpf_shell_host_workspace_sample_pipeline_review_film_ng_metrics`
-  - Legacy-named target retained for compatibility; covers a public-safe Threshold Bad sample opening into Pipeline Review, active `Sample_` pipeline binding, explicit Review execution, controlled `ResultCount` NG, beginner next action, result-count metric detail, run log, output preview, and no native Preview side effects before explicit review.
+
+- Legacy-named target retained for compatibility; covers a public-safe Threshold Bad sample opening into Pipeline Review, active `Sample_` pipeline binding, explicit Review execution, controlled `ResultCount` NG, beginner next action, result-count metric detail, run log, output preview, and no native Preview side effects before explicit review.
 
 ### 3B. Matching Fixture Reference Teach
 
@@ -689,7 +767,8 @@ Stable behavior:
 
 Relevant smoke:
 - `wpf_shell_host_workspace_sample_fixture_teach`
-  - Covers reviewed-pose availability, explicit save, persisted center/angle/scale reference values, stale-result invalidation, and unchanged consumer parameters/routes/layers/native Preview count.
+
+- Covers reviewed-pose availability, explicit save, persisted center/angle/scale reference values, stale-result invalidation, and unchanged consumer parameters/routes/layers/native Preview count.
 
 ### 3C. Fixture And Relative-ROI Designer
 
@@ -708,13 +787,17 @@ Do not:
 
 Relevant smoke:
 - `wpf_shell_host_workspace_sample_normalize_fixture_review`
-  - Covers two-consumer relationship resolution, stable consumer identities, source and normalized ROI drawings, selected-row highlight/edit target, template/reference/current/quality state, explicit action availability, controlled Good/Bad replay, and zero tab/row-selection execution/layer/routing side effects.
+
+- Covers two-consumer relationship resolution, stable consumer identities, source and normalized ROI drawings, selected-row highlight/edit target, template/reference/current/quality state, explicit action availability, controlled Good/Bad replay, and zero tab/row-selection execution/layer/routing side effects.
 - `wpf_shell_host_workspace_sample_fixture_teach`
-  - Preserves legacy translation-Fixture reference teach and its zero-auto-run contract.
+
+- Preserves legacy translation-Fixture reference teach and its zero-auto-run contract.
 - `wpf_shell_host_pipeline_step_edit_handoff`
-  - Covers the authoritative Recipe Manager PropertyGrid edit route.
+
+- Covers the authoritative Recipe Manager PropertyGrid edit route.
 - `wpf_shell_host_recipe_fixture_properties`
-  - Covers Matching/NormalizeImage Fixture parameter round trip.
+
+- Covers Matching/NormalizeImage Fixture parameter round trip.
 
 ### 4. Tool Inline Preview Viewer
 
@@ -789,8 +872,6 @@ Relevant smoke:
 - `wpf_shell_host_matching_tool`
 
 Completion evidence:
-- 2026-06-28: `artifacts\ui_precheck_product_ux_core_tools_after_threshold_fix_20260628`
-- 2026-06-28: `artifacts\ui_precheck_product_ux_matching_edge_20260628`
 
 Related docs:
 - `docs\VISION_TOOL_PROPERTY_GRID_POLICY.md`
@@ -831,11 +912,13 @@ Do not:
 ### 5D. Tool Window UX And Theme Direction
 
 Stable behavior:
-- Native WPF tools open as floating tool windows by default. Docked tool inspection is an explicit operator mode, not the default open path.
-- Do not auto-dock a tool just because the shell has an inspector panel available. The main workspace and layer comparison workflow must remain operator controlled.
-- Floating tool windows expose an operator-visible `우측 고정` action. This moves the current hosted tool view into the right inspector without recreating the tool view or treating the action as a close.
-- Docked tool inspectors expose the reverse float action. Floating and docking must preserve the current tool content, selected layers, parameter state, and preview state.
-- Docked tool inspector headers must show the active tool title and operator-visible float/close actions. These buttons must stay clickable, localized, and large enough to use without relying on the floating-window chrome.
+- Native WPF tools open in the right tool panel by default (V2 K1 / D-01). Opening or reselecting a tool reveals that panel without executing the tool or changing layer/routing state.
+- `분리 (별도 창)` / `Float` moves the same hosted Tool View into the existing floating window. Section 5C placement and lifetime contracts remain active for that explicit action.
+- Floating tool windows expose `오른쪽에 도킹` / `Dock right`. This returns the same hosted Tool View to the right panel without recreating it or treating the action as a close.
+- Floating and docking preserve current tool content, selected layers, parameter state, preview state, and the operator-adjusted panel width. They must not execute Preview/Run, create layers, or change the active layer or input/output route.
+- Docked tool inspector headers show the localized active tool title, subtitle, mode badge, Wide, Float, tool menu, and Close actions. The tool menu exposes parameter guidance and the existing tool-specific Learn topic. Switching ko/en updates captions without recreating the Tool View or executing it.
+- The Workbench test-mode menu restores the tool factory's parameter defaults while retaining input/output routing, acceptance settings and the native property object. Restoring defaults clears the displayed test result; it does not run, create/delete a layer or write recipe files.
+- The step-mode menu reuses the pipeline's rename/duplicate/delete commands. `같은 툴로 새로 테스트` / `Test again with this tool` copies parameters, template and acceptance into a memory test draft, captures the selected step output as its input once and chooses a unique test output. Editing that draft preserves the source step. Native preview and pipeline execution guards block editing commands while running. Focused gates: `wpf_workbench_tool_menu_state`, `wpf_workbench_tool_menu`, `wpf_workbench_tool_menu_compact`; current results and remaining guidance consumers are recorded in the report.
 - When the docked tool inspector is visible, selecting the same native WPF tool again must reuse the docked inspector instead of creating a duplicate floating tool window.
 - When the docked tool inspector is visible, selecting another native WPF tool must replace the hosted docked content in that inspector and must not leave the previous tool behind as a hidden or visible duplicate floating window.
 - Reselecting a docked native tool with an existing displayable preview result must restore the Shell top direct-result `OK` state and route text from the active native document. This is a status synchronization step only; it must not rerun Preview/Run, create a layer, or change the input route.
@@ -855,26 +938,26 @@ Stable behavior:
 - PropertyGrid search must remain operator-readable in docked tools. If the active search text matches no visible property rows, the shared WPG bridge shows a non-blocking empty-search message; clearing the search hides it again.
 - Docked double-input/custom tool views keep compact input/output preview cards on the left, reserve the remaining height for the parameter panel, and keep Add Pipeline plus the active Run action near the bottom of the inspector instead of leaving a large trailing blank area below the action row.
 - Docked tool summary/status areas use compact inspector strips. Summary text remains a single trimmed line; status text appears as a compact bordered strip only when non-empty and collapses when empty so the inspector does not show blank status rows.
-- 2026-06-28 docked Matching/EdgeBasedMatching/FeatureMatching/Line smoke guards: these tools must preserve the hosted native tool view when docked, keep input/output preview cards visible, keep PropertyGrid editing readable, keep result review text available, and must not leave a duplicate floating tool window behind. Validation artifact: `artifacts\ui_precheck_docked_matching_line_20260628`.
-- 2026-06-28 docked Threshold/RotateScale/Morphology/Arithmetic smoke guards: preprocessing and arithmetic tools must keep preview cards, parameter controls, result/summary area, and primary actions visible in the docked inspector. Arithmetic smoke must select Operation mode before asserting Input B controls, because Offset mode legitimately hides Input B. Validation artifact: `artifacts\ui_precheck_docked_preprocess_arithmetic_20260628_b`.
-- 2026-06-28 dock/float cycle guard: Blob floating -> docked -> floating -> docked -> Matching docked switching must keep exactly one active native WPF tool, preserve the operator-adjusted dock width, and end with no duplicate floating windows. Validation target: `wpf_tool_window_dock_float_cycle`. Validation artifacts: `artifacts\ui_precheck_tool_dock_float_cycle_20260628` and actual product entrypoint `artifacts\actual_exe_tool_dock_float_cycle_20260628`.
-- 2026-06-28 docked tool header guard: docked Blob/Matching switching must keep a non-empty tool title plus visible float/close buttons with localized tooltips. Validation artifact: `artifacts\ui_precheck_docked_tool_header_20260628`.
-- 2026-06-28 compact docked preview guard: docked single-input tools keep input/output preview frames compact so parameter editing remains the primary inspector task. Validation artifact: `artifacts\ui_precheck_compact_docked_previews_20260628`.
-- 2026-06-28 docked PropertyGrid density guard: docked Blob/Matching switching must keep WPG compact density enabled while preserving floating PropertyGrid spacing. Validation artifact: `artifacts\ui_precheck_docked_property_grid_density_20260628`.
-- 2026-06-28 docked long-parameter review guard: Matching/EdgeBasedMatching/FeatureMatching style docked tools must keep the result review compact with internal chip scrolling while preserving PropertyGrid editing height and action visibility. Validation artifact: `artifacts\ui_precheck_docked_long_property_review_20260628`.
-- 2026-06-28 docked PropertyGrid navigation guard: docked Matching scroll position must survive switching to Blob and back to Matching. Validation artifact: `artifacts\ui_precheck_docked_property_grid_navigation_20260628`.
-- 2026-06-28 docked PropertyGrid search guard: docked Matching search text must survive switching to Blob and back to Matching. Validation artifact: `artifacts\ui_precheck_docked_property_grid_search_20260628`.
-- 2026-06-28 docked PropertyGrid empty-search guard: docked Matching must show the empty-search message for a no-match search and hide it when the search is cleared. Validation artifact: `artifacts\ui_precheck_docked_property_grid_search_empty_20260628`.
-- 2026-06-28 docked summary/status strip guard: docked Matching and Arithmetic keep compact summary/status strips; empty status rows collapse and non-empty status rows remain single-line and visible. Validation artifact: `artifacts\ui_precheck_docked_status_result_strip_20260628`.
-- 2026-06-28 docked preview route hint guard: docked Matching and Arithmetic image thumbnails show the route hint icon/click affordance, while empty thumbnails do not. Validation artifact: `artifacts\ui_precheck_docked_preview_route_hint_20260628`.
-- 2026-06-28 central layer tab readability guard: Shell layer tabs render structured index/title/status fields, reject placeholder tabs, and remain readable before layer docking comparison. Validation artifact: `artifacts\ui_precheck_central_layer_tabs_20260628`.
-- 2026-06-28 docked layer header readability guard: docked comparison headers and tabs keep readable layer titles, drag handles, and image-size badges while preserving AvalonDock tab gestures. Validation artifact: `artifacts\ui_precheck_docked_layer_headers_20260628`.
-- 2026-06-28 docking/result layout guard: docked comparison panes reject too-narrow viewer columns, AvalonDock tab defaults remain intact, and docked PropertyGrid editors must not be overlapped by Result/Summary/Action rows. Validation artifact: `artifacts\ui_precheck_docking_result_layout_20260628_b`.
-- Every live image/result layer must be mirrored into the central AvalonDock workspace as a same-pane tab as soon as the layer exists. The top Shell layer strip is a selection/status strip only; it must not be the primary drag source for docking. Operators drag the AvalonDock layer tab itself to split/compare layers. Validation artifact: `artifacts\ui_precheck_workspace_custom_docking_20260629_v2`.
+- 2026-06-28 docked Matching/EdgeBasedMatching/FeatureMatching/Line smoke guards: these tools must preserve the hosted native tool view when docked, keep input/output preview cards visible, keep PropertyGrid editing readable, keep result review text available, and must not leave a duplicate floating tool window behind.
+- 2026-06-28 docked Threshold/RotateScale/Morphology/Arithmetic smoke guards: preprocessing and arithmetic tools must keep preview cards, parameter controls, result/summary area, and primary actions visible in the docked inspector. Arithmetic smoke must select Operation mode before asserting Input B controls, because Offset mode legitimately hides Input B.
+- V2 K1 cycle guard: Blob docked -> floating -> docked -> Matching docked -> repeated selection keeps one active native Tool View, the same property object and preserved routing/result state, with no duplicate floating windows. Keep the existing scroll/search/viewport assertions. Targets: `wpf_tool_window_dock_float_cycle`, `wpf_tool_panel_wide`, `wpf_tool_panel_compact`. Current checks and native evidence boundaries are recorded in ; the 2026-06-28 floating-first artifacts remain historical.
+- docked tool header guard: docked Blob/Matching switching must keep a non-empty tool title plus visible float/close buttons with localized tooltips.
+- compact docked preview guard: docked single-input tools keep input/output preview frames compact so parameter editing remains the primary inspector task.
+- docked PropertyGrid density guard: docked Blob/Matching switching must keep WPG compact density enabled while preserving floating PropertyGrid spacing.
+- docked long-parameter review guard: Matching/EdgeBasedMatching/FeatureMatching style docked tools must keep the result review compact with internal chip scrolling while preserving PropertyGrid editing height and action visibility.
+- docked PropertyGrid navigation guard: docked Matching scroll position must survive switching to Blob and back to Matching.
+- docked PropertyGrid search guard: docked Matching search text must survive switching to Blob and back to Matching.
+- docked PropertyGrid empty-search guard: docked Matching must show the empty-search message for a no-match search and hide it when the search is cleared.
+- docked summary/status strip guard: docked Matching and Arithmetic keep compact summary/status strips; empty status rows collapse and non-empty status rows remain single-line and visible.
+- docked preview route hint guard: docked Matching and Arithmetic image thumbnails show the route hint icon/click affordance, while empty thumbnails do not.
+- central layer tab readability guard: Shell layer tabs render structured index/title/status fields, reject placeholder tabs, and remain readable before layer docking comparison.
+- docked layer header readability guard: docked comparison headers and tabs keep readable layer titles, drag handles, and image-size badges while preserving AvalonDock tab gestures.
+- docking/result layout guard: docked comparison panes reject too-narrow viewer columns, AvalonDock tab defaults remain intact, and docked PropertyGrid editors must not be overlapped by Result/Summary/Action rows.
+- Every live image/result layer must be mirrored into the central AvalonDock workspace as a same-pane tab as soon as the layer exists. The top Shell layer strip is a selection/status strip only; it must not be the primary drag source for docking. Operators drag the AvalonDock layer tab itself to split/compare layers.
 - Docked/AvalonDock layer tab/title dragging must not spawn a large native floating document window over the workspace. Layer comparison movement is owned by the wrapper workspace gesture/guide path, while AvalonDock remains the underlying pane/layout control.
 - 2026-06-29 Visual Studio-style layer docking contract: global and pane-local dock semantics must stay aligned with DockingManager expectations: global side commands split the whole workspace, pane-side commands split the target pane, and center/tab commands merge into the target pane. Docked layer tabs must be top-aligned, not bottom tab strips. Validation: `tools\RunDockingVerification.ps1` runs the actual EXE `--smoke layer-docking-verification` and asserts tabbed, GlobalRight, GlobalBottom, pane-local Bottom, nested restore, center-tab merge behavior, and native floating preview suppression.
-- 2026-06-29 docking DLL boundary guard: AvalonDock package ownership starts in `src/Libraries/OpenVisionLab.Docking.Controls/OpenVisionLab.Docking.Controls.csproj`. Do not add `Dirkster.AvalonDock` back as a direct `src/OpenVisionLab/OpenVisionLab.csproj` package reference. New docking policy/control code should move toward `OpenVisionLab.Docking.Controls`; ShellHost should consume it through wrapper/control APIs instead of growing more AvalonDock-specific code-behind. Validation: `dotnet list src/OpenVisionLab/OpenVisionLab.csproj package --include-transitive` must show `Dirkster.AvalonDock` only as transitive, plus `dotnet build OpenVisionLab.sln -c Debug -p:Platform="Any CPU"` and `OpenVisionLab.exe --smoke layer-global-docking`.
-- 2026-06-29 docked-layer state DTO guard: Shell/test diagnostics should read docked comparison state through snapshot DTOs such as `OpenVisionDockedLayerWorkspaceState`, `OpenVisionDockedLayerDocumentState`, and wrapper-owned visual snapshots, not by reaching into AvalonDock document/pane objects from ShellHost. The snapshot must preserve content id, native float suppression state, viewer tile readiness, compact chrome state, pane count, root orientation, nested layout count, and top-aligned tab/header bounds. Validation target: `tools\RunDockingVerification.ps1`.
+- docking DLL boundary guard: AvalonDock package ownership starts in `src/Libraries/OpenVisionLab.Docking.Controls/OpenVisionLab.Docking.Controls.csproj`. Do not add `Dirkster.AvalonDock` back as a direct `src/OpenVisionLab/OpenVisionLab.csproj` package reference. New docking policy/control code should move toward `OpenVisionLab.Docking.Controls`; ShellHost should consume it through wrapper/control APIs instead of growing more AvalonDock-specific code-behind. Validation: `dotnet list src/OpenVisionLab/OpenVisionLab.csproj package --include-transitive` must show `Dirkster.AvalonDock` only as transitive, plus `dotnet build OpenVisionLab.sln -c Debug -p:Platform="Any CPU"` and `OpenVisionLab.exe --smoke layer-global-docking`.
+- docked-layer state DTO guard: Shell/test diagnostics should read docked comparison state through snapshot DTOs such as `OpenVisionDockedLayerWorkspaceState`, `OpenVisionDockedLayerDocumentState`, and wrapper-owned visual snapshots, not by reaching into AvalonDock document/pane objects from ShellHost. The snapshot must preserve content id, native float suppression state, viewer tile readiness, compact chrome state, pane count, root orientation, nested layout count, and top-aligned tab/header bounds. Validation target: `tools\RunDockingVerification.ps1`.
 - Operator-facing tool labels must resolve to localized/display text in both floating and docked modes. Do not expose resource keys such as `Morphology.Operation.Erode` or `Morphology.Shape.Rect` in buttons, radio buttons, or summaries.
 - The former right-side Shell rail must not return as a permanently visible three-card stack. Direct tool execution state belongs in a compact top status strip, while layer/result selection belongs in the central workspace tab strip.
 - The selected-layer detail card is no longer a primary Shell surface. Keep selected-layer information visible in the central workspace overlay/status where needed, but do not re-add the old fixed right detail panel without an explicit UX decision.
@@ -889,12 +972,12 @@ Stable behavior:
 - Pane-local and global docking guides are owned by the docking wrapper. Do not route ShellHost directly back to raw AvalonDock overlay APIs, and do not let AvalonDock native floating previews cover the workspace during layer comparison dragging.
 - The top direct-run status strip is a status surface, not a command toolbar. Keep it compact, single-line, and text-trimmed so it does not compete with the workspace or tool inspector.
 - Floating tool windows use smart placement so they do not cover the main workspace by default.
-- Tool views use shared `VisionToolWpfTheme.xaml` tokens. The visual direction is Shell-compatible neutral inspector styling: dark image workspace, teal accent, muted blue-gray tool surface, bright readable input fields.
+- Tool views use shared `VisionToolWpfTheme.xaml` tokens. The visual direction is Shell-compatible neutral inspector styling: dark image workspace, teal accent, muted blue-gray tool surface, readable theme-aligned input fields under the K8 instance-theme contrast contract.
 - PropertyGrid-heavy tool views must keep value editing readable. TextBox, ComboBox, RangeEditor, and Slider fields stay high-contrast and easy to scan.
 - Tool views should not return to disconnected pure-white card styling when they are meant to sit beside or dock into the WPF shell.
-- 2026-06-28 inspector theme alignment guard: `VisionToolWpfTheme.xaml` keeps tool panels on the same neutral inspector palette as the WPF Shell, while preserving readable light input fields and teal actions. Validation artifact: `artifacts\ui_precheck_inspector_theme_alignment_20260628`.
-- 2026-06-28 single-input docked density guard: Blob and Matching docked layouts keep PropertyGrid editing readable, preserve result review/action visibility, and reject excessive blank space below Run Preview. Validation artifact: `artifacts\ui_precheck_single_input_docked_density_20260628`.
-- 2026-06-28 double-input docked density guard: Arithmetic docked layout keeps input/output preview frames readable, places the active run action near the bottom of the inspector, and preserves route behavior. Validation artifact: `artifacts\ui_precheck_double_input_docked_density_20260628_retry`.
+- inspector theme alignment guard: `VisionToolWpfTheme.xaml` keeps tool panels on the same neutral inspector palette as the WPF Shell, while preserving readable light input fields and teal actions.
+- single-input docked density guard: Blob and Matching docked layouts keep PropertyGrid editing readable, preserve result review/action visibility, and reject excessive blank space below Run Preview.
+- double-input docked density guard: Arithmetic docked layout keeps input/output preview frames readable, places the active run action near the bottom of the inspector, and preserves route behavior.
 
 Do not:
 - Make native tools open docked by default without an explicit operator UX decision.
@@ -953,6 +1036,9 @@ Stable behavior:
 - If more than one input layer exists, Input B must not silently default to the same layer as Input A.
 - Creating/changing the output layer must preserve the selected A/B input route.
 - Offset mode may hide Input B because it intentionally uses Input A plus offset.
+- A Workbench test chooses its initial B route once. Offset/Operation round trips retain that route; reopening a cached test or editing a saved step must not reselect B.
+- Loading Input B must use the Workbench A/B/output routes. If B shares A, a successful load creates a separate B layer and updates the working-copy route without overwriting A/Main.
+- A malformed image or a canceled file dialog must preserve the existing input routes and image layers. Image loading itself must not run the tool.
 
 Do not:
 - Collapse Arithmetic back to single-input routing.
@@ -971,52 +1057,30 @@ Stable behavior:
 - Hybrid verification must not change `SCORE_MIN` semantics or the public result `Score`; the result score remains the edge score.
 - Template/model caching keeps the prepared template, base edge model, and rotated edge models for repeated preview/run on the same tool instance. It is result-neutral and must be cleared on template or relevant preprocessing/model parameter changes.
 - Probe validation on 2026-06-27 showed the template/model cache kept the same EasyMatch and synthetic probe results. The repeated EasyMatch run still measured about 45-58 ms, so the next speed bottleneck is source gradient generation and position scanning, not template model creation.
-- UI validation on 2026-06-27: `artifacts\ui_precheck_edge_based_template_model_cache_20260627` passed for `wpf_shell_host_edge_based_matching_tool`.
-- 2026-06-27 speed pass: source/template gradient unit vectors are precomputed and scoring uses array-based dot products. `Cv2.CartToPolar` was replaced with `Cv2.Magnitude` because angle output was unused. Focused probes kept the same score/angle/center outputs; EasyMatch `EdgeBased coarse angle step4 refine` measured about 32.6 ms in the sequential probe run. UI validation: `artifacts\ui_precheck_edge_based_unit_gradient_20260627`.
-- 2026-06-27 sample rotation benchmark: `.codex\EdgeBasedSampleRotationBenchmark` validates 10 EasyMatch sample images with inserted `0, +5, +10, -5, -10` degree targets. Pass criteria are center error <= 6 px and angle error <= 2 deg. Latest artifact: `artifacts\edge_based_hybrid_perf_20260627`.
+- 2026-06-27 speed pass: source/template gradient unit vectors are precomputed and scoring uses array-based dot products. `Cv2.CartToPolar` was replaced with `Cv2.Magnitude` because angle output was unused. Focused probes kept the same score/angle/center outputs; EasyMatch `EdgeBased coarse angle step4 refine` measured about 32.6 ms in the sequential probe run.
 - Latest 10-sample rotation result with threshold disabled for measurement after downscaled Hybrid proposal, edge-descriptor near-tie re-rank, per-angle-batch source resize reuse, and scaled proposal top K=2: `ImageCoarse` 50/50 pass, average 55.351 ms; `ImageExhaustive` 50/50 pass, average 58.934 ms; `EdgeOptimized` 43/50 pass, average 53.018 ms; `EdgeHybrid` 50/50 pass, average 126.511 ms, median 121.569 ms. This means EdgeHybrid is the safer repeated-pattern option, but it is still not a free default because it runs image proposals during angle search.
-- EdgeBasedMatching Hybrid verify may add image-matching proposals even when angle search is enabled. This is required for repeated edge-pattern samples such as Floppies where pure edge score can select the wrong repeated structure. The image proposal path may search on a downscaled source/template and then refine the selected top-left location on the original image, but it must recompute the edge score from the original gradient image before selecting the result. The downscaled source image is resized once per angle proposal batch; do not move that resize back inside the angle loop. The scaled proposal keeps top K=2 because K=1 kept accuracy in the current benchmark but measured slower and leaves less candidate margin. Hybrid re-rank may use a Canny edge-map descriptor only as a near-tie resolver for candidates near the best image location; it must not let a far repeated-pattern location override the image proposal. Keep this opt-in because it materially increases runtime. UI validation: `artifacts\ui_precheck_edge_based_hybrid_perf_20260627`.
-- 2026-06-27 follow-up: Hybrid verification reuses the image proposal candidate's existing image score instead of recomputing the same template match during re-rank. This is a result-neutral duplicate-work removal; public edge score, angle, center, and result drawing semantics must remain unchanged. Validation artifact: `artifacts\edge_based_hybrid_score_reuse_20260627`; UI validation: `artifacts\ui_precheck_edge_based_hybrid_score_reuse_20260627`.
-- 2026-06-27 diagnostic pass: EdgeBasedMatching now has opt-in phase timing through `CollectPhaseTimings`. It is diagnostic-only and must remain off by default. Benchmark artifact: `artifacts\edge_based_phase_timing_20260627`. The measured bottleneck order is `SearchEdgeCandidate` first, `HybridImageProposal` / `HybridProposal.ScaledMatch` second, and source gradient third. Descriptor matching, draw result, model cache, and preprocess are not first-priority speed targets. See `docs\EDGE_BASED_MATCHING_PERFORMANCE_ANALYSIS.md`.
-- 2026-06-27 Hybrid proposal speed pass: angle proposals inside Hybrid image verification may run in parallel when enough proposal angles are present. This is result-neutral and must keep public edge-score semantics unchanged. Validation artifact: `artifacts\edge_based_parallel_hybrid_proposal_20260627`; UI validation: `artifacts\ui_precheck_edge_based_parallel_hybrid_proposal_20260627`.
-- 2026-06-27 Search hot-loop speed pass: candidate scoring may cache per-model source index offsets and per-context early-break thresholds. This is result-neutral and must not change public edge-score semantics. Validation artifact: `artifacts\edge_based_score_context_20260627`; UI validation: `artifacts\ui_precheck_edge_based_score_context_20260627`.
-- 2026-06-27 Hybrid fast path speed pass: single-match Hybrid verify may skip full edge candidate search only when the image proposal is high-confidence (`ImageVerifyScore >= 0.985`) and its recomputed edge score is at least `max(SCORE_MIN, 0.70)`. Otherwise it must fall back to full edge search plus Hybrid verification. Public result `Score` remains the recomputed edge score. Validation artifact: `artifacts\edge_based_hybrid_fast_path_20260627`; UI validation: `artifacts\ui_precheck_edge_based_hybrid_fast_path_20260627`.
-- 2026-06-27 model quality diagnostics pass: EdgeBasedMatching may publish `Model.*` metrics for template size, raw/final edge point count, point sample ratio, edge density, edge coverage, quadrant balance, and simple risk flags. These metrics are telemetry only and must not change result scoring, overlays, recipe values, pipeline acceptance, or preview/run behavior. Validation artifact: `artifacts\edge_based_model_diagnostics_20260627`; visible UI validation: `artifacts\ui_precheck_edge_based_model_diagnostics_visible_20260627`.
-- 2026-06-27 candidate retention diagnostics pass: EdgeBasedMatching may publish `Candidate.*` metrics for image proposal count, fast path count, fallback search count, seed count, hybrid verification candidate count, verified count, image-proposal selection count, fallback selection count, and max proposal/search scores. These metrics are telemetry only and must not change result scoring, overlays, recipe values, pipeline acceptance, preview/run behavior, or candidate pruning. Validation artifact: `artifacts\edge_based_candidate_diagnostics_20260627`; UI validation: `artifacts\ui_precheck_edge_based_candidate_diagnostics_20260627`.
+- EdgeBasedMatching Hybrid verify may add image-matching proposals even when angle search is enabled. This is required for repeated edge-pattern samples such as Floppies where pure edge score can select the wrong repeated structure. The image proposal path may search on a downscaled source/template and then refine the selected top-left location on the original image, but it must recompute the edge score from the original gradient image before selecting the result. The downscaled source image is resized once per angle proposal batch; do not move that resize back inside the angle loop. The scaled proposal keeps top K=2 because K=1 kept accuracy in the current benchmark but measured slower and leaves less candidate margin. Hybrid re-rank may use a Canny edge-map descriptor only as a near-tie resolver for candidates near the best image location; it must not let a far repeated-pattern location override the image proposal. Keep this opt-in because it materially increases runtime.
+- 2026-06-27 follow-up: Hybrid verification reuses the image proposal candidate's existing image score instead of recomputing the same template match during re-rank. This is a result-neutral duplicate-work removal; public edge score, angle, center, and result drawing semantics must remain unchanged.
+- 2026-06-27 diagnostic pass: EdgeBasedMatching now has opt-in phase timing through `CollectPhaseTimings`. It is diagnostic-only and must remain off by default.
+- 2026-06-27 Hybrid proposal speed pass: angle proposals inside Hybrid image verification may run in parallel when enough proposal angles are present. This is result-neutral and must keep public edge-score semantics unchanged.
+- 2026-06-27 Search hot-loop speed pass: candidate scoring may cache per-model source index offsets and per-context early-break thresholds. This is result-neutral and must not change public edge-score semantics.
+- 2026-06-27 Hybrid fast path speed pass: single-match Hybrid verify may skip full edge candidate search only when the image proposal is high-confidence (`ImageVerifyScore >= 0.985`) and its recomputed edge score is at least `max(SCORE_MIN, 0.70)`. Otherwise it must fall back to full edge search plus Hybrid verification. Public result `Score` remains the recomputed edge score.
+- 2026-06-27 model quality diagnostics pass: EdgeBasedMatching may publish `Model.*` metrics for template size, raw/final edge point count, point sample ratio, edge density, edge coverage, quadrant balance, and simple risk flags. These metrics are telemetry only and must not change result scoring, overlays, recipe values, pipeline acceptance, or preview/run behavior.
+- 2026-06-27 candidate retention diagnostics pass: EdgeBasedMatching may publish `Candidate.*` metrics for image proposal count, fast path count, fallback search count, seed count, hybrid verification candidate count, verified count, image-proposal selection count, fallback selection count, and max proposal/search scores. These metrics are telemetry only and must not change result scoring, overlays, recipe values, pipeline acceptance, preview/run behavior, or candidate pruning.
 - 2026-06-27 rejected experiment: position-pyramid coarse search was not accepted. It either worsened runtime or broke the 50/50 EdgeHybrid rotation benchmark. Do not reintroduce that approach without a redesigned candidate-retention strategy and sample-backed proof.
-- 2026-06-27 option matrix notes: `SearchStep=5/6`, `CoarseStep=10`, and `Greediness=0.95` did not improve the 10-sample benchmark. `HybridTopN=3` and `MaxTemplatePoints=180` passed the current sample set, but they were not promoted to product defaults because the measured speed win was small/noisy and `MaxTemplatePoints` can affect generalization on richer edge templates.
 - Probe validation on 2026-06-27 showed `Search step=2 + Hybrid verify` and `Search step=4 + Refine position + Hybrid verify` suppress the synthetic similar-edge clutter false positive and return the true target region.
 - `Search step=4 + Refine position` without Hybrid verify can still pick the wrong coarse candidate in clutter-heavy samples. Treat it as a speed option requiring sample validation, not as a universal default.
-- 2026-06-28 current recommendation recheck: `artifacts\edge_based_current_benchmark_20260628` compared default and large EasyMatch sets with baseline and pyramid variants. `EdgeHybrid` remains the safe edge-based recommendation. `EdgeOptimized` alone must not become the production default because repeated-pattern samples such as `Floppies`/`FloppiesLarge` still select wrong repeated structures without Hybrid verification. `Pyramid proposal top N = 6` remains an explicit operator option, not a silent default migration.
-- 2026-06-28 pyramid proposal center mapping fix: scaled proposal candidates must be mapped back through `TemplateCenter`, then converted to the full-resolution model origin per refine angle. Do not revert this to `proposal.Center / scale`; that reintroduces large-template shifted verification windows. Validation artifact: `artifacts\edge_based_pyramid_center_mapping_guard_20260628`.
+- 2026-06-28 pyramid proposal center mapping fix: scaled proposal candidates must be mapped back through `TemplateCenter`, then converted to the full-resolution model origin per refine angle. Do not revert this to `proposal.Center / scale`; that reintroduces large-template shifted verification windows.
 - Pyramid proposal acceptance must keep the weak-verified fallback guard. A proposal whose full-resolution verified edge score only barely clears the configured threshold must fall back to the normal full search rather than being accepted as a confident proposal result.
 - 2026-06-28 scale/subpixel pass: EdgeBasedMatching has opt-in scale search through `USE_FIND_SCALE`, `FIND_SCALE_MIN`, `FIND_SCALE_MAX`, and `FIND_SCALE_STEP`, plus final-candidate `USE_SUBPIXEL_REFINE`. Scale search builds scale-specific edge template models and reports result `Scale`; it must not be simulated by resizing only the source while keeping a fixed template model. Subpixel refine is a local 3x3 score-peak center refinement and must not change `SCORE_MIN` semantics.
-- P225 Pipeline mapping guard: EdgeBasedMatching PropertyGrid/Pipeline creation and runtime factory execution must preserve scale, subpixel, and pyramid proposal settings. Do not silently restore their defaults when a saved Step explicitly contains these keys.
+- Pipeline mapping guard: EdgeBasedMatching PropertyGrid/Pipeline creation and runtime factory execution must preserve scale, subpixel, and pyramid proposal settings. Do not silently restore their defaults when a saved Step explicitly contains these keys.
 - When EdgeBasedMatching scale search is enabled, `Pyramid proposal` is intentionally bypassed for correctness. The current scale path uses the full edge search over angle x scale candidates, while Hybrid verify can still re-rank the selected edge candidates with scale-aware verification templates.
 - 2026-06-28 EdgeBasedMatching scale multi-match speed path: when `USE_FIND_SCALE=true`, `USE_FIND_ANGLE=false`, `USE_HYBRID_VERIFY=true`, `USE_MULTI_ROI=false`, and `NUM_MATCH>1`, the tool may reuse the first full edge-search candidate seed pool to select multiple non-overlapping matches. If the seed pool is depleted, it must fall back to the existing full edge search for the remaining results. Do not broaden this to angle search or multi-ROI without a separate validation pass.
 - EdgeBasedMatching result center semantics are now the visual template center. Drawing edge-model outlines must convert this result center back to the rotated/scaled model center through `TemplateCenterOffset`; do not mix edge-centroid and template-center coordinate contracts.
 - Scale verification images must be generated by resizing the whole original sample image. Do not create composite/blurred/pasted test images for scale validation. Current focused probe writes whole-image resized samples to `bin\Debug\EasyMatch\EdgeBasedScaleProbe` and validates 10 EasyMatch samples at 0.90x and 1.10x.
-- 2026-06-28 scale probe result: `artifacts\edge_based_scale_subpixel_20260628\scale_summary.csv` reported 20/20 pass, average 189.566 ms, median 155.292 ms, average center error 0.717 px, average scale error 0. BOARD dimensions verified as 772x480 original, 695x432 at 0.90x, and 849x528 at 1.10x.
-- 2026-06-28 scale speed probe after seed reuse: `.codex\EdgeBasedScaleProbe` reported 20/20 pass, average 170.187 ms, median 154.718 ms, average center error 0.717 px, average scale error 0. The `SearchEdgeCandidate` phase average was 75.718 ms.
-- 2026-06-28 actual EXE scale smoke: `OpenVisionLab.exe --smoke edge-based-scale-matching` passed in `artifacts\actual_exe_edge_based_scale_20260628_final`. The smoke loads a whole-image 0.90x BOARD sample into the real WPF shell, registers a 120x90 template, enables `USE_FIND_SCALE`, runs preview, checks `EdgeBasedMatching_Preview`, verifies `Scale 0.9` in the result review, and verifies XML save/load for `USE_FIND_SCALE`, `FIND_SCALE_MIN/MAX/STEP`, `SEARCH_STEP`, and `USE_SUBPIXEL_REFINE`.
 - 2026-06-28 Image Matching scale-search contract: Matching has opt-in target scale search through `USE_FIND_SCALE`, `FIND_SCALE_MIN`, `FIND_SCALE_MAX`, and `FIND_SCALE_STEP`. This creates scale-specific templates and reports result `Scale`. `MAGNIFIATION` remains the existing calculation/downsample magnification and must not be reused as target size correction. Do not auto-enable scale search without an explicit recipe/operator setting.
-- 2026-06-28 actual EXE image-vs-edge scale comparison after Image Matching scale search: `OpenVisionLab.exe --smoke matching-vs-edge-based-scale-comparison` passed in `artifacts\actual_exe_matching_vs_edge_scale_after_image_scale_20260628`. On the same whole-image 0.90x BOARD source and 120x90 original template, Image Matching returned `Score 94.458`, `Box 108x80`, `Scale 0.9`, center error 0.500 px, tact 166.7 ms; EdgeBasedMatching returned `Score 97.476`, `Box 108x81`, `Scale 0.9`, center error 0.721 px, tact 269.7 ms. This is a focused actual-EXE scale behavior check, not a universal speed ranking.
-- 2026-06-28 10-sample Image Matching vs EdgeBased scale comparison: `.codex\MatchingScaleComparisonProbe` passed 40/40 rows in `artifacts\matching_scale_comparison_20260628`. It uses whole-image 0.90x/1.10x resized samples only. Image Matching scale search passed 20/20 with average 473.771 ms, median 455.425 ms, average center error 0.845 px, average scale error 0. EdgeBasedMatching passed 20/20 with average 179.842 ms, median 147.206 ms, average center error 0.717 px, average scale error 0. Do not treat score values as directly comparable between tools; compare pass, geometry, and tact time.
-- 2026-06-28 Image Matching pyramid proposal scale comparison: `.codex\MatchingScaleComparisonProbe` passed 60/60 rows in `artifacts\matching_scale_pyramid_comparison_20260628`. In the same 10-sample whole-image 0.90x/1.10x run, baseline Image Matching averaged 626.925 ms, Image Matching with `USE_PYRAMID_POSITION_PROPOSAL=true` averaged 342.530 ms, and EdgeBasedMatching averaged 236.045 ms. The pyramid option preserved Image Matching score, center error, and scale error on this run. Keep it opt-in and angle-search-off until a separate validation proves broader use.
-- 2026-06-28 scale comparison after EdgeBased seed reuse: `.codex\MatchingScaleComparisonProbe` passed 60/60 rows in `artifacts\matching_scale_after_edge_seed_reuse_20260628`. In the same 10-sample whole-image scale run, EdgeBasedMatching averaged 116.962 ms, Image Matching averaged 586.619 ms, and Image Matching with pyramid proposal averaged 326.588 ms. Scores are still not directly comparable across tools; compare pass, geometry, and tact time.
-- 2026-06-28 actual EXE recheck after adding Image Matching pyramid proposal: `OpenVisionLab.exe --smoke matching-vs-edge-based-scale-comparison` passed in `artifacts\actual_exe_matching_vs_edge_scale_after_pyramid_20260628`. This confirms the default scale-search path still loads source/template images, publishes `Matching_Preview` and `EdgeBasedMatching_Preview`, and reports `Scale 0.9` for both tools after the new opt-in option was added.
-- 2026-06-28 actual EXE Image Matching pyramid smoke: `OpenVisionLab.exe --smoke matching-pyramid-scale` passed in `artifacts\actual_exe_matching_pyramid_scale_20260628`. The smoke enables `USE_PYRAMID_POSITION_PROPOSAL=true`, `PYRAMID_POSITION_TOP_N=8`, and `PYRAMID_POSITION_MIN_SCORE=0.7`, verifies XML save/load for those fields, runs preview through the real WPF shell, checks `Matching_Preview`, and confirms `Scale 0.9` with center error 0.5 px.
-- 2026-06-28 actual EXE EdgeBased scale speed smoke: `OpenVisionLab.exe --smoke edge-based-scale-matching` passed in `artifacts\actual_exe_edge_based_scale_after_speed_20260628`. It confirmed `EdgeBasedMatching_Preview`, `Count 5`, `Scale 0.9`, and tact `113.5 ms` on the BOARD 0.90x sample.
-- 2026-06-28 Matching Pyramid proposal PropertyGrid UI smoke: `wpf_shell_host_matching_pyramid_property_grid` passed in `artifacts\ui_precheck_matching_pyramid_property_grid_20260628`. It verifies `PYRAMID_POSITION_TOP_N` and `PYRAMID_POSITION_MIN_SCORE` are hidden when `USE_PYRAMID_POSITION_PROPOSAL=false`, become visible under the parent option, preserve edited values, and do not trigger auto-preview when the parent visibility switch is toggled.
-- 2026-06-28 EdgeBased scale pyramid survival audit: `.codex\EdgeBasedPyramidScaleSurvivalProbe` wrote `artifacts\edge_based_pyramid_scale_survival_20260628`. On 10 EasyMatch samples, target scales `0.75/0.90/1.10/1.25`, and search range `0.70..1.30`, the true candidate survived Top12 in 37/40 cases at 1/2 level and 25/40 cases at 1/4 level. This is not enough for a hard pyramid candidate cutoff.
-- 2026-06-28 EdgeBased scale pyramid gate variants: `.codex\EdgeBasedPyramidScaleGateProbe` wrote `artifacts\edge_based_pyramid_scale_gate_20260628`. With whole-image resized EasyMatch samples and a 1/2 working-level gate, no tested variant reached 40/40 survival under center error `<=16 px` and scale error `<=0.051`. `top24_step1_p220` and `top24_step2_p220_hybrid` reached 39/40 but were slower than the accepted EdgeBased scale seed-reuse path. Do not promote these gate variants into production without a redesigned fallback/candidate-propagation validation.
-- 2026-06-28 rejected EdgeBased scale candidate-propagation attempt: `artifacts\matching_scale_edge_pyramid_guarded_single_multi_20260628` showed that a guarded scale-aware 1/2 proposal path still accepted the wrong repeated candidate for `EdgeBasedMatchingSinglePyramid` on `DiePad2@0.9` with center error `49.798 px`. The attempted production code was reverted. `artifacts\matching_scale_after_candidate_propagation_revert_20260628` passed 60/60 rows after the revert. Do not reintroduce scale candidate propagation through the current position-proposal path.
-- 2026-06-28 EdgeBased scale quality metrics: `EdgeBasedTemplateMatchingTool` now reports diagnostic-only `Model.ScaleSearchRisk`, `Model.ScaleCoverageWarningRisk`, `Model.LowQuadrantBalanceRisk`, `Candidate.ScaleAmbiguityRisk`, same/different-scale ambiguous alternative counts, and `Candidate.MaxAmbiguousScaleDelta`. `.codex\MatchingScaleComparisonProbe` writes these into `ModelMetrics`/`CandidateMetrics`; `artifacts\matching_scale_quality_metrics_20260628` passed 60/60 rows. These metrics must not reject matches, auto-tune recipes, or accept pyramid proposals until a separate acceptance-rule validation proves the rule.
-- 2026-06-28 EdgeBased scale proposal acceptance-rule probe: `.codex\EdgeBasedScaleAcceptanceRuleProbe` wrote `artifacts\edge_based_scale_acceptance_rule_probe_20260628`. The offline rule `ProposalAmbiguousAndGapLe003` blocked the known wrong proposal accept for `DiePad2@0.9` with 0/15 good proposal fallback cost in the rejected artifact. This is not yet a production behavior change. If implemented later, the rule must only reject the proposal shortcut and fall back to the existing full-resolution multi-match search; it must not fail the match, change public score semantics, or auto-edit recipe values.
-- 2026-06-28 diverse local image scale probe: `.codex\EdgeBasedDiverseScaleProbe` sampled 60 images from `bin\Debug`, generated whole-image `0.90x/1.10x` sources, and wrote `artifacts\edge_based_diverse_scale_probe_20260628_60`. The current full EdgeBased scale path passed 104/120 rows; 8 failures were low-edge/reference images where the automatic probe crop could not build a template, and 8 were repeated/weak auto-crop geometry failures. Passed rows averaged `0.525 px` center error. `Candidate.ScaleAmbiguityRisk=1` appeared in 99/120 rows, proving again that ambiguity telemetry must not be used as a hard fail.
-- 2026-06-28 rejected EdgeBased scale pyramid proposal attempt: `artifacts\matching_scale_edge_pyramid_proposal_20260628` showed `EdgeBasedMatchingPyramid` passed only 19/20 rows and averaged 257.241 ms, while the existing EdgeBased scale path passed 20/20 and averaged 105.661 ms in the same run. The production change was reverted. Keep `Pyramid proposal` bypassed when `USE_FIND_SCALE=true`.
-- 2026-06-28 post-revert scale comparison: `artifacts\matching_scale_after_pyramid_revert_check_20260628` passed 60/60 rows, confirming the accepted scale paths were restored after the rejected attempt.
-- 2026-06-28 post-audit actual EXE smoke: `artifacts\actual_exe_edge_based_scale_after_pyramid_audit_20260628` passed and confirmed `EdgeBasedMatching_Preview`, `Scale 0.9`, and tact `109.5 ms`.
+- Guarded scale candidate propagation must not reintroduce acceptance of a wrong repeated candidate. Retain the full-resolution fallback search.
+- 2026-06-28 EdgeBased scale quality metrics: `EdgeBasedTemplateMatchingTool` now reports diagnostic-only `Model.ScaleSearchRisk`, `Model.ScaleCoverageWarningRisk`, `Model.LowQuadrantBalanceRisk`, `Candidate.ScaleAmbiguityRisk`, same/different-scale ambiguous alternative counts, and `Candidate.MaxAmbiguousScaleDelta`. These diagnostics must not reject matches, auto-tune recipes or accept pyramid proposals without an independently defined acceptance rule.
 - Matching-family test hooks must expose result review text for Matching, EdgeBasedMatching, and FeatureMatching, not only Line. This is required for actual EXE smoke verification and must remain read-only.
 
 Do not:
@@ -1039,8 +1103,6 @@ Do not:
 - Replace Image Matching target scale search with `MAGNIFIATION`. They are different controls: `MAGNIFIATION` changes the working resolution for speed, while `USE_FIND_SCALE` searches actual target size changes.
 
 Relevant focused checks:
-- `.codex\MatchingRobustnessProbe`
-- `.codex\EdgeBasedAngleProbe`
 - `wpf_shell_host_edge_based_matching_tool`
 - `wpf_shell_host_edge_based_matching_auto_mpoint`
 
@@ -1077,8 +1139,6 @@ Do not:
   expansion without the separately required fixed-ROI evidence.
 
 Evidence:
-
-- `artifacts\p224_unique_match_runtime_20260724`
 - `docs\OPENVISIONLAB_EDGE_BASED_UNIQUE_MATCH_V1_CONTRACT.md`
 
 ## Recipe Review Bundle Import Dry-Run
@@ -1214,18 +1274,15 @@ Do not:
 - infer a completed rename/delete from a partial file set, delete uncertain operator files, or silently choose a foreign pointer/backup;
 - treat process-kill evidence as proof of power loss, filesystem corruption, non-cooperative native worker shutdown, or full WPF/DPI/hardware qualification.
 
-Relevant smoke and evidence:
-
 - `--pipeline-persistence-recovery-contract`
 - `--pipeline-persistence-process-recovery-contract`
 - `--pipeline-persistence-process-recovery-probe`
-- `docs/reports/OPENVISIONLAB_OVL06_BEHAVIOR_REGRESSION_PROCESS_RECOVERY_20260907.md`
 
-## Public File Input Boundary — Pending Product Size Policy
+## Public File Input Boundary — Local Size Policy
 
 Current boundary audit:
 
-- `AppPathService` and the PL-0007 `RecipeWorkspaceService` owner keep new
+- `AppPathService` and the `RecipeWorkspaceService` owner keep new
   storage paths inside the intended root and reject the existing traversal,
   rooted, reserved-device, control-character, trailing-dot/space, and
   case-collision cases before mutation.
@@ -1274,13 +1331,15 @@ Current boundary audit:
   1 MiB control frame, and 1 KiB UTF-8 relative paths; a product may lower
   those bounds.
 
-This is not yet a uniform public-file size contract. General Pipeline XML,
-locator JSON, local integration messages, and generic local artifacts still
-read without a product-approved common maximum. Do not add an arbitrary limit,
-reopen PL-0007, or introduce a second filesystem/security framework until the
-product chooses the supported per-entry and aggregate ceilings and their typed
-error mapping. The bounded audit and evidence are recorded in
-`docs/reports/OPENVISIONLAB_2D_PUBLIC_FILE_INPUT_BOUNDARY_AUDIT_20260915.md`.
+사용자 결정(2026-10-15): 일반 Pipeline XML·locator JSON·로컬 message/artifact에
+별도 제품 단일/합계 byte cap을 추가하지 않는다. “MAX 크게”는 기존 읽기/자료형의
+표현 범위를 유지하는 뜻으로 적용하며 임의의 큰 상수나 local adapter의 TCP 제한을
+새로 만들지 않는다. 기존 TCP/review-bundle 제한과 parse/I/O/typed 오류 경로는 유지한다.
+새 cap이 없으므로 cap 초과 전용 오류 코드·KO/EN 문구도 추가하지 않는다. 이 결정은
+무제한 파일 처리, 기존 제한 철회 또는 할당 실패 복구를 보증하지 않는다. 기존 path/reparse
+owner를 유지하며 별도 보안 framework를 재구현하지 않는다. 과거 감사는
+, 현재 결정은
+관련 계약과 의 1단계 결과를 따른다.
 
 Relevant existing smoke/evidence:
 
@@ -1290,8 +1349,6 @@ Relevant existing smoke/evidence:
 - `--integration-2d-run-record-recovery-contract`
 - `--integration-2d-input-hash-decode-contract <evidenceRoot> <runtime-config>`
 - `TwoDIntegrationTcpSmoke --fault-injection-contract <evidenceRoot> <source> <pipeline> <runtime-config>`
-- `docs/reports/OPENVISIONLAB_OVL02_TWO_D_INTEGRATION_IDENTITY_20260907.md`
-- `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\2d023-file-input-20260915\source-and-upstream-audit.txt`
 
 ## Deployment SDK Provenance Boundary — 2D-046
 
@@ -1354,7 +1411,7 @@ Focused smoke route:
 
 The example contract and loopback evidence do not qualify two-PC networking,
 offline installation, .NET 4.8 hosts, hardware, long-running operation, or WPF
-interaction. See `docs/reports/OPENVISIONLAB_2D_CSHARP_CONSUMER_OUTCOME_20260916.md`.
+interaction. See .
 
 ## Recipe/Pipeline Persistence Recovery Gate
 
@@ -1482,7 +1539,6 @@ Relevant smoke:
 Relevant smoke:
 
 - `--pinarraygap-validation-identity-owner-contract <evidenceDirectory>`
-- `docs/reports/OPENVISIONLAB_2D_VALIDATION_CONTENT_HASH_AUDIT_20260915.md`
 
 ## Run History Batch Analytics
 
@@ -1515,6 +1571,10 @@ Relevant smoke:
 
 ## Pipeline Review Input-State Semantics
 
+V2 메인 패널도 같은 입력 상태를 사용한다. 현재 Main이 없고 앞 단계 생산자가 없는 행은 입력 오류,
+앞 단계에서 만들어질 입력은 WAIT다. 실제 이미지 로드 후 상태 갱신은 실행하지 않는다.
+메인 행의 사용 안 함/이전 결과/미실행 표시는 부록 C를 따르며 아래 기존 Review 상태 의미를 보존한다.
+
 Stable behavior:
 
 - An enabled Step with no current input image is `입력 없음` only when no earlier enabled Step produces that input layer.
@@ -1531,15 +1591,23 @@ Relevant smoke:
 
 ## Pipeline Review Selected-Step Edit Handoff
 
+This section preserves the legacy handoff's identity and safety guarantees during
+V2 migration; its former tab path is not the target View specification. Approved
+V2 HTML places selected-Step editing in the main right Tool panel alongside its
+images/results. Do not recreate an Inspection Work overlay for legacy checks.
+The approved work-copy/save migration applies at its recorded implementation
+boundary; this documentation correction alone changes no runtime behavior.
+
 Stable behavior:
 
-- `설정 수정` in Pipeline Review opens the same recipe, pipeline, and 1-based selected Step in Recipe Manager `Advanced > Pipeline > XML/Step`.
-- The existing Recipe Manager PropertyGrid is the authoritative selected-Step parameter editor and must be brought into the visible viewport. The separate Tool View remains a detached tool session unless a future explicit apply-back contract is designed and verified.
+- `설정 수정` preserves the same recipe, pipeline, and 1-based selected Step when handing off to the existing selected-Step editor.
+- The existing selected-Step PropertyGrid remains the authoritative parameter editor and must be brought into the visible viewport. The separate Tool View remains a detached tool session unless a future explicit apply-back contract is designed and verified.
 - Opening the handoff must not run Preview/Run, create/delete/load layers, change the active layer, change workspace or pipeline routing, or create recipe sample evidence.
-- Parameter persistence remains an explicit Recipe Manager XML apply action; rerun remains an explicit operator action.
-- When the requested pipeline exactly matches a runnable catalog workspace pipeline (`Sample_<catalog sample name>`), the Recipe Manager work sample must align to that same catalog sample before Good/Bad rerun. It must not retain an unrelated prior/default sample.
+- Parameter persistence remains an explicit selected-Step XML apply action; rerun remains an explicit operator action.
+- After an explicit top-bar Recipe switch from selected-Step editing, a successful pending-edit apply must rebind the editor and browsed context to the newly current Recipe/Pipeline after preparation. Cancel or failed apply keeps the prior identity and dirty input; the switch must not run inspection.
+- When the requested pipeline exactly matches a runnable catalog workspace pipeline (`Sample_<catalog sample name>`), the work sample must align to that same catalog sample before Good/Bad rerun. It must not retain an unrelated prior/default sample.
 - A pipeline with no exact runnable catalog match must not change the current work-sample selection merely because selected-Step edit was opened.
-- An unsupported PropertyGrid mapping may still navigate to the exact XML/Step detail, but it must show an unavailable edit status rather than silently changing the Step.
+- An unsupported PropertyGrid mapping may still navigate to the exact current-Step detail, but it must show an unavailable edit status rather than silently changing the Step.
 
 Relevant smoke:
 
@@ -1565,7 +1633,7 @@ Stable behavior:
   Native Tool View grayscale normalization is applied only to the execution
   copy. The saved source snapshot remains the original loaded image and is
   verified by SHA-256.
-- Phase 1 executes sequentially. Stop is checked between images and therefore
+- executes sequentially. Stop is checked between images and therefore
   means stop after the current image. Do not describe this as parallel
   execution.
 - Every completed row retains its source snapshot, result drawing, run report,
@@ -1596,7 +1664,7 @@ Stable behavior:
   selected Pipeline is not runnable; Pipeline, dependency, or image hash drift
   fails before image execution. Legacy unlocked Validation Sets keep their
   existing add/remove/repair and OK/NG behavior.
-- P234's first real-folder acceptance must remain reproducible: the frozen P230
+- 해당 기능's first real-folder acceptance must remain reproducible: the frozen 해당 기능
   Die Pad 1 Step SHA-256
   `7CEAEC5D50259ED1337AB912F0F0A63C673F4A74E692DCDEA01BAA14FC25658F`
   registers and executes a deterministic 12 OK + 12 NG top-level folder with
@@ -1614,8 +1682,7 @@ Relevant smoke:
 - `wpf_tool_n_image_entry_side_effect_contract`
 - `--tool-n-image-verification-contract` in `VisionRecipeRunnerSmoke`
 - `--tool-n-image-real-folder-acceptance` in `VisionRecipeRunnerSmoke`, with
-  the frozen P230 dataset/template/baseline arguments recorded in
-  `artifacts\p234_tool_n_image_real_folder_acceptance_20260724`
+  the frozen 해당 기능 dataset/template/baseline arguments recorded in
 
 ## Qualified Recipe Snapshot Core And Run History UI
 
@@ -1672,11 +1739,6 @@ Relevant smoke:
 
 - `tools\QualifiedRecipeSnapshotSmoke`
 - `wpf_shell_host_recipe_qualified_snapshot`
-- `D:\OpenVisionLab-TestData\OpenVisionLab_Dev\2d025-qualification-20260915`
-- retained evidence:
-  `artifacts\qualified_recipe_snapshot_core_20260727\final` and
-  `artifacts\qualified_recipe_snapshot_ui_20260727`
-
 ## EdgeBased Matcher Retained-Run Diagnostics
 
 Stable behavior:
@@ -1712,9 +1774,8 @@ Relevant smoke:
 - `wpf_shell_host_workspace_sample_pipeline_review_edge_ng_metrics`
 - `wpf_shell_host_edge_based_matching_tool`
 - retained evidence:
-  `artifacts\cvr06_matcher_diagnostic_20260728`
 - completion report:
-  `docs\reports\OPENVISIONLAB_MATCHER_DIAGNOSTIC_SURFACE_20260728.md`
+
 
 ## Threshold Basic Retained-Preview Teaching Suggestion
 
@@ -1747,16 +1808,13 @@ Stable behavior:
   changes, generic easyTouch behavior, a new inspection algorithm, or
   additional suggestion families without their own trigger and verification.
 
-Relevant smoke and evidence:
-
 - `cvr07_threshold_suggestion`
 - `wpf_shell_host_threshold_basic_tool`
 - `wpf_shell_host_threshold_tool`
 - `wpf_threshold_signal_good_bad_replay`
 - retained evidence:
-  `artifacts\cvr07_threshold_suggestion_20260728`
 - completion report:
-  `docs\reports\OPENVISIONLAB_THRESHOLD_TEACHING_SUGGESTION_20260728.md`
+
 
 ## LineFixture Typed Dual-Datum Producer
 
@@ -1796,16 +1854,13 @@ Stable behavior:
   named operator/data packet and reviewed N-sample rail/reflection evidence in
   the dedicated contract.
 
-Relevant smoke and evidence:
-
 - `OpenVisionFixtureSmoke --cvr09-line-fixture`;
 - `cvr09_line_fixture_property_grid`;
 - retained evidence:
-  `artifacts\cvr09_line_fixture_20260728_r11`;
 - contract:
   `docs\contracts\openvisionlab\OPENVISIONLAB_LINE_FIXTURE_V1_CONTRACT.md`;
 - completion report:
-  `docs\reports\OPENVISIONLAB_CVR09_LINE_FIXTURE_20260728.md`.
+  .
 
 ## MultiMatchMean Bounded Multi-Instance Consumer
 
@@ -1844,16 +1899,13 @@ Stable behavior:
   graph engine, arbitrary nested sub-recipe, calibrated measurement,
   cross-image tracking, another fan-out tool family, or field qualification.
 
-Relevant smoke and evidence:
-
 - `OpenVisionFixtureSmoke --cvr10-multi-match-mean`;
 - `cvr10_multi_match_mean_review`;
 - retained evidence:
-  `artifacts\cvr10_multi_match_mean_20260728_r6`;
 - contract:
   `docs\contracts\openvisionlab\OPENVISIONLAB_MULTI_MATCH_MEAN_V1_CONTRACT.md`;
 - completion report:
-  `docs\reports\OPENVISIONLAB_CVR10_MULTI_MATCH_MEAN_20260728.md`.
+  .
 
 ## Validation Variant v1 Contract
 
@@ -1868,11 +1920,8 @@ CVR-19 is stable at the bounded image-level Variant scope:
 - missing fields remain legacy Default/no-gate behavior; invalid ranges fail
   closed.
 
-Relevant smoke and evidence:
-
 - `wpf_shell_host_recipe_local_validation_set`;
 - `QualifiedRecipeSnapshotSmoke`;
-- `artifacts\cvr19_validation_variants_20260729`;
 - `docs\contracts\openvisionlab\OPENVISIONLAB_VALIDATION_VARIANT_V1_CONTRACT.md`.
 
 ## Overlay Rendering v1 Contract
@@ -1892,12 +1941,9 @@ CVR-20 is stable inside the existing `OverlayMerge` Step:
   unchanged;
 - Run Reports and Pipeline snapshots retain the rendering parameters.
 
-Relevant smoke and evidence:
-
 - `cvr20_overlay_rendering`;
 - `wpf_shell_host_pipeline_review`;
 - `wpf_shell_host_recipe_manager_summary`;
-- `artifacts\cvr20_overlay_rendering_20260729`;
 - `docs\contracts\openvisionlab\OPENVISIONLAB_OVERLAY_RENDERING_V1_CONTRACT.md`.
 
 ## Before Touching Stable Paths
@@ -1912,9 +1958,9 @@ Example focused commands:
 ```powershell
 dotnet build .\src\OpenVisionLab\OpenVisionLab.csproj -c Debug -p:Platform=x64 -p:WpgCustomBuildEnabled=false -m:1 -nr:false
 dotnet build .\tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj -c Debug -p:Platform=x64 -p:WpgCustomBuildEnabled=false -m:1 -nr:false
-dotnet .\tools\PipelineViewerScreenshotSmoke\bin\x64\Debug\net8.0-windows7.0\PipelineViewerScreenshotSmoke.dll --target wpf_shell_host_blob_tool .\.codex\smoke-output\stable-blob
-dotnet .\tools\PipelineViewerScreenshotSmoke\bin\x64\Debug\net8.0-windows7.0\PipelineViewerScreenshotSmoke.dll --target wpf_shell_host_workspace_image_load .\.codex\smoke-output\stable-workspace-load
-Start-Process -FilePath .\bin\x64\Debug\OpenVisionLab.exe -WorkingDirectory . -ArgumentList @('--smoke','line-pins-measure','--output','.\.codex\smoke-output\actual-exe-line-pins-measure') -Wait
+dotnet .\tools\PipelineViewerScreenshotSmoke\bin\x64\Debug\net8.0-windows7.0\PipelineViewerScreenshotSmoke.dll --target wpf_shell_host_blob_tool <isolated-output>\stable-blob
+dotnet .\tools\PipelineViewerScreenshotSmoke\bin\x64\Debug\net8.0-windows7.0\PipelineViewerScreenshotSmoke.dll --target wpf_shell_host_workspace_image_load <isolated-output>\stable-workspace-load
+Start-Process -FilePath .\bin\x64\Debug\OpenVisionLab.exe -WorkingDirectory . -ArgumentList @('--smoke','line-pins-measure','--output','<isolated-output>\actual-exe-line-pins-measure') -Wait
 ```
 
 ## Completion Rule
@@ -1925,3 +1971,130 @@ A restored feature becomes "do not touch casually" only when:
 - the smoke passes after the final code change.
 
 If all three are true, future work should preserve the behavior and avoid opportunistic redesign.
+
+## 작업대 도킹·표시·편집 계약
+
+작업대의 표시·편집·저장·실행 경계는 아래 조항을 따른다. 실제 owner와 호출은 `docs/admin/CODEBASE_STRUCTURE.md` 및 해당 소스에서 확인한다.
+
+### K1. 오른쪽 툴 패널을 기본으로 사용
+
+대상: §5D의 별도 창 기본 열기 조항과 Matching의 별도 창 기본 열기 설명.
+§5C의 스마트 배치 계약은 사용자가 `분리`한 창에 계속 적용한다.
+
+- 툴은 오른쪽 툴 패널에 기본으로 열린다. `분리 (별도 창)`는 현재 툴을 기존 별도 창으로 옮기고,
+  `오른쪽에 도킹`은 같은 툴을 오른쪽 패널로 되돌린다.
+- 도킹·분리·툴 전환은 기존 native Tool View와 수명 owner를 재사용한다. 현재 입력·출력,
+  파라미터, 미리보기 상태와 조정한 패널 폭을 보존하며 중복 창을 만들지 않는다.
+- 창 위치·표시 방식의 변경과 복원은 실행, 레이어 생성, 활성 레이어·입력 경로 변경을 일으키지 않는다.
+- 툴 목록은 전처리7·위치·정렬5·검사·측정4 순서와 정상2열을 사용한다.
+  기존 canonical 툴·아이콘·선택 명령을 재사용하고 Pipeline 작업 화면 항목은 툴 목록에서 제외한다.
+  registry의 기존 Pipeline 진입은 유지한다. 준비 점은 템플릿 필요/입력2개/추가 불가를 표시하며
+  이미지 없음 배지로 타일을 채우지 않는다. 검색·표시·준비 상태 갱신은 실행하지 않는다.
+  검색 결과가 없으면 현재 언어의 빈 검색 안내를 표시한다. 기존 검색의 학습·샘플·Guided Setup 진입과
+  기존 검색1열의 동작과 선택 계약을 보존한다.
+- `wpf_tool_window_dock_float_cycle`의 시작 상태를 오른쪽 패널로 바꾸고,
+  §5D의 도킹 PropertyGrid·헤더·스크롤·편집 상태 가드를 모두 유지한다.
+  툴 목록은 `wpf_workbench_tool_palette`/compact와 `wpf_shell_host_tool_search`에서
+  순서·canonical binding·긴 캡션·준비 표시/복원·검색 오류/회복·무실행을 검사한다.
+
+### K2. 분할 프리셋과 창별 표시 소스
+
+대상: §5D의 레이어 탭 미러링 기본 배치와 §6의 비교 진입 방식.
+
+- 작업대 비교는 1·2·4분할 프리셋과 창별 표시 소스로 구성한다. 모든 레이어를 각 창의
+  소스 메뉴에서 선택할 수 있어야 하며, 메뉴 밖으로 레이어를 숨기지 않는다.
+- 표시 소스는 툴 입력 경로와 별개다. 출력 생성, 단계 선택, 표시 토글, 레이어 생성·삭제·로드,
+  배치 복원은 검사 실행이나 자동 재배치를 일으키지 않는다. 선택 단계의 입력·출력을 보여주는
+  정책은 사용자가 정한 프리셋과 고정 상태 안에서만 적용한다.
+- 확대·이동·좌표·ROI·템플릿 편집·비교 기능을 유지한다. AvalonDock과 창 배치의 소유자는
+  `OpenVisionLab.Docking.Controls`이며 Shell에서 raw AvalonDock에 접근하지 않는다.
+- `tools/RunDockingVerification.ps1`의 기대 배치를 새 계약에 맞게 바꾼다. 모든 레이어 접근,
+  창별 소스 독립, 입력 경로 보존, 자동 재배치 0, ROI 적용 시 실행 0을 검증한다.
+
+### K3. Pipeline Review의 상태와 결과를 메인에 통합
+
+대상: §3A의 별도 화면 책임. 입력 상태·실행·결과 의미는 보존한다.
+
+- 단계 목록과 입력 상태는 메인 파이프라인 패널, 상세 결과는 하단 결과 탭에서 다룬다.
+  기존 Review 실행·결과 presenter와 입력 검증 owner를 재사용한다.
+- `입력 없음`과 앞 단계에서 생성될 입력의 `WAIT` 의미, 단계 인덱스 기반 결과 대응,
+  첫 NG/오류 뒤 미실행과 사용 안 함의 구분을 유지한다. 판정 없는 완료를 OK로 바꾸지 않는다.
+- 참조 검증은 실행 전에 fail-closed로 수행한다. 단계 선택과 결과 탐색은 실행하지 않으며,
+  이전 결과를 새 입력으로 조용히 대신 사용하지 않는다.
+- `wpf_shell_host_pipeline_review_input_state`의 같은 입력 상태를 새 파이프라인 행에서 검증하고,
+  실제 EXE `recipe-pipeline-roundtrip`으로 저장·재열기 대응을 확인한다.
+- 통합을 이유로 별도 Review 화면의 기존 명령과 결과 계약을 제거하지 않는다.
+
+### K4. 작업본 편집과 레시피 저장
+
+대상: `Pipeline Review Selected-Step Edit Handoff`와 단계 추가의 즉시 저장 계약.
+
+- 단계 파라미터와 추가·삽입·이동·삭제·복제·이름·사용 여부의 편집은 메모리 작업본에 바로 반영한다.
+  디스크 반영은 `레시피 저장`(Ctrl+S)과 저장 확인 창으로 처리한다. 편집 명령이 직접 저장하지 않는다.
+- 미저장 전환은 저장·저장 안 함·취소 결과에 따라 처리한다. 저장 실패 시 작업본과 현재 문맥을
+  유지하고 전환을 완료하지 않는다. 기존 pending-edit·전환·대화상자 owner를 확장한다.
+- XML 스키마와 이름·참조·단위·문화권 호환을 유지한다. 기존 atomic 파일 저장·복구 계약을
+  재사용하며 여러 파일을 저장하는 레시피 전체의 트랜잭션 보장을 새로 주장하지 않는다.
+- 저장과 실행 취소는 실행하거나 이전 결과를 최신 결과로 바꾸지 않는다. 단계 편집 후 영향받은
+  결과의 이전 상태는 실제 재실행으로만 해소한다.
+- 미저장 전환 스모크, `wpf_recipe_pending_edit_dialog`,
+  `--recipe-save-failure-contract`, XML 왕복을 같은 변경에서 갱신한다.
+
+### K5. 단계 편집의 Core 책임
+
+대상: 새 단계 편집 계약. 기존 실행 엔진·저장 형식은 변경하지 않는다.
+
+- `VisionPipelineStepEditService`는 단계 삽입·이동·삭제·복제·이름 변경·사용 여부를 처리한다.
+  입력과 반환은 `VisionPipeline` 복사본과 `VisionPipelineValidator` 검증 결과다.
+- 디스크 IO, UI 객체, 실행 정책을 소유하지 않는다. 이름 고유 규칙은 기존
+  `VisionPipelineAppendService`와 공유하며 참조를 자동으로 고치지 않는다.
+- 변경과 실행 취소 후 깨진 입력·B 입력·fixture 참조가 남으면 실행을 차단한다.
+  사용 안 함, 이전 결과, 미실행 상태를 서로 바꾸어 실패를 숨기지 않는다.
+- `VisionRecipeRunnerSmoke --pipeline-step-edit-contract`에서 위치·이름·참조,
+  실행 취소와 XML 왕복을 검증한다.
+
+### K6. 앞 단계를 포함한 N장 테스트
+
+대상: `Tool View N-Image Verification`의 한 단계 격리 실행 범위.
+
+- 테스트 입력을 만드는 앞 단계 사본을 먼저 실행하고 테스트 툴 사본을 이어서 실행한다.
+  앞 단계의 `UseAcceptance=false`로 OK/NG 판정을 무시하되 실행 오류는 무시하지 않는다.
+- 앞 단계에서 오류가 나면 해당 이미지 결과를 오류로 기록한다. 오류 뒤의 테스트 툴을
+  정상 실행한 것처럼 결과를 만들지 않는다.
+- 테스트 시작 시 앞 단계·테스트 툴의 정의와 입력 목록을 고정하고 SHA-256 근거를 보존한다.
+  격리 `Main`에서 기존 실행 엔진을 사용하며 원본 파이프라인·작업본·입력 경로를 바꾸지 않는다.
+- 순차 실행, 현재 이미지 완료 뒤 중지, 결과 보관과 진입 무실행 계약을 유지한다.
+  이 변경만으로 현행 지원 툴 범위나 Validation Set·Run History 계약을 확대하지 않는다.
+- `wpf_tool_n_image_verification_window`, `wpf_tool_n_image_entry_side_effect_contract`,
+  `--tool-n-image-verification-contract`를 앞 단계 포함·오류·고정 해시·중지 사례로 갱신한다.
+
+### K7. 로그를 하단 탭으로 이동
+
+
+대상: Shell의 고정 68px 로그 행. 기존 로그 동작의 위치만 바꾼다.
+
+- 로그는 하단 패널의 `로그` 탭에서 제공한다. 탭 열기·접기·전환은 실행하지 않는다.
+- 기존 로그 control·수명·표시 계약을 재사용한다. 화면 위치 변경을 이유로 수집·기록 정책을 바꾸지 않는다.
+- `log_panel_contract_check`의 새 위치를 검증하고 Shell 시작·레이아웃 복원 시 실행 0을 확인한다.
+  하단 패널 확장에서도 이 계약을 유지한다.
+
+### K8. 인스턴스 범위의 어두운 PropertyGrid
+
+대상: §1·§5D의 Tool View PropertyGrid 표현.
+
+- 어두운 테마의 툴 패널에는 기존 `WpfPropertyGridBridge`의 인스턴스 범위 변형을 사용한다.
+  전역 WPG 스타일이나 다른 창의 표현을 함께 바꾸지 않는다. 기본 선택·복원·도킹은 같은 인스턴스 범위를 유지한다.
+- PropertyGrid와 툴 전용 파라미터 영역의 양식·순서·편집기·편집 계약을 유지한다.
+  라벨 값은 `LocalizationCatalog.tsv`의 ko/en 값으로 제공한다.
+- 정상·포커스·선택·비활성·오류·팝업과 template 자식의 대비를 확인한다.
+  대비를 충족하지 못하면 밝은 PropertyGrid로 되돌린다. 밝은 테마도 별도로 확인한다.
+
+### 그대로 보호할 계약과 적용 조건
+
+- 기존 PropertyGrid 파라미터 계약, 출력과 입력의 독립, 표시·레이어·복원의
+  무실행, A/B 독립, ROI·템플릿·확대·이동·비교, 제목줄 버튼, wrapper 소유권을 유지한다.
+- 레시피 관리는 관리 전용이며 탐색으로 메인 레시피를 바꾸지 않는다. 검증 세트 폴더 규칙,
+  실행 이력 분석, LLM 유지보수 범위, 언어별 매뉴얼, 내부 스모크 정리 계약을 유지한다.
+- Tool 실행 정책을 임의로 확대하지 않는다. 선택·표시·레이어 변경·설정 복원에
+  실행을 연결하지 않는다.
+- 기존 owner를 재사용한다. owner 변경 시 실제 호출·상태 쓰기·수명을 확인해 `docs/admin/CODEBASE_STRUCTURE.md`를 갱신한다.

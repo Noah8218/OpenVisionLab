@@ -83,6 +83,23 @@ internal static class ScreenshotPngWriterContract
 
         Check("element rendering keeps the requested PNG dimensions", elementSize, passed, failed);
         Check("visible element rendering keeps the arranged PNG dimensions", visibleSize, passed, failed);
+        Grid parent = new Grid { Width = 150, Height = 100 };
+        element.HorizontalAlignment = HorizontalAlignment.Left;
+        element.VerticalAlignment = VerticalAlignment.Top;
+        element.Margin = new Thickness(31, 12, 0, 0);
+        parent.Children.Add(element);
+        parent.Measure(new System.Windows.Size(150, 100));
+        parent.Arrange(new Rect(0, 0, 150, 100));
+        parent.UpdateLayout();
+        string offsetPath = Path.Combine(evidenceDirectory, "visible-offset.png");
+        ScreenshotPngWriter.WriteVisibleElementPng(element, offsetPath);
+        using (Bitmap offsetBitmap = new Bitmap(offsetPath))
+        {
+            Check("visible element capture excludes its parent offset and retains every corner",
+                offsetBitmap.Width == 48 && offsetBitmap.Height == 32
+                    && new[] { new System.Drawing.Point(0, 0), new System.Drawing.Point(47, 0), new System.Drawing.Point(0, 31), new System.Drawing.Point(47, 31) }
+                        .All(point => offsetBitmap.GetPixel(point.X, point.Y).ToArgb() == System.Drawing.Color.SteelBlue.ToArgb()), passed, failed);
+        }
         Check(
             "screen capture remains represented by the same writer owner",
             owner.Contains("window.PointToScreen", StringComparison.Ordinal)

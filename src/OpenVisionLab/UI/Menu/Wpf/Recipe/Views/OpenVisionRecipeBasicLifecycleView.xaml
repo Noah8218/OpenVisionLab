@@ -9,32 +9,38 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="90" />
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="Auto" />
-        </Grid.ColumnDefinitions>
-        <TextBlock Text="{Binding RecipeCommands.EditRecipeNameLabelText}"
-                   Foreground="#A8CBD1"
+        <TextBlock Text="{Binding RecipeCommands.RecipeManagerNameEditHintText}"
+                   TextWrapping="Wrap" FontSize="11"
+                   Foreground="{DynamicResource OpenVision.Workbench.SecondaryTextBrush}"
                    VerticalAlignment="Center" />
-        <TextBox Grid.Column="1"
-                 Height="26"
+        <TextBox x:Name="recipeNameEditor" Grid.Row="1"
+                 Height="32"
+                 Style="{DynamicResource OpenVision.ControlTextBoxDarkStyle}"
+                 Margin="0,4,0,0"
                  Padding="7,2"
                  VerticalContentAlignment="Center"
                  AutomationProperties.AutomationId="HostRecipeNameEditor"
-                 Foreground="{DynamicResource ShellHost.FieldTextBrush}"
-                 CaretBrush="#8FE8F0"
-                 BorderBrush="{DynamicResource ShellHost.FieldBorderBrush}"
-                 Background="{DynamicResource ShellHost.FieldBrush}"
-                 Text="{Binding RecipeCommands.EditRecipeName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-        <WrapPanel Grid.Column="2"
-                   Margin="12,0,0,0"
-                   HorizontalAlignment="Right"
+                 Foreground="{DynamicResource OpenVision.Workbench.TextBrush}"
+                 CaretBrush="{DynamicResource OpenVision.Workbench.AccentBrush}"
+                 BorderBrush="{DynamicResource OpenVision.Workbench.FieldBorderBrush}"
+                 Background="{DynamicResource OpenVision.Workbench.PanelAltBrush}"
+                 Text="{Binding RecipeCommands.EditRecipeName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+            <TextBox.InputBindings>
+                <KeyBinding Key="Enter" Command="{Binding RecipeCommands.RenameRecipeCommand}" />
+                <KeyBinding Key="Escape" Command="{Binding RecipeCommands.CancelRecipeNameEditCommand}" />
+            </TextBox.InputBindings>
+        </TextBox>
+        <WrapPanel Grid.Row="2"
+                   Margin="0,6,0,0"
+                   HorizontalAlignment="Stretch"
                    AutomationProperties.AutomationId="HostRecipeManagerCommandStrip">
             <Button MinWidth="86"
-                    Height="28"
-                    Margin="0,0,6,0"
+                    Height="32"
+                    Style="{DynamicResource OpenVision.Workbench.PrimaryButtonStyle}"
+                    Margin="0,0,6,6"
                     AutomationProperties.AutomationId="HostRecipeCreateNamedButton"
                     Command="{Binding RecipeCommands.CreateNamedRecipeCommand}">
                 <StackPanel Orientation="Horizontal">
@@ -43,8 +49,9 @@
                 </StackPanel>
             </Button>
             <Button MinWidth="74"
-                    Height="28"
-                    Margin="0,0,6,0"
+                    Height="32"
+                    Style="{DynamicResource OpenVision.Workbench.ButtonStyle}"
+                    Margin="0,0,6,6"
                     AutomationProperties.AutomationId="HostRecipeDuplicateButton"
                     Command="{Binding RecipeCommands.DuplicateRecipeCommand}">
                 <StackPanel Orientation="Horizontal">
@@ -53,8 +60,9 @@
                 </StackPanel>
             </Button>
             <Button MinWidth="86"
-                    Height="28"
-                    Margin="0,0,6,0"
+                    Height="32"
+                    Style="{DynamicResource OpenVision.Workbench.ButtonStyle}"
+                    Margin="0,0,6,6"
                     AutomationProperties.AutomationId="HostRecipeRenameButton"
                     Command="{Binding RecipeCommands.RenameRecipeCommand}">
                 <StackPanel Orientation="Horizontal">
@@ -63,7 +71,9 @@
                 </StackPanel>
             </Button>
             <Button MinWidth="72"
-                    Height="28"
+                    Height="32"
+                    Style="{DynamicResource OpenVision.Workbench.DangerButtonStyle}"
+                    Margin="0,0,0,6"
                     AutomationProperties.AutomationId="HostRecipeDeleteButton"
                     Command="{Binding RecipeCommands.DeleteRecipeCommand}">
                 <StackPanel Orientation="Horizontal">
@@ -72,20 +82,17 @@
                 </StackPanel>
             </Button>
         </WrapPanel>
-        <TextBlock Grid.Row="1"
-                   Grid.Column="1"
-                   Grid.ColumnSpan="2"
-                   Margin="0,4,0,0"
+        <TextBlock Grid.Row="3"
+                   Margin="0,0,0,0"
                    AutomationProperties.AutomationId="HostRecipeEditValidation"
-                   Foreground="#A8CBD1"
+                   Foreground="{DynamicResource OpenVision.Workbench.SecondaryTextBrush}"
                    FontSize="10"
                    Text="{Binding RecipeCommands.RecipeEditValidationText}"
                    TextWrapping="Wrap"
                    TextTrimming="CharacterEllipsis" />
-        <TextBlock Grid.Row="2"
-                   Grid.ColumnSpan="3"
+        <TextBlock Grid.Row="4"
                    Margin="0,5,0,0"
-                   Foreground="#8AD7DA"
+                   Foreground="{DynamicResource OpenVision.Workbench.SecondaryTextBrush}"
                    FontSize="10"
                    Text="{Binding RecipeCommands.StatusText}"
                    TextWrapping="Wrap" />

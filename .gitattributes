@@ -1,2 +1,6 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Guide checksums cover the generated Windows HTML bytes.
+docs/manual/generated/OpenVisionLab_User_Manual.ko.html text eol=crlf
+docs/manual/generated/OpenVisionLab_User_Manual.en.html text eol=crlf

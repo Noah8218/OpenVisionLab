@@ -17,7 +17,7 @@ namespace OpenVisionLab
     {
         #region Core
 
-        private const int StepTimeoutMilliseconds = 60000;
+        private const int StepTimeoutMilliseconds = OpenVisionPipelineReviewExecutionController.DefaultStepTimeoutMilliseconds;
         private readonly IDisplayManager displayManager;
         private readonly OpenVisionRecipeContext recipeContext;
         private readonly OpenVisionPipelineReviewView view;
@@ -56,6 +56,14 @@ namespace OpenVisionLab
         }
 
         public OpenVisionPipelineReviewDocument(IDisplayManager displayManager, OpenVisionRecipeContext recipeContext)
+            : this(displayManager, recipeContext, isHistoricalRunReview: false)
+        {
+        }
+
+        public OpenVisionPipelineReviewDocument(
+            IDisplayManager displayManager,
+            OpenVisionRecipeContext recipeContext,
+            bool isHistoricalRunReview)
         {
             this.displayManager = displayManager ?? throw new ArgumentNullException(nameof(displayManager));
             this.recipeContext = recipeContext ?? new OpenVisionRecipeContext(
@@ -66,6 +74,7 @@ namespace OpenVisionLab
                 isDirty: false,
                 activeLayerName: "Main",
                 lastReviewState: string.Empty);
+            IsHistoricalRunReview = isHistoricalRunReview;
             view = new OpenVisionPipelineReviewView();
             executionController = new OpenVisionPipelineReviewExecutionController(displayManager, InvokeOnViewDispatcher);
             layerImageOwner = new OpenVisionPipelineReviewLayerImageOwner(
@@ -89,12 +98,16 @@ namespace OpenVisionLab
             view.ScaleCalibrationRequested += OnScaleCalibrationRequested;
             view.ScaleCalibrationApplyRequested += OnScaleCalibrationApplyRequested;
             OpenVisionLanguageService.LanguageChanged += OnLanguageChanged;
-            RefreshLayerState();
+            if (!IsHistoricalRunReview)
+            {
+                RefreshLayerState();
+            }
         }
 
         public FrameworkElement View => view;
         public string ActiveViewTypeName => view.GetType().Name;
         public OpenVisionRecipeContext RecipeContext => recipeContext;
+        public bool IsHistoricalRunReview { get; }
         public string ActivePipelineName => string.IsNullOrWhiteSpace(activePipelineName) ? ResolveActivePipelineName() : activePipelineName;
         public int StepCount => pipeline?.Steps?.Count ?? 0;
         public string SelectedStepName => view.SelectedStepText;
@@ -161,6 +174,11 @@ namespace OpenVisionLab
 
         public void RefreshLayerState()
         {
+            if (IsHistoricalRunReview)
+            {
+                return;
+            }
+
             revisionGate.InvalidateRecipe();
             activePipelineName = ResolveActivePipelineName();
             pipeline = VisionPipelineStorage.Load(recipeContext.Name, activePipelineName);
@@ -212,6 +230,11 @@ namespace OpenVisionLab
 
         public void RefreshInputLayerState()
         {
+            if (IsHistoricalRunReview)
+            {
+                return;
+            }
+
             if (pipeline?.Steps == null || pipeline.Steps.Count == 0)
             {
                 RefreshLayerState();
@@ -236,6 +259,11 @@ namespace OpenVisionLab
 
         public bool RefreshIfPipelineChanged()
         {
+            if (IsHistoricalRunReview)
+            {
+                return true;
+            }
+
             string resolvedPipelineName = ResolveActivePipelineName();
             if (!string.Equals(activePipelineName, resolvedPipelineName, StringComparison.Ordinal)
                 || activePipelineLastWriteUtc != GetPipelineLastWriteUtc(resolvedPipelineName))
@@ -261,6 +289,24 @@ namespace OpenVisionLab
         public Task RunReviewForTestAsync()
         {
             return RunReviewAsync();
+        }
+
+        internal void SetHistoricalRunEvidence(OpenVisionRecipeRunEvidence evidence)
+        {
+            if (!IsHistoricalRunReview)
+            {
+                throw new InvalidOperationException("Historical evidence requires a read-only Pipeline Review document.");
+            }
+
+            OpenVisionRecipeRunEvidenceDrawing drawing = evidence?.DefaultDrawing
+                ?? throw new ArgumentNullException(nameof(evidence));
+            using Bitmap sourceImage = OpenVisionBitmapImagePreviewFactory.LoadBitmap(
+                evidence.OriginalImagePath,
+                "source");
+            using Bitmap drawingImage = OpenVisionBitmapImagePreviewFactory.LoadBitmap(
+                drawing.DrawingImagePath,
+                "drawing");
+            view.SetHistoricalRunEvidence(evidence, sourceImage, drawingImage);
         }
 
         public void SelectObjectResultForTest(int index)
@@ -426,7 +472,10 @@ namespace OpenVisionLab
 
         private void SelectStep(int index, PipelineFlowPreviewMode mode)
         {
-            if (pipeline?.Steps == null || index < 0 || index >= pipeline.Steps.Count)
+            if (IsHistoricalRunReview
+                || pipeline?.Steps == null
+                || index < 0
+                || index >= pipeline.Steps.Count)
             {
                 return;
             }
@@ -643,6 +692,11 @@ namespace OpenVisionLab
 
         private void SaveSelectedMatchingPoseAsReference()
         {
+            if (IsHistoricalRunReview)
+            {
+                return;
+            }
+
             VisionPipelineStep step = fixtureProducerIndex >= 0
                 ? pipeline?.Steps?.ElementAtOrDefault(fixtureProducerIndex)
                 : GetSelectedStepOrDefault();
@@ -753,7 +807,7 @@ namespace OpenVisionLab
 
         private async Task RunReviewAsync()
         {
-            if (disposed)
+            if (disposed || IsHistoricalRunReview)
             {
                 return;
             }
@@ -1195,7 +1249,7 @@ namespace OpenVisionLab
 
         private async void OnRunReviewRequested(object sender, EventArgs e)
         {
-            if (disposed)
+            if (disposed || IsHistoricalRunReview)
             {
                 return;
             }
@@ -1313,7 +1367,8 @@ namespace OpenVisionLab
             object sender,
             OpenVisionPipelineReviewFixtureConsumerSelectedEventArgs e)
         {
-            if (e == null
+            if (IsHistoricalRunReview
+                || e == null
                 || e.StepIndex == fixtureMeasurementIndex
                 || pipeline?.Steps?.ElementAtOrDefault(e.StepIndex) == null)
             {
@@ -1326,6 +1381,11 @@ namespace OpenVisionLab
 
         private void OnScaleCalibrationRequested(object sender, VisionScaleCalibrationRequestedEventArgs e)
         {
+            if (IsHistoricalRunReview)
+            {
+                return;
+            }
+
             IReadOnlyList<VisionPipelineGeometryFeatureResult> points = executionController
                 .GetCurrentGeometryFeatures()
                 .Where(item => item.Kind == VisionPipelineGeometryKind.Point)
@@ -1361,6 +1421,11 @@ namespace OpenVisionLab
 
         private void OnScaleCalibrationApplyRequested(object sender, VisionScaleCalibrationApplyRequestedEventArgs e)
         {
+            if (IsHistoricalRunReview)
+            {
+                return;
+            }
+
             if (pipeline?.Steps == null || e == null || e.StepIndex < 0 || e.StepIndex >= pipeline.Steps.Count)
             {
                 view.SetScaleCalibrationStatus("Select one compatible target Step.");
@@ -1418,7 +1483,10 @@ namespace OpenVisionLab
 
         private void RequestStepEdit(int index)
         {
-            if (pipeline?.Steps == null || index < 0 || index >= pipeline.Steps.Count)
+            if (IsHistoricalRunReview
+                || pipeline?.Steps == null
+                || index < 0
+                || index >= pipeline.Steps.Count)
             {
                 return;
             }
@@ -1434,7 +1502,8 @@ namespace OpenVisionLab
 
         private bool RequestOpenPairSample()
         {
-            if (activePairCounterpartSample?.CanOpen != true
+            if (IsHistoricalRunReview
+                || activePairCounterpartSample?.CanOpen != true
                 || string.IsNullOrWhiteSpace(activePairCounterpartSample.SampleName))
             {
                 return false;
@@ -1464,6 +1533,11 @@ namespace OpenVisionLab
 
         private void RefreshLocalizedDisplay()
         {
+            if (IsHistoricalRunReview)
+            {
+                return;
+            }
+
             activePipelineName = ResolveActivePipelineName();
             int stepCount = pipeline?.Steps?.Count ?? 0;
             RefreshActiveSamplePairGuide(activePipelineName);

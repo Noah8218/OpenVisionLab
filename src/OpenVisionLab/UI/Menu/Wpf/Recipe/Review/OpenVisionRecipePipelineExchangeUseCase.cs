@@ -46,6 +46,17 @@ namespace OpenVisionLab
             return OpenVisionRecipePipelineExchangeResult.Success(activePipelineName, destinationPath);
         }
 
+        public OpenVisionRecipePipelineExchangeResult ExportExisting(string recipeName, string pipelineName, string destinationPath)
+        {
+            if (!VisionPipelineStorage.TryLoadFromFile(RecipeWorkspaceService.GetVisionPipelinePath(recipeName, pipelineName), out VisionPipeline pipeline, out string message)
+                || !VisionPipelineStorage.TrySaveToFile(destinationPath, pipeline, out message))
+            {
+                return OpenVisionRecipePipelineExchangeResult.Failure(message);
+            }
+
+            return OpenVisionRecipePipelineExchangeResult.Success(pipelineName, destinationPath);
+        }
+
         public OpenVisionRecipePipelineExchangeResult ExportReviewBundle(
             string recipeName,
             string activePipelineName,

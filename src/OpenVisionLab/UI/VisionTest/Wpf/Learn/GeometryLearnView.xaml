@@ -70,7 +70,7 @@
                             <TextBlock x:Name="txtGeometryToolLocationDetail"
                                        Margin="0,4,0,0"
                                        Style="{StaticResource LearnMutedTextStyle}"
-                                       Text="Preview를 명시적으로 실행한 뒤 OutputSize, Affine 2x3 행렬, destination triangle/frame 드로잉, AffineValidPixelRatio를 확인합니다."
+                                       Text="Preview 버튼을 누른 뒤 OutputSize, Affine 2x3 행렬, destination triangle/frame 드로잉, AffineValidPixelRatio를 확인합니다."
                                        TextWrapping="Wrap"
                                        AutomationProperties.AutomationId="OpenVisionLearnGeometryToolLocationDetail" />
                         </StackPanel>

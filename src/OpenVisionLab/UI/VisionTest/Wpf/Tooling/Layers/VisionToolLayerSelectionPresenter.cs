@@ -9,6 +9,13 @@ namespace OpenVisionLab
 {
     internal static class VisionToolLayerSelectionPresenter
     {
+        private const string WorkbenchInputChoicesKey = "VisionTool.WorkbenchInputChoices";
+
+        internal static void SetWorkbenchInputChoices(ComboBox comboBox, IReadOnlyList<KeyValuePair<string, string>> choices)
+        {
+            if (comboBox != null) { comboBox.Resources[WorkbenchInputChoicesKey] = choices; }
+        }
+
         public static void ApplySingle(
             ComboBox inputComboBox,
             ComboBox outputComboBox,
@@ -23,7 +30,7 @@ namespace OpenVisionLab
 
             ConfigureExistingLayerCombo(inputComboBox);
             ConfigureOutputLayerCombo(outputComboBox);
-            ApplyInputLayerSelection(inputComboBox, layerSelection.InputLayers, layerSelection.SelectedInputLayer);
+            ApplyInputLayerSelection(inputComboBox, layerSelection.InputLayers, HasWorkbenchInputChoices(inputComboBox) ? selectedInputLayer : layerSelection.SelectedInputLayer);
             ApplyOutputLayerSelection(outputComboBox, layerSelection.OutputLayers, layerSelection.SelectedOutputLayer);
         }
 
@@ -45,8 +52,8 @@ namespace OpenVisionLab
             ConfigureExistingLayerCombo(inputAComboBox);
             ConfigureExistingLayerCombo(inputBComboBox);
             ConfigureOutputLayerCombo(outputComboBox);
-            ApplyInputLayerSelection(inputAComboBox, layerSelection.InputLayers, layerSelection.SelectedInputLayer);
-            ApplyInputLayerSelection(inputBComboBox, layerSelection.InputLayers, layerSelection.SelectedInputLayerB);
+            ApplyInputLayerSelection(inputAComboBox, layerSelection.InputLayers, HasWorkbenchInputChoices(inputAComboBox) ? selectedInputA : layerSelection.SelectedInputLayer);
+            ApplyInputLayerSelection(inputBComboBox, layerSelection.InputLayers, HasWorkbenchInputChoices(inputBComboBox) ? selectedInputB : layerSelection.SelectedInputLayerB);
             ApplyOutputLayerSelection(outputComboBox, layerSelection.OutputLayers, layerSelection.SelectedOutputLayer);
         }
 
@@ -60,10 +67,21 @@ namespace OpenVisionLab
                 return;
             }
 
-            // Input selectors must only point at existing workspace layers.
-            comboBox.ItemsSource = layerNames?.ToList() ?? new List<string>();
+            if (comboBox.Resources[WorkbenchInputChoicesKey] is IReadOnlyList<KeyValuePair<string, string>> choices)
+            {
+                comboBox.ItemsSource = choices;
+                comboBox.SetResourceReference(ItemsControl.ItemTemplateProperty, "VisionTool.WorkbenchInputLayerTemplate");
+                TextSearch.SetTextPath(comboBox, "Value");
+            }
+            else
+            {
+                // Independent tool inputs retain the existing workspace-only contract.
+                comboBox.ItemsSource = layerNames?.ToList() ?? new List<string>();
+            }
             VisionToolLayerComboHelper.SelectLayerText(comboBox, selectedLayer, allowFreeText: false);
         }
+
+        private static bool HasWorkbenchInputChoices(ComboBox comboBox) => comboBox?.Resources[WorkbenchInputChoicesKey] is IReadOnlyList<KeyValuePair<string, string>>;
 
         private static void ApplyOutputLayerSelection(
             ComboBox comboBox,

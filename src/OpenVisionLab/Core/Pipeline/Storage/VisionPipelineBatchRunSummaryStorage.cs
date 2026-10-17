@@ -172,11 +172,14 @@ namespace OpenVisionLab
             string notes = "",
             VisionPipeline pipelineSnapshot = null,
             VisionPipelineExecutionProvenance executionProvenance = null,
-            int inputSampleCount = 0)
+            int inputSampleCount = 0,
+            string destinationRoot = null)
         {
             List<VisionPipelineBatchSampleRunResult> resultList = (results ?? Enumerable.Empty<VisionPipelineBatchSampleRunResult>()).ToList();
-            string batchName = CreateUniqueBatchName(recipeName, pipelineName, startedAt);
-            string directory = RecipeWorkspaceService.GetVisionPipelineBatchRunDirectory(recipeName, pipelineName, batchName);
+            string batchName = CreateUniqueBatchName(recipeName, pipelineName, startedAt, destinationRoot);
+            string directory = destinationRoot == null ? RecipeWorkspaceService.GetVisionPipelineBatchRunDirectory(recipeName, pipelineName, batchName)
+                : RecipeWorkspaceService.GetContainedStoragePath(Path.GetFullPath(destinationRoot), batchName, "Transient batch directory");
+            Directory.CreateDirectory(directory);
 
             VisionPipelineBatchRunSummary summary = new VisionPipelineBatchRunSummary
             {
@@ -526,9 +529,18 @@ namespace OpenVisionLab
             internal Dictionary<string, double> Metrics { get; }
         }
 
+        internal static IReadOnlyList<BatchRunSummaryInfo> ListRecipe(string recipeName)
+        {
+            string root = RecipeWorkspaceService.GetContainedStoragePath(RecipeWorkspaceService.GetRecipeDirectoryPath(recipeName), Path.Combine("VISION", "PipelineBatchRuns"), "Recipe history directory");
+            return Directory.Exists(root)
+                ? Directory.EnumerateDirectories(root).SelectMany(directory => List(recipeName, Path.GetFileName(directory))).OrderByDescending(summary => summary.StartedAt).ToList()
+                : Array.Empty<BatchRunSummaryInfo>();
+        }
+
         public static List<BatchRunSummaryInfo> List(string recipeName, string pipelineName)
         {
-            string rootDirectory = RecipeWorkspaceService.GetVisionPipelineBatchRunRootDirectory(recipeName, pipelineName);
+            string rootDirectory = RecipeWorkspaceService.GetContainedStoragePath(RecipeWorkspaceService.GetRecipeDirectoryPath(recipeName),
+                Path.Combine("VISION", "PipelineBatchRuns", RecipeWorkspaceService.NormalizeStoragePathSegment(pipelineName, "Pipeline", "Pipeline name")), "Batch history directory");
             if (!Directory.Exists(rootDirectory))
             {
                 return new List<BatchRunSummaryInfo>();
@@ -780,10 +792,10 @@ namespace OpenVisionLab
             return value > 0D && !double.IsNaN(value) && !double.IsInfinity(value);
         }
 
-        private static string CreateUniqueBatchName(string recipeName, string pipelineName, DateTime startedAt)
+        private static string CreateUniqueBatchName(string recipeName, string pipelineName, DateTime startedAt, string destinationRoot = null)
         {
             string baseName = startedAt.ToString("yyyyMMdd_HHmmssfff");
-            string rootDirectory = RecipeWorkspaceService.GetVisionPipelineBatchRunRootDirectory(recipeName, pipelineName);
+            string rootDirectory = destinationRoot ?? RecipeWorkspaceService.GetVisionPipelineBatchRunRootDirectory(recipeName, pipelineName);
             string candidate = baseName;
             int suffix = 2;
             while (Directory.Exists(

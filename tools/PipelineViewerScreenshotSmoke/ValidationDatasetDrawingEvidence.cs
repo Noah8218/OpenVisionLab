@@ -18,6 +18,9 @@ internal static class ValidationDatasetDrawingEvidence
         string pipelineXml,
         string sourceImagePath,
         string artifactDirectory,
+        Func<DependencyObject, string, FrameworkElement?> findElementByAutomationId,
+        Func<DependencyObject, string, FrameworkElement?> findElementByName,
+        Action<DependencyObject, string, string> clickVisibleButtonByAutomationId,
         Action<int> pump)
     {
         int layerCountBefore = shellHost.LayerDocumentCount;
@@ -74,37 +77,6 @@ internal static class ValidationDatasetDrawingEvidence
             File.Copy(artifact, Path.Combine(evidenceArtifactDirectory, Path.GetFileName(artifact)), overwrite: true);
         }
 
-        bool viewerReady = false;
-        using (OpenVisionRecipeRunEvidenceViewerView evidenceProbe = new OpenVisionRecipeRunEvidenceViewerView())
-        {
-            if (!evidenceProbe.TrySetEvidence(storedEvidence))
-            {
-                throw new InvalidOperationException(
-                    "Stored batch evidence images could not be assigned to the viewer: "
-                    + evidenceProbe.LoadError);
-            }
-            if (expectsTwoPinArrayGapDrawings)
-            {
-                ComboBox drawingSelector = evidenceProbe.FindName("cmbStoredDrawing") as ComboBox
-                    ?? throw new InvalidOperationException("Stored drawing selector was not found.");
-                drawingSelector.SelectedIndex = 0;
-                drawingSelector.SelectedIndex = 1;
-                if (evidenceProbe.DrawingCount != 2
-                    || !evidenceProbe.HasDrawingImage
-                    || !string.Equals(
-                        evidenceProbe.SelectedStepText,
-                        storedEvidence.Drawings[1].StepText,
-                        StringComparison.Ordinal))
-                {
-                    throw new InvalidOperationException(
-                        "Stored evidence viewer could not select the second PinArrayGap row drawing. "
-                        + $"DrawingCount={evidenceProbe.DrawingCount}, Selected='{evidenceProbe.SelectedStepText}'.");
-                }
-            }
-
-            viewerReady = evidenceProbe.HasSourceImage && evidenceProbe.HasDrawingImage;
-        }
-
         if (!shellHost.RecipeCommands.OpenSelectedRecentBatchRunEvidenceCommand.CanExecute(null))
         {
             shellHost.RecipeCommands.OpenSelectedRecentBatchRunEvidenceCommand.Execute(null);
@@ -118,17 +90,79 @@ internal static class ValidationDatasetDrawingEvidence
                 + shellHost.RecipeCommands.SelectedRecentBatchRunReviewText);
         }
 
+        string currentRecipeBeforeReview = shellHost.SelectedRecipeNameForTest;
+        string selectedRecipeBeforeReview = shellHost.RecipeCommands.RecipeManagerSelectedRecipeName;
+        string selectedPipelineBeforeReview = shellHost.RecipeCommands.RecipeManagerSelectedPipelineName;
+        bool detailContextBeforeReview = shellHost.RecipeCommands.IsRecipeManagerDetailContextActive;
+        System.Windows.Window captureWindow = System.Windows.Window.GetWindow(shellHost)
+            ?? throw new InvalidOperationException("Recipe validation smoke window was not available for screen capture.");
+        TabItem runHistoryTab = findElementByName(shellHost, "tabRecipePipelineRunHistory") as TabItem
+            ?? throw new InvalidOperationException("Recipe validation run-history tab was not found.");
+        bool runHistoryTabSelectedBeforeReview = runHistoryTab.IsSelected;
+        string selectedSampleBeforeReview = shellHost.RecipeCommands.SelectedRecentBatchSampleResultOption?.SampleName
+            ?? string.Empty;
+        ScreenshotPngWriter.WriteWindowScreenPng(
+            captureWindow,
+            Path.Combine(artifactDirectory, "recipe_validation_before_handoff.png"));
         shellHost.RecipeCommands.OpenSelectedRecentBatchRunEvidenceCommand.Execute(null);
         pump(120);
-        OpenVisionFloatingToolWindow? evidenceWindow = Application.Current.Windows
-            .OfType<OpenVisionFloatingToolWindow>()
-            .LastOrDefault(item => item.IsVisible);
-        OpenVisionRecipeRunEvidenceViewerView? evidenceViewer = evidenceWindow?.HostedContent
-            as OpenVisionRecipeRunEvidenceViewerView;
-        bool workspaceUnchanged = evidenceWindow != null
-            && evidenceViewer != null
-            && evidenceViewer.HasSourceImage
-            && evidenceViewer.HasDrawingImage
+        bool isPipelineReview = shellHost.HasPipelineReviewDocumentForTest
+            && shellHost.IsDockedDocumentWorkspaceVisibleForTest
+            && string.Equals(
+                shellHost.ActiveWpfToolWindowTypeName,
+                nameof(OpenVisionPipelineReviewView),
+                StringComparison.Ordinal)
+            && shellHost.HasPipelineReviewInputPreview
+            && shellHost.HasPipelineReviewOutputPreview
+            && shellHost.PipelineReviewProgressText.Contains(
+                "Historical result · no inspection rerun",
+                StringComparison.Ordinal)
+            && string.Equals(
+                shellHost.PipelineReviewSelectedStepName,
+                storedEvidence.DefaultDrawing.StepText,
+                StringComparison.Ordinal)
+            && shellHost.PipelineReviewRunLogText.Contains(storedEvidence.RunRecordId, StringComparison.Ordinal)
+            && !shellHost.CanSelectPreviousPipelineReviewStepForTest
+            && !shellHost.CanSelectNextPipelineReviewStepForTest;
+        Button runReviewButton = findElementByAutomationId(shellHost, "PipelineReviewRunReviewButton") as Button
+            ?? throw new InvalidOperationException("Historical Pipeline Review Run button was not found.");
+        Button editSelectedStepButton = (findElementByAutomationId(shellHost, "PipelineReviewEditSelectedStepButton")
+                ?? findElementByName(shellHost, "btnEditSelectedStep")) as Button
+            ?? throw new InvalidOperationException("Historical Pipeline Review Step edit button was not found.");
+        isPipelineReview = isPipelineReview
+            && !runReviewButton.IsEnabled
+            && editSelectedStepButton.Visibility == Visibility.Collapsed;
+        if (!isPipelineReview)
+        {
+            throw new InvalidOperationException(
+                "Selected saved evidence did not open as a read-only docked Pipeline Review. "
+                + $"Type={shellHost.ActiveWpfToolWindowTypeName}, Docked={shellHost.IsDockedDocumentWorkspaceVisibleForTest}, "
+                + $"Source={shellHost.HasPipelineReviewInputPreview}, Drawing={shellHost.HasPipelineReviewOutputPreview}, "
+                + $"Progress='{shellHost.PipelineReviewProgressText}', Step='{shellHost.PipelineReviewSelectedStepName}', "
+                + $"HistoryStatus='{shellHost.RecipeCommands.StatusText}', ManagerOpen={shellHost.IsRecipeManagerOpenForTest}, "
+                + $"Detail={shellHost.RecipeCommands.IsRecipeManagerDetailContextActive}, "
+                + $"RunEnabled={runReviewButton.IsEnabled}, EditVisibility={editSelectedStepButton.Visibility}.");
+        }
+
+        ScreenshotPngWriter.WriteWindowScreenPng(
+            captureWindow,
+            Path.Combine(artifactDirectory, "historical_pipeline_review.png"));
+        clickVisibleButtonByAutomationId(
+            shellHost,
+            "PipelineReviewReturnToRecipeButton",
+            "Historical Pipeline Review return-to-Recipe button");
+        pump(120);
+        bool returnedToValidationContext = shellHost.IsRecipeManagerOpenForTest
+            && shellHost.RecipeCommands.IsRecipeManagerDetailContextActive == detailContextBeforeReview
+            && string.Equals(shellHost.SelectedRecipeNameForTest, currentRecipeBeforeReview, StringComparison.Ordinal)
+            && string.Equals(shellHost.RecipeCommands.RecipeManagerSelectedRecipeName, selectedRecipeBeforeReview, StringComparison.Ordinal)
+            && string.Equals(shellHost.RecipeCommands.RecipeManagerSelectedPipelineName, selectedPipelineBeforeReview, StringComparison.Ordinal)
+            && string.Equals(
+                shellHost.RecipeCommands.SelectedRecentBatchSampleResultOption?.SampleName,
+                selectedSampleBeforeReview,
+                StringComparison.Ordinal)
+            && runHistoryTab.IsSelected == runHistoryTabSelectedBeforeReview;
+        bool workspaceUnchanged = returnedToValidationContext
             && shellHost.LayerDocumentCount == layerCountBefore
             && shellHost.NativePreviewRunCount == previewRunsBefore
             && string.Equals(shellHost.ActiveNativeRouteInputLayerNameForTest, inputRouteBefore, StringComparison.Ordinal)
@@ -138,9 +172,12 @@ internal static class ValidationDatasetDrawingEvidence
         if (!workspaceUnchanged)
         {
             throw new InvalidOperationException(
-                "Stored batch evidence viewer did not keep source/drawing images or changed workspace execution state. "
-                + $"ViewerType={evidenceWindow?.HostedContent?.GetType().Name ?? "-"}, "
-                + $"Source={evidenceViewer?.HasSourceImage}, Drawing={evidenceViewer?.HasDrawingImage}, "
+                "Historical Pipeline Review did not return to the same Recipe validation selection or changed workspace execution state. "
+                + $"ManagerOpen={shellHost.IsRecipeManagerOpenForTest}, Detail={detailContextBeforeReview}->{shellHost.RecipeCommands.IsRecipeManagerDetailContextActive}, "
+                + $"Recipe={selectedRecipeBeforeReview}->{shellHost.RecipeCommands.RecipeManagerSelectedRecipeName}, "
+                + $"Pipeline={selectedPipelineBeforeReview}->{shellHost.RecipeCommands.RecipeManagerSelectedPipelineName}, "
+                + $"RunHistoryTab={runHistoryTabSelectedBeforeReview}->{runHistoryTab.IsSelected}, "
+                + $"ReturnedSample={shellHost.RecipeCommands.SelectedRecentBatchSampleResultOption?.SampleName}, "
                 + $"Status='{shellHost.RecipeCommands.StatusText}', "
                 + $"Layers={layerCountBefore}->{shellHost.LayerDocumentCount}, "
                 + $"Preview={previewRunsBefore}->{shellHost.NativePreviewRunCount}, "
@@ -150,29 +187,38 @@ internal static class ValidationDatasetDrawingEvidence
                 + $"PreviewResult={previewResultBefore}->{shellHost.HasNativePreviewResult}");
         }
 
+        ScreenshotPngWriter.WriteWindowScreenPng(
+            captureWindow,
+            Path.Combine(artifactDirectory, "recipe_validation_after_return.png"));
         File.WriteAllLines(
             Path.Combine(artifactDirectory, "drawing_evidence_contract.txt"),
             BuildContractLines(
                 storedEvidence.SampleName,
+                storedEvidence.RunRecordId,
+                storedEvidence.DefaultDrawing.StepText,
                 storedEvidence.Drawings.Count,
                 storedEvidence.IsStoredSourceVerified,
-                viewerReady,
+                isPipelineReview,
                 workspaceUnchanged));
     }
 
     internal static IReadOnlyList<string> BuildContractLines(
         string sampleName,
+        string runRecordId,
+        string selectedStep,
         int drawingCount,
         bool storedSourceVerified,
-        bool viewerReady,
+        bool pipelineReviewReady,
         bool workspaceUnchanged)
     {
         return new[]
         {
             "Sample=" + (sampleName ?? string.Empty),
+            "RunRecord=" + (runRecordId ?? string.Empty),
+            "SelectedStep=" + (selectedStep ?? string.Empty),
             "DrawingCount=" + drawingCount.ToString(CultureInfo.InvariantCulture),
             "StoredSourceVerified=" + storedSourceVerified,
-            "ViewerReady=" + viewerReady,
+            "PipelineReviewReady=" + pipelineReviewReady,
             "WorkspaceUnchanged=" + workspaceUnchanged
         };
     }

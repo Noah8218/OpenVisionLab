@@ -15,14 +15,17 @@ namespace OpenVisionLab
     internal sealed class OpenVisionNativePreviewExecutionController
     {
         private readonly IDisplayManager displayManager;
+        private readonly Func<string, Bitmap> acquireInputSnapshot;
         private readonly OpenVisionNativePreviewLayerPublisher previewLayerPublisher;
 
         public OpenVisionNativePreviewExecutionController(
             IDisplayManager displayManager,
-            OpenVisionNativePreviewLayerPublisher previewLayerPublisher)
+            OpenVisionNativePreviewLayerPublisher previewLayerPublisher,
+            Func<string, Bitmap> acquireInputSnapshot = null)
         {
             this.displayManager = displayManager ?? throw new ArgumentNullException(nameof(displayManager));
             this.previewLayerPublisher = previewLayerPublisher ?? throw new ArgumentNullException(nameof(previewLayerPublisher));
+            this.acquireInputSnapshot = acquireInputSnapshot ?? (layerName => this.displayManager.GetLayerImageSnapshot(layerName));
         }
 
         public OpenVisionNativePreviewExecutionResult RunSingleInput(
@@ -70,7 +73,7 @@ namespace OpenVisionLab
 
             try
             {
-                using Bitmap sourceBitmap = displayManager.GetLayerImageSnapshot(inputLayer);
+                using Bitmap sourceBitmap = acquireInputSnapshot(inputLayer);
                 if (sourceBitmap == null)
                 {
                     failure = FailedStatus("Preview", "input image missing");
@@ -95,7 +98,8 @@ namespace OpenVisionLab
         public OpenVisionNativePreviewComputation ComputeSingleInput(
             OpenVisionNativePreviewInputSnapshot snapshot,
             Func<Mat, VisionToolResult> executePreview,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            VisionPipelineStep resultStep = null)
         {
             if (snapshot == null)
             {
@@ -145,11 +149,12 @@ namespace OpenVisionLab
                     {
                         message = "tool returned an inconsistent result";
                     }
-                    return OpenVisionNativePreviewComputation.Failed(message);
+                    return OpenVisionNativePreviewComputation.Failed(message, CaptureSummary(resultStep, result, message));
                 }
 
+                VisionPipelineStepResultSummary summary = CaptureSummary(resultStep, result);
                 Bitmap resultBitmap = BitmapImageConverter.ToBitmap(result.ResultImage);
-                return OpenVisionNativePreviewComputation.Passed(resultBitmap, stopwatch.Elapsed);
+                return OpenVisionNativePreviewComputation.Passed(resultBitmap, stopwatch.Elapsed, summary);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -159,7 +164,8 @@ namespace OpenVisionLab
             catch (Exception ex)
             {
                 stopwatch.Stop();
-                return OpenVisionNativePreviewComputation.Failed(ex.GetBaseException().Message);
+                string message = ex.GetBaseException().Message;
+                return OpenVisionNativePreviewComputation.Failed(message, CaptureSummary(resultStep, result, message));
             }
             finally
             {
@@ -183,7 +189,9 @@ namespace OpenVisionLab
             string inputLayerA,
             string outputLayer,
             string activationLayer,
-            bool useOffsetMode)
+            bool useOffsetMode,
+            VisionPipelineStep resultStep = null,
+            Action started = null)
         {
             if (LayersCollide(inputLayerA, outputLayer)
                 || (VisionPipelineArithmeticStep.RequiresInputLayerB(step)
@@ -192,7 +200,7 @@ namespace OpenVisionLab
                 return FailedStatus("Preview", "input and output layers must be different to preserve the source image");
             }
 
-            using Bitmap sourceA = displayManager.GetLayerImageSnapshot(inputLayerA);
+            using Bitmap sourceA = acquireInputSnapshot(inputLayerA);
             if (sourceA == null)
             {
                 return FailedStatus("Preview", "input A image missing");
@@ -208,7 +216,7 @@ namespace OpenVisionLab
                 if (VisionPipelineArithmeticStep.RequiresInputLayerB(step))
                 {
                     string inputB = VisionPipelineArithmeticStep.GetInputLayerB(step);
-                    using Bitmap sourceB = displayManager.GetLayerImageSnapshot(inputB);
+                    using Bitmap sourceB = acquireInputSnapshot(inputB);
                     if (sourceB == null)
                     {
                         return FailedStatus("Preview", "input B image missing");
@@ -217,15 +225,18 @@ namespace OpenVisionLab
                     using Mat matB = BitmapImageConverter.ToMat(sourceB);
                     // Arithmetic execution reads InputB from this context before matB leaves scope.
                     context.SetLayer(inputB, matB);
+                    started?.Invoke();
                     result = VisionPipelineArithmeticStep.Execute(step, matA, context);
                 }
                 else
                 {
+                    started?.Invoke();
                     result = VisionPipelineArithmeticStep.Execute(step, matA, context);
                 }
 
                 stopwatch.Stop();
-                return PublishResult(outputLayer, activationLayer, result, stopwatch.Elapsed, useOffsetMode ? "Offset" : "Preview");
+                VisionPipelineStepResultSummary summary = CaptureSummary(resultStep, result);
+                return PublishResult(outputLayer, activationLayer, result, stopwatch.Elapsed, useOffsetMode ? "Offset" : "Preview").WithSummary(summary);
             }
             catch (Exception ex)
             {
@@ -322,6 +333,28 @@ namespace OpenVisionLab
                 && string.Equals(inputLayer.Trim(), outputLayer.Trim(), StringComparison.OrdinalIgnoreCase);
         }
 
+        internal static VisionPipelineStepResultSummary CaptureSummary(VisionPipelineStep step, VisionToolResult result, string failure = null)
+        {
+            if (step == null) { return null; }
+            VisionPipelineAcceptanceResult acceptance = result == null ? null : VisionPipelineExecutionService.EvaluateAcceptance(step, result);
+            VisionPipelineStepResultSummary summary = VisionPipelineResultSummaryService.CreateStepSummary(0, new VisionPipelineStepResult
+            {
+                Step = step,
+                ToolResult = result,
+                AcceptancePassed = acceptance?.Passed == true,
+                AcceptanceMessage = acceptance?.Message ?? string.Empty
+            });
+            if (result == null || !string.IsNullOrEmpty(failure))
+            {
+                summary.Success = false;
+                summary.IsToolError = true;
+                summary.IsAcceptanceNg = false;
+                summary.Executed = result != null;
+                summary.Message = failure ?? summary.Message;
+            }
+            return summary;
+        }
+
         private static OpenVisionNativePreviewExecutionResult FailedStatus(string statusLabel, string detail)
         {
             string prefix = string.IsNullOrWhiteSpace(statusLabel) ? "Preview" : statusLabel.Trim();
@@ -338,11 +371,13 @@ namespace OpenVisionLab
 
     internal sealed class OpenVisionNativePreviewExecutionResult
     {
-        private OpenVisionNativePreviewExecutionResult(bool success, bool canceled, string status)
+        private OpenVisionNativePreviewExecutionResult(bool success, bool canceled, string status, VisionPipelineStepResultSummary summary = null, bool isTeachingPreview = false)
         {
             Success = success;
             Canceled = canceled;
             Status = status ?? string.Empty;
+            Summary = summary;
+            IsTeachingPreview = isTeachingPreview;
         }
 
         public bool Success { get; }
@@ -350,6 +385,15 @@ namespace OpenVisionLab
         public bool Canceled { get; }
 
         public string Status { get; }
+
+        public VisionPipelineStepResultSummary Summary { get; }
+
+        public bool IsTeachingPreview { get; }
+
+        internal OpenVisionNativePreviewExecutionResult WithSummary(VisionPipelineStepResultSummary summary, bool isTeachingPreview = false)
+        {
+            return new OpenVisionNativePreviewExecutionResult(Success, Canceled, Status, summary, IsTeachingPreview || isTeachingPreview);
+        }
 
         public static OpenVisionNativePreviewExecutionResult Passed(string status)
         {
@@ -402,13 +446,15 @@ namespace OpenVisionLab
             bool canceled,
             string status,
             Bitmap resultBitmap,
-            TimeSpan elapsed)
+            TimeSpan elapsed,
+            VisionPipelineStepResultSummary summary = null)
         {
             Success = success;
             Canceled = canceled;
             Status = status ?? string.Empty;
             ResultBitmap = resultBitmap;
             Elapsed = elapsed;
+            Summary = summary;
         }
 
         public bool Success { get; }
@@ -421,14 +467,16 @@ namespace OpenVisionLab
 
         public TimeSpan Elapsed { get; }
 
-        public static OpenVisionNativePreviewComputation Passed(Bitmap resultBitmap, TimeSpan elapsed)
+        public VisionPipelineStepResultSummary Summary { get; }
+
+        public static OpenVisionNativePreviewComputation Passed(Bitmap resultBitmap, TimeSpan elapsed, VisionPipelineStepResultSummary summary = null)
         {
-            return new OpenVisionNativePreviewComputation(true, false, string.Empty, resultBitmap, elapsed);
+            return new OpenVisionNativePreviewComputation(true, false, string.Empty, resultBitmap, elapsed, summary);
         }
 
-        public static OpenVisionNativePreviewComputation Failed(string status)
+        public static OpenVisionNativePreviewComputation Failed(string status, VisionPipelineStepResultSummary summary = null)
         {
-            return new OpenVisionNativePreviewComputation(false, false, status, null, TimeSpan.Zero);
+            return new OpenVisionNativePreviewComputation(false, false, status, null, TimeSpan.Zero, summary);
         }
 
         public static OpenVisionNativePreviewComputation CanceledResult()

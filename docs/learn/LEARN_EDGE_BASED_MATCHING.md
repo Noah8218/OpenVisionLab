@@ -70,4 +70,4 @@ Auto MPoint is a training-time suggestion step for choosing a distinctive fixed-
 7. Run `Preview` explicitly and confirm the actual match drawing and score on the current image.
 8. Qualify the selected pattern separately through Recipe Manager Validation Set/Run History when OK/NG roles and recipe acceptance are required.
 
-Changing Auto MPoint teaching fields, analyzing candidates, selecting a row, exporting a report, or applying a suggestion must not automatically run Preview/Run or change layers and routing.
+After applying a pattern, click `Preview` to inspect the current image, then run the recipe from Pipeline Review. Check the selected input and output layers before execution.

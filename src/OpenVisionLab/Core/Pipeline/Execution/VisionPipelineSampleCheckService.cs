@@ -59,14 +59,15 @@ namespace OpenVisionLab
             string pipelineXmlText,
             string recipeName,
             bool normalizeInputToGray = false,
-            CancellationToken cancellationToken = default(CancellationToken))
+            CancellationToken cancellationToken = default(CancellationToken),
+            string reportRoot = null, IReadOnlyDictionary<string, string> inputSnapshots = null)
         {
             return Task.Run(() => RunSampleCheckSafeCoreAsync(
                 sample,
                 pipelineXmlText,
                 recipeName,
                 normalizeInputToGray,
-                cancellationToken));
+                cancellationToken, reportRoot, inputSnapshots));
         }
 
         public static VisionPipelineSampleCheckResult RunSampleCheckSafe(
@@ -110,7 +111,7 @@ namespace OpenVisionLab
             string pipelineXmlText,
             string reportRecipeName,
             bool normalizeInputToGray,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken, string reportRoot = null, IReadOnlyDictionary<string, string> inputSnapshots = null)
         {
             try
             {
@@ -130,7 +131,7 @@ namespace OpenVisionLab
                     pipelineXmlText,
                     reportRecipeName,
                     normalizeInputToGray,
-                    cancellationToken).ConfigureAwait(false);
+                    cancellationToken, reportRoot, inputSnapshots).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -231,7 +232,7 @@ namespace OpenVisionLab
             string pipelineXmlText,
             string reportRecipeName,
             bool normalizeInputToGray,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken, string reportRoot = null, IReadOnlyDictionary<string, string> inputSnapshots = null)
         {
             DateTime checkedAt = DateTime.Now;
             ValidateInspectionImageFormat(sample.ImageFullPath);
@@ -243,7 +244,7 @@ namespace OpenVisionLab
                     sample,
                     PrepareExecutionSource(source, executionSource, normalizeInputToGray),
                     pipelineXmlText,
-                    cancellationToken).ConfigureAwait(false);
+                    cancellationToken, inputSnapshots).ConfigureAwait(false);
                 using (result)
                 {
                     DateTime finishedAt = DateTime.Now;
@@ -255,7 +256,7 @@ namespace OpenVisionLab
                             result,
                             checkedAt,
                             finishedAt,
-                            sourceImage: source);
+                            sourceImage: source, reportRoot: reportRoot);
                     List<string> messages = new List<string>();
                     bool expectedFailure = sample.ExpectsFailure;
                     VisionPipelineExpectedFailureEvaluation expectedFailureEvaluation = expectedFailure
@@ -405,40 +406,52 @@ namespace OpenVisionLab
             VisionPipelineSampleCatalogItem sample,
             Mat source,
             string pipelineXmlText,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken, IReadOnlyDictionary<string, string> inputSnapshots = null)
         {
             VisionRecipeRunner runner = new VisionRecipeRunner();
-            if (!string.IsNullOrWhiteSpace(pipelineXmlText))
+            var sources = new Dictionary<string, Mat>(StringComparer.OrdinalIgnoreCase);
+            try
             {
-                if (!SerializeHelper.TryLoadFromXmlText(pipelineXmlText, out VisionPipeline pipeline, out string loadError) || pipeline == null)
+                foreach (var input in inputSnapshots ?? new Dictionary<string, string>())
                 {
-                    throw new InvalidOperationException(string.IsNullOrWhiteSpace(loadError)
-                        ? "Recipe XML could not be loaded."
-                        : loadError);
+                    using Bitmap bitmap = new Bitmap(input.Value);
+                    Mat snapshot = BitmapImageConverter.ToMat(bitmap);
+                    try { sources.Add(input.Key, snapshot); }
+                    catch { snapshot.Dispose(); throw; }
+                }
+                if (!string.IsNullOrWhiteSpace(pipelineXmlText))
+                {
+                    if (!SerializeHelper.TryLoadFromXmlText(pipelineXmlText, out VisionPipeline pipeline, out string loadError) || pipeline == null)
+                    {
+                        throw new InvalidOperationException(string.IsNullOrWhiteSpace(loadError)
+                            ? "Recipe XML could not be loaded."
+                            : loadError);
+                    }
+
+                    VisionRecipeRunResult result = await runner.RunAsync(
+                        pipeline,
+                        source,
+                        "Main",
+                        VisionRecipeRunner.DefaultStepTimeoutMilliseconds,
+                        cancellationToken, sources).ConfigureAwait(false);
+                    return (result, pipeline);
                 }
 
-                VisionRecipeRunResult result = await runner.RunAsync(
-                    pipeline,
+                if (!SerializeHelper.TryLoadFromXmlFile(sample.PipelineFullPath, out VisionPipeline loadedPipeline) || loadedPipeline == null)
+                {
+                    throw new InvalidOperationException($"Recipe XML could not be loaded: {sample.PipelineFullPath}");
+                }
+
+                sample.ResolvePipelineDependencyPaths(loadedPipeline);
+                VisionRecipeRunResult loadedResult = await runner.RunAsync(
+                    loadedPipeline,
                     source,
                     "Main",
                     VisionRecipeRunner.DefaultStepTimeoutMilliseconds,
-                    cancellationToken).ConfigureAwait(false);
-                return (result, pipeline);
+                    cancellationToken, sources).ConfigureAwait(false);
+                return (loadedResult, loadedPipeline);
             }
-
-            if (!SerializeHelper.TryLoadFromXmlFile(sample.PipelineFullPath, out VisionPipeline loadedPipeline) || loadedPipeline == null)
-            {
-                throw new InvalidOperationException($"Recipe XML could not be loaded: {sample.PipelineFullPath}");
-            }
-
-            sample.ResolvePipelineDependencyPaths(loadedPipeline);
-            VisionRecipeRunResult loadedResult = await runner.RunAsync(
-                loadedPipeline,
-                source,
-                "Main",
-                VisionRecipeRunner.DefaultStepTimeoutMilliseconds,
-                cancellationToken).ConfigureAwait(false);
-            return (loadedResult, loadedPipeline);
+            finally { foreach (var image in sources.Values) { image.Dispose(); } }
         }
 
         private static Mat PrepareExecutionSource(

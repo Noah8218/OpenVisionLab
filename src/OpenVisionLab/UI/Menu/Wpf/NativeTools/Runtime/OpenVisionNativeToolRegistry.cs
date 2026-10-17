@@ -99,7 +99,8 @@ namespace OpenVisionLab
         public static bool TryCreateDocument(
             VISION_MENU menu,
             IDisplayManager displayManager,
-            out OpenVisionNativeToolDocument document)
+            out OpenVisionNativeToolDocument document,
+            bool forWorkbench = false)
         {
             if (!RegistrationsByMenu.TryGetValue(menu, out OpenVisionNativeToolRegistration registration))
             {
@@ -107,7 +108,7 @@ namespace OpenVisionLab
                 return false;
             }
 
-            document = registration.CreateDocument(displayManager);
+            document = registration.CreateDocument(displayManager, forWorkbench);
             string settingsConfigName =
                 OpenVisionNativeToolSettingsStore.CreateConfigName(
                     document.ToolName);
@@ -128,7 +129,7 @@ namespace OpenVisionLab
 
         private static OpenVisionNativeToolRegistration Tool(
             VISION_MENU menu,
-            Func<IDisplayManager, OpenVisionNativeToolDocument> createDocument,
+            Func<IDisplayManager, bool, OpenVisionNativeToolDocument> createDocument,
             string viewTypeName)
         {
             return new OpenVisionNativeToolRegistration(menu, createDocument, StandardHostedToolSize, viewTypeName, warmHostedLayout: false);
@@ -136,7 +137,7 @@ namespace OpenVisionLab
 
         private static OpenVisionNativeToolRegistration LargeTool(
             VISION_MENU menu,
-            Func<IDisplayManager, OpenVisionNativeToolDocument> createDocument,
+            Func<IDisplayManager, bool, OpenVisionNativeToolDocument> createDocument,
             string viewTypeName,
             bool warmHostedLayout)
         {
