@@ -4,88 +4,88 @@
 
 OpenVisionLab is an **OpenCvSharp 4 rule-based machine vision workbench**.
 
-It lets users build inspection sequences, adjust tool parameters, and review
-the images and measurements behind each OK/NG decision.
+Build inspection sequences, adjust tool parameters, and check the images and
+measurements used for each OK/NG decision.
 
 ## Version
 
-Current version: `v2.2.0-dev.9`
-
-This project is maintained using explicit version numbers. Versions with a
-`dev` suffix are development builds.
+Current version: `v2.2.0-dev.10`
 
 ### Recent version history
 
+#### `v2.2.0-dev.10` (2026-10-18)
+
+- Revised the English and Korean README instructions for inspection, setup and source builds.
+
 #### `v2.2.0-dev.9` (2026-10-17)
 
-- Aligns the offline manual version with the application and preserves Guide checksums across Git checkouts.
+- Matched the offline manual version to the application and fixed Guide checksum differences between Git checkouts.
 
 #### `v2.2.0-dev.8` (2026-10-17)
 
-- Reduces redundant updates during image selection, tool-editor activation and log filtering.
-- Improves inline tool editing, recipe transitions and inspection-result review.
-- Adds a full Korean README and refreshes the screenshots and workflow recordings.
+- Reduced redundant updates during image selection, tool-editor activation and log filtering.
+- Improved inline tool editing, recipe transitions and inspection-result review.
+- Added a full Korean README and replaced the screenshots and workflow recordings.
 
 #### `v2.2.0-dev.7` (2026-10-06)
 
-- Improves Recipe Manager selection and explicit work opening, preserving edits
-  through cancellation and save failures.
-- Modernizes shared controls and nine UI areas, and improves ROI dialog layout,
-  long Tool errors, and input/output layer names.
-- Fixes output-layer target synchronization and updates the main workspace,
-  native Tool forms, Recipe persistence, Pipeline execution and LLM/XML review.
+- Updated selection and opening in Recipe Manager; edits are retained when
+  opening is cancelled or saving fails.
+- Updated shared controls and nine UI areas, including ROI dialog layout,
+  long tool error messages, and input/output layer names.
+- Fixed output-layer target synchronization and updated the main workspace,
+  native tool forms, recipe persistence, pipeline execution and LLM/XML review.
 
 #### `v2.2.0-dev.6` (2026-09-27)
 
-- Includes the recipe workspace sources and integration alpha.4 packages.
-- Adds NuGet lock files for repeatable dependency restores.
-- Clarifies the Visual Studio workload, desktop SDK and Git prerequisites for source builds.
+- Included the recipe workspace sources and integration alpha.4 packages.
+- Added NuGet lock files for repeatable dependency restores.
+- Clarified the Visual Studio workload, desktop SDK and Git prerequisites for source builds.
 
 #### `v2.2.0-dev.5` (2026-09-17)
 
-- Adds fail-closed 2D runtime qualification that matches the checkout commit and
-  entry assembly bytes before a cross-repository smoke run.
-- Extends the separate-EXE integration evidence with profile, source/recipe
-  identity, source dimensions, and screenshot reporting.
+- Added a 2D runtime check that blocks cross-repository smoke runs when the
+  checkout commit or entry assembly bytes do not match the expected build.
+- Added the profile, source and recipe identity, source dimensions, and
+  screenshots to separate-EXE integration reports.
 
 #### `v2.2.0-dev.4` (2026-09-16)
 
-- Adds 2D integration checks for retry, fault injection, input identity and
+- Added 2D integration checks for retry, fault injection, input identity and
   output allocation.
 
 #### `v2.2.0-dev.3` (2026-09-16)
 
-- Hardens Pipeline Review, Recipe switching, N-image verification, docking,
-  Tool interaction, workspace restoration, storage recovery, and execution
-  provenance for clearer deterministic workflows.
-- Adds 2D integration checks and output-allocation preflight guards.
+- Updated Pipeline Review, recipe switching, multi-image validation, docking,
+  tool interaction, workspace restoration, storage recovery, and execution
+  source tracking.
+- Added 2D integration checks and output-allocation checks before execution.
   LLM/XML assistance remains optional.
 
 #### `v2.2.0-dev.2` (2026-09-10)
 
-- Organizes the Docking.Controls source by contracts, models, documents,
+- Organized the Docking.Controls source by contracts, models, documents,
   workspace, guides, layer docking, converters, and Views.
-- Preserves namespaces, XAML bindings, ResourceDictionary behavior, and the
+- Preserved namespaces, XAML bindings, ResourceDictionary behavior, and the
   existing Image → Layer → Tool → Inspection → Pipeline → Recipe → Result → Review flow.
 
 #### `v2.2.0-dev.1` (2026-09-09)
 
-- Aligns the application, manual, and integration identity surfaces to one
-  version.
-- Promotes the verified ImageCanvas, Image Compare, Recipe, Shell,
-  PropertyGrid, Learn, and namespace ownership boundaries.
+- Aligned version information in the application, manual, and integration metadata.
+- Integrated the verified changes to ImageCanvas, Image Compare, Recipe, Shell,
+  PropertyGrid, Learn, and namespace ownership.
 
 ## Quick Overview
 
 OpenVisionLab is a Windows desktop application for building and validating
 rule-based inspection recipes from image samples.
 
-- Workflow: load an image -> select a Layer -> configure a Tool -> run Preview
-  or Run -> save the Pipeline/Recipe -> validate with Good and Bad samples
+- Workflow: load an image -> select a layer -> configure a tool -> run Preview
+  or Run -> save the pipeline/recipe -> validate with Good and Bad samples
 - Main tools: Threshold, Filter, Morphology, Blob, Contour, Matching,
   FeatureMatching, EdgeBasedMatching, Line/Length, and Mean
-- Current focus: PropertyGrid-based Tool Views, Pipeline Review, intermediate
-  Layer comparison, public samples, and multi-image validation
+- Inspection setup: PropertyGrid tool settings, Pipeline Review, intermediate
+  layer comparison, public samples, and multi-image validation
 - LLM/XML assistance is optional and is not required to use the application
 
 ## Build and Check a Recipe
@@ -114,37 +114,37 @@ When **Run on change** is off, parameter changes leave the result pending until
 the tool runs. Loading a recipe restores its settings without running the
 inspection. Saving and running are separate actions.
 
-A completed run can have no verdict when no enabled step has acceptance
-criteria. An execution error is separate from an inspection NG. Input or
-parameter changes mark retained results as previous; rerun to obtain current
-results. Batch processing does not retain every intermediate image; run the
-selected image explicitly to inspect those outputs.
+A run may finish without an OK/NG verdict if none of its enabled steps has
+acceptance criteria. An execution error is reported separately from NG. After
+input or parameter changes, retained results are marked as previous results;
+run again to update them. Batch inspection does not keep every intermediate
+image. Run the selected image to inspect those outputs.
 
 ## One Image, Every Inspection Stage
 
 ![OpenVisionLab Filter, Threshold, Morphology, Blob, and Contour comparison](docs/assets/demo/readme-workflows/inspection-stages.png)
 
 Use the four-panel viewer to compare the source, filtered, binary and cleaned
-images. This public perforated-plate recipe runs `Filter -> Threshold -> Morphology`,
-then branches the cleaned Layer to Blob and Contour. Both branches return
-34 accepted holes, shown in the Results tab. The shared area gate excludes
-the full-image background contour.
+images. The public perforated-plate recipe runs `Filter -> Threshold -> Morphology`,
+then feeds the cleaned layer into Blob and Contour. Both branches return
+34 accepted holes, shown in the Results tab. The same area limits exclude
+the contour around the full-image background.
 
-[Open the reproducible public Pipeline](docs/samples/public/product/Product_Field_PerforatedPlate_Inspection.pipeline.xml)
+[Open the example pipeline](docs/samples/public/product/Product_Field_PerforatedPlate_Inspection.pipeline.xml)
 or select `Product_Field_PerforatedPlate_HoleArray` in the sample catalog.
 
-This is the central workflow OpenVisionLab is designed for: tune each Step,
-compare intermediate images, inspect final drawings and metrics, then confirm
-the same evidence in Pipeline Review. Preview and Run remain explicit actions.
+Adjust each step while comparing its intermediate image, then check the final
+overlays and measurements in Pipeline Review. Preview and Run execute only
+when requested.
 
 ## User Manual
 
-Open the application and select `Guide` to open the offline user manual. The
-same source is maintained under [docs/manual](docs/manual/README.md). Every
-workflow and all 17 Tool chapters include a current OpenVisionLab UI capture,
-numbered callouts, and the matching click or review order.
+Select `Guide` in the application to open the offline user manual. Its source
+is in [docs/manual](docs/manual/README.md). The workflow sections and all
+17 tool chapters include screenshots, numbered callouts, and the steps to
+follow or results to check.
 
-## Tool Views in the Current EXE
+## Tool Setup and Results
 
 The recording moves through Matching, Line, Blob and Contour settings
 and results in the main workbench.
@@ -174,8 +174,8 @@ Pipelines, including the Morphology operation and kernel settings:
 
 [Watch the chained-processing MP4](docs/assets/demo/readme-workflows/preprocessing-chains.mp4)
 
-Pipeline Review lets users select each Step, inspect its intermediate image,
-and review the detected objects and drawings from the final Step.
+In Pipeline Review, select a step to inspect its intermediate image. Check the
+final step for detected objects and overlays.
 
 Run an individual tool with **F8** or the pipeline with **F5**. Tools with a
 **Run on change** option can also run when parameters change.
@@ -195,9 +195,9 @@ startup project and use `Debug` / `Any CPU`; the product starts through
 `OpenVisionShellHostWindow`. Do not choose a verification tool as the F5
 startup project.
 
-The solution lists the product and shared library projects. Other `.csproj`
-files under `tools/` are standalone verification entry points, so they are
-opened or run by their project path when a specific check is needed.
+The solution contains the application and shared libraries. Verification
+projects under `tools/` run independently; open or run their `.csproj` files
+when you need a specific check.
 
 | Work you are doing | Project or folder to open | First code to read |
 | --- | --- | --- |
@@ -208,11 +208,10 @@ opened or run by their project path when a specific check is needed.
 | Change shared pipeline, docking, logging, or localization controls | the matching project under `src/Libraries/` | its `View/`, `ViewModel/`, or `Services/` owner |
 | Run a structural or feature check | the matching project under `tools/` | `tools/OpenVisionReadinessCheck/`, `tools/VisionRecipeRunnerSmoke/`, or `tools/PipelineViewerScreenshotSmoke/` |
 
-The shortest code-reading route is
+To find the code for a feature, follow
 `AGENTS.md` -> `docs/README.md` ->
 `docs/admin/CODEBASE_STRUCTURE.md` -> the stable contract for the feature ->
-the owner named in that structure document. From PowerShell, the baseline
-commands are:
+the implementation named in that document. Start with these PowerShell commands:
 
 ```powershell
 dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"
@@ -230,10 +229,10 @@ Requirements:
 - `.NET desktop development` workload selected in Visual Studio Installer
 - Internet access for the first NuGet package restore
 
-The workload supplies MSBuild, WPF development tools, and its matching .NET SDK.
-The build also invokes Git directly. Verify `git --version` in the terminal
-used for development; if it fails, install Git for Windows with PATH support
-and restart Visual Studio. GitHub Desktop alone does not establish this check.
+The workload installs MSBuild, the WPF development tools, and a compatible
+.NET SDK. The build also calls Git, so run `git --version` in your development
+terminal. If the command fails, install Git for Windows with PATH support and
+restart Visual Studio. Check this even if GitHub Desktop is installed.
 
 1. Open **Visual Studio Installer**.
 2. Find Visual Studio 2022, select **Modify**, select
@@ -443,14 +442,14 @@ Tool Property Model
   -> Pipeline Step XML
 ```
 
-This keeps Tool configuration and Recipe serialization consistent as new Tools
-are added. Users can start with presets such as Basic, Fast, or Precise and then
-adjust individual parameters in the PropertyGrid.
+The same property model supplies the tool settings and the values saved in
+recipe XML. Start with a Basic, Fast, or Precise preset, then adjust individual
+parameters in the PropertyGrid.
 
 ## Pipeline Review
 
-Pipeline Review shows the execution order and retained result for each Step.
-Users can inspect:
+Pipeline Review shows each step in execution order, along with its retained
+result. Select a step to check:
 
 - the input and output Layer for the selected Step;
 - connections and branches between Steps;
@@ -502,22 +501,22 @@ dotnet build "OpenVisionLab.sln" -c Debug -p:Platform="Any CPU"
 .\bin\Debug\OpenVisionLab.exe --smoke recipe-manager-tabs --output artifacts\smoke\recipe_manager_tabs
 ```
 
-When a visible UI or workflow changes, capture fresh evidence from the current
-build. Screenshots from an older build are not evidence of the current UI.
+When changing the UI or a workflow, run the affected steps and capture the
+results from that build. An older screenshot does not verify the change.
 
 ## Continuous Integration
 
 The GitHub Actions workflow is defined in `.github/workflows/ci.yml`.
 
-The Windows CI gate checks:
+On Windows, CI checks:
 
 - solution build;
 - readiness contracts;
 - external-reference policy;
 - public-sample asset policy.
 
-WPF screenshots and actual-EXE UI checks are run locally when the change
-requires evidence from the current build.
+Run WPF screenshot checks and actual-EXE UI checks locally when a change
+affects the displayed controls or workflow.
 
 ## Releases
 
@@ -525,8 +524,8 @@ requires evidence from the current build.
 - Release and version policy:
   [docs/OPENVISIONLAB_RELEASE_VERSION_POLICY.md](docs/OPENVISIONLAB_RELEASE_VERSION_POLICY.md)
 
-The product version is defined in `src/OpenVisionLab/OpenVisionLab.csproj`.
-The version shown above and the change history follow that value.
+The version in `src/OpenVisionLab/OpenVisionLab.csproj` is the source for the
+version shown in this README and the changelog.
 
 ## Roadmap
 
@@ -547,9 +546,8 @@ and evidence from the affected controls.
 - Publicly distributed samples are defined by `docs/samples/public` and the
   catalog CSV files. Local or third-party files under `Sample/` are not public
   distribution assets.
-- Results from public examples do not establish production robustness.
-- Visible changes must be checked in a current build before they are considered
-  complete.
+- Validate recipes with representative production images before using them for inspection.
+- Check UI changes in the build that contains them.
 
 ## Documentation
 
@@ -578,7 +576,6 @@ license terms. Copies or substantial portions of the software must retain the
 
 ## Summary
 
-OpenVisionLab is a rule-based machine vision workbench where users configure
-inspection conditions, review intermediate results, and validate Recipes across
-multiple images. Public samples provide a starting point, while production use
-requires representative data and application-specific validation.
+Use OpenVisionLab to teach inspection tools, compare intermediate images, and
+check a recipe across multiple images. Start with a public sample, then
+validate the recipe with images from the intended inspection.
