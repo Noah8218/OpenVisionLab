@@ -3,6 +3,10 @@
 User-facing changes to OpenVisionLab. Product and dependency versioning follows
 [the version policy](docs/OPENVISIONLAB_RELEASE_VERSION_POLICY.md).
 
+## 2.2.0-dev.11 - 2026-10-18
+
+- Adjusted Korean introduction and recipe-instruction paragraphs after reviewing the README at a narrow GitHub width.
+
 ## 2.2.0-dev.10 - 2026-10-18
 
 - Rewrites the English and Korean README for clearer inspection, setup and build instructions while preserving the detailed workflow, tables, commands and media.

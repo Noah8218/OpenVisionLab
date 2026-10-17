@@ -9,9 +9,13 @@ measurements used for each OK/NG decision.
 
 ## Version
 
-Current version: `v2.2.0-dev.10`
+Current version: `v2.2.0-dev.11`
 
 ### Recent version history
+
+#### `v2.2.0-dev.11` (2026-10-18)
+
+- Adjusted Korean paragraph lengths and recipe instructions for narrower README views.
 
 #### `v2.2.0-dev.10` (2026-10-18)
 
@@ -69,12 +73,6 @@ Current version: `v2.2.0-dev.10`
 - Preserved namespaces, XAML bindings, ResourceDictionary behavior, and the
   existing Image → Layer → Tool → Inspection → Pipeline → Recipe → Result → Review flow.
 
-#### `v2.2.0-dev.1` (2026-09-09)
-
-- Aligned version information in the application, manual, and integration metadata.
-- Integrated the verified changes to ImageCanvas, Image Compare, Recipe, Shell,
-  PropertyGrid, Learn, and namespace ownership.
-
 ## Quick Overview
 
 OpenVisionLab is a Windows desktop application for building and validating
@@ -115,10 +113,13 @@ the tool runs. Loading a recipe restores its settings without running the
 inspection. Saving and running are separate actions.
 
 A run may finish without an OK/NG verdict if none of its enabled steps has
-acceptance criteria. An execution error is reported separately from NG. After
-input or parameter changes, retained results are marked as previous results;
-run again to update them. Batch inspection does not keep every intermediate
-image. Run the selected image to inspect those outputs.
+acceptance criteria. An execution error is reported separately from NG.
+
+After input or parameter changes, retained results are marked as previous
+results; run again to update them.
+
+Batch inspection does not keep every intermediate image. Run the selected
+image to inspect those outputs.
 
 ## One Image, Every Inspection Stage
 

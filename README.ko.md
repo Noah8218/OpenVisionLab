@@ -4,13 +4,17 @@
 
 OpenVisionLab은 **OpenCvSharp 4로 구현한 규칙 기반 머신비전 개발 도구**입니다.
 
-검사 순서를 구성하고 툴 파라미터를 조정하면서 OK/NG 판정에 사용한 영상과 측정값을 확인합니다.
+검사 순서와 툴 파라미터를 설정하고 OK/NG 판정에 사용한 영상과 측정값을 확인합니다.
 
 ## 버전
 
-현재 버전: `v2.2.0-dev.10`
+현재 버전: `v2.2.0-dev.11`
 
 ### 최근 버전 이력
+
+#### `v2.2.0-dev.11` (2026-10-18)
+
+- 좁은 화면에서 읽기 편하도록 소개와 레시피 조작 안내의 문장·문단을 다듬었습니다.
 
 #### `v2.2.0-dev.10` (2026-10-18)
 
@@ -57,11 +61,6 @@ OpenVisionLab은 **OpenCvSharp 4로 구현한 규칙 기반 머신비전 개발 
 - Docking.Controls 소스를 contracts, models, documents, workspace, guides, layer docking, converters, Views로 정리했습니다.
 - 네임스페이스, XAML 바인딩, ResourceDictionary 동작과 기존 Image → Layer → Tool → Inspection → Pipeline → Recipe → Result → Review 흐름은 유지했습니다.
 
-#### `v2.2.0-dev.1` (2026-09-09)
-
-- 프로그램, 설명서, 연동 식별 정보의 버전을 맞췄습니다.
-- 검증을 마친 ImageCanvas, Image Compare, Recipe, Shell, PropertyGrid, Learn의 변경 사항과 네임스페이스별 책임 구분을 반영했습니다.
-
 ## 개요
 
 OpenVisionLab은 샘플 영상으로 규칙 기반 검사 레시피를 구성하고 검증하는 Windows 데스크톱 애플리케이션입니다.
@@ -76,20 +75,23 @@ OpenVisionLab은 샘플 영상으로 규칙 기반 검사 레시피를 구성하
 ![레시피 생성, 영상 불러오기와 검사 툴 티칭](docs/assets/demo/readme-workflows/recipe-teaching.gif)
 
 1. **Recipe Manager**에서 `Shape Count`를 만들고 **Open work with selected inspection**을 선택한 뒤 영상을 엽니다.
-2. **Threshold**를 엽니다. **Run on change**를 끄고 임계값을 `150`으로 설정한 뒤 **Run tool (F8)** 버튼을 선택합니다.
-   원본과 이진화 영상을 비교한 다음 **Add to pipeline → Add at end**를 선택합니다.
+2. **Threshold**를 열고 **Run on change**를 끕니다. 임계값을 `150`으로 설정한 뒤 **Run tool (F8)** 버튼을 누릅니다.
+   원본과 이진화 영상을 비교하고 **Add to pipeline → Add at end**로 추가합니다.
 3. **Contour**를 열고 입력이 `Threshold_1`인지 확인합니다. **Use threshold**를 끄고 다섯 형상을 포함하도록 검사 영역(ROI)을 그린 뒤 **Apply**를 선택하거나 **Enter**를 누릅니다.
-4. **Acceptance**를 켜고 **Detection count**를 선택합니다. **Lower**와 **Upper**를 체크하고 두 값을 모두 `5`로 설정한 뒤 **F8**을 누릅니다.
-   검출된 형상과 개수 `5`를 확인한 다음 **Ctrl+Enter**로 단계를 추가합니다.
+4. **Acceptance**를 켜고 **Detection count**를 선택합니다. **Lower**와 **Upper**를 체크해 모두 `5`로 설정한 뒤 **F8**을 누릅니다.
+   형상 `5`개가 검출됐는지 확인하고 **Ctrl+Enter**로 단계를 추가합니다.
 5. **F5**로 파이프라인을 실행합니다. **Results** 탭에서 결과를 확인하고 한 패널·두 패널·네 패널 뷰어에서 원본·중간·출력 레이어를 비교합니다.
 6. **Ctrl+S**로 저장합니다. 다른 레시피를 선택했다가 돌아와 저장한 단계·파라미터·ROI·레이어 연결을 다시 불러옵니다.
 7. Good과 Bad 영상을 추가하고 같은 레시피로 **Batch inspection**을 실행합니다. 각 영상의 측정값과 OK/NG 결과를 확인합니다.
 
-**Run on change**가 꺼져 있으면 파라미터를 바꾼 뒤 툴을 실행해야 결과가 갱신됩니다. 실행 전에는 대기 상태로 표시합니다.
-레시피를 불러오면 설정만 복원합니다. 검사 실행과 저장은 각각 따로 합니다.
+**Run on change**가 꺼져 있으면 파라미터를 바꾼 뒤 툴을 직접 실행해야 결과가 갱신됩니다. 실행 전에는 대기 상태로 표시합니다.
 
-활성 단계에 판정 조건이 없으면 실행을 마쳐도 OK/NG 대신 판정없음으로 표시될 수 있습니다.
-실행 오류는 검사 NG와 구분해 표시합니다. 입력이나 파라미터가 바뀌면 보관된 결과에 이전 결과임을 표시하므로, 현재 설정의 결과를 확인하려면 다시 실행해야 합니다.
+레시피를 불러올 때는 검사 실행 없이 설정만 복원합니다. 저장과 실행은 별도 동작입니다.
+
+활성 단계에 판정 조건이 없으면 실행을 마쳐도 OK/NG 대신 판정없음으로 표시될 수 있습니다. 실행 오류는 검사 NG와 구분해 표시합니다.
+
+입력이나 파라미터가 바뀌면 보관된 결과는 이전 결과로 표시합니다. 현재 설정의 결과를 확인하려면 다시 실행해야 합니다.
+
 일괄 검사에서는 모든 중간 영상을 보관하지 않습니다. 중간 영상이 필요하면 해당 영상을 선택해 실행합니다.
 
 ## 한 영상에서 모든 검사 단계 확인
