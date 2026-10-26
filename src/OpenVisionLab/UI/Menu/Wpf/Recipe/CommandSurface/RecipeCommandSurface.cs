@@ -6054,7 +6054,9 @@ namespace OpenVisionLab
                 error = LocalText("XML을 다시 검증하세요.", "Validate the XML again."); return false;
             }
             if (!RecipeWorkspaceService.TryNormalizeStoragePathSegment(name, string.Empty, "Pipeline name", out string normalized, out error)) { return false; }
-            if (RecipeWorkspaceService.GetVisionPipelineNames(MainRecipeName).Contains(normalized, StringComparer.OrdinalIgnoreCase))
+            string targetPath = RecipeWorkspaceService.GetVisionPipelinePath(MainRecipeName, normalized);
+            if (File.Exists(targetPath) || Directory.Exists(targetPath)
+                || RecipeWorkspaceService.GetVisionPipelineNames(MainRecipeName).Contains(normalized, StringComparer.OrdinalIgnoreCase))
             {
                 error = LocalText("같은 이름의 파이프라인이 있습니다.", "A pipeline with this name already exists."); return false;
             }
@@ -7774,7 +7776,9 @@ namespace OpenVisionLab
             string candidate = baseName;
             int index = 2;
             HashSet<string> existing = RecipeWorkspaceService.GetVisionPipelineNames(recipeName).ToHashSet(StringComparer.OrdinalIgnoreCase);
-            while (existing.Contains(candidate))
+            while (existing.Contains(candidate)
+                || File.Exists(RecipeWorkspaceService.GetVisionPipelinePath(recipeName, candidate))
+                || Directory.Exists(RecipeWorkspaceService.GetVisionPipelinePath(recipeName, candidate)))
             {
                 candidate = baseName + "_" + index.ToString(CultureInfo.InvariantCulture);
                 index++;

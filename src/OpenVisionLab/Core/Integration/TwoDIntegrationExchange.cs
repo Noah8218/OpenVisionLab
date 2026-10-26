@@ -407,7 +407,8 @@ public static class TwoDIntegrationExchange
         string exchangeRoot,
         Guid transactionId)
     {
-        var handoff = ReadHandoff(exchangeRoot, transactionId);
+        var handoff = ReadHandoffEnvelope(exchangeRoot, transactionId);
+        ValidateTwoDConsumer(handoff);
         var acknowledgement = IntegrationContractJson.DeserializeAcknowledgementV2(
             ReadMessage(
                 GetTransactionDirectory(exchangeRoot, transactionId),
@@ -415,6 +416,11 @@ public static class TwoDIntegrationExchange
         ThrowIfInvalid(IntegrationContractValidator.ValidateV2Sequence(
             handoff,
             acknowledgement));
+        if (acknowledgement.Status == IntegrationAcknowledgementStatus.Accepted)
+        {
+            ReadHandoff(exchangeRoot, transactionId);
+        }
+
         return acknowledgement;
     }
 

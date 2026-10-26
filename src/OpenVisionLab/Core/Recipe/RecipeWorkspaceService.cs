@@ -188,8 +188,14 @@ namespace OpenVisionLab
                 };
                 using XmlReader reader = XmlReader.Create(path, settings);
                 reader.MoveToContent();
-                return string.Equals(reader.LocalName, "VisionPipeline", StringComparison.Ordinal)
-                    && string.IsNullOrEmpty(reader.NamespaceURI);
+                if (!string.Equals(reader.LocalName, "VisionPipeline", StringComparison.Ordinal)
+                    || !string.IsNullOrEmpty(reader.NamespaceURI))
+                {
+                    return false;
+                }
+
+                while (reader.Read()) { }
+                return true;
             }
             catch (IOException)
             {

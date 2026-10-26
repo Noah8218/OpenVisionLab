@@ -2,6 +2,7 @@ using OpenVisionLab.Vision2D.Pipeline;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 
 namespace OpenVisionLab
@@ -20,6 +21,10 @@ namespace OpenVisionLab
                 return OpenVisionRecipePipelineLifecycleResult.Failure("A pipeline with that name already exists.");
             }
             string target = RecipeWorkspaceService.GetVisionPipelinePath(recipeName, name);
+            if (File.Exists(target) || Directory.Exists(target))
+            {
+                return OpenVisionRecipePipelineLifecycleResult.Failure("A pipeline with that name already exists.");
+            }
             try
             {
                 VisionPipelineStorage.Save(recipeName, new VisionPipeline { Name = name });
@@ -143,7 +148,9 @@ namespace OpenVisionLab
             int index = 2;
             HashSet<string> existing = RecipeWorkspaceService.GetVisionPipelineNames(recipeName)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
-            while (existing.Contains(candidate))
+            while (existing.Contains(candidate)
+                || File.Exists(RecipeWorkspaceService.GetVisionPipelinePath(recipeName, candidate))
+                || Directory.Exists(RecipeWorkspaceService.GetVisionPipelinePath(recipeName, candidate)))
             {
                 candidate = baseName + "_" + index.ToString(CultureInfo.InvariantCulture);
                 index++;

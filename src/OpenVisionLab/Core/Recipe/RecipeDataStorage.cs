@@ -40,16 +40,7 @@ namespace OpenVisionLab
                     return data;
                 }
 
-                RecipeDataPersistenceState previousState =
-                    GetPersistenceState(path);
-                string backupPath =
-                    previousState?.Kind
-                            == RecipeDataPersistenceStateKind
-                                .InvalidFileSubstituted
-                        && File.Exists(previousState.BackupPath)
-                            ? previousState.BackupPath
-                            : SerializeHelper.BackupInvalidXmlFile(
-                                path);
+                string backupPath = SerializeHelper.BackupInvalidXmlFile(path);
                 SetPersistenceState(
                     path,
                     new RecipeDataPersistenceState(
@@ -81,8 +72,15 @@ namespace OpenVisionLab
                 RecipeWorkspaceService.GetVisionDataPath(recipeName);
             RecipeDataPersistenceState previousState =
                 GetPersistenceState(path);
+            string backupPath = previousState?.BackupPath ?? string.Empty;
             try
             {
+                if (previousState?.IsFailure == true && File.Exists(backupPath) && File.Exists(path)
+                    && (!SerializeHelper.TryLoadFromXmlFile(path, out DataState currentData, out _)
+                        || currentData == null || (currentData.SavedRevision != 0 && string.IsNullOrEmpty(currentData.SavedContentHash))))
+                {
+                    backupPath = SerializeHelper.BackupInvalidXmlFile(path);
+                }
                 SerializeHelper.SaveXmlFile(
                     path,
                     data ?? new DataState());
@@ -94,7 +92,7 @@ namespace OpenVisionLab
                             RecipeDataPersistenceStateKind.SaveRecovered,
                             recipeName,
                             path,
-                            previousState.BackupPath,
+                            backupPath,
                             string.Empty));
                 }
                 else
@@ -110,7 +108,7 @@ namespace OpenVisionLab
                         RecipeDataPersistenceStateKind.SaveFailed,
                         recipeName,
                         path,
-                        previousState?.BackupPath,
+                        backupPath,
                         ex.GetBaseException().Message));
                 throw;
             }

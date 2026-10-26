@@ -115,16 +115,7 @@ namespace OpenVisionLab
                     return defaultPipeline;
                 }
 
-                VisionPipelinePersistenceState previousState =
-                    GetPersistenceState(path);
-                string backupPath =
-                    previousState?.Kind
-                            == VisionPipelinePersistenceStateKind
-                                .InvalidFileSubstituted
-                        && File.Exists(previousState.BackupPath)
-                            ? previousState.BackupPath
-                            : SerializeHelper.BackupInvalidXmlFile(
-                                path);
+                string backupPath = SerializeHelper.BackupInvalidXmlFile(path);
                 SetPersistenceState(
                     path,
                     new VisionPipelinePersistenceState(
@@ -165,8 +156,15 @@ namespace OpenVisionLab
             string path = RecipeWorkspaceService.GetVisionPipelinePath(recipeName, target.Name);
             VisionPipelinePersistenceState previousState =
                 GetPersistenceState(path);
+            string backupPath = previousState?.BackupPath ?? string.Empty;
             try
             {
+                if (previousState?.IsFailure == true && File.Exists(backupPath) && File.Exists(path)
+                    && !SerializeHelper.TryLoadFromXmlFile(path, out VisionPipeline _, out Exception loadException)
+                    && (loadException is not VisionPipelineXmlSchemaException schemaException || !schemaException.PreserveOriginal))
+                {
+                    backupPath = SerializeHelper.BackupInvalidXmlFile(path);
+                }
                 SerializeHelper.SaveXmlFile(path, target);
                 if (previousState?.IsFailure == true)
                 {
@@ -177,7 +175,7 @@ namespace OpenVisionLab
                             recipeName,
                             target.Name,
                             path,
-                            previousState.BackupPath,
+                            backupPath,
                             string.Empty));
                 }
                 else
@@ -194,7 +192,7 @@ namespace OpenVisionLab
                         recipeName,
                         target.Name,
                         path,
-                        previousState?.BackupPath,
+                        backupPath,
                         ex.GetBaseException().Message));
                 throw;
             }

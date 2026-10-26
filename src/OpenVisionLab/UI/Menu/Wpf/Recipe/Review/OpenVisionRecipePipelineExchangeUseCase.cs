@@ -1,10 +1,9 @@
 using OpenVisionLab.Vision2D.Pipeline;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Xml.Serialization;
+using System.Text;
 
 namespace OpenVisionLab
 {
@@ -37,13 +36,7 @@ namespace OpenVisionLab
 
         public OpenVisionRecipePipelineExchangeResult Export(string recipeName, string activePipelineName, string destinationPath)
         {
-            VisionPipeline pipeline = VisionPipelineStorage.Load(recipeName, activePipelineName);
-            if (!VisionPipelineStorage.TrySaveToFile(destinationPath, pipeline, out string message))
-            {
-                return OpenVisionRecipePipelineExchangeResult.Failure(message);
-            }
-
-            return OpenVisionRecipePipelineExchangeResult.Success(activePipelineName, destinationPath);
+            return ExportExisting(recipeName, activePipelineName, destinationPath);
         }
 
         public OpenVisionRecipePipelineExchangeResult ExportExisting(string recipeName, string pipelineName, string destinationPath)
@@ -63,15 +56,22 @@ namespace OpenVisionLab
             string destinationPath,
             IReadOnlyList<OpenVisionRecipeReviewReference> references)
         {
-            VisionPipeline pipeline = VisionPipelineStorage.Load(recipeName, activePipelineName);
-            if (!OpenVisionRecipeReviewBundleExporter.TryExport(
+            string sourcePath = RecipeWorkspaceService.GetVisionPipelinePath(recipeName, activePipelineName);
+            if (File.Exists(destinationPath)
+                && string.Equals(Path.GetFullPath(destinationPath), Path.GetFullPath(sourcePath), StringComparison.OrdinalIgnoreCase))
+            {
+                return OpenVisionRecipePipelineExchangeResult.Failure("Review bundle destination must not overwrite the stored Pipeline XML.");
+            }
+
+            if (!VisionPipelineStorage.TryLoadFromFile(sourcePath, out VisionPipeline pipeline, out string message)
+                || !OpenVisionRecipeReviewBundleExporter.TryExport(
                 destinationPath,
                 recipeName,
                 activePipelineName,
                 pipeline,
                 SerializePipelineToXmlText(pipeline),
                 references ?? Array.Empty<OpenVisionRecipeReviewReference>(),
-                out string message))
+                out message))
             {
                 return OpenVisionRecipePipelineExchangeResult.Failure(message);
             }
@@ -81,10 +81,7 @@ namespace OpenVisionLab
 
         private static string SerializePipelineToXmlText(VisionPipeline pipeline)
         {
-            XmlSerializer serializer = new XmlSerializer(typeof(VisionPipeline));
-            using StringWriter writer = new StringWriter(CultureInfo.InvariantCulture);
-            serializer.Serialize(writer, pipeline);
-            return writer.ToString();
+            return Encoding.UTF8.GetString(VisionPipelineExecutionPlan.SerializePipeline(pipeline));
         }
 
         private static bool TryCreateUniquePipelineName(
@@ -109,7 +106,9 @@ namespace OpenVisionLab
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
             string candidate = normalizedBaseName;
             int suffix = 2;
-            while (names.Contains(candidate))
+            while (names.Contains(candidate)
+                || File.Exists(RecipeWorkspaceService.GetVisionPipelinePath(recipeName, candidate))
+                || Directory.Exists(RecipeWorkspaceService.GetVisionPipelinePath(recipeName, candidate)))
             {
                 candidate = normalizedBaseName + "_" + suffix;
                 suffix++;
