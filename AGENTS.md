@@ -4,10 +4,10 @@ Open `OpenVisionLab.sln` and set `src/OpenVisionLab/OpenVisionLab.csproj` as the
 
 ## README Format Preservation
 
-- Before changing a README, its linked presentation documents or media, read [the README format contract](docs/admin/OPENVISIONLAB_README_FORMAT_CONTRACT.md) and this repository's actual English and Korean READMEs. Preserve their section order, English-first/Korean links, media placement and detail destinations; make only the edits required by the approved feature or factual correction.
+- Before changing a README, its linked presentation documents or media, read this repository's actual English and Korean READMEs. Preserve their section order, English-first/Korean links, media placement and detail destinations; make only the edits required by the approved feature or factual correction.
 - Changes to the format itself require explicit user confirmation of the proposed layout before implementation. Another project's README, a new model, elapsed time or a general continuation request does not authorize a redesign. Preserve this repository's features, versions, support qualifications and source/download distinctions.
-- Use natural English and Korean, current-build maximized UI captures without interaction overlays, and concise, readable fast GIFs. Check relative links, anchors, tracked media and rendered desktop/narrow layout as specified in the contract; retained recordings do not verify a later build.
-- Integrate changes into this existing AGENTS without replacing unrelated instructions and re-read the saved AGENTS and contract. Global instructions remain with their designated owner. Keep public README copy focused on user capabilities; keep internal platform non-goal boilerplate in contributor or product contracts.
+- Use natural English and Korean, current-build maximized UI captures without interaction overlays, and concise, readable fast GIFs. Check relative links, anchors, tracked media and rendered desktop/narrow layout; retained recordings do not verify a later build.
+- Integrate changes into this existing AGENTS without replacing unrelated instructions and re-read the saved AGENTS and READMEs. Global instructions remain with their designated owner. Keep public README copy focused on user capabilities; keep internal platform non-goal boilerplate in contributor or product contracts.
 
 ## Product Identity
 

@@ -128,7 +128,7 @@ Pipeline Review에서 Step을 선택하면 해당 중간 영상을 확인할 수
 Pipeline Review에서는 연결과 분기, 보관된 결과 영상, 판정 범위와 측정값, 조정할 파라미터도 확인합니다.
 측정값에는 `ResultCount`, `AreaMax`, `ScoreMax`, `LineAngleAvg`가 있습니다.
 [작업 공간 안내](docs/runbooks/BUILD.md#workspace-reference)와
-[Pipeline Review 화면](docs/runbooks/DEVELOPMENT.md#pipeline-review)을 참고하세요.
+[Pipeline Review 화면](docs/assets/demo/readme-workflows/pipeline-results.png)을 참고하세요.
 
 ## 공개 샘플
 
@@ -167,7 +167,7 @@ Git이 PATH에 있어야 하며 최초 NuGet 복원에는 인터넷 연결이 �
 작업 절차와 17개 툴별 설명에는 화면 사진, 번호별 설명, 조작 순서와 확인할 결과가 있습니다.
 
 [사용 설명서](docs/manual/README.md) · [튜토리얼](docs/learn/OPENVISIONLAB_TUTORIAL.md) · [Learn Mode](docs/learn/README.md)
-[빌드](docs/runbooks/BUILD.md) · [개발·검증](docs/runbooks/DEVELOPMENT.md) · [변경 이력](CHANGELOG.md) · [문서 목차](docs/README.md)
+[빌드](docs/runbooks/BUILD.md) · [변경 이력](CHANGELOG.md) · [문서 목차](docs/README.md)
 
 ## 현재 상태와 한계
 

@@ -136,7 +136,7 @@ Pipeline Review also shows connections and branches, retained result images,
 acceptance ranges and values, and parameters to adjust. Metrics include
 `ResultCount`, `AreaMax`, `ScoreMax` and `LineAngleAvg`.
 See the [workspace reference](docs/runbooks/BUILD.md#workspace-reference) and
-[Pipeline Review image](docs/runbooks/DEVELOPMENT.md#pipeline-review).
+[Pipeline Review image](docs/assets/demo/readme-workflows/pipeline-results.png).
 
 ## Public Samples
 
@@ -178,7 +178,7 @@ workflow sections and 17 Tool chapters include screenshots, numbered callouts,
 steps to follow and results to check.
 
 [User manual](docs/manual/README.md) · [Tutorial](docs/learn/OPENVISIONLAB_TUTORIAL.md) · [Learn Mode](docs/learn/README.md)
-[Build](docs/runbooks/BUILD.md) · [Development and checks](docs/runbooks/DEVELOPMENT.md) · [Changelog](CHANGELOG.md) · [Documentation index](docs/README.md)
+[Build](docs/runbooks/BUILD.md) · [Changelog](CHANGELOG.md) · [Documentation index](docs/README.md)
 
 ## Status and limitations
 

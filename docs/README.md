@@ -13,9 +13,7 @@ Updated: 2026-10-26 KST
 기계 판독 경로는 [LLM_DOCUMENT_INDEX.json](LLM_DOCUMENT_INDEX.json)입니다.
 실제 동작과 의존성은 소스·프로젝트·스키마가 원본이며 문서 지도는 검색 진입점입니다.
 
-README에서 연결하는 자세한 안내는 [빌드·실행](runbooks/BUILD.md)과
-[개발·검증](runbooks/DEVELOPMENT.md)에 있습니다. README를 수정할 때는
-[형식 유지 계약](admin/OPENVISIONLAB_README_FORMAT_CONTRACT.md)을 먼저 확인합니다.
+소스 빌드와 실행 방법은 [빌드·실행](runbooks/BUILD.md)을 참고하세요.
 
 ## Visual Studio에서 열고 실행하기
 

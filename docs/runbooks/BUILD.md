@@ -1,6 +1,6 @@
 # Build and run OpenVisionLab
 
-[English README](../../README.md) · [한국어 README](../../README.ko.md) · [Development and checks](DEVELOPMENT.md)
+[English README](../../README.md) · [한국어 README](../../README.ko.md)
 
 ## Published ZIP
 
