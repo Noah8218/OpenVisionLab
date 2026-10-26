@@ -140,11 +140,11 @@ Before publishing:
 3. Check that `docs/assets/tutorial/current` and `docs/assets/tutorial/annotated` do not visibly contain SDK sample images.
 4. Keep any local SDK sample tests opt-in and skipped by default.
 
-Required checks:
+Generator fields record the historical development source path. The generation tools stay in Dev; public builds use the committed assets and provenance manifests.
+
+Required public checks:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File tools\GenerateOpenVisionSyntheticSamples.ps1
-powershell -NoProfile -ExecutionPolicy Bypass -File tools\GenerateOpenVisionProductSamples.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\TestPublicSampleAssets.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\RunVisionSampleCatalog.ps1 -CatalogPath docs\samples\OpenVisionLab.PublicSampleCatalog.csv -OutputDir artifacts\public_sample_catalog
 powershell -NoProfile -ExecutionPolicy Bypass -File tools\RunVisionSampleCatalog.ps1 -CatalogPath docs\samples\OpenVisionLab.ProductSampleCatalog.csv -OutputDir artifacts\product_sample_catalog

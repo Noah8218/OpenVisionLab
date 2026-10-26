@@ -1,6 +1,6 @@
 # Contributor Instructions
 
-Open `OpenVisionLab.sln` and set `src/OpenVisionLab/OpenVisionLab.csproj` as the startup project (`Debug` / `Any CPU`, Windows x64). Use [docs/README.md](docs/README.md) and its single [owner map](docs/admin/CODEBASE_STRUCTURE.md) to find the affected source, stable contracts and matching tests.
+Open `OpenVisionLab.sln` and set `src/OpenVisionLab/OpenVisionLab.csproj` as the startup project (`Debug` / `Any CPU`, Windows x64). Use [docs/README.md](docs/README.md) for public build, manual, sample and interface references; trace affected owners in the current source.
 
 ## README Format Preservation
 
@@ -8,6 +8,14 @@ Open `OpenVisionLab.sln` and set `src/OpenVisionLab/OpenVisionLab.csproj` as the
 - Changes to the format itself require explicit user confirmation of the proposed layout before implementation. Another project's README, a new model, elapsed time or a general continuation request does not authorize a redesign. Preserve this repository's features, versions, support qualifications and source/download distinctions.
 - Use natural English and Korean, current-build maximized UI captures without interaction overlays, and concise, readable fast GIFs. Check relative links, anchors, tracked media and rendered desktop/narrow layout; retained recordings do not verify a later build.
 - Integrate changes into this existing AGENTS without replacing unrelated instructions and re-read the saved AGENTS and READMEs. Global instructions remain with their designated owner. Keep public README copy focused on user capabilities; keep internal platform non-goal boilerplate in contributor or product contracts.
+
+## Public Verification Boundary
+
+- Original retains the tools required for public source builds, vendored DLL and NOTICE checks, public sample execution, clean publishing and distribution verification. Run `tools/VerifyReleaseCandidate.ps1` for the complete public gate; CI keeps its existing entry point.
+- Internal architecture/refactoring checks, regression campaigns, screenshot harnesses and their development records remain in Dev. Do not copy them back to Original merely to satisfy a source-text dependency or bypass a failed public check.
+- `OpenVisionReadinessCheck` in Original checks public build inputs, the recipe schema and both hash-verified offline Guides. Dev retains the complete development readiness checker. The public sample runner preserves its image/pipeline/output/overlay CLI; internal contract modes are Dev-only.
+- The product project's optional `OpenVisionLabEnableEmbeddedSmokeRunner=true` setting is a Dev-only verification option. Normal public builds use its existing `false` default.
+- Preserve product source, runtime assets, version and the approved English/Korean READMEs when separating development tools. Keep all required public build, sample and distribution checks active.
 
 ## Product Identity
 
@@ -154,7 +162,7 @@ Before editing:
 ## Source Organization And Folder Rules
 
 - 폴더는 실제 책임을 찾기 위한 신호입니다. 현재 배치는 코드가 원본이며 탐색은
-  [CODEBASE_STRUCTURE](docs/admin/CODEBASE_STRUCTURE.md)를 사용합니다. 여기에 클래스·폴더별
+  [public build guide](docs/runbooks/BUILD.md)를 사용합니다. 여기에 클래스·폴더별
   구현 목록을 다시 만들거나 계획만으로 빈 폴더를 만들지 않습니다.
 - 새 작업은 기존 feature/module의 concrete owner를 먼저 찾습니다. 폴더 정리나 파일 길이만으로
   완료된 owner를 다시 분할하지 않습니다. 이동은 실제 책임이 명확하고 탐색·변경에 도움이 될 때만 합니다.

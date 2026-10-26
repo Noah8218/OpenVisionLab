@@ -45,7 +45,6 @@ OpenVisionLab source identity, SDK version/commit, vendored DLL length/SHA-256 a
 - Build the application: `dotnet build OpenVisionLab.sln -c Debug -p:Platform=x64`.
 - Run the vendored DLL check: `powershell -ExecutionPolicy Bypass -File tools\TestExternalReferences.ps1`.
 - Run the readiness gate: `dotnet run --project tools\OpenVisionReadinessCheck\OpenVisionReadinessCheck.csproj`.
-- Run the non-UI platform precheck against the repository-portable public catalog: `powershell -ExecutionPolicy Bypass -File tools\RunVisionPlatformPrecheck.ps1 -SkipUi -CatalogPath docs\samples\OpenVisionLab.PublicSampleCatalog.csv`.
 - Run the public sample catalog after any catalog/pipeline change: `powershell -ExecutionPolicy Bypass -File tools\RunVisionSampleCatalog.ps1 -CatalogPath docs\samples\OpenVisionLab.PublicSampleCatalog.csv -OutputDir <evidence-dir>`.
 
 The legacy `docs\samples\OpenVisionLab.SampleCatalog.csv` remains available for

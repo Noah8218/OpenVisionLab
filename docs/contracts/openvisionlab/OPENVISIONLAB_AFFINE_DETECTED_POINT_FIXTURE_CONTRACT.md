@@ -117,38 +117,6 @@ No fixed-point fallback occurs after detected-point mode is enabled.
 Property edits, selection, XML apply, output-layer creation, and visibility
 changes do not invoke Preview or Run.
 
-## Runtime Evidence
-
-P219 executes this actual six-Step representative path:
-
-```text
-Matching x3 -> AffineTransform -> Threshold -> fixed-reference-ROI Blob
-```
-
-- all three Matching Steps publish their runtime `Center` Point;
-- Affine publishes `AffineDetectedSourcePointCount=3` and the six resolved
-  `AffineSourcePoint*X/Y` values;
-- the recovered matrix equals the independently calculated three-point matrix;
-- the saved downstream `CvROI=170,120,70,60` is unchanged;
-- Blob accepts exactly one normalized target;
-- duplicate source references are rejected by definition validation and again
-  fail closed when execution is invoked directly.
-
-Evidence:
-
-- `artifacts\p219_dynamic_affine_fixture_20260723\runtime`
-- `artifacts\p219_dynamic_affine_fixture_20260723\before`
-- `artifacts\p219_dynamic_affine_fixture_20260723\after`
-
-Focused commands:
-
-```powershell
-dotnet build "tools\VisionRecipeRunnerSmoke\VisionRecipeRunnerSmoke.csproj" -c Debug -p:Platform="Any CPU"
-dotnet "tools\VisionRecipeRunnerSmoke\bin\Any CPU\Debug\net8.0-windows7.0\VisionRecipeRunnerSmoke.dll" --affine-detected-points-contract "artifacts\p219_dynamic_affine_fixture_20260723\runtime"
-dotnet build "tools\PipelineViewerScreenshotSmoke\PipelineViewerScreenshotSmoke.csproj" -c Debug -p:Platform="Any CPU"
-dotnet "tools\PipelineViewerScreenshotSmoke\bin\Any CPU\Debug\net8.0-windows7.0\PipelineViewerScreenshotSmoke.dll" --target p219_affine_point_binding_property_grid "artifacts\p219_dynamic_affine_fixture_20260723\after"
-```
-
 ## Boundary
 
 This is deterministic same-run correspondence wiring, not automatic
@@ -157,22 +125,6 @@ perspective correction, lens calibration, certified metrology, unseen-data
 robustness, or field qualification. Three good locators remain a
 recipe/application responsibility. LLM development remains frozen.
 
-Status: Complete
-
-Scope: typed Point x3 to the existing OpenVisionLab Vision SDK Affine transform, followed by
-one unchanged fixed reference-coordinate inspection ROI.
-
-Acceptance criteria: XML/PropertyGrid persistence, actual Matching centers,
-matrix equivalence, downstream fixed-ROI result, drawings, provenance metrics,
-legacy fixed-mode preservation, and duplicate-reference fail-closed behavior
-all pass.
-
-Verification: P219 detected-point runtime/UI contracts, P218 fixed-source Affine
-regression, P213 geometry review/PropertyGrid regressions, the readiness contract,
-vendored-DLL and public-sample policy checks, JSON catalog parsing, `git diff
---check`, and the final current-source zero-warning solution build all passed.
-
-Evidence: `artifacts\p219_dynamic_affine_fixture_20260723`.
 
 Boundary / next dependency: qualification of a real inspection requires an
 operator-selected physical three-point fixture, taught destination frame,

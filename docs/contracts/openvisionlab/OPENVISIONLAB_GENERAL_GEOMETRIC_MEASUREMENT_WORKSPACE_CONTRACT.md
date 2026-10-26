@@ -1,4 +1,4 @@
-﻿# OpenVisionLab General Geometric Measurement Workspace Contract
+# OpenVisionLab General Geometric Measurement Workspace Contract
 
 Updated: 2026-07-23 KST
 Contract state: Complete on 2026-07-23. The approved checkpoints A through C and all bounded completion gates passed.
@@ -273,25 +273,3 @@ No checkpoint is the completed workspace by itself. Completion requires all thre
 6. Direct summaries and saved reports round-trip all geometry rows and provenance.
 7. Fresh current-build before/after UI captures show PropertyGrid teaching, feature selection, result table, and drawing selection.
 8. Evidence states pixel-only algorithm/UI verification; it does not claim industrial semantic accuracy, calibration, unseen robustness, or field qualification.
-
-## Approved Checklist
-
-The operator approved all four decisions on 2026-07-23:
-
-1. Typed feature identity is `SourceStep + FeatureName`, with only `Point`, `Segment`, and `Circle` in v1.
-2. `CircleGauge` uses an operator-taught annular sector and radial-caliper fit evidence rather than a Hough-only detector.
-3. `GeometryMeasure` supports exactly the seven frozen pixel-only modes in this document.
-4. Editing stays PropertyGrid-based; Pipeline Review supplies read-only table/drawing evidence; Preview/Run stays explicit.
-
-After approval, implementation may proceed through A, B, and C without requesting repeated approval for ordinary in-scope code, build, smoke, or documentation work.
-
-## Completion Record
-
-```text
-Status: Complete
-Scope: P213 typed same-run Point/Segment/Circle results, existing-Line export, CircleGauge, seven GeometryMeasure modes, compatible PropertyGrid source dropdowns, Geometry Review table/drawing selection, validator/runtime fail-closed gates, and direct/recipe Run Report persistence.
-Acceptance criteria: checkpoints A-C and Completion Gates 1-8 passed in the bounded current-source smoke. All seven modes passed positive math cases; wrong kind, coordinate mismatch, degenerate segment, far intersection, invalid result ROI, missing Circle ROI, no edge, wrong polarity, insufficient support/coverage, and excessive residual rejected by named gates. Property apply/save/reload retained source identities with zero Preview/Run. Geometry rows and provenance round-tripped through both report paths. Legacy Line, LineDistance, and LineIntersection UI smokes remained green.
-Verification: `dotnet build OpenVisionLab.sln -c Debug -p:Platform="Any CPU"`; `dotnet build tools/PipelineViewerScreenshotSmoke/PipelineViewerScreenshotSmoke.csproj -c Debug`; focused targets `p213_geometry_review,p213_geometry_property_grid`; regressions `wpf_shell_host_line_tool,wpf_shell_host_line_measure_tool,wpf_shell_host_line_intersection_tool`; JSON catalog parse; `git diff --check`.
-Evidence: `artifacts/p213_general_geometric_measurement_workspace_20260723/README.md`, current-source PropertyGrid/Geometry Review captures, per-mode and Circle drawings, saved report XML, and legacy regression captures in that artifact folder.
-Boundary / next dependency: pixel-only synthetic algorithm/UI verification. It does not prove calibration, industrial semantic accuracy, unseen-data robustness, field qualification, arbitrary automatic feature selection, or experimental OuterCornerIntersection semantics. The next separate priority is bounded two-point scale teaching.
-```

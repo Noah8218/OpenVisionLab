@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updated": "2026-08-26",
+  "updated": "2026-10-26",
   "scope": "Tracked DLL files under dll. This is a repository inventory and release-admission record; it is not a legal opinion.",
   "rules": {
     "required": "The file is part of the current application/runtime contract and must remain hash-verified.",
@@ -246,8 +246,6 @@
       "classification": "runtime-required",
       "directReferences": [
         "src/OpenVisionLab/OpenVisionLab.csproj",
-        "tools/OpenVisionFixtureSmoke/OpenVisionFixtureSmoke.csproj",
-        "tools/PipelineViewerScreenshotSmoke/PipelineViewerScreenshotSmoke.csproj",
         "tools/VisionRecipeRunnerSmoke/VisionRecipeRunnerSmoke.csproj"
       ],
       "dynamicReferences": [],
@@ -274,9 +272,6 @@
         "src/OpenVisionLab/OpenVisionLab.csproj",
         "src/Libraries/OpenVisionLab.Display.Core/OpenVisionLab.Display.Core.csproj",
         "src/Libraries/OpenVisionLab.ImageCanvas/OpenVisionLab.ImageCanvas.csproj",
-        "tools/OpenVisionFixtureSmoke/OpenVisionFixtureSmoke.csproj",
-        "tools/PipelineViewerScreenshotSmoke/PipelineViewerScreenshotSmoke.csproj",
-        "tools/QualifiedRecipeSnapshotSmoke/QualifiedRecipeSnapshotSmoke.csproj",
         "tools/VisionRecipeRunnerSmoke/VisionRecipeRunnerSmoke.csproj"
       ],
       "dynamicReferences": [
@@ -303,8 +298,6 @@
       "classification": "runtime-required",
       "directReferences": [
         "src/OpenVisionLab/OpenVisionLab.csproj",
-        "tools/OpenVisionFixtureSmoke/OpenVisionFixtureSmoke.csproj",
-        "tools/PipelineViewerScreenshotSmoke/PipelineViewerScreenshotSmoke.csproj",
         "tools/VisionRecipeRunnerSmoke/VisionRecipeRunnerSmoke.csproj"
       ],
       "dynamicReferences": [],
@@ -328,9 +321,7 @@
       "assembly": "OpenVisionLab.Vision2D.Blob, Version=3.0.0.0",
       "classification": "runtime-required",
       "directReferences": [
-        "src/OpenVisionLab/OpenVisionLab.csproj",
-        "tools/OpenVisionFixtureSmoke/OpenVisionFixtureSmoke.csproj",
-        "tools/PipelineViewerScreenshotSmoke/PipelineViewerScreenshotSmoke.csproj"
+        "src/OpenVisionLab/OpenVisionLab.csproj"
       ],
       "dynamicReferences": [],
       "buildCopy": "clean-runtime-observed",
@@ -354,9 +345,6 @@
       "classification": "runtime-required",
       "directReferences": [
         "src/OpenVisionLab/OpenVisionLab.csproj",
-        "tools/OpenVisionFixtureSmoke/OpenVisionFixtureSmoke.csproj",
-        "tools/PipelineViewerScreenshotSmoke/PipelineViewerScreenshotSmoke.csproj",
-        "tools/QualifiedRecipeSnapshotSmoke/QualifiedRecipeSnapshotSmoke.csproj",
         "tools/VisionRecipeRunnerSmoke/VisionRecipeRunnerSmoke.csproj"
       ],
       "dynamicReferences": [],
@@ -420,8 +408,7 @@
       "assembly": "SharpGL, Version=3.1.1.0",
       "classification": "runtime-required",
       "directReferences": [
-        "src/Libraries/OpenVisionLab.ImageCanvas/OpenVisionLab.ImageCanvas.csproj",
-        "tools/PipelineViewerScreenshotSmoke/PipelineViewerScreenshotSmoke.csproj"
+        "src/Libraries/OpenVisionLab.ImageCanvas/OpenVisionLab.ImageCanvas.csproj"
       ],
       "dynamicReferences": [],
       "buildCopy": "clean-runtime-observed",

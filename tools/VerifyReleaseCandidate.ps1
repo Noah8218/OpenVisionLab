@@ -43,6 +43,7 @@ $stageStatus = [ordered]@{
     "Debug solution build" = if ($SkipDebugBuild) { "Skipped" } else { "NotRun" }
     "Release solution build" = "NotRun"
     Readiness = "NotRun"
+    "Documentation index" = "NotRun"
     "External references" = "NotRun"
     "NOTICE coverage" = "NotRun"
     "Public sample asset policy" = "NotRun"
@@ -120,6 +121,10 @@ try {
 
     Invoke-NativeStep "Readiness" {
         & dotnet run --project (Join-Path $repoRoot "tools\OpenVisionReadinessCheck\OpenVisionReadinessCheck.csproj") -c Release --no-build -- $repoRoot
+    }
+
+    Invoke-NativeStep "Documentation index" {
+        & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $repoRoot "tools\\TestDocumentationIndex.ps1")
     }
 
     Invoke-NativeStep "External references" {

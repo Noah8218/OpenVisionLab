@@ -1,9 +1,8 @@
 {
   "schemaVersion": "1.2",
   "updated": "2026-10-26",
-  "purpose": "Find source owners, stable contracts, user guides and focused checks from one Start Here route.",
+  "purpose": "Find public build, user manual, sample and product-interface references.",
   "entrypoint": "docs/README.md",
-  "detailedRegistry": "docs/admin/CODEBASE_STRUCTURE.md",
   "rules": {
     "readMinimalSetFirst": true,
     "followRootRedirects": true,
@@ -16,158 +15,35 @@
       "id": "workspace_rules",
       "path": "AGENTS.md",
       "role": "Repository boundary, product scope, ownership, verification, and completion rules."
-    },
-    {
-      "rank": 3,
-      "id": "stable_contracts",
-      "path": "docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md",
-      "role": "Stable non-regression behavior."
     }
   ],
   "routes": [
     {
       "id": "start_or_continue",
-      "intent": "Open, build and navigate the current source.",
-      "keywords": [
-        "start",
-        "orientation",
-        "build"
-      ],
+      "intent": "Open and build the public source.",
       "read": [
         "AGENTS.md",
         "docs/README.md"
       ],
       "lookup": [
         {
-          "path": "docs/admin/CODEBASE_STRUCTURE.md",
-          "when": "Find project roles, owners, callers and lifetime boundaries."
-        },
-        {
-          "path": "docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md",
-          "when": "Before behavior changes, read General Rules and complete affected sections."
+          "path": "docs/runbooks/BUILD.md",
+          "when": "Source-build prerequisites, launch paths or clean-build verification."
         }
       ]
-    },
-    {
-      "id": "source_architecture",
-      "intent": "Trace projects, owners, call paths, mutable state, lifetime, and refactor boundaries.",
-      "keywords": [
-        "architecture",
-        "owner",
-        "module",
-        "MVVM",
-        "partial",
-        "structure"
-      ],
-      "read": [
-        "docs/admin/CODEBASE_STRUCTURE.md"
-      ],
-      "lookup": []
-    },
-    {
-      "id": "ui_and_operator_workflow",
-      "intent": "Change WPF UI, navigation, visible state, input, layout, or operator workflow.",
-      "keywords": [
-        "UI",
-        "UX",
-        "WPF",
-        "workflow",
-        "screen",
-        "DPI"
-      ],
-      "read": [
-        "docs/admin/CODEBASE_STRUCTURE.md"
-      ],
-      "lookup": [
-        {
-          "path": "docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md",
-          "when": "Required before behavior changes: read General Rules and every complete affected contract section and its required cross-references. Conditional reading does not waive contracts."
-        },
-        {
-          "path": "docs/admin/CODEBASE_STRUCTURE.md",
-          "when": "Locating existing UI owners, callers, state/lifetime responsibility and focused tests; confirm implementation in source."
-        },
-        {
-          "path": "docs/runbooks/UI_SCREENSHOT_SMOKE.md",
-          "when": "Selecting or running UI verification and interpreting screenshot or actual-EXE evidence."
-        }
-      ]
-    },
-    {
-      "id": "recipe_pipeline_and_tools",
-      "intent": "Change Recipe, Pipeline, Tool parameters, Preview/Run, result, or XML behavior.",
-      "keywords": [
-        "recipe",
-        "pipeline",
-        "tool",
-        "parameter",
-        "Preview",
-        "Run",
-        "XML"
-      ],
-      "read": [
-        "docs/admin/CODEBASE_STRUCTURE.md"
-      ],
-      "lookup": [
-        {
-          "path": "docs/contracts/openvisionlab/OPENVISIONLAB_STABLE_FEATURE_CONTRACTS.md",
-          "when": "Required before behavior changes: read General Rules and all affected Recipe, selected-Step editing, execution, routing and persistence contracts with their required cross-references."
-        },
-        {
-          "path": "docs/admin/CODEBASE_STRUCTURE.md",
-          "when": "Locating the existing owner and shortest reading path before code changes; source is authoritative for actual calls and state writes."
-        },
-        {
-          "path": "docs/runbooks/UI_SCREENSHOT_SMOKE.md",
-          "when": "The Recipe/Tool change affects rendered UI or user interaction; select matching focused checks and current-build evidence."
-        }
-      ]
-    },
-    {
-      "id": "image_canvas",
-      "intent": "Change ImageCanvas, ROI, OpenGL rendering, input, dialogs, or image lifetime.",
-      "keywords": [
-        "ImageCanvas",
-        "ROI",
-        "OpenGL",
-        "Mat",
-        "viewer",
-        "canvas"
-      ],
-      "read": [
-        "docs/contracts/openvisionlab/OPENVISIONLAB_IMAGECANVAS_EXTERNAL_CONSUMER_MANIFEST.json",
-        "docs/admin/CODEBASE_STRUCTURE.md"
-      ],
-      "lookup": []
     },
     {
       "id": "verification",
-      "intent": "Run or modify headless contracts, WPF smoke, actual EXE smoke, or readiness gates.",
-      "keywords": [
-        "test",
-        "smoke",
-        "contract",
-        "verification",
-        "readiness",
-        "screenshot"
-      ],
+      "intent": "Verify public builds, dependencies, samples and distribution.",
       "read": [
-        "docs/runbooks/UI_SCREENSHOT_SMOKE.md",
-        "docs/admin/CODEBASE_STRUCTURE.md"
+        "docs/README.md",
+        "docs/runbooks/BUILD.md"
       ],
       "lookup": []
     },
     {
       "id": "external_dependencies",
-      "intent": "Inspect DLL provenance, dependency closure, platform support, or redistribution.",
-      "keywords": [
-        "DLL",
-        "SDK",
-        "dependency",
-        "license",
-        "NOTICE",
-        "x64"
-      ],
+      "intent": "Inspect DLL provenance, support and redistribution.",
       "read": [
         "docs/contracts/openvisionlab/OPENVISIONLAB_EXTERNAL_REFERENCE_POLICY.md",
         "docs/contracts/openvisionlab/OPENVISIONLAB_EXTERNAL_BINARY_MANIFEST.json",
@@ -177,34 +53,29 @@
       "lookup": []
     },
     {
-      "id": "documentation_maintenance",
-      "intent": "Add, move, archive, index, or remove project documentation and assets.",
-      "keywords": [
-        "documentation",
-        "docs",
-        "archive",
-        "index",
-        "redirect",
-        "cleanup"
-      ],
+      "id": "manual_and_learn",
+      "intent": "Read the localized user Guide and Tool learning content.",
       "read": [
-        "docs/README.md"
+        "docs/manual/README.md",
+        "docs/learn/README.md"
       ],
       "lookup": []
     },
     {
-      "id": "beginner_tutorial_and_learn",
-      "intent": "Change user manual, Learn content, screenshots, or first-use guidance.",
-      "keywords": [
-        "manual",
-        "tutorial",
-        "Learn",
-        "guide",
-        "first use"
-      ],
+      "id": "public_samples",
+      "intent": "Open and execute publicly redistributable sample recipes.",
       "read": [
-        "docs/manual/README.md",
-        "docs/learn/README.md"
+        "docs/samples/public/README.md",
+        "docs/samples/public/product/README.md"
+      ],
+      "lookup": []
+    },
+    {
+      "id": "pipeline_xml",
+      "intent": "Compose valid Pipeline XML with the optional XML authoring aid.",
+      "read": [
+        "docs/contracts/openvisionlab/OPENVISIONLAB_LLM_XML_AUTHORING_GUIDE.md",
+        "docs/contracts/vision/VISION_PIPELINE_LLM_RECIPE_CONTRACT.md"
       ],
       "lookup": []
     }

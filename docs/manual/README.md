@@ -17,22 +17,6 @@
 선택 언어 파일이 없거나 해시가 다르면 다른 언어로 대신 열지 않고 오류로
 종료합니다.
 
-화면 안내 규칙:
-
-1. 각 장은 실제 OpenVisionLab 화면을 먼저 보여줍니다.
-2. 화면 위 번호와 바로 아래 번호 설명은 반드시 일치해야 합니다.
-3. 번호는 기본 작업 순서인 입력 -> 설정 -> 명시적 Preview/Run -> 결과 확인을 따릅니다.
-4. 오래된 캡처나 임의로 만든 UI 이미지를 현재 화면으로 사용하지 않습니다.
-5. 원본 캡처를 바꾸면 `manual-visuals.json`의 번호 위치도 다시 확인합니다.
-6. 각 언어 매뉴얼의 캡처와 번호 설명은 같은 언어여야 합니다.
-7. 두 매뉴얼은 장 순서, Tool 범위, 작업 계약이 같아야 합니다.
-
-생성 명령:
-
-```powershell
-dotnet run --project tools/OpenVisionUserManualBuilder/OpenVisionUserManualBuilder.csproj -- "$PWD"
-```
-
-원본 Markdown 또는 UI 캡처를 수정한 뒤에는 생성 명령, readiness, clean runtime
-빌드를 실행합니다. 배포본의 `Guide`에 두 HTML과 매니페스트가 있는지 확인하고,
-한국어 → 영어 → 한국어 전환 후 Guide가 각각 같은 언어 파일을 여는지 검증합니다.
+배포본의 `Guide`에는 두 HTML과 `guide-manifest.json`이 함께 들어갑니다.
+앱은 선택한 언어의 파일과 해시를 확인한 뒤 엽니다. 사용자 매뉴얼의 편집·생성과
+화면 검수 도구는 Dev에서 관리하며, 공개 빌드는 검증된 생성 결과를 패키징합니다.

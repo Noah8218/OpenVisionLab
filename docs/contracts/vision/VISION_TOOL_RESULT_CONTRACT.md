@@ -225,10 +225,10 @@ External callers should treat `ErrorCodeValue` / `ErrorName` as stable and treat
 
 ## Validation Baseline
 
-The platform precheck executes runnable sample recipes and verifies that final detection steps return metrics or overlays:
+The public sample catalog executes the committed sample recipes and verifies their expected results, metrics and controlled failures:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File tools\RunVisionPlatformPrecheck.ps1 -FailOnUiWarn
+powershell -ExecutionPolicy Bypass -File tools\RunVisionSampleCatalog.ps1 -CatalogPath docs\samples\OpenVisionLab.PublicSampleCatalog.csv -OutputDir artifacts\public_sample_catalog
 ```
 
 Add or update a sample recipe when a new tool becomes pipeline-ready.
