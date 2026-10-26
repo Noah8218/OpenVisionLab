@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.2",
-  "updated": "2026-10-13",
+  "updated": "2026-10-26",
   "purpose": "Find source owners, stable contracts, user guides and focused checks from one Start Here route.",
   "entrypoint": "docs/README.md",
   "detailedRegistry": "docs/admin/CODEBASE_STRUCTURE.md",
@@ -209,5 +209,21 @@
       "lookup": []
     }
   ],
-  "references": []
+  "references": [
+    {
+      "id": "readme_format_contract",
+      "path": "docs/admin/OPENVISIONLAB_README_FORMAT_CONTRACT.md",
+      "role": "Approved README structure, language links, media and review requirements."
+    },
+    {
+      "id": "source_build_guide",
+      "path": "docs/runbooks/BUILD.md",
+      "role": "Canonical user source-build and workspace guide."
+    },
+    {
+      "id": "development_guide",
+      "path": "docs/runbooks/DEVELOPMENT.md",
+      "role": "Canonical contributor workflow and verification guide."
+    }
+  ]
 }

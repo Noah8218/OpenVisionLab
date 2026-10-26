@@ -68,6 +68,7 @@ User-facing changes to OpenVisionLab. Product and dependency versioning follows
   prerequisite.
 - External 2D image-buffer/projection consumer samples and deterministic
   cross-process evidence paths were added for bounded integration review.
+- Added 2D integration checks and output-allocation checks before execution.
 
 ### Changed
 
@@ -96,6 +97,7 @@ User-facing changes to OpenVisionLab. Product and dependency versioning follows
 - namespace, public docking contract, XAML binding/resource URI, Recipe/XML,
   explicit Preview/Run 동작은 유지했습니다. smoke harness와 `Common`은 경로
   계약을 확인한 뒤 후속 검토 대상으로 남겼습니다.
+- Preserved the Image → Layer → Tool → Inspection → Pipeline → Recipe → Result → Review flow.
 
 ## 2.2.0-dev.1 - 2026-09-09
 
