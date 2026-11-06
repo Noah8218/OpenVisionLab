@@ -11,6 +11,17 @@ param(
 $ErrorActionPreference = "Stop"
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
+# WPF temporary-project filenames can hit legacy MSBuild/Roslyn path limits.
+# A short OutputDir does not shorten these build intermediates.
+if (-not $SkipRunnerBuild) {
+    $wpfGeneratedPathProbe = Join-Path $repoRoot (
+        "src\Libraries\OpenVisionLab.Logging.Controls\obj\$Platform\$Configuration\net8.0-windows7.0\" +
+        "OpenVisionLab.Logging.Controls_00000000_wpftmp.GeneratedMSBuildEditorConfig.editorconfig")
+    if ($wpfGeneratedPathProbe.Length -ge 260) {
+        throw "This checkout is too deep for reliable WPF/MSBuild catalog builds ($($wpfGeneratedPathProbe.Length) characters in a generated path). Clone OpenVisionLab to a shorter path such as C:\src\OpenVisionLab, then rerun the same command. A shorter -OutputDir does not shorten build intermediates. No restore or build was started."
+    }
+}
+
 $catalogFullPath = if ([System.IO.Path]::IsPathRooted($CatalogPath)) { $CatalogPath } else { Join-Path $repoRoot $CatalogPath }
 $runnerProject = Join-Path $repoRoot "tools\VisionRecipeRunnerSmoke\VisionRecipeRunnerSmoke.csproj"
 $runnerExeCandidates = @(

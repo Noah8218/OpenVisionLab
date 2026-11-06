@@ -205,6 +205,7 @@ namespace OpenVisionLab
 
         public ThresholdToolProperty CreateProperty()
         {
+            thresholdInteractionController.CommitThresholdInput();
             thresholdInteractionController.FlushParameterBindings();
             return presenter.CreateProperty();
         }

@@ -5,6 +5,7 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 
 namespace OpenVisionLab
 {
@@ -102,6 +103,7 @@ namespace OpenVisionLab
 
         public void Detach()
         {
+            txtThreshold.LostKeyboardFocus -= Threshold_LostKeyboardFocus;
             rbBasic.Checked -= Mode_Checked;
             rbRange.Checked -= Mode_Checked;
             rbAdaptive.Checked -= Mode_Checked;
@@ -184,6 +186,22 @@ namespace OpenVisionLab
             VisionToolControlBinding.SetPanelVisible(panelBasic, mode == ThresholdToolMode.Threshold);
             VisionToolControlBinding.SetPanelVisible(panelRange, mode == ThresholdToolMode.Range);
             VisionToolControlBinding.SetPanelVisible(panelAdaptive, mode == ThresholdToolMode.Adaptive);
+        }
+
+        public void CommitThresholdInput()
+        {
+            // Preserve intermediate text (1 -> 15 -> 150); normalize on commit.
+            RunSuppressed(() =>
+            {
+                VisionToolControlBinding.UpdateTextSource(txtThreshold);
+                presenter.Threshold = presenter.CreateProperty().Threshold;
+                txtThreshold.GetBindingExpression(TextBox.TextProperty)?.UpdateTarget();
+            });
+        }
+
+        private void Threshold_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+        {
+            CommitThresholdInput();
         }
 
         public void FlushParameterBindings()
@@ -282,6 +300,7 @@ namespace OpenVisionLab
 
         private void AttachControlBehaviors()
         {
+            txtThreshold.LostKeyboardFocus += Threshold_LostKeyboardFocus;
             // Toggle events must handle both user clicks and test/programmatic IsChecked changes while keeping the View free of handlers.
             rbBasic.Checked += Mode_Checked;
             rbRange.Checked += Mode_Checked;

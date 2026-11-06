@@ -3,6 +3,11 @@
 User-facing changes to OpenVisionLab. Product and dependency versioning follows
 [the version policy](docs/OPENVISIONLAB_RELEASE_VERSION_POLICY.md).
 
+## Unreleased
+
+- Keep threshold text, slider, execution and saved settings consistent when numeric input is committed.
+- Detect overly deep catalog-build checkouts before restore or build and explain how to use a shorter checkout path.
+
 ## 2.2.0-dev.11 - 2026-10-18
 
 - Adjusted Korean introduction and recipe-instruction paragraphs after reviewing the README at a narrow GitHub width.
