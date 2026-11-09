@@ -29,6 +29,7 @@ namespace OpenVisionLab
         private readonly int sourceWidth;
         private readonly int sourceHeight;
         private readonly RoiEditorViewModel viewModel;
+        private VisionToolLanguageChangeController languageChangeController;
         private CvRect selectedRegionSnapshot = new CvRect();
         private List<CvRect> selectedRegionsSnapshot = new List<CvRect>();
         private DragOperation dragOperation = DragOperation.None;
@@ -197,6 +198,7 @@ namespace OpenVisionLab
 
             Loaded -= OnLoaded;
             Closed -= OnClosed;
+            languageChangeController?.Dispose();
             DataContext = null;
             sourceBitmap?.Dispose();
             GC.SuppressFinalize(this);
@@ -204,9 +206,18 @@ namespace OpenVisionLab
 
         private void HookLifecycle()
         {
+            languageChangeController = VisionToolLanguageChangeController.Attach(ApplyLocalization);
+            ApplyLocalization();
             Loaded += OnLoaded;
             Closed += OnClosed;
             viewModel.UpdateSelectionSummary();
+        }
+
+        private void ApplyLocalization()
+        {
+            foreach (string key in new[] { "Common.Minimize", "Common.Maximize", "Common.Close", "Common.Cancel", "RoiEditor.Selection", "RoiEditor.Full", "RoiEditor.Center", "RoiEditor.Clear", "RoiEditor.PatternPreview", "RoiEditor.RoiList", "RoiEditor.DeleteSelected" }) Resources[key] = OpenVisionLanguageService.T(key);
+            viewModel.RefreshLocalization();
+            Title = viewModel.Title;
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e)
@@ -362,7 +373,7 @@ namespace OpenVisionLab
         {
             if (dragOperation == DragOperation.None && !isPanning)
             {
-                viewModel.StatusText = "Ready";
+                viewModel.SetReadyStatus();
                 Cursor = Cursors.Arrow;
             }
         }
@@ -739,7 +750,7 @@ namespace OpenVisionLab
         {
             if (!TryDisplayToImagePoint(displayPoint, out WpfPoint imagePoint))
             {
-                viewModel.StatusText = "Ready";
+                viewModel.SetReadyStatus();
                 return;
             }
 

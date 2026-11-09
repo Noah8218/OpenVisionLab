@@ -207,7 +207,7 @@ namespace OpenVisionLab
                 if (value > 0)
                 {
                     cell.Background = animationCandidateBrush;
-                    text.Foreground = Brushes.White;
+                    text.Foreground = GetContrastBrush(cell.Background);
                 }
 
                 matchingTemplateGrid.Children.Add(cell);
@@ -293,7 +293,7 @@ namespace OpenVisionLab
                 PaintMatchingSearchGrid(-1);
                 for (int i = 0; i < scores.Length; i++)
                 {
-                    PaintMatchingScoreCell(i, animationNeutralBrush, Brushes.White, "-");
+                    PaintMatchingScoreCell(i, animationNeutralBrush, "-");
                 }
 
                 txtMatchingAnimationStatus.Text = matchingPresenter.AnimationStatusText;
@@ -305,7 +305,7 @@ namespace OpenVisionLab
                 PaintMatchingCandidateScanGrid();
                 for (int i = 0; i < scores.Length; i++)
                 {
-                    PaintMatchingScoreCell(i, animationCandidateBrush, Brushes.White, scores[i].ToString("0.00", CultureInfo.InvariantCulture));
+                    PaintMatchingScoreCell(i, animationCandidateBrush, scores[i].ToString("0.00", CultureInfo.InvariantCulture));
                 }
 
                 txtMatchingAnimationStatus.Text = matchingPresenter.AnimationStatusText;
@@ -333,7 +333,7 @@ namespace OpenVisionLab
                             : animationNeutralBrush;
                 }
 
-                PaintMatchingScoreCell(i, background, Brushes.White, scores[i].ToString("0.00", CultureInfo.InvariantCulture));
+                PaintMatchingScoreCell(i, background, scores[i].ToString("0.00", CultureInfo.InvariantCulture));
             }
 
             txtMatchingAnimationStatus.Text = matchingPresenter.AnimationStatusText;
@@ -416,7 +416,7 @@ namespace OpenVisionLab
                     "M");
                 for (int i = 0; i < OpenVisionLearnMatchingSimulationModel.FeatureScores.Count; i++)
                 {
-                    PaintFeatureScoreCell(i, animationNeutralBrush, Brushes.White, "-");
+                    PaintFeatureScoreCell(i, animationNeutralBrush, "-");
                 }
 
                 txtFeatureMatchingAnimationStatus.Text = featureMatchingPresenter.AnimationStatusText;
@@ -452,7 +452,6 @@ namespace OpenVisionLab
                 PaintFeatureScoreCell(
                     i,
                     background,
-                    Brushes.White,
                     OpenVisionLearnMatchingSimulationModel.FeatureScores[i]
                         .ToString("0.00", CultureInfo.InvariantCulture));
             }
@@ -489,7 +488,7 @@ namespace OpenVisionLab
             for (int i = 0; i < cells.Count; i++)
             {
                 cells[i].Background = Brushes.Black;
-                texts[i].Foreground = Brushes.White;
+                texts[i].Foreground = GetContrastBrush(cells[i].Background);
                 texts[i].Text = "0";
             }
 
@@ -498,15 +497,15 @@ namespace OpenVisionLab
                 int index = points[i].Y * 5 + points[i].X;
                 bool good = i < goodMatches.Count && goodMatches[i];
                 cells[index].Background = good ? animationCandidateBrush : animationNeutralBrush;
-                texts[index].Foreground = Brushes.White;
+                texts[index].Foreground = GetContrastBrush(cells[index].Background);
                 texts[index].Text = good ? label : "x";
             }
         }
 
-        private void PaintFeatureScoreCell(int index, Brush background, Brush foreground, string text)
+        private void PaintFeatureScoreCell(int index, Brush background, string text)
         {
             featureMatchScoreCells[index].Background = background;
-            featureMatchScoreTexts[index].Foreground = foreground;
+            featureMatchScoreTexts[index].Foreground = GetContrastBrush(background);
             featureMatchScoreTexts[index].Text = text;
         }
 
@@ -522,18 +521,18 @@ namespace OpenVisionLab
                 bool inBest = bestIndex >= 0 && x >= best.X && x < best.X + 2 && y >= best.Y && y < best.Y + 2;
                 int value = OpenVisionLearnMatchingSimulationModel.SearchValues[i];
 
-                matchingSearchCells[i].BorderBrush = new SolidColorBrush(Color.FromRgb(209, 213, 219));
+                matchingSearchCells[i].SetResourceReference(Border.BorderBrushProperty, "OpenVision.Workbench.FieldBorderBrush");
                 matchingSearchCells[i].BorderThickness = new Thickness(1);
                 if (inBest)
                 {
                     matchingSearchCells[i].Background = animationPassBrush;
-                    matchingSearchTexts[i].Foreground = Brushes.White;
+                    matchingSearchTexts[i].Foreground = GetContrastBrush(matchingSearchCells[i].Background);
                     matchingSearchTexts[i].Text = value > 0 ? "B" : "0";
                 }
                 else
                 {
                     matchingSearchCells[i].Background = CreateGrayBrush(value > 0 ? 230 : 20);
-                    matchingSearchTexts[i].Foreground = value > 0 ? Brushes.Black : Brushes.White;
+                    matchingSearchTexts[i].Foreground = GetContrastBrush(value > 0 ? 230 : 20);
                     matchingSearchTexts[i].Text = value > 0
                         ? matchingPresenter.SearchMark
                         : "0";
@@ -556,14 +555,14 @@ namespace OpenVisionLab
                 matchingSearchCells[index].BorderBrush = candidateBrush;
                 matchingSearchCells[index].BorderThickness = new Thickness(3);
                 matchingSearchTexts[index].Text = "S";
-                matchingSearchTexts[index].Foreground = Brushes.White;
+                matchingSearchTexts[index].Foreground = GetContrastBrush(matchingSearchCells[index].Background);
             }
         }
 
-        private void PaintMatchingScoreCell(int index, Brush background, Brush foreground, string text)
+        private void PaintMatchingScoreCell(int index, Brush background, string text)
         {
             matchingScoreCells[index].Background = background;
-            matchingScoreTexts[index].Foreground = foreground;
+            matchingScoreTexts[index].Foreground = GetContrastBrush(background);
             matchingScoreTexts[index].Text = text;
         }
 

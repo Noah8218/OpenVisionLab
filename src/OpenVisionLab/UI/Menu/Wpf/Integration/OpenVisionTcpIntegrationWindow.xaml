@@ -4,6 +4,7 @@
         xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
         xmlns:local="clr-namespace:OpenVisionLab"
         Title="{Binding WindowTitle}"
+        Background="{DynamicResource OpenVision.Workbench.PanelBrush}"
         Width="1180"
         Height="760"
         MinWidth="960"
@@ -189,7 +190,7 @@
                                     Margin="0,0,6,6">
                                 <StackPanel Orientation="Horizontal">
                                     <iconPacks:PackIconMaterial Kind="LanConnect" Width="16" Height="16" Margin="0,0,6,0" />
-                                    <TextBlock Text="{Binding StartText}" Foreground="White" FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding StartText}" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" FontWeight="SemiBold" />
                                 </StackPanel>
                             </Button>
                             <Button AutomationProperties.AutomationId="TcpIntegrationStopButton"
@@ -290,7 +291,9 @@
                                     <DataGridTextColumn Binding="{Binding TargetText}" Width="1.4*">
                                         <DataGridTextColumn.Header><TextBlock Text="{Binding DataContext.TargetHeaderText, RelativeSource={RelativeSource AncestorType=DataGrid}}" /></DataGridTextColumn.Header>
                                     </DataGridTextColumn>
-                                    <DataGridTextColumn Header="ACK" Binding="{Binding AcknowledgementText}" Width="55" />
+                                    <DataGridTextColumn Binding="{Binding AcknowledgementText}" Width="55">
+                                        <DataGridTextColumn.Header><TextBlock Text="ACK" /></DataGridTextColumn.Header>
+                                    </DataGridTextColumn>
                                     <DataGridTextColumn Binding="{Binding ResultText}" Width="62">
                                         <DataGridTextColumn.Header><TextBlock Text="{Binding DataContext.ResultHeaderText, RelativeSource={RelativeSource AncestorType=DataGrid}}" /></DataGridTextColumn.Header>
                                     </DataGridTextColumn>

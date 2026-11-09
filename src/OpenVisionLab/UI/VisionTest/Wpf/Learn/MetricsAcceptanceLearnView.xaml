@@ -4,7 +4,11 @@
              xmlns:local="clr-namespace:OpenVisionLab"
              Focusable="False">
     <UserControl.Resources>
-        <local:SharedResourceDictionary Source="LearnResources.xaml" />
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <local:SharedResourceDictionary Source="LearnResources.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
     </UserControl.Resources>
     <Border x:Name="metricsAcceptanceTopicPanel"
             Margin="0,10,8,0"
@@ -21,6 +25,9 @@
                 <Border Margin="0,12,0,0"
                         Style="{StaticResource LearnPanelStyle}">
                     <Expander x:Name="metricGateCheatSheetExpander"
+                              Background="{DynamicResource OpenVision.Workbench.RaisedBrush}"
+                              Foreground="{DynamicResource OpenVision.Workbench.TextBrush}"
+                              BorderBrush="{DynamicResource OpenVision.Workbench.FieldBorderBrush}"
                               Header="Minimum Good/Bad gate cheat sheet"
                               IsExpanded="False"
                               AutomationProperties.AutomationId="OpenVisionLearnMetricGateCheatSheetPanel">

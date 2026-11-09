@@ -60,7 +60,7 @@ namespace OpenVisionLab
             string selectedLabel = GetSelectedCandidateLabel(evidence.State);
             string summary = string.Format(
                 CultureInfo.CurrentCulture,
-                "{0} | model {1}x{2}, {3} points | {4} {5} | alternative {6}",
+                OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.SummaryFormat"),
                 evidence.State,
                 evidence.TemplateWidth,
                 evidence.TemplateHeight,
@@ -92,22 +92,22 @@ namespace OpenVisionLab
             IReadOnlyDictionary<string, double> metrics)
         {
             List<OpenVisionPipelineReviewMatcherDiagnosticRow> rows = new List<OpenVisionPipelineReviewMatcherDiagnosticRow>();
-            Add(rows, "Decision", "State", evidence.State);
-            Add(rows, "Decision", "Error", string.IsNullOrWhiteSpace(evidence.ErrorCode) ? "None" : evidence.ErrorCode);
-            Add(rows, "Decision", "Exact reason", evidence.Reason);
-            Add(rows, "Search", "Search ROI", FormatRectangle(evidence.SearchRoi));
+            Add(rows, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Decision"), OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.State"), evidence.State);
+            Add(rows, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Decision"), OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Error"), string.IsNullOrWhiteSpace(evidence.ErrorCode) ? OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.NoneError") : evidence.ErrorCode);
+            Add(rows, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Decision"), OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Exactreason"), evidence.Reason);
+            Add(rows, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Search"), OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.SearchROI"), FormatRectangle(evidence.SearchRoi));
             AddCandidateRows(rows, GetSelectedCandidateLabel(evidence.State), evidence.SelectedCandidate);
-            AddCandidateRows(rows, "Alternative", evidence.StrongestSpatialAlternative);
+            AddCandidateRows(rows, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Alternative"), evidence.StrongestSpatialAlternative);
 
-            AddMetric(rows, metrics, "Model", "Raw edge points", "Model.RawEdgePointCount", "0");
-            AddMetric(rows, metrics, "Model", "Retained edge points", "Model.EdgePointCount", "0");
-            AddMetric(rows, metrics, "Model", "Point sample ratio", "Model.PointSampleRatio", "0.###");
-            AddMetric(rows, metrics, "Model", "Edge coverage", "Model.EdgeCoverageArea", "0.###");
-            AddMetric(rows, metrics, "Model", "Quadrant balance", "Model.QuadrantBalance", "0.###");
-            AddMetric(rows, metrics, "Model", "Scale-search risk", "Model.ScaleSearchRisk", "0");
+            AddMetric(rows, metrics, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Model"), OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Rawedgepoints"), "Model.RawEdgePointCount", "0");
+            AddMetric(rows, metrics, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Model"), OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Retainededgepoints"), "Model.EdgePointCount", "0");
+            AddMetric(rows, metrics, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Model"), OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Pointsampleratio"), "Model.PointSampleRatio", "0.###");
+            AddMetric(rows, metrics, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Model"), OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Edgecoverage"), "Model.EdgeCoverageArea", "0.###");
+            AddMetric(rows, metrics, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Model"), OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Quadrantbalance"), "Model.QuadrantBalance", "0.###");
+            AddMetric(rows, metrics, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Model"), OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Scalesearchrisk"), "Model.ScaleSearchRisk", "0");
 
-            AddMetric(rows, metrics, "Pyramid", "Highest usable level", "Model.Pyramid.HighestUsableLevel", "0");
-            AddMetric(rows, metrics, "Pyramid", "Estimated levels", "Model.Pyramid.LevelCountEstimate", "0");
+            AddMetric(rows, metrics, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Pyramid"), OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Highestusablelevel"), "Model.Pyramid.HighestUsableLevel", "0");
+            AddMetric(rows, metrics, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Pyramid"), OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Estimatedlevels"), "Model.Pyramid.LevelCountEstimate", "0");
             for (int level = 0; level < 6; level++)
             {
                 string prefix = "Model.Pyramid.Level" + level.ToString(CultureInfo.InvariantCulture);
@@ -118,39 +118,39 @@ namespace OpenVisionLab
 
                 string value = string.Format(
                     CultureInfo.CurrentCulture,
-                    "{0:0}x{1:0} / edges {2:0} / coverage {3:0.###} / {4}",
+                    OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.LevelEvidenceFormat"),
                     GetMetric(metrics, prefix + ".Width"),
                     GetMetric(metrics, prefix + ".Height"),
                     GetMetric(metrics, prefix + ".EdgePointCount"),
                     GetMetric(metrics, prefix + ".CoverageArea"),
-                    GetMetric(metrics, prefix + ".Usable") > 0.5D ? "usable" : "not usable");
-                Add(rows, "Pyramid", "Level " + level.ToString(CultureInfo.CurrentCulture), value);
+                    GetMetric(metrics, prefix + ".Usable") > 0.5D ? OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.usable") : OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.notusable"));
+                Add(rows, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Pyramid"), string.Format(CultureInfo.CurrentCulture, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.LevelFormat"), level), value);
             }
 
-            AddMetric(rows, metrics, "Candidates", "Angle candidates", "Candidate.SearchAngleCount", "0");
-            AddMetric(rows, metrics, "Candidates", "Coarse angle candidates", "Candidate.CoarseAngleCount", "0");
-            AddMetric(rows, metrics, "Candidates", "Scale candidates", "Candidate.SearchScaleCount", "0");
-            AddMetric(rows, metrics, "Candidates", "Estimated raw positions", "Candidate.EstimatedRawSearchPositions", "0");
-            AddMetric(rows, metrics, "Candidates", "Estimated coarse positions", "Candidate.EstimatedCoarseSearchPositions", "0");
-            AddMetric(rows, metrics, "Candidates", "Edge seeds", "Candidate.EdgeSeedCount", "0");
-            AddMetric(rows, metrics, "Candidates", "Pyramid proposal scale", "Candidate.PyramidProposalScale", "0.###");
-            AddMetric(rows, metrics, "Candidates", "Pyramid proposal attempts", "Candidate.PyramidProposalAttemptCount", "0");
-            AddMetric(rows, metrics, "Candidates", "Pyramid proposals", "Candidate.PyramidProposalCandidateCount", "0");
-            AddMetric(rows, metrics, "Candidates", "Pyramid verified", "Candidate.PyramidProposalVerifiedCount", "0");
-            AddMetric(rows, metrics, "Candidates", "Pyramid accepted", "Candidate.PyramidProposalAcceptedCount", "0");
-            AddMetric(rows, metrics, "Candidates", "Pyramid fallback", "Candidate.PyramidProposalFallbackCount", "0");
-            AddMetric(rows, metrics, "Candidates", "Ambiguous alternatives", "Candidate.AmbiguousAlternativeCount", "0");
+            AddMetric(rows, metrics, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Candidates"), OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Anglecandidates"), "Candidate.SearchAngleCount", "0");
+            AddMetric(rows, metrics, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Candidates"), OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Coarseanglecandidates"), "Candidate.CoarseAngleCount", "0");
+            AddMetric(rows, metrics, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Candidates"), OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Scalecandidates"), "Candidate.SearchScaleCount", "0");
+            AddMetric(rows, metrics, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Candidates"), OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Estimatedrawpositions"), "Candidate.EstimatedRawSearchPositions", "0");
+            AddMetric(rows, metrics, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Candidates"), OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Estimatedcoarsepositions"), "Candidate.EstimatedCoarseSearchPositions", "0");
+            AddMetric(rows, metrics, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Candidates"), OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Edgeseeds"), "Candidate.EdgeSeedCount", "0");
+            AddMetric(rows, metrics, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Candidates"), OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Pyramidproposalscale"), "Candidate.PyramidProposalScale", "0.###");
+            AddMetric(rows, metrics, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Candidates"), OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Pyramidproposalattempts"), "Candidate.PyramidProposalAttemptCount", "0");
+            AddMetric(rows, metrics, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Candidates"), OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Pyramidproposals"), "Candidate.PyramidProposalCandidateCount", "0");
+            AddMetric(rows, metrics, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Candidates"), OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Pyramidverified"), "Candidate.PyramidProposalVerifiedCount", "0");
+            AddMetric(rows, metrics, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Candidates"), OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Pyramidaccepted"), "Candidate.PyramidProposalAcceptedCount", "0");
+            AddMetric(rows, metrics, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Candidates"), OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Pyramidfallback"), "Candidate.PyramidProposalFallbackCount", "0");
+            AddMetric(rows, metrics, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Candidates"), OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Ambiguousalternatives"), "Candidate.AmbiguousAlternativeCount", "0");
 
-            AddMetric(rows, metrics, "Unique", "Enabled", "UniqueMatch.Enabled", "0");
-            AddMetric(rows, metrics, "Unique", "Selected score", "UniqueMatch.SelectedScore", "0.###");
-            AddMetric(rows, metrics, "Unique", "Strongest alternative", "UniqueMatch.StrongestAlternativeScore", "0.###");
-            AddMetric(rows, metrics, "Unique", "Score margin", "UniqueMatch.ScoreMargin", "0.###");
-            AddMetric(rows, metrics, "Unique", "Required margin", "UniqueMatch.MinimumScoreMargin", "0.###");
-            AddMetric(rows, metrics, "Polarity", "Allow global reversal", "GlobalPolarity.AllowReversal", "0");
-            AddMetric(rows, metrics, "Polarity", "Selected reversed", "GlobalPolarity.Reversed", "0");
-            AddMetric(rows, metrics, "Polarity", "Same result count", "GlobalPolarity.SameCount", "0");
-            AddMetric(rows, metrics, "Polarity", "Reversed result count", "GlobalPolarity.ReversedCount", "0");
-            AddMetric(rows, metrics, "Unique", "Plausible alternatives", "UniqueMatch.PlausibleAlternativeCount", "0");
+            AddMetric(rows, metrics, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Unique"), OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Enabled"), "UniqueMatch.Enabled", "0");
+            AddMetric(rows, metrics, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Unique"), OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Selectedscore"), "UniqueMatch.SelectedScore", "0.###");
+            AddMetric(rows, metrics, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Unique"), OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Strongestalternative"), "UniqueMatch.StrongestAlternativeScore", "0.###");
+            AddMetric(rows, metrics, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Unique"), OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Scoremargin"), "UniqueMatch.ScoreMargin", "0.###");
+            AddMetric(rows, metrics, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Unique"), OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Requiredmargin"), "UniqueMatch.MinimumScoreMargin", "0.###");
+            AddMetric(rows, metrics, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Polarity"), OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Allowglobalreversal"), "GlobalPolarity.AllowReversal", "0");
+            AddMetric(rows, metrics, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Polarity"), OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Selectedreversed"), "GlobalPolarity.Reversed", "0");
+            AddMetric(rows, metrics, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Polarity"), OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Sameresultcount"), "GlobalPolarity.SameCount", "0");
+            AddMetric(rows, metrics, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Polarity"), OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Reversedresultcount"), "GlobalPolarity.ReversedCount", "0");
+            AddMetric(rows, metrics, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Unique"), OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Plausiblealternatives"), "UniqueMatch.PlausibleAlternativeCount", "0");
             return rows;
         }
 
@@ -161,23 +161,23 @@ namespace OpenVisionLab
         {
             if (candidate == null)
             {
-                Add(rows, section, "Candidate", "None retained");
+                Add(rows, section, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Candidate"), OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Noneretained"));
                 return;
             }
 
-            Add(rows, section, "Score", candidate.Score.ToString("0.###", CultureInfo.CurrentCulture));
+            Add(rows, section, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Score"), candidate.Score.ToString("0.###", CultureInfo.CurrentCulture));
             Add(
                 rows,
                 section,
-                "Pose",
+                OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Pose"),
                 string.Format(
                     CultureInfo.CurrentCulture,
-                    "center ({0:0.##}, {1:0.##}) / angle {2:0.###}° / scale {3:0.###}",
+                    OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.PoseFormat"),
                     candidate.Center.X,
                     candidate.Center.Y,
                     candidate.Angle,
                     candidate.Scale));
-            Add(rows, section, "Bounds", FormatRectangle(candidate.Bounds));
+            Add(rows, section, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Bounds"), FormatRectangle(candidate.Bounds));
         }
 
         private static void AddMetric(
@@ -218,7 +218,7 @@ namespace OpenVisionLab
         private static string FormatCandidateScore(EdgeBasedMatchingCandidateDiagnostic candidate)
         {
             return candidate == null
-                ? "none"
+                ? OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.none")
                 : candidate.Score.ToString("0.###", CultureInfo.CurrentCulture);
         }
 
@@ -277,7 +277,7 @@ namespace OpenVisionLab
 
             DrawCaption(
                 graphics,
-                $"Trained edge model — {evidence.TemplateWidth}x{evidence.TemplateHeight}, {evidence.ModelPoints.Count} points",
+                string.Format(CultureInfo.CurrentCulture, OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.ModelFormat"), evidence.TemplateWidth, evidence.TemplateHeight, evidence.ModelPoints.Count),
                 width,
                 height);
             return preview;
@@ -313,7 +313,7 @@ namespace OpenVisionLab
                 evidence,
                 evidence.StrongestSpatialAlternative,
                 Color.Orange,
-                "Alternative",
+                OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Alternative"),
                 thickness);
             DrawCandidate(
                 graphics,
@@ -324,7 +324,7 @@ namespace OpenVisionLab
                 thickness);
             DrawCaption(
                 graphics,
-                "Search ROI / retained primary hypothesis / strongest spatial alternative",
+                OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.PreviewCaption"),
                 preview.Width,
                 preview.Height);
             return preview;
@@ -386,15 +386,15 @@ namespace OpenVisionLab
         {
             if (string.Equals(state, "NoMatch", StringComparison.OrdinalIgnoreCase))
             {
-                return "Best observed (below gate)";
+                return OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Bestobservedbelowgate");
             }
 
             if (string.Equals(state, "Ambiguous", StringComparison.OrdinalIgnoreCase))
             {
-                return "Rejected primary hypothesis";
+                return OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Rejectedprimaryhypothesis");
             }
 
-            return "Selected";
+            return OpenVisionLanguageService.T("PipelineReview.MatcherDiagnostics.Label.Selected");
         }
 
         private static void DrawCaption(Graphics graphics, string text, int width, int height)

@@ -18,7 +18,7 @@ English | [한국어](README.ko.md)
 The published ZIP is `v2.1.0-rc.3`; it predates the source workflow shown here.
 To use that workflow, [build from source](#build-from-source): clone the repository, build the solution, then press F5.
 
-Current version: `v2.2.0-dev.11` · [Changelog](CHANGELOG.md)
+Current version: `v2.2.0-dev.12` · [Changelog](CHANGELOG.md)
 
 ## What it does
 
@@ -182,7 +182,7 @@ steps to follow and results to check.
 
 ## Status and limitations
 
-The source is `v2.2.0-dev.11`; the published ZIP is the older `v2.1.0-rc.3` prerelease.
+The source is `v2.2.0-dev.12`; the published ZIP is the older `v2.1.0-rc.3` prerelease.
 LLM/XML assistance is optional and is not part of inspection execution.
 Validate Recipes with representative production images before using them for inspection.
 Check UI changes in the build that contains them; recordings do not verify later changes.

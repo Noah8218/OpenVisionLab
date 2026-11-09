@@ -134,15 +134,17 @@ namespace OpenVisionLab
             for (int i = 0; i < layerRecipeFlowCells.Count; i++)
             {
                 bool selectedRow = presenter.IsSelectedFlowCell(i);
-                layerRecipeFlowCells[i].Background = selectedRow ? animationCandidateBrush : CreateGrayBrush(230);
-                layerRecipeFlowTexts[i].Foreground = selectedRow ? Brushes.White : Brushes.Black;
+                layerRecipeFlowCells[i].SetResourceReference(Border.BackgroundProperty, selectedRow ? "Learn.Animation.CandidateBrush" : "OpenVision.Workbench.RaisedBrush");
+                if (selectedRow) layerRecipeFlowTexts[i].Foreground = GetContrastBrush(layerRecipeFlowCells[i].Background);
+                else layerRecipeFlowTexts[i].SetResourceReference(TextBlock.ForegroundProperty, "OpenVision.Workbench.TextBrush");
             }
 
             for (int i = 0; i < layerRecipeLayerCells.Count; i++)
             {
                 bool routeLayer = presenter.IsRouteLayer(i);
-                layerRecipeLayerCells[i].Background = routeLayer ? animationPassBrush : CreateGrayBrush(230);
-                layerRecipeLayerTexts[i].Foreground = routeLayer ? Brushes.White : Brushes.Black;
+                layerRecipeLayerCells[i].SetResourceReference(Border.BackgroundProperty, routeLayer ? "Learn.Animation.PassBrush" : "OpenVision.Workbench.RaisedBrush");
+                if (routeLayer) layerRecipeLayerTexts[i].Foreground = GetContrastBrush(layerRecipeLayerCells[i].Background);
+                else layerRecipeLayerTexts[i].SetResourceReference(TextBlock.ForegroundProperty, "OpenVision.Workbench.TextBrush");
             }
         }
 
@@ -157,13 +159,13 @@ namespace OpenVisionLab
             for (int i = 0; i < layerRecipeFlowCells.Count; i++)
             {
                 layerRecipeFlowCells[i].Background = animationNeutralBrush;
-                layerRecipeFlowTexts[i].Foreground = Brushes.White;
+                layerRecipeFlowTexts[i].Foreground = GetContrastBrush(layerRecipeFlowCells[i].Background);
             }
 
             for (int i = 0; i < layerRecipeLayerCells.Count; i++)
             {
                 layerRecipeLayerCells[i].Background = animationNeutralBrush;
-                layerRecipeLayerTexts[i].Foreground = Brushes.White;
+                layerRecipeLayerTexts[i].Foreground = GetContrastBrush(layerRecipeLayerCells[i].Background);
             }
         }
 

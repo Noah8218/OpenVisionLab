@@ -3,10 +3,11 @@
 User-facing changes to OpenVisionLab. Product and dependency versioning follows
 [the version policy](docs/OPENVISIONLAB_RELEASE_VERSION_POLICY.md).
 
-## Unreleased
+## 2.2.0-dev.12 - 2026-11-09
 
-- Keep threshold text, slider, execution and saved settings consistent when numeric input is committed.
-- Detect overly deep catalog-build checkouts before restore or build and explain how to use a shorter checkout path.
+- Make Learn windows follow the selected theme, including open-window theme changes, checkbox interaction states and readable diagram values.
+- Localize ROI, template, ROI-array and Auto MPoint editors and Pipeline Review results and calibration. Improve the TCP Inbox ACK header contrast.
+- Keep committed threshold text, sliders, execution and saved settings consistent, and detect overly deep catalog-build paths before restore or build.
 
 ## 2.2.0-dev.11 - 2026-10-18
 

@@ -4,7 +4,11 @@
              xmlns:local="clr-namespace:OpenVisionLab"
              Focusable="False">
     <UserControl.Resources>
-        <local:SharedResourceDictionary Source="LearnResources.xaml" />
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <local:SharedResourceDictionary Source="LearnResources.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -171,7 +175,7 @@
                                                FontWeight="SemiBold" />
                                     <TextBlock x:Name="txtBrightnessOffset"
                                                Grid.Column="1"
-                                               Foreground="{StaticResource VisionTool.SecondaryTextBrush}" />
+                                               Foreground="{DynamicResource OpenVision.Workbench.SecondaryTextBrush}" />
                                 </Grid>
                                 <Slider x:Name="brightnessOffsetSlider"
                                         Grid.Row="2"
@@ -573,6 +577,7 @@
             </Border>
 
             <TabControl x:Name="thresholdTabs"
+                        Style="{StaticResource LearnTabControlStyle}"
                         Grid.Row="0"
                         AutomationProperties.AutomationId="OpenVisionLearnThresholdTabs">
                 <TabItem Header="개념">
@@ -686,7 +691,7 @@
                                                Text="Threshold = 127" />
                                     <TextBlock x:Name="txtMaxValue"
                                                Grid.Column="1"
-                                               Foreground="{StaticResource VisionTool.SecondaryTextBrush}"
+                                               Foreground="{DynamicResource OpenVision.Workbench.SecondaryTextBrush}"
                                                Text="MaxValue = 255" />
                                 </Grid>
 
@@ -730,10 +735,10 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="0 검정"
-                                               Foreground="{StaticResource VisionTool.SecondaryTextBrush}" />
+                                               Foreground="{DynamicResource OpenVision.Workbench.SecondaryTextBrush}" />
                                     <TextBlock Grid.Column="1"
                                                Text="255 흰색"
-                                               Foreground="{StaticResource VisionTool.SecondaryTextBrush}" />
+                                               Foreground="{DynamicResource OpenVision.Workbench.SecondaryTextBrush}" />
                                 </Grid>
                             </Grid>
                         </Border>
@@ -753,7 +758,7 @@
                                     <TextBlock Margin="0,3,0,10"
                                                Text="각 칸은 하나의 예제 픽셀입니다."
                                                FontSize="11"
-                                               Foreground="{StaticResource VisionTool.SecondaryTextBrush}" />
+                                               Foreground="{DynamicResource OpenVision.Workbench.SecondaryTextBrush}" />
                                     <UniformGrid x:Name="sampleGrid"
                                                  Columns="4"
                                                  Rows="2" />
@@ -768,7 +773,7 @@
                                     <TextBlock x:Name="txtFormula"
                                                Margin="0,3,0,10"
                                                FontSize="11"
-                                               Foreground="{StaticResource VisionTool.SecondaryTextBrush}"
+                                               Foreground="{DynamicResource OpenVision.Workbench.SecondaryTextBrush}"
                                                TextWrapping="Wrap" />
                                     <UniformGrid x:Name="resultGrid"
                                                  Columns="4"
@@ -813,8 +818,10 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <CheckBox x:Name="chkInvert"
+                          Style="{StaticResource LearnThresholdCheckBoxStyle}"
                           Grid.Column="0"
                           Content="BinaryInv"
+                          HorizontalAlignment="Left"
                           VerticalAlignment="Center"
                           Checked="InvertCheckBox_Changed"
                           Unchecked="InvertCheckBox_Changed"

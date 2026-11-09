@@ -50,7 +50,7 @@ namespace OpenVisionLab
                 sampleCells[index].Background = !presenter.ShowsSampleDecision
                     ? neutralBrush
                     : presenter.IsOutlier(index) ? warningBrush : passBrush;
-                sampleTexts[index].Foreground = Brushes.White;
+                sampleTexts[index].Foreground = GetContrastBrush(sampleCells[index].Background);
                 sampleTexts[index].Text = presenter.GetSampleText(index);
             }
             txtMetricsAcceptanceFormula.Text = presenter.FormulaText;

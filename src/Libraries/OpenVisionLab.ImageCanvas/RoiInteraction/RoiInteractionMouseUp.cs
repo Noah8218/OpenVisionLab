@@ -42,7 +42,6 @@ namespace OpenVisionLab.ImageCanvas
 		public static void OpenAddRoiArrayView(OpenVisionLab.ImageCanvas.Rendering.ImageCanvasControl imageViewer, AddRoiArrayViewModel addRoiArrayVm, OverlayAddedCallback callbackRoiAdded)
 		{
 			AddRoiArrayView addRoiArrayView = new AddRoiArrayView();
-			addRoiArrayView.Title = "Roi Add";
 			addRoiArrayView.DataContext = addRoiArrayVm;
 			addRoiArrayView.WindowStartupLocation = WindowStartupLocation.CenterScreen;
 			bool? dialogResult = addRoiArrayView.ShowDialog();

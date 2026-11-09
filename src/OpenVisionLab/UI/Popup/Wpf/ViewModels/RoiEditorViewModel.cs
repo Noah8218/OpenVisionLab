@@ -13,8 +13,9 @@ namespace OpenVisionLab
         private BitmapSource sourceImage;
         private BitmapSource patternPreviewImage;
         private RoiEditorRegionViewModel selectedRegion;
-        private string statusText = "Ready";
-        private string coordinateText = "No ROI selected";
+        private string statusText = OpenVisionLanguageService.T("RoiEditor.Ready");
+        private bool readyStatus = true;
+        private string coordinateText = OpenVisionLanguageService.T("RoiEditor.NoSelection");
         private int selectedX;
         private int selectedY;
         private int selectedWidth;
@@ -27,26 +28,17 @@ namespace OpenVisionLab
             ImageHeight = imageHeight;
             IsMultiRoiMode = string.Equals(Mode, "MULTI_ROI", StringComparison.OrdinalIgnoreCase);
             IsTrainingMode = string.Equals(Mode, "TRAIN", StringComparison.OrdinalIgnoreCase);
-            Title = IsTrainingMode
-                ? "Pattern ROI"
-                : IsMultiRoiMode
-                    ? "Multi ROI"
-                    : "ROI";
-            PrimaryActionText = IsTrainingMode ? "Use Pattern" : "OK";
-            HelpText = IsMultiRoiMode
-                ? OpenVisionLanguageService.T("RoiEditor.Help.Multi")
-                : OpenVisionLanguageService.T("RoiEditor.Help.Single");
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
 
         public string Mode { get; }
 
-        public string Title { get; }
+        public string Title => IsTrainingMode ? OpenVisionLanguageService.T("RoiEditor.PatternTitle") : IsMultiRoiMode ? OpenVisionLanguageService.T("RoiEditor.MultiTitle") : "ROI";
 
-        public string PrimaryActionText { get; }
+        public string PrimaryActionText => OpenVisionLanguageService.T(IsTrainingMode ? "RoiEditor.UsePattern" : "Common.OK");
 
-        public string HelpText { get; }
+        public string HelpText => OpenVisionLanguageService.T(IsMultiRoiMode ? "RoiEditor.Help.Multi" : "RoiEditor.Help.Single");
 
         public string ZoomOutText => OpenVisionLanguageService.T("RoiEditor.ZoomOut");
 
@@ -97,7 +89,7 @@ namespace OpenVisionLab
         public string StatusText
         {
             get => statusText;
-            set => SetField(ref statusText, value);
+            set { readyStatus = false; SetField(ref statusText, value); }
         }
 
         public string CoordinateText
@@ -208,7 +200,7 @@ namespace OpenVisionLab
         {
             if (SelectedRegion == null || SelectedRegion.ImageRect.IsEmpty)
             {
-                CoordinateText = "No ROI selected";
+                CoordinateText = OpenVisionLanguageService.T("RoiEditor.NoSelection");
                 SelectedX = 0;
                 SelectedY = 0;
                 SelectedWidth = 0;
@@ -222,6 +214,19 @@ namespace OpenVisionLab
             SelectedWidth = Math.Max(0, (int)Math.Round(rect.Width));
             SelectedHeight = Math.Max(0, (int)Math.Round(rect.Height));
             CoordinateText = $"X {SelectedX} / Y {SelectedY} / W {SelectedWidth} / H {SelectedHeight}";
+        }
+
+        internal void SetReadyStatus()
+        {
+            readyStatus = true;
+            SetField(ref statusText, OpenVisionLanguageService.T("RoiEditor.Ready"), nameof(StatusText));
+        }
+
+        internal void RefreshLocalization()
+        {
+            foreach (string property in new[] { nameof(Title), nameof(PrimaryActionText), nameof(HelpText), nameof(ZoomOutText), nameof(ZoomInText), nameof(FitViewText) }) OnPropertyChanged(property);
+            if (readyStatus) SetReadyStatus();
+            if (SelectedRegion == null || SelectedRegion.ImageRect.IsEmpty) CoordinateText = OpenVisionLanguageService.T("RoiEditor.NoSelection");
         }
 
         private bool SetField<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
@@ -280,7 +285,7 @@ namespace OpenVisionLab
         {
             get
             {
-                if (ImageRect.IsEmpty) { return "Empty"; }
+                if (ImageRect.IsEmpty) { return OpenVisionLanguageService.T("RoiEditor.Empty"); }
                 return $"{Math.Round(ImageRect.X):0}, {Math.Round(ImageRect.Y):0}, {Math.Round(ImageRect.Width):0} x {Math.Round(ImageRect.Height):0}";
             }
         }

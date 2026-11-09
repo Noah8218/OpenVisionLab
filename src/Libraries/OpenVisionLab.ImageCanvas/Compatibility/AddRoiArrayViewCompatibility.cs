@@ -23,6 +23,8 @@ namespace OpenVisionLab.ImageCanvas.Views
 			Background = (Brush)FindResource("RoiArray.SurfaceBrush");
 			Foreground = (Brush)FindResource("RoiArray.TextBrush");
 			Content = CreateContent();
+			SetResourceReference(TitleProperty, "RoiArray.Title");
+			ApplyLocalization();
 			Loaded += OnLoaded;
 			Unloaded += OnUnloaded;
 			DataContextChanged += OnDataContextChanged;
@@ -38,13 +40,13 @@ namespace OpenVisionLab.ImageCanvas.Views
 			grid.ColumnDefinitions.Add(new ColumnDefinition());
 			grid.ColumnDefinitions.Add(new ColumnDefinition());
 
-			AddLabel(grid, "Row", 0, 0);
+			AddLabel(grid, "RoiArray.Rows", 0, 0);
 			AddTextBox(grid, nameof(AddRoiArrayViewModel.Rows), 1, 0);
-			AddLabel(grid, "Column", 0, 1);
+			AddLabel(grid, "RoiArray.Columns", 0, 1);
 			AddTextBox(grid, nameof(AddRoiArrayViewModel.Columns), 1, 1);
-			AddLabel(grid, "Row Gap(mm)", 2, 0);
+			AddLabel(grid, "RoiArray.RowGap", 2, 0);
 			AddTextBox(grid, nameof(AddRoiArrayViewModel.RowSpacing), 3, 0);
-			AddLabel(grid, "Column Gap(mm)", 2, 1);
+			AddLabel(grid, "RoiArray.ColumnGap", 2, 1);
 			AddTextBox(grid, nameof(AddRoiArrayViewModel.ColumnSpacing), 3, 1);
 
 			TextBlock validation = new TextBlock { Margin = new Thickness(4, 8, 4, 4), TextWrapping = TextWrapping.Wrap, Foreground = new SolidColorBrush(Color.FromRgb(166, 35, 61)) };
@@ -55,14 +57,16 @@ namespace OpenVisionLab.ImageCanvas.Views
 			Grid.SetColumnSpan(validation, 2);
 			grid.Children.Add(validation);
 
-			Button apply = new Button { Content = "Apply", Height = 32, Margin = new Thickness(4), IsDefault = true, Style = (Style)FindResource("RoiArray.PrimaryButtonStyle") };
+			Button apply = new Button { Height = 32, Margin = new Thickness(4), IsDefault = true, Style = (Style)FindResource("RoiArray.PrimaryButtonStyle") };
+			apply.SetResourceReference(ContentControl.ContentProperty, "RoiArray.Apply");
 			apply.SetBinding(Button.CommandProperty, nameof(AddRoiArrayViewModel.ApplyCommand));
 			AutomationProperties.SetAutomationId(apply, "RoiArrayApplyButton");
 			Grid.SetRow(apply, 5);
 			Grid.SetColumn(apply, 0);
 			grid.Children.Add(apply);
 
-			Button cancel = new Button { Content = "Cancel", Height = 32, Margin = new Thickness(4), IsCancel = true, Style = (Style)FindResource("RoiArray.ButtonStyle") };
+			Button cancel = new Button { Height = 32, Margin = new Thickness(4), IsCancel = true, Style = (Style)FindResource("RoiArray.ButtonStyle") };
+			cancel.SetResourceReference(ContentControl.ContentProperty, "Common.Cancel");
 			cancel.SetBinding(Button.CommandProperty, nameof(AddRoiArrayViewModel.CancelCommand));
 			AutomationProperties.SetAutomationId(cancel, "RoiArrayCancelButton");
 			Grid.SetRow(cancel, 5);
@@ -74,7 +78,8 @@ namespace OpenVisionLab.ImageCanvas.Views
 
 		private static void AddLabel(Grid grid, string text, int row, int column)
 		{
-			TextBlock label = new TextBlock { Text = text, Margin = new Thickness(4), VerticalAlignment = VerticalAlignment.Bottom };
+			TextBlock label = new TextBlock { Margin = new Thickness(4), VerticalAlignment = VerticalAlignment.Bottom };
+			label.SetResourceReference(TextBlock.TextProperty, text);
 			Grid.SetRow(label, row);
 			Grid.SetColumn(label, column);
 			grid.Children.Add(label);
@@ -92,12 +97,23 @@ namespace OpenVisionLab.ImageCanvas.Views
 
 		private void OnLoaded(object sender, RoutedEventArgs e)
 		{
+			OpenVisionLanguageService.LanguageChanged += OnLanguageChanged;
+			ApplyLocalization();
 			UpdateCloseSubscription();
 		}
 
 		private void OnUnloaded(object sender, RoutedEventArgs e)
 		{
+			OpenVisionLanguageService.LanguageChanged -= OnLanguageChanged;
 			DetachCloseSubscription();
+		}
+
+		private void OnLanguageChanged(object sender, EventArgs e) => Dispatcher.Invoke(ApplyLocalization);
+
+		private void ApplyLocalization()
+		{
+			foreach (string key in new[] { "RoiArray.Title", "RoiArray.Rows", "RoiArray.Columns", "RoiArray.RowGap", "RoiArray.ColumnGap", "RoiArray.Apply", "Common.Cancel" }) Resources[key] = OpenVisionLanguageService.T(key);
+			(DataContext as AddRoiArrayViewModel)?.RefreshLocalization();
 		}
 
 		private void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -126,6 +142,7 @@ namespace OpenVisionLab.ImageCanvas.Views
 		protected override void OnClosed(EventArgs e)
 		{
 			DetachCloseSubscription();
+			OpenVisionLanguageService.LanguageChanged -= OnLanguageChanged;
 			Loaded -= OnLoaded;
 			Unloaded -= OnUnloaded;
 			DataContextChanged -= OnDataContextChanged;

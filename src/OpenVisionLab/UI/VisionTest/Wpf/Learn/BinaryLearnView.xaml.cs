@@ -261,13 +261,12 @@ namespace OpenVisionLab
         {
             presenter.SynchronizeMorphologyMode(GetSelectedMorphologyMode());
             IReadOnlyList<bool> result = presenter.MorphologyResult;
-            SolidColorBrush defaultBorder = new(Color.FromRgb(209, 213, 219));
             SolidColorBrush kernelBorder = new(Color.FromRgb(21, 124, 134));
             SolidColorBrush centerBorder = new(Color.FromRgb(217, 119, 6));
 
             foreach (Border inputCell in morphologyInputCells)
             {
-                inputCell.BorderBrush = defaultBorder;
+                inputCell.SetResourceReference(Border.BorderBrushProperty, "OpenVision.Workbench.FieldBorderBrush");
                 inputCell.BorderThickness = new Thickness(1);
             }
 
@@ -276,9 +275,7 @@ namespace OpenVisionLab
                 bool processed = presenter.IsMorphologyCellProcessed(i);
                 int value = processed && result[i] ? 255 : processed ? 0 : 226;
                 morphologyOutputCells[i].Background = CreateGrayBrush(value);
-                morphologyOutputTexts[i].Foreground = processed
-                    ? value > 0 ? Brushes.Black : Brushes.White
-                    : new SolidColorBrush(Color.FromRgb(75, 85, 99));
+                morphologyOutputTexts[i].Foreground = GetContrastBrush(morphologyOutputCells[i].Background);
                 morphologyOutputTexts[i].Text = processed ? value > 0 ? "1" : "0" : ".";
             }
 
@@ -327,7 +324,7 @@ namespace OpenVisionLab
             presenter.UpdateBlob(blobMinAreaSlider.Value);
             foreach (Border inputCell in blobInputCells)
             {
-                inputCell.BorderBrush = new SolidColorBrush(Color.FromRgb(209, 213, 219));
+                inputCell.SetResourceReference(Border.BorderBrushProperty, "OpenVision.Workbench.FieldBorderBrush");
                 inputCell.BorderThickness = new Thickness(1);
             }
 
@@ -342,7 +339,7 @@ namespace OpenVisionLab
                     BinaryLearnPresenter.CellKind.Candidate => animationCandidateBrush,
                     _ => animationPassBrush
                 };
-                PaintBlobCell(i, background, Brushes.White, presenter.GetBlobCellText(i));
+                PaintBlobCell(i, background, presenter.GetBlobCellText(i));
                 if (kind != BinaryLearnPresenter.CellKind.Background && kind != BinaryLearnPresenter.CellKind.Pending && i < blobInputCells.Count)
                 {
                     blobInputCells[i].BorderBrush = background;
@@ -367,7 +364,7 @@ namespace OpenVisionLab
             Brush acceptedBrush = new SolidColorBrush(Color.FromRgb(229, 244, 247));
             foreach (Border inputCell in contourInputCells)
             {
-                inputCell.BorderBrush = new SolidColorBrush(Color.FromRgb(209, 213, 219));
+                inputCell.SetResourceReference(Border.BorderBrushProperty, "OpenVision.Workbench.FieldBorderBrush");
                 inputCell.BorderThickness = new Thickness(1);
             }
 
@@ -388,8 +385,7 @@ namespace OpenVisionLab
                     BinaryLearnPresenter.CellKind.Box => animationPassBrush,
                     _ => acceptedBrush
                 };
-                Brush foreground = kind == BinaryLearnPresenter.CellKind.Region ? Brushes.Black : Brushes.White;
-                PaintContourCell(i, background, foreground, presenter.GetContourCellText(i));
+                PaintContourCell(i, background, presenter.GetContourCellText(i));
             }
 
             txtContourAnimationStatus.Text = presenter.ContourAnimationStatusText;
@@ -468,27 +464,27 @@ namespace OpenVisionLab
                 Height = 28,
                 Margin = new Thickness(0, 0, 5, 5),
                 CornerRadius = new CornerRadius(3),
-                BorderBrush = new SolidColorBrush(Color.FromRgb(209, 213, 219)),
                 BorderThickness = new Thickness(1),
                 Background = CreateGrayBrush(value),
                 Child = textBlock
             };
 
-            textBlock.Foreground = value > 0 ? Brushes.Black : Brushes.White;
+            cell.SetResourceReference(Border.BorderBrushProperty, "OpenVision.Workbench.FieldBorderBrush");
+            textBlock.Foreground = GetContrastBrush(cell.Background);
             return cell;
         }
 
-        private void PaintBlobCell(int index, Brush background, Brush foreground, string text)
+        private void PaintBlobCell(int index, Brush background, string text)
         {
             blobOutputCells[index].Background = background;
-            blobOutputTexts[index].Foreground = foreground;
+            blobOutputTexts[index].Foreground = GetContrastBrush(background);
             blobOutputTexts[index].Text = text;
         }
 
-        private void PaintContourCell(int index, Brush background, Brush foreground, string text)
+        private void PaintContourCell(int index, Brush background, string text)
         {
             contourOutputCells[index].Background = background;
-            contourOutputTexts[index].Foreground = foreground;
+            contourOutputTexts[index].Foreground = GetContrastBrush(background);
             contourOutputTexts[index].Text = text;
         }
 

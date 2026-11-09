@@ -7,6 +7,9 @@ namespace OpenVisionLab
     public partial class AutoMPointTeachingPanel : UserControl, IDisposable
     {
         private readonly VisionToolLanguageChangeController languageChangeController;
+        private string statusKey = "VisionTool.AutoMPoint.Ready";
+        private object[] statusArguments = Array.Empty<object>();
+        private int representativeCount;
 
         public AutoMPointTeachingPanel()
         {
@@ -48,9 +51,26 @@ namespace OpenVisionLab
             languageChangeController.Dispose();
         }
 
+        internal void SetStatus(string key, params object[] arguments)
+        {
+            statusKey = key;
+            statusArguments = arguments;
+            RefreshStatus();
+        }
+
+        internal void SetRepresentativeCount(int count)
+        {
+            representativeCount = count;
+            RepresentativeCountText.Text = string.Format(System.Globalization.CultureInfo.CurrentCulture, OpenVisionLanguageService.T("VisionTool.AutoMPoint.RepresentativeCountFormat"), count);
+        }
+
+        private void RefreshStatus() => StatusText.Text = string.Format(System.Globalization.CultureInfo.CurrentCulture, OpenVisionLanguageService.T(statusKey), statusArguments);
+
         private void ApplyLocalization()
         {
             if (TitleText.GetBindingExpression(TextBlock.TextProperty) == null) { TitleText.Text = OpenVisionLanguageService.T("VisionTool.AutoMPoint.Title"); }
+            RefreshStatus();
+            SetRepresentativeCount(representativeCount);
             SuggestedText.Text = OpenVisionLanguageService.T("VisionTool.AutoMPoint.Suggested");
             AnalyzeText.Text = OpenVisionLanguageService.T("VisionTool.AutoMPoint.Analyze");
             RepresentativeImagesText.Text =

@@ -12,6 +12,15 @@ namespace OpenVisionLab
 {
     internal static class OpenVisionPipelineReviewCircleEvidencePresenter
     {
+        internal static string FormatSummary(VisionPipelineCircleEvidence circle)
+        {
+            return circle.HasFit
+                ? string.Format(CultureInfo.CurrentCulture, OpenVisionLanguageService.T("PipelineReview.CircleEvidence.FitSummaryFormat"), circle.ScanCount, circle.EdgeCandidateCount, circle.InlierCount, circle.SupportRatio, circle.MinimumSupportRatio, circle.FitRadiusPx, circle.FitResidualPx, circle.MaximumFitResidualPx)
+                : string.Format(CultureInfo.CurrentCulture, OpenVisionLanguageService.T("PipelineReview.CircleEvidence.NoFitSummaryFormat"), circle.ScanCount, circle.EdgeCandidateCount, circle.MinimumSupportRatio);
+        }
+
+        internal static string FormatState(string state) => OpenVisionLanguageService.TryT("PipelineReview.CircleEvidence.State." + state.Replace(" ", string.Empty), out string localized) ? localized : state;
+
         public static VisionToolSignalEvidence CreateResidualEvidence(
             VisionPipelineCircleEvidence circle,
             Bitmap sourceImage,
@@ -48,21 +57,21 @@ namespace OpenVisionLab
                 resultHash,
                 "CircleGauge/" + circle.StepName,
                 circle.InputLayer,
-                $"radial scans {circle.StartAngleDeg:0.###}..{circle.StartAngleDeg + circle.SweepAngleDeg:0.###} deg",
+                string.Format(CultureInfo.CurrentCulture, OpenVisionLanguageService.T("PipelineReview.CircleEvidence.ScanRegionFormat"), circle.StartAngleDeg, circle.StartAngleDeg + circle.SweepAngleDeg),
                 parameters,
-                "Scan #",
-                "|Radial residual| (px)",
+                OpenVisionLanguageService.T("PipelineReview.CircleEvidence.ScanAxis"),
+                OpenVisionLanguageService.T("PipelineReview.CircleEvidence.ResidualAxis"),
                 new[]
                 {
                     new VisionToolSignalSeries(
-                        "Absolute residual (px)",
+                        OpenVisionLanguageService.T("PipelineReview.CircleEvidence.ResidualSeries"),
                         "#8E44AD",
                         1D,
                         1D,
                         values)
                 },
                 guidance:
-                    "Click one scan to select its row and image drawing. Zero means no fitted residual was available; use the row state.",
+                    OpenVisionLanguageService.T("PipelineReview.CircleEvidence.ResidualHint"),
                 attributes: CreateAttributes(circle));
         }
 
@@ -108,7 +117,7 @@ namespace OpenVisionLab
             {
                 markers.Add(new VisionToolSignalMarker(
                     "SelectedEdge",
-                    "Selected edge",
+                    OpenVisionLanguageService.T("PipelineReview.CircleEvidence.SelectedEdge"),
                     sample.EdgeRadiusPx,
                     "#C0392B",
                     false));
@@ -120,28 +129,27 @@ namespace OpenVisionLab
                 resultHash,
                 "CircleGauge/" + circle.StepName + "/scan " + sample.Number,
                 circle.InputLayer,
-                $"angle {sample.AngleDeg:0.###} deg / radius {circle.RadiusMinPx:0.###}..{circle.RadiusMaxPx:0.###} px",
+                string.Format(CultureInfo.CurrentCulture, OpenVisionLanguageService.T("PipelineReview.CircleEvidence.ProfileRegionFormat"), sample.AngleDeg, circle.RadiusMinPx, circle.RadiusMaxPx),
                 parameters,
-                "Radius (px)",
-                "GV / signed response",
+                OpenVisionLanguageService.T("PipelineReview.CircleEvidence.RadiusAxis"),
+                OpenVisionLanguageService.T("PipelineReview.CircleEvidence.ResponseAxis"),
                 new[]
                 {
                     new VisionToolSignalSeries(
-                        "Intensity (GV)",
+                        OpenVisionLanguageService.T("PipelineReview.CircleEvidence.IntensitySeries"),
                         "#2276B9",
                         sample.ProfileRadiusStartPx,
                         sample.ProfileRadiusStepPx,
                         intensities),
                     new VisionToolSignalSeries(
-                        "Signed edge response (ΔGV)",
+                        OpenVisionLanguageService.T("PipelineReview.CircleEvidence.ResponseSeries"),
                         "#D35400",
                         sample.ProfileRadiusStartPx,
                         sample.ProfileRadiusStepPx,
                         responses)
                 },
                 markers,
-                $"State {sample.StateText}. Edge strength {sample.EdgeStrengthGv:0.###} GV; "
-                    + $"contrast gate {circle.MinimumContrastGv:0.###} GV. {sample.RejectReason}",
+                string.Format(CultureInfo.CurrentCulture, OpenVisionLanguageService.T("PipelineReview.CircleEvidence.ProfileGuideFormat"), FormatState(sample.StateText), sample.EdgeStrengthGv, circle.MinimumContrastGv, sample.RejectReason),
                 CreateAttributes(circle, sample));
         }
 

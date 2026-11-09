@@ -4,6 +4,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Threading;
 using static OpenVisionLab.DEFINE;
@@ -629,8 +630,18 @@ namespace OpenVisionLab
             }
         }
 
+        protected override void OnSourceInitialized(EventArgs e)
+        {
+            base.OnSourceInitialized(e);
+            if (Owner != null)
+            {
+                SetBinding(OpenVisionWorkbenchThemeBehavior.ThemeNameProperty, new Binding { Source = Owner, Path = new PropertyPath("(0)", OpenVisionWorkbenchThemeBehavior.ThemeNameProperty) });
+            }
+        }
+
         protected override void OnClosed(EventArgs e)
         {
+            BindingOperations.ClearBinding(this, OpenVisionWorkbenchThemeBehavior.ThemeNameProperty);
             grayscaleLearnView.StopAnimations();
             grayscaleLearnView.ApplyThresholdRequested -= OnGrayscaleThresholdApplied;
             grayscaleLearnView.CloseRequested -= OnGrayscaleCloseRequested;
@@ -665,6 +676,11 @@ namespace OpenVisionLab
                 ColorHsvLearnGuide.SampleHue,
                 ColorHsvLearnGuide.SampleSaturation,
                 ColorHsvLearnGuide.SampleValue);
+            Brush pixelCardTextBrush = GetContrastBrush(((SolidColorBrush)colorBgrPixelCard.Background).Color);
+            txtColorBgrPixelType.Foreground = pixelCardTextBrush;
+            txtColorBgrPixelValue.Foreground = pixelCardTextBrush;
+            txtColorHsvPixelType.Foreground = pixelCardTextBrush;
+            txtColorHsvPixelValue.Foreground = pixelCardTextBrush;
 
             Border[] channels = { colorHueChannel, colorSaturationChannel, colorValueChannel };
             bool[] channelPass = { guide.HuePass, guide.SaturationPass, guide.ValuePass };
@@ -676,9 +692,9 @@ namespace OpenVisionLab
                 channels[i].BorderThickness = visibleStep >= 2 ? new Thickness(2) : new Thickness(1);
             }
 
-            colorHsvPreviewSwatch.BorderBrush = visibleStep >= 4
-                ? guide.MaskPass ? animationPassBrush : animationWarningBrush
-                : new SolidColorBrush(Color.FromRgb(203, 213, 225));
+            colorHsvPreviewSwatch.SetResourceReference(Border.BorderBrushProperty, visibleStep >= 4
+                ? guide.MaskPass ? "Learn.Animation.PassBrush" : "Learn.Animation.WarningBrush"
+                : "OpenVision.Workbench.FieldBorderBrush");
             colorHsvPreviewSwatch.BorderThickness = visibleStep >= 4 ? new Thickness(2) : new Thickness(1);
             colorHsvPreviewSwatch.Background = visibleStep >= 4
                 ? guide.MaskPass ? Brushes.White : Brushes.Black
@@ -690,11 +706,10 @@ namespace OpenVisionLab
                     + " / V " + ColorHsvLearnGuide.SampleValue;
             txtColorHsvPreviewLabel.Foreground = visibleStep >= 4
                 ? guide.MaskPass ? Brushes.Black : Brushes.White
-                : ColorHsvLearnGuide.SampleValue < 150 ? Brushes.White : Brushes.Black;
-            Brush defaultBorderBrush = new SolidColorBrush(Color.FromRgb(209, 213, 219));
-            colorBgrPixelCard.BorderBrush = visibleStep == 0 ? animationCandidateBrush : defaultBorderBrush;
-            colorHsvPixelCard.BorderBrush = visibleStep == 2 ? animationPassBrush : defaultBorderBrush;
-            colorBgrMergeResult.BorderBrush = visibleStep == 2 ? animationPassBrush : new SolidColorBrush(Color.FromRgb(165, 212, 220));
+                : GetContrastBrush(sampleColor);
+            colorBgrPixelCard.SetResourceReference(Border.BorderBrushProperty, visibleStep == 0 ? "Learn.Animation.CandidateBrush" : "OpenVision.Workbench.FieldBorderBrush");
+            colorHsvPixelCard.SetResourceReference(Border.BorderBrushProperty, visibleStep == 2 ? "Learn.Animation.PassBrush" : "OpenVision.Workbench.FieldBorderBrush");
+            colorBgrMergeResult.SetResourceReference(Border.BorderBrushProperty, visibleStep == 2 ? "Learn.Animation.PassBrush" : "OpenVision.Workbench.FieldBorderBrush");
             colorBgrPixelCard.Opacity = 1D;
             txtColorBgrSplitTitle.Opacity = visibleStep >= 1 ? 1D : 0.28D;
             colorBgrSplitChannels.Opacity = visibleStep >= 1 ? 1D : 0.28D;

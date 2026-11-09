@@ -34,7 +34,7 @@
                                VerticalAlignment="Center"
                                FontSize="11"
                                FontWeight="SemiBold"
-                               Text="Auto MPoint" />
+                               Text="" />
                     <Border Margin="8,0,0,0"
                             Padding="6,0"
                             Background="{DynamicResource VisionTool.SurfaceBrush}"
@@ -43,7 +43,7 @@
                         <TextBlock x:Name="suggestedText"
                                    FontSize="9"
                                    Foreground="{DynamicResource VisionTool.SecondaryTextBrush}"
-                                   Text="Suggested" />
+                                   Text="" />
                     </Border>
                 </StackPanel>
             </Expander.Header>
@@ -77,7 +77,7 @@
                                 <TextBlock x:Name="representativeImagesText"
                                            Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                            VerticalAlignment="Center"
-                                           Text="Representative images" />
+                                           Text="" />
                             </StackPanel>
                         </Button>
                         <TextBlock x:Name="representativeCountText"
@@ -85,7 +85,7 @@
                                    VerticalAlignment="Center"
                                    FontSize="10.5"
                                    Foreground="{DynamicResource VisionTool.SecondaryTextBrush}"
-                                   Text="0 selected" />
+                                   Text="" />
                     </StackPanel>
                     <Grid Grid.Row="2">
                         <Grid.ColumnDefinitions>
@@ -109,7 +109,7 @@
                                 <TextBlock x:Name="analyzeText"
                                            Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                            VerticalAlignment="Center"
-                                           Text="Analyze candidates" />
+                                           Text="" />
                             </StackPanel>
                         </Button>
                         <ListBox x:Name="candidateList"
@@ -133,7 +133,7 @@
                                 <TextBlock x:Name="usePatternText"
                                            Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                            VerticalAlignment="Center"
-                                           Text="Use this pattern" />
+                                           Text="" />
                             </StackPanel>
                         </Button>
                     </Grid>
@@ -153,7 +153,7 @@
                             <TextBlock x:Name="reportText"
                                        Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                        VerticalAlignment="Center"
-                                       Text="Save N-image report" />
+                                       Text="" />
                         </StackPanel>
                     </Button>
                     <TextBlock x:Name="statusText"
@@ -161,7 +161,7 @@
                                FontSize="10.5"
                                Foreground="{DynamicResource VisionTool.SecondaryTextBrush}"
                                TextWrapping="Wrap"
-                               Text="Choose the analysis settings in PropertyGrid, then analyze explicitly." />
+                               Text="" />
                 </Grid>
             </Border>
         </Expander>

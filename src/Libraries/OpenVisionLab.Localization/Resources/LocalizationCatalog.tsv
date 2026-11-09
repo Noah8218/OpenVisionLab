@@ -3266,3 +3266,195 @@ Workbench.LayerManager.RenameFailed	이름을 바꾸지 못했습니다. 사용 
 Workbench.LayerManager.Renamed	레이어 이름을 바꿨습니다.	Layer renamed.
 Workbench.LayerManager.Protected	이 레이어는 삭제할 수 없습니다. 현재 입력으로 사용 중인지 확인하세요.	This layer cannot be deleted. Check whether it is used as a current input.
 Workbench.LayerManager.Deleted	선택한 레이어를 삭제했습니다.	Selected layer deleted.
+RoiEditor.Selection	선택 영역	Selection
+RoiEditor.Full	전체	Full
+RoiEditor.Center	중앙	Center
+RoiEditor.Clear	지우기	Clear
+RoiEditor.PatternPreview	패턴 미리보기	Pattern Preview
+RoiEditor.RoiList	ROI 목록	ROI List
+RoiEditor.DeleteSelected	선택 삭제	Delete Selected
+RoiEditor.PatternTitle	패턴 ROI	Pattern ROI
+RoiEditor.MultiTitle	다중 ROI	Multi ROI
+RoiEditor.UsePattern	패턴 사용	Use Pattern
+RoiEditor.Ready	준비	Ready
+RoiEditor.NoSelection	선택한 ROI 없음	No ROI selected
+RoiEditor.Empty	비어 있음	Empty
+TemplateEditor.Title	템플릿 등록	Template registration
+TemplateEditor.Roi	템플릿 ROI	Template ROI
+TemplateEditor.Rotation	회전	Rotation
+TemplateEditor.RotationHint	ROI 회전 각도. 회전 핸들을 드래그하거나 값을 입력하세요.	Selected ROI rotation angle. Drag the rotation handle beside the ROI or enter a value.
+TemplateEditor.RotateLeft	ROI 왼쪽 90도 회전	Rotate ROI left 90 degrees
+TemplateEditor.RotateRight	ROI 오른쪽 90도 회전	Rotate ROI right 90 degrees
+TemplateEditor.ResetRotation	ROI 회전 초기화	Reset ROI rotation
+TemplateEditor.FitHint	이미지 맞춤	Fit image to view
+TemplateEditor.CenterHint	템플릿 ROI 중앙 정렬	Center template ROI
+TemplateEditor.FullHint	전체 이미지 사용	Use full image
+TemplateEditor.Fit	화면 맞춤	Fit
+TemplateEditor.NoPreview	패턴 미리보기 없음	No pattern preview
+TemplateEditor.Register	등록	Register
+TemplateEditor.InitFailed	뷰어 초기화 실패: {0}	Viewer initialization failed: {0}
+TemplateEditor.SelectArea	템플릿 영역을 선택하세요.	Select a template area.
+TemplateEditor.NoRoi	템플릿 ROI 없음	No template ROI
+RoiArray.Rows	행 수	Row
+RoiArray.Columns	열 수	Column
+RoiArray.RowGap	행 간격(mm)	Row Gap(mm)
+RoiArray.ColumnGap	열 간격(mm)	Column Gap(mm)
+RoiArray.Apply	적용	Apply
+RoiArray.Title	ROI 배열 추가	Add ROI array
+RoiArray.InvalidRows	행 수는 1 이상의 정수로 입력하십시오.	Rows must be a positive whole number.
+RoiArray.InvalidColumns	열 수는 1 이상의 정수로 입력하십시오.	Columns must be a positive whole number.
+RoiArray.InvalidRowGap	행 간격(mm)은 유한한 숫자로 입력하십시오.	Row gap (mm) must be a finite number.
+RoiArray.InvalidColumnGap	열 간격(mm)은 유한한 숫자로 입력하십시오.	Column gap (mm) must be a finite number.
+VisionTool.AutoMPoint.RepresentativeCandidateFormat	#{0} 최적 | ROI {1},{2},{3},{4} | 이미지 {5}/{6} ({7:0.0}%) | 평균 {8:0.0} | 최소 U {9:0.000}	#{0} BEST | ROI {1},{2},{3},{4} | Samples {5}/{6} ({7:0.0}%) | Avg {8:0.0} | Umin {9:0.000}
+VisionTool.AutoMPoint.CandidateFormat	#{0} | ROI {1},{2},{3},{4} | U {5:0.000} | 오차 {6:0.00}px | P95 {7:0.0}ms	#{0} | ROI {1},{2},{3},{4} | U {5:0.000} | Err {6:0.00}px | P95 {7:0.0}ms
+VisionTool.AutoMPoint.ReportFilter	HTML 보고서|*.html	HTML report|*.html
+VisionTool.AutoMPoint.ImageFilter	이미지 파일|*.bmp;*.png;*.jpg;*.jpeg;*.tif;*.tiff|모든 파일|*.*	Image files|*.bmp;*.png;*.jpg;*.jpeg;*.tif;*.tiff|All files|*.*
+PipelineReview.InstanceInspector.Title	인스턴스 결과	Instance Results
+PipelineReview.GeometryReview.Title	기하 결과	Geometry Review
+PipelineReview.CircleEvidence.Title	원 검출 근거	Circle Evidence
+PipelineReview.MatcherDiagnostics.Title	매칭 진단	Matcher Diagnostics
+PipelineReview.CircleEvidence.Residuals	잔차	Residuals
+PipelineReview.CircleEvidence.Profile	선택 스캔 프로파일	Selected scan profile
+PipelineReview.ScaleCalibration.Title	스케일 교정	Scale Calibration
+PipelineReview.InstanceInspector.Highlight	선택 인스턴스 상대 ROI	Selected instance relative ROI
+PipelineReview.GeometryReview.Highlight	선택 기하 강조	Selected geometry highlight
+PipelineReview.ScaleCalibration.Preview	점 A/B 근거	Point A/B evidence
+PipelineReview.ScaleCalibration.Inputs	같은 실행의 점 근거	Same-run point evidence
+PipelineReview.ScaleCalibration.KnownDistance	실측	Real
+PipelineReview.ScaleCalibration.Result	저장 스케일(mm/px)	Saved scale (mm/px)
+PipelineReview.ScaleCalibration.Calculate	계산·저장	Calculate + save
+PipelineReview.ScaleCalibration.Apply	단계에 적용	Apply to Step
+PipelineReview.GeometryReview.CountFormat	기하 특징 {0} / 같은 실행·픽셀 좌표	Typed features {0} / same-run, pixel-only
+PipelineReview.InstanceInspector.CountFormat	인스턴스 {0} / OK {1} / NG {2}	Instances {0} / OK {1} / NG {2}
+PipelineReview.CircleEvidence.NoEvidence	반경 스캔 근거 없음. 리뷰를 실행하세요.	Run Review explicitly to retain radial sample evidence.
+PipelineReview.MatcherDiagnostics.NoEvidence	모델·피라미드·후보·판정 근거 없음. 리뷰를 실행하세요.	Run Review explicitly to retain model, pyramid, candidate, and decision diagnostics.
+PipelineReview.ScaleCalibration.NotTaught	교정값 없음	Not taught
+PipelineReview.ScaleCalibration.Waiting	리뷰를 실행해 점 두 개를 구하세요.	Run Review to obtain two typed points.
+PipelineReview.ScaleCalibration.InvalidPoint	유효한 점 두 개를 선택하세요.	Select two valid points.
+PipelineReview.ScaleCalibration.InvalidKnownDistance	실측 거리는 양수로 입력하세요.	Known distance must be a positive number.
+PipelineReview.ScaleCalibration.SelectTarget	적용 가능한 단계를 선택하세요.	Select one compatible target Step.
+PipelineReview.MatcherDiagnostics.ModelCaption	학습 엣지 모델	Trained edge model
+PipelineReview.MatcherDiagnostics.SearchCaption	검색 / 후보	Search / candidates
+PipelineReview.CircleEvidence.ScanCaption	선택 반경 스캔	Selected radial scan
+PipelineReview.CircleEvidence.PlotHint	휠: 확대·축소. 드래그: 이동. 잔차 스캔 클릭: 행 선택.	Mouse wheel: zoom. Drag: pan. Click a residual scan to select its row.
+PipelineReview.CircleEvidence.PlotEmpty	스캔별 반경 잔차 절댓값	Absolute fitted-radius residual by scan
+PipelineReview.CircleEvidence.SelectScan	반경 스캔을 선택하세요.	Select one radial scan.
+PipelineReview.CircleEvidence.ResidualGuide	스캔별 반경 잔차 절댓값. 클릭해 선택하세요.	Absolute fitted-radius residual by scan. Click to select.
+PipelineReview.CircleEvidence.ProfileCaptionFormat	스캔 {0} / {1:0.###} deg / 밝기 + 부호 있는 응답	Scan {0} / {1:0.###} deg / intensity + signed response
+PipelineReview.CircleEvidence.ResidualCaptionFormat	스캔 {0} / {1} / {2} px	Scan {0} / {1} / {2} px
+PipelineReview.DetailColumn.Id	ID	ID
+PipelineReview.DetailColumn.State	상태	State
+PipelineReview.DetailColumn.Score	점수	Score
+PipelineReview.DetailColumn.CenterX	중심 X	Center X
+PipelineReview.DetailColumn.CenterY	중심 Y	Center Y
+PipelineReview.DetailColumn.Angle	각도	Angle
+PipelineReview.DetailColumn.Scale	배율	Scale
+PipelineReview.DetailColumn.Mean	평균	Mean
+PipelineReview.DetailColumn.Valid	유효 비율	Valid
+PipelineReview.DetailColumn.RejectReason	제외 사유	Reject reason
+PipelineReview.DetailColumn.Group	그룹	Group
+PipelineReview.DetailColumn.Diagnostic	진단 항목	Diagnostic
+PipelineReview.DetailColumn.CurrentEvidence	현재 실행 근거	Current run evidence
+PipelineReview.DetailColumn.Feature	단계 / 특징	Step / Feature
+PipelineReview.DetailColumn.Kind	종류	Kind
+PipelineReview.DetailColumn.Geometry	기하	Geometry
+PipelineReview.DetailColumn.CoordinateLayer	좌표 레이어	Coordinate layer
+PipelineReview.DetailColumn.FitEvidence	피팅 근거	Fit evidence
+PipelineReview.DetailColumn.Number	#	#
+PipelineReview.DetailColumn.EdgeGv	엣지 GV	Edge GV
+PipelineReview.DetailColumn.Residual	잔차	Residual
+PipelineReview.DetailColumn.Reason	사유	Reason
+PipelineReview.MatcherDiagnostics.Label.Decision	판정	Decision
+PipelineReview.MatcherDiagnostics.Label.State	상태	State
+PipelineReview.MatcherDiagnostics.Label.Error	오류	Error
+PipelineReview.MatcherDiagnostics.Label.Exactreason	원문 사유	Exact reason
+PipelineReview.MatcherDiagnostics.Label.Search	검색	Search
+PipelineReview.MatcherDiagnostics.Label.SearchROI	검색 ROI	Search ROI
+PipelineReview.MatcherDiagnostics.Label.Alternative	대안	Alternative
+PipelineReview.MatcherDiagnostics.Label.Model	모델	Model
+PipelineReview.MatcherDiagnostics.Label.Rawedgepoints	원본 엣지점 수	Raw edge points
+PipelineReview.MatcherDiagnostics.Label.Retainededgepoints	보존 엣지점 수	Retained edge points
+PipelineReview.MatcherDiagnostics.Label.Pointsampleratio	점 샘플 비율	Point sample ratio
+PipelineReview.MatcherDiagnostics.Label.Edgecoverage	엣지 분포 면적	Edge coverage
+PipelineReview.MatcherDiagnostics.Label.Quadrantbalance	사분면 균형	Quadrant balance
+PipelineReview.MatcherDiagnostics.Label.Scalesearchrisk	배율 검색 위험	Scale-search risk
+PipelineReview.MatcherDiagnostics.Label.Pyramid	피라미드	Pyramid
+PipelineReview.MatcherDiagnostics.Label.Highestusablelevel	최고 사용 레벨	Highest usable level
+PipelineReview.MatcherDiagnostics.Label.Estimatedlevels	예상 레벨 수	Estimated levels
+PipelineReview.MatcherDiagnostics.Label.usable	사용 가능	usable
+PipelineReview.MatcherDiagnostics.Label.notusable	사용 불가	not usable
+PipelineReview.MatcherDiagnostics.Label.Candidates	후보	Candidates
+PipelineReview.MatcherDiagnostics.Label.Anglecandidates	각도 후보 수	Angle candidates
+PipelineReview.MatcherDiagnostics.Label.Coarseanglecandidates	1차 각도 후보 수	Coarse angle candidates
+PipelineReview.MatcherDiagnostics.Label.Scalecandidates	배율 후보 수	Scale candidates
+PipelineReview.MatcherDiagnostics.Label.Estimatedrawpositions	예상 원본 위치 수	Estimated raw positions
+PipelineReview.MatcherDiagnostics.Label.Estimatedcoarsepositions	예상 1차 위치 수	Estimated coarse positions
+PipelineReview.MatcherDiagnostics.Label.Edgeseeds	엣지 시작점 수	Edge seeds
+PipelineReview.MatcherDiagnostics.Label.Pyramidproposalscale	피라미드 제안 배율	Pyramid proposal scale
+PipelineReview.MatcherDiagnostics.Label.Pyramidproposalattempts	피라미드 제안 시도 수	Pyramid proposal attempts
+PipelineReview.MatcherDiagnostics.Label.Pyramidproposals	피라미드 제안 수	Pyramid proposals
+PipelineReview.MatcherDiagnostics.Label.Pyramidverified	피라미드 검증 수	Pyramid verified
+PipelineReview.MatcherDiagnostics.Label.Pyramidaccepted	피라미드 통과 수	Pyramid accepted
+PipelineReview.MatcherDiagnostics.Label.Pyramidfallback	피라미드 폴백 수	Pyramid fallback
+PipelineReview.MatcherDiagnostics.Label.Ambiguousalternatives	모호한 대안 수	Ambiguous alternatives
+PipelineReview.MatcherDiagnostics.Label.Unique	고유 매칭	Unique
+PipelineReview.MatcherDiagnostics.Label.Enabled	사용	Enabled
+PipelineReview.MatcherDiagnostics.Label.Selectedscore	선택 점수	Selected score
+PipelineReview.MatcherDiagnostics.Label.Strongestalternative	최강 대안 점수	Strongest alternative
+PipelineReview.MatcherDiagnostics.Label.Scoremargin	점수 차이	Score margin
+PipelineReview.MatcherDiagnostics.Label.Requiredmargin	필요 점수 차이	Required margin
+PipelineReview.MatcherDiagnostics.Label.Polarity	극성	Polarity
+PipelineReview.MatcherDiagnostics.Label.Allowglobalreversal	전체 극성 반전 허용	Allow global reversal
+PipelineReview.MatcherDiagnostics.Label.Selectedreversed	반전 결과 선택	Selected reversed
+PipelineReview.MatcherDiagnostics.Label.Sameresultcount	동일 극성 결과 수	Same result count
+PipelineReview.MatcherDiagnostics.Label.Reversedresultcount	반전 극성 결과 수	Reversed result count
+PipelineReview.MatcherDiagnostics.Label.Plausiblealternatives	가능한 대안 수	Plausible alternatives
+PipelineReview.MatcherDiagnostics.Label.Candidate	후보	Candidate
+PipelineReview.MatcherDiagnostics.Label.Noneretained	보존 후보 없음	None retained
+PipelineReview.MatcherDiagnostics.Label.Score	점수	Score
+PipelineReview.MatcherDiagnostics.Label.Pose	자세	Pose
+PipelineReview.MatcherDiagnostics.Label.Bounds	경계	Bounds
+PipelineReview.MatcherDiagnostics.Label.none	없음	none
+PipelineReview.MatcherDiagnostics.Label.NoneError	없음	None
+PipelineReview.MatcherDiagnostics.Label.Bestobservedbelowgate	관측 최상위(기준 미달)	Best observed (below gate)
+PipelineReview.MatcherDiagnostics.Label.Rejectedprimaryhypothesis	제외된 주 후보	Rejected primary hypothesis
+PipelineReview.MatcherDiagnostics.Label.Selected	선택	Selected
+PipelineReview.MatcherDiagnostics.SummaryFormat	{0} | 모델 {1}x{2}, {3}점 | {4} {5} | 대안 {6}	{0} | model {1}x{2}, {3} points | {4} {5} | alternative {6}
+PipelineReview.MatcherDiagnostics.LevelEvidenceFormat	{0:0}x{1:0} / 엣지 {2:0} / 분포 면적 {3:0.###} / {4}	{0:0}x{1:0} / edges {2:0} / coverage {3:0.###} / {4}
+PipelineReview.MatcherDiagnostics.PoseFormat	중심 ({0:0.##}, {1:0.##}) / 각도 {2:0.###}° / 배율 {3:0.###}	center ({0:0.##}, {1:0.##}) / angle {2:0.###}° / scale {3:0.###}
+PipelineReview.MatcherDiagnostics.PreviewCaption	검색 ROI / 보존 주 후보 / 최강 위치 대안	Search ROI / retained primary hypothesis / strongest spatial alternative
+PipelineReview.MatcherDiagnostics.LevelFormat	레벨 {0}	Level {0}
+PipelineReview.MatcherDiagnostics.ModelFormat	학습 엣지 모델 — {0}x{1}, {2}점	Trained edge model — {0}x{1}, {2} points
+PipelineReview.CircleEvidence.ScanAxis	스캔 번호	Scan #
+PipelineReview.CircleEvidence.ResidualAxis	|반경 잔차| (px)	|Radial residual| (px)
+PipelineReview.CircleEvidence.ResidualSeries	잔차 절댓값(px)	Absolute residual (px)
+PipelineReview.CircleEvidence.ResidualHint	스캔을 클릭하면 해당 행과 드로잉을 선택합니다. 잔차가 없으면 0으로 표시하므로 행 상태를 확인하세요.	Click one scan to select its row and image drawing. Zero means no fitted residual was available; use the row state.
+PipelineReview.CircleEvidence.SelectedEdge	선택 엣지	Selected edge
+PipelineReview.CircleEvidence.RadiusAxis	반경(px)	Radius (px)
+PipelineReview.CircleEvidence.ResponseAxis	GV / 부호 있는 응답	GV / signed response
+PipelineReview.CircleEvidence.IntensitySeries	밝기(GV)	Intensity (GV)
+PipelineReview.CircleEvidence.ResponseSeries	부호 있는 엣지 응답(ΔGV)	Signed edge response (ΔGV)
+PipelineReview.CircleEvidence.ScanRegionFormat	반경 스캔 {0:0.###}..{1:0.###} deg	radial scans {0:0.###}..{1:0.###} deg
+PipelineReview.CircleEvidence.ProfileRegionFormat	각도 {0:0.###} deg / 반경 {1:0.###}..{2:0.###} px	angle {0:0.###} deg / radius {1:0.###}..{2:0.###} px
+PipelineReview.CircleEvidence.ProfileGuideFormat	상태 {0}. 엣지 강도 {1:0.###} GV; 대비 기준 {2:0.###} GV. {3}	State {0}. Edge strength {1:0.###} GV; contrast gate {2:0.###} GV. {3}
+PipelineReview.CircleEvidence.State.Nosample	검출점 없음	No sample
+PipelineReview.CircleEvidence.State.Contrastreject	대비 기준 미달	Contrast reject
+PipelineReview.CircleEvidence.State.Inlier	피팅 유효점	Inlier
+PipelineReview.CircleEvidence.State.Fitoutlier	피팅 이상점	Fit outlier
+PipelineReview.CircleEvidence.State.Edgecandidate	엣지 후보	Edge candidate
+PipelineReview.GeometryReview.SupportPrefix	지지점	support
+PipelineReview.GeometryReview.ResidualPrefix	, 잔차	, residual
+PipelineReview.CircleEvidence.FitSummaryFormat	스캔 {0} | 엣지 {1} | 유효점 {2} | S {3:0.###} >= {4:0.###} | R {5:0.###} px | RMS {6:0.###} <= {7:0.###} px	{0} scans | edge {1} | inlier {2} | S {3:0.###} >= {4:0.###} | R {5:0.###} px | RMS {6:0.###} <= {7:0.###} px
+PipelineReview.CircleEvidence.NoFitSummaryFormat	스캔 {0} | 엣지 {1} | S 기준 >= {2:0.###} | 피팅된 원 없음	{0} scans | edge {1} | S gate >= {2:0.###} | no fitted circle
+PipelineReview.ScaleCalibration.NoSteps	스케일 교정 전에 측정 단계를 추가하세요.	Add measurement Steps before teaching scale.
+PipelineReview.ScaleCalibration.SourceMatches	저장 근거와 현재 이미지가 일치합니다. 적용할 단계를 선택하세요.	Saved evidence matches the current image. Select one compatible Step to apply; Apply never runs the pipeline.
+PipelineReview.ScaleCalibration.SourceMismatchFormat	현재 이미지에 저장 근거를 적용할 수 없습니다: {0}	Saved evidence is not applicable to the current image: {0}
+PipelineReview.ScaleCalibration.NeedPoints	리뷰를 실행해 같은 좌표 레이어에서 점 두 개 이상을 구하세요.	Run Review explicitly and produce at least two typed Point results in one coordinate layer.
+PipelineReview.ScaleCalibration.ReadyToCalculate	같은 실행의 점 두 개를 선택하고 실측 거리를 입력해 계산·저장하세요.	Select two same-run points, enter the certified real distance, then calculate and save evidence.
+PipelineReview.ScaleCalibration.SaveFailedFormat	스케일 근거 저장 실패: {0}	Scale evidence was not saved: {0}
+PipelineReview.ScaleCalibration.SavedFormat	두 점 근거 저장: {0}. 적용할 단계를 선택하세요.	Saved exact two-point evidence: {0}. Apply remains explicit; no Preview/Run occurred.
+PipelineReview.ScaleCalibration.ApplyFailedFormat	스케일 적용 실패: {0}	Scale was not applied: {0}
+PipelineReview.ScaleCalibration.RoundTripFailedFormat	스케일 파이프라인 저장 검증 실패: {0}	Scale pipeline save did not verify: {0}
+PipelineReview.ScaleCalibration.AuditFailedFormat	스케일은 적용했지만 적용 단계 기록을 저장하지 못했습니다: {0}	Scale was applied, but its applied-Step audit did not save: {0}
+PipelineReview.ScaleCalibration.AppliedFormat	'{1}' 단계에 {0:0.############} mm/px 적용. 파이프라인과 {2}의 저장을 검증했습니다.	Applied {0:0.############} mm/px to '{1}' only. Pipeline and {2} round-tripped; no Preview/Run occurred.
+PipelineReview.ScaleCalibration.ApplyExceptionFormat	스케일 적용 실패: {0}	Scale apply failed: {0}

@@ -295,9 +295,9 @@ namespace OpenVisionLab
                     Margin = new Thickness(0, 6, 0, 0),
                     FontSize = 10,
                     TextAlignment = TextAlignment.Center,
-                    Foreground = new SolidColorBrush(Color.FromRgb(82, 101, 121)),
                     TextWrapping = TextWrapping.Wrap
                 };
+                label.SetResourceReference(TextBlock.ForegroundProperty, "OpenVision.Workbench.SecondaryTextBrush");
 
                 Grid.SetRow(bar, 0);
                 Grid.SetRow(label, 1);
@@ -374,13 +374,13 @@ namespace OpenVisionLab
                 Height = 44,
                 Margin = new Thickness(0, 0, 8, 8),
                 CornerRadius = new CornerRadius(4),
-                BorderBrush = new SolidColorBrush(Color.FromRgb(209, 213, 219)),
                 BorderThickness = new Thickness(1),
                 Background = CreateGrayBrush(grayValue),
                 Child = textBlock
             };
 
-            textBlock.Foreground = grayValue > 128 ? Brushes.Black : Brushes.White;
+            cell.SetResourceReference(Border.BorderBrushProperty, "OpenVision.Workbench.FieldBorderBrush");
+            textBlock.Foreground = GetContrastBrush(grayValue);
             return cell;
         }
 
@@ -454,13 +454,20 @@ namespace OpenVisionLab
         {
             PaintBorder(border, cell.BorderRole);
             border.Background = cell.BackgroundRole == GrayscaleLearnCellRole.Gray ? CreateGrayBrush(cell.Gray) : ResolveBrush(cell.BackgroundRole);
-            text.Foreground = cell.BackgroundRole == GrayscaleLearnCellRole.Gray && cell.Gray > 128 ? Brushes.Black : Brushes.White;
+            text.Foreground = GetContrastBrush(border.Background);
             text.Text = cell.Text;
         }
 
         private void PaintBorder(Border border, GrayscaleLearnCellRole role)
         {
-            border.BorderBrush = ResolveBrush(role);
+            if (role == GrayscaleLearnCellRole.Default)
+            {
+                border.SetResourceReference(Border.BorderBrushProperty, "OpenVision.Workbench.FieldBorderBrush");
+            }
+            else
+            {
+                border.BorderBrush = ResolveBrush(role);
+            }
             border.BorderThickness = role == GrayscaleLearnCellRole.Default ? new Thickness(1) : new Thickness(2);
         }
 
@@ -472,7 +479,7 @@ namespace OpenVisionLab
                 GrayscaleLearnCellRole.Candidate => animationCandidateBrush,
                 GrayscaleLearnCellRole.Pass => animationPassBrush,
                 GrayscaleLearnCellRole.Warning => animationWarningBrush,
-                _ => new SolidColorBrush(Color.FromRgb(209, 213, 219))
+                _ => (Brush)FindResource("OpenVision.Workbench.FieldBorderBrush")
             };
         }
 

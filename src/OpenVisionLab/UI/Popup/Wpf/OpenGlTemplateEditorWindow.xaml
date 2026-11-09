@@ -5,7 +5,7 @@
         xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
         xmlns:imageCanvasViews="clr-namespace:OpenVisionLab.ImageCanvas.Views;assembly=OpenVisionLab.ImageCanvas"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
-        Title="Template registration"
+        Title="{DynamicResource TemplateEditor.Title}"
         Width="1040"
         Height="700"
         MinWidth="840"
@@ -112,7 +112,7 @@
                                                 Height="18"
                                                 Foreground="#8AD7DA"
                                                 VerticalAlignment="Center" />
-                    <TextBlock Text="Template registration"
+                    <TextBlock Text="{DynamicResource TemplateEditor.Title}"
                                Foreground="#F5FAFC"
                                FontFamily="Segoe UI"
                                FontWeight="SemiBold"
@@ -122,13 +122,13 @@
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal">
-                    <Button Style="{StaticResource TemplateChromeButtonStyle}" ToolTip="Minimize" Click="Minimize_Click">
+                    <Button Style="{StaticResource TemplateChromeButtonStyle}" ToolTip="{DynamicResource Common.Minimize}" Click="Minimize_Click">
                         <iconPacks:PackIconMaterial Kind="WindowMinimize" Width="15" Height="15" />
                     </Button>
-                    <Button Style="{StaticResource TemplateChromeButtonStyle}" ToolTip="Maximize" Click="MaximizeRestore_Click">
+                    <Button Style="{StaticResource TemplateChromeButtonStyle}" ToolTip="{DynamicResource Common.Maximize}" Click="MaximizeRestore_Click">
                         <iconPacks:PackIconMaterial x:Name="maximizeIcon" Kind="WindowMaximize" Width="14" Height="14" />
                     </Button>
-                    <Button Style="{StaticResource TemplateChromeButtonStyle}" ToolTip="Close" Click="Cancel_Click">
+                    <Button Style="{StaticResource TemplateChromeButtonStyle}" ToolTip="{DynamicResource Common.Close}" Click="Cancel_Click">
                         <iconPacks:PackIconMaterial Kind="Close" Width="16" Height="16" />
                     </Button>
                 </StackPanel>
@@ -198,13 +198,13 @@
                             CornerRadius="3"
                             Padding="12,10">
                         <StackPanel>
-                            <TextBlock Text="Template ROI"
+                            <TextBlock Text="{DynamicResource TemplateEditor.Roi}"
                                        FontFamily="Segoe UI"
                                        FontWeight="SemiBold"
                                        FontSize="13"
                                        Foreground="{StaticResource OpenVision.TextBrush}" />
                             <TextBlock x:Name="statusText"
-                                       Text="Ready"
+                                       Text="{DynamicResource RoiEditor.Ready}"
                                        Margin="0,6,0,0"
                                        TextWrapping="Wrap"
                                        FontFamily="Segoe UI"
@@ -229,7 +229,7 @@
                                 <RowDefinition Height="8" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
-                            <TextBlock Text="Selection"
+                            <TextBlock Text="{DynamicResource RoiEditor.Selection}"
                                        FontFamily="Segoe UI"
                                        FontSize="12"
                                        FontWeight="SemiBold"
@@ -267,53 +267,53 @@
                                     <ColumnDefinition Width="4" />
                                     <ColumnDefinition Width="30" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Text="Rotation"
+                                <TextBlock Text="{DynamicResource TemplateEditor.Rotation}"
                                            Style="{StaticResource TemplateLabelStyle}" />
                                 <TextBox x:Name="txtRotation" MinWidth="84"
                                          Grid.Column="1"
                                          Style="{StaticResource TemplateFieldStyle}"
                                          IsReadOnly="False"
-                                         ToolTip="Selected ROI rotation angle. Drag the rotation handle beside the ROI or enter a value."
+                                         ToolTip="{DynamicResource TemplateEditor.RotationHint}"
                                          TextChanged="RotationText_TextChanged" />
                                 <Button Grid.Column="3"
                                         Style="{StaticResource TemplateToolButtonStyle}"
                                         Padding="0"
-                                        ToolTip="Rotate ROI left 90 degrees"
+                                        ToolTip="{DynamicResource TemplateEditor.RotateLeft}"
                                         Click="RotateLeft_Click">
                                     <TextBlock Text="-90" />
                                 </Button>
                                 <Button Grid.Column="5"
                                         Style="{StaticResource TemplateToolButtonStyle}"
                                         Padding="0"
-                                        ToolTip="Rotate ROI right 90 degrees"
+                                        ToolTip="{DynamicResource TemplateEditor.RotateRight}"
                                         Click="RotateRight_Click">
                                     <TextBlock Text="+90" />
                                 </Button>
                                 <Button Grid.Column="7"
                                         Style="{StaticResource TemplateToolButtonStyle}"
                                         Padding="0"
-                                        ToolTip="Reset ROI rotation"
+                                        ToolTip="{DynamicResource TemplateEditor.ResetRotation}"
                                         Click="ResetRotation_Click">
                                     <TextBlock Text="0" />
                                 </Button>
                             </Grid>
                             <UniformGrid Grid.Row="6" Columns="3">
-                                <Button Style="{StaticResource TemplateToolButtonStyle}" Margin="0,0,6,0" ToolTip="Fit image to view" Click="FitView_Click">
+                                <Button Style="{StaticResource TemplateToolButtonStyle}" Margin="0,0,6,0" ToolTip="{DynamicResource TemplateEditor.FitHint}" Click="FitView_Click">
                                     <StackPanel Orientation="Horizontal">
                                         <iconPacks:PackIconMaterial Kind="Fullscreen" Width="14" Height="14" Margin="0,0,5,0" />
-                                        <TextBlock Text="Fit" />
+                                        <TextBlock Text="{DynamicResource TemplateEditor.Fit}" />
                                     </StackPanel>
                                 </Button>
-                                <Button Style="{StaticResource TemplateToolButtonStyle}" Margin="0,0,6,0" ToolTip="Center template ROI" Click="CenterRoi_Click">
+                                <Button Style="{StaticResource TemplateToolButtonStyle}" Margin="0,0,6,0" ToolTip="{DynamicResource TemplateEditor.CenterHint}" Click="CenterRoi_Click">
                                     <StackPanel Orientation="Horizontal">
                                         <iconPacks:PackIconMaterial Kind="ImageFilterCenterFocus" Width="14" Height="14" Margin="0,0,5,0" />
-                                        <TextBlock Text="Center" />
+                                        <TextBlock Text="{DynamicResource RoiEditor.Center}" />
                                     </StackPanel>
                                 </Button>
-                                <Button Style="{StaticResource TemplateToolButtonStyle}" ToolTip="Use full image" Click="FullRoi_Click">
+                                <Button Style="{StaticResource TemplateToolButtonStyle}" ToolTip="{DynamicResource TemplateEditor.FullHint}" Click="FullRoi_Click">
                                     <StackPanel Orientation="Horizontal">
                                         <iconPacks:PackIconMaterial Kind="CropFree" Width="14" Height="14" Margin="0,0,5,0" />
-                                        <TextBlock Text="Full" />
+                                        <TextBlock Text="{DynamicResource RoiEditor.Full}" />
                                     </StackPanel>
                                 </Button>
                             </UniformGrid>
@@ -332,7 +332,7 @@
                                 <RowDefinition Height="8" />
                                 <RowDefinition Height="150" />
                             </Grid.RowDefinitions>
-                            <TextBlock Text="Pattern Preview"
+                            <TextBlock Text="{DynamicResource RoiEditor.PatternPreview}"
                                        FontFamily="Segoe UI"
                                        FontSize="12"
                                        FontWeight="SemiBold"
@@ -345,7 +345,7 @@
                                 <Grid>
                                     <Image x:Name="patternPreviewImage" Stretch="Uniform" />
                                     <TextBlock x:Name="patternPreviewEmptyText"
-                                               Text="No pattern preview"
+                                               Text="{DynamicResource TemplateEditor.NoPreview}"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center"
                                                FontFamily="Segoe UI"
@@ -370,7 +370,7 @@
                 </Grid.ColumnDefinitions>
                 <TextBlock x:Name="footerText"
                            Grid.Column="0"
-                           Text="Ready"
+                           Text="{DynamicResource RoiEditor.Ready}"
                            VerticalAlignment="Center"
                            Margin="14,0,0,0"
                            FontFamily="Segoe UI"
@@ -381,7 +381,7 @@
                         Click="Cancel_Click">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <iconPacks:PackIconMaterial Kind="Close" Width="14" Height="14" Margin="0,0,6,0" />
-                        <TextBlock Text="Cancel" />
+                        <TextBlock Text="{DynamicResource Common.Cancel}" />
                     </StackPanel>
                 </Button>
                 <Button Grid.Column="3"
@@ -389,7 +389,7 @@
                         Click="Ok_Click">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <iconPacks:PackIconMaterial Kind="Check" Width="15" Height="15" Margin="0,0,7,0" />
-                        <TextBlock Text="Register" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                        <TextBlock Text="{DynamicResource TemplateEditor.Register}" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                     </StackPanel>
                 </Button>
             </Grid>

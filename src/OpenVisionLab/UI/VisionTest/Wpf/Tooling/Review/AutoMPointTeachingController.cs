@@ -30,6 +30,7 @@ namespace OpenVisionLab
         private string analyzedRepresentativeDefinition = string.Empty;
         private string appliedTemplatePath = string.Empty;
         private bool disposed;
+        private readonly VisionToolLanguageChangeController languageChangeController;
 
         internal AutoMPointTeachingController(
             AutoMPointTeachingPanel panel,
@@ -43,6 +44,7 @@ namespace OpenVisionLab
             panel.ReportButton.Click += ExportReport;
             panel.UsePatternButton.Click += UseSelectedPattern;
             panel.CandidateList.SelectionChanged += CandidateSelectionChanged;
+            languageChangeController = VisionToolLanguageChangeController.Attach(RefreshLocalization);
             ClearAnalysis();
             UpdateRepresentativeCount();
         }
@@ -73,9 +75,7 @@ namespace OpenVisionLab
                     .Distinct(StringComparer.OrdinalIgnoreCase));
             ClearAnalysis();
             UpdateRepresentativeCount();
-            panel.StatusText.Text = string.Format(
-                CultureInfo.CurrentCulture,
-                OpenVisionLanguageService.T("VisionTool.AutoMPoint.RepresentativeLoadedFormat"),
+            panel.SetStatus("VisionTool.AutoMPoint.RepresentativeLoadedFormat",
                 representativeImagePaths.Count);
         }
 
@@ -85,7 +85,7 @@ namespace OpenVisionLab
                 || SelectedCandidate is not AutoMPointCandidateResult candidate
                 || candidate.RepresentativeImageCount <= 0)
             {
-                panel.StatusText.Text = OpenVisionLanguageService.T("VisionTool.AutoMPoint.NoSelection");
+                panel.SetStatus("VisionTool.AutoMPoint.NoSelection");
                 return false;
             }
 
@@ -94,7 +94,7 @@ namespace OpenVisionLab
             if (!IsCurrentAnalysis(currentDefinition))
             {
                 panel.ReportButton.IsEnabled = false;
-                panel.StatusText.Text = OpenVisionLanguageService.T("VisionTool.AutoMPoint.Changed");
+                panel.SetStatus("VisionTool.AutoMPoint.Changed");
                 return false;
             }
 
@@ -105,12 +105,7 @@ namespace OpenVisionLab
                 analyzedDefinition,
                 reportPath,
                 out string error);
-            panel.StatusText.Text = string.Format(
-                CultureInfo.CurrentCulture,
-                OpenVisionLanguageService.T(exported
-                    ? "VisionTool.AutoMPoint.ReportExportedFormat"
-                    : "VisionTool.AutoMPoint.ReportExportFailedFormat"),
-                exported ? Path.GetFullPath(reportPath) : error);
+            panel.SetStatus(exported ? "VisionTool.AutoMPoint.ReportExportedFormat" : "VisionTool.AutoMPoint.ReportExportFailedFormat", exported ? Path.GetFullPath(reportPath) : error);
             return exported;
         }
 
@@ -124,6 +119,7 @@ namespace OpenVisionLab
             panel.ReportButton.Click -= ExportReport;
             panel.UsePatternButton.Click -= UseSelectedPattern;
             panel.CandidateList.SelectionChanged -= CandidateSelectionChanged;
+            languageChangeController.Dispose();
             sourceBitmap?.Dispose();
             sourceBitmap = null;
         }
@@ -137,14 +133,14 @@ namespace OpenVisionLab
         {
             if (sourceBitmap == null)
             {
-                panel.StatusText.Text = OpenVisionLanguageService.T("VisionTool.AutoMPoint.NoImage");
+                panel.SetStatus("VisionTool.AutoMPoint.NoImage");
                 return;
             }
 
             panel.AnalyzeButton.IsEnabled = false;
             panel.UsePatternButton.IsEnabled = false;
             Mouse.OverrideCursor = Cursors.Wait;
-            panel.StatusText.Text = OpenVisionLanguageService.T("VisionTool.AutoMPoint.Analyzing");
+            panel.SetStatus("VisionTool.AutoMPoint.Analyzing");
             panel.CandidateList.Items.Clear();
 
             List<Mat> representativeImages = new List<Mat>();
@@ -189,34 +185,19 @@ namespace OpenVisionLab
                 }
 
                 AutoMPointCandidateResult best = tool.results.FirstOrDefault();
-                panel.StatusText.Text = execution?.Success == true
-                    && best?.RepresentativeImageCount > 0
-                    ? string.Format(
-                        CultureInfo.CurrentCulture,
-                        OpenVisionLanguageService.T("VisionTool.AutoMPoint.RepresentativeSuccessFormat"),
-                        best.RepresentativeImageCount,
-                        best.RepresentativeSuccessCount,
-                        best.RepresentativeSuccessRate * 100d,
-                        best.Rank)
-                    : execution?.Success == true
-                        ? string.Format(
-                            CultureInfo.CurrentCulture,
-                            OpenVisionLanguageService.T("VisionTool.AutoMPoint.SuccessFormat"),
-                            panel.CandidateList.Items.Count)
-                        : string.Format(
-                            CultureInfo.CurrentCulture,
-                            OpenVisionLanguageService.T("VisionTool.AutoMPoint.FailedFormat"),
-                            execution?.ErrorName ?? VisionToolErrorCode.Unknown.ToString(),
-                            execution?.Message ?? string.Empty);
+                if (execution?.Success == true && best?.RepresentativeImageCount > 0)
+                {
+                    panel.SetStatus("VisionTool.AutoMPoint.RepresentativeSuccessFormat", best.RepresentativeImageCount, best.RepresentativeSuccessCount, best.RepresentativeSuccessRate * 100d, best.Rank);
+                }
+                else if (execution?.Success == true) panel.SetStatus("VisionTool.AutoMPoint.SuccessFormat", panel.CandidateList.Items.Count);
+                else panel.SetStatus("VisionTool.AutoMPoint.FailedFormat", execution?.ErrorName ?? VisionToolErrorCode.Unknown.ToString(), execution?.Message ?? string.Empty);
             }
             catch (Exception exception)
             {
                 analyzedSourceRevision = -1;
                 analyzedDefinition = string.Empty;
                 analyzedRepresentativeDefinition = string.Empty;
-                panel.StatusText.Text = string.Format(
-                    CultureInfo.CurrentCulture,
-                    OpenVisionLanguageService.T("VisionTool.AutoMPoint.FailedFormat"),
+                panel.SetStatus("VisionTool.AutoMPoint.FailedFormat",
                     exception.GetType().Name,
                     exception.GetBaseException().Message);
             }
@@ -245,7 +226,7 @@ namespace OpenVisionLab
             SaveFileDialog dialog = new SaveFileDialog
             {
                 Title = OpenVisionLanguageService.T("VisionTool.AutoMPoint.ExportReport"),
-                Filter = "HTML report|*.html",
+                Filter = OpenVisionLanguageService.T("VisionTool.AutoMPoint.ReportFilter"),
                 DefaultExt = ".html",
                 AddExtension = true,
                 FileName = "OpenVisionLab_AutoMPoint_"
@@ -262,7 +243,7 @@ namespace OpenVisionLab
         {
             if (sourceBitmap == null || SelectedCandidate is not AutoMPointCandidateResult candidate)
             {
-                panel.StatusText.Text = OpenVisionLanguageService.T("VisionTool.AutoMPoint.NoSelection");
+                panel.SetStatus("VisionTool.AutoMPoint.NoSelection");
                 return;
             }
 
@@ -271,7 +252,7 @@ namespace OpenVisionLab
             if (!IsCurrentAnalysis(currentDefinition))
             {
                 panel.UsePatternButton.IsEnabled = false;
-                panel.StatusText.Text = OpenVisionLanguageService.T("VisionTool.AutoMPoint.Changed");
+                panel.SetStatus("VisionTool.AutoMPoint.Changed");
                 return;
             }
 
@@ -281,7 +262,7 @@ namespace OpenVisionLab
                 string path = PropertyGridEditorFactory.SaveTemplateImageForTeaching(source, candidate.PatternRoi);
                 if (string.IsNullOrWhiteSpace(path))
                 {
-                    panel.StatusText.Text = OpenVisionLanguageService.T("VisionTool.AutoMPoint.SaveFailed");
+                    panel.SetStatus("VisionTool.AutoMPoint.SaveFailed");
                     return;
                 }
 
@@ -293,17 +274,13 @@ namespace OpenVisionLab
                     property.ReloadTemplateImage();
                 });
                 appliedTemplatePath = path;
-                panel.StatusText.Text = string.Format(
-                    CultureInfo.CurrentCulture,
-                    OpenVisionLanguageService.T("VisionTool.AutoMPoint.AppliedFormat"),
+                panel.SetStatus("VisionTool.AutoMPoint.AppliedFormat",
                     candidate.Rank,
                     path);
             }
             catch (Exception exception)
             {
-                panel.StatusText.Text = string.Format(
-                    CultureInfo.CurrentCulture,
-                    OpenVisionLanguageService.T("VisionTool.AutoMPoint.FailedFormat"),
+                panel.SetStatus("VisionTool.AutoMPoint.FailedFormat",
                     exception.GetType().Name,
                     exception.GetBaseException().Message);
             }
@@ -314,7 +291,7 @@ namespace OpenVisionLab
             OpenFileDialog dialog = new OpenFileDialog
             {
                 Title = OpenVisionLanguageService.T("VisionTool.AutoMPoint.RepresentativeImages"),
-                Filter = "Image files|*.bmp;*.png;*.jpg;*.jpeg;*.tif;*.tiff|All files|*.*",
+                Filter = OpenVisionLanguageService.T("VisionTool.AutoMPoint.ImageFilter"),
                 Multiselect = true,
                 CheckFileExists = true
             };
@@ -343,15 +320,21 @@ namespace OpenVisionLab
             panel.CandidateList.Items.Clear();
             panel.UsePatternButton.IsEnabled = false;
             panel.ReportButton.IsEnabled = false;
-            panel.StatusText.Text = OpenVisionLanguageService.T("VisionTool.AutoMPoint.Ready");
+            panel.SetStatus("VisionTool.AutoMPoint.Ready");
         }
 
         private void UpdateRepresentativeCount()
         {
-            panel.RepresentativeCountText.Text = string.Format(
-                CultureInfo.CurrentCulture,
-                OpenVisionLanguageService.T("VisionTool.AutoMPoint.RepresentativeCountFormat"),
-                representativeImagePaths.Count);
+            panel.SetRepresentativeCount(representativeImagePaths.Count);
+        }
+
+        private void RefreshLocalization()
+        {
+            UpdateRepresentativeCount();
+            foreach (ListBoxItem item in panel.CandidateList.Items)
+            {
+                if (item.Tag is AutoMPointCandidateResult candidate) item.Content = FormatCandidate(candidate);
+            }
         }
 
         private void UpdateReportButton()
@@ -465,7 +448,7 @@ namespace OpenVisionLab
             {
                 return string.Format(
                     CultureInfo.CurrentCulture,
-                    "#{0} BEST | ROI {1},{2},{3},{4} | Samples {5}/{6} ({7:0.0}%) | Avg {8:0.0} | Umin {9:0.000}",
+                    OpenVisionLanguageService.T("VisionTool.AutoMPoint.RepresentativeCandidateFormat"),
                     candidate.Rank,
                     roi.X,
                     roi.Y,
@@ -480,7 +463,7 @@ namespace OpenVisionLab
 
             return string.Format(
                 CultureInfo.CurrentCulture,
-                "#{0} | ROI {1},{2},{3},{4} | U {5:0.000} | Err {6:0.00}px | P95 {7:0.0}ms",
+                OpenVisionLanguageService.T("VisionTool.AutoMPoint.CandidateFormat"),
                 candidate.Rank,
                 roi.X,
                 roi.Y,

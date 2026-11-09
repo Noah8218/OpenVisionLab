@@ -4,7 +4,11 @@
              xmlns:local="clr-namespace:OpenVisionLab"
              Focusable="False">
     <UserControl.Resources>
-        <local:SharedResourceDictionary Source="LearnResources.xaml" />
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <local:SharedResourceDictionary Source="LearnResources.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
     </UserControl.Resources>
     <Grid>
             <Border x:Name="geometryTopicPanel"
@@ -144,7 +148,7 @@
                                                Style="{StaticResource LearnMutedTextStyle}" />
                                     <Canvas Width="250"
                                             Height="112"
-                                            Background="#F8FAFC">
+                                            Background="{DynamicResource OpenVision.Workbench.PanelBrush}">
                                         <Rectangle x:Name="geometrySourceBox"
                                                    Width="92"
                                                    Height="54"
@@ -153,28 +157,32 @@
                                                    Stroke="#94A3B8"
                                                    StrokeDashArray="4 3"
                                                    StrokeThickness="2"
-                                                   Fill="#FFFFFF" />
-                                        <Border x:Name="geometryTargetBox"
-                                                Width="92"
-                                                Height="54"
-                                                Canvas.Left="79"
-                                                Canvas.Top="30"
-                                                Background="#2563EB"
-                                                Opacity="0.78"
-                                                CornerRadius="5"
-                                                RenderTransformOrigin="0.5,0.5">
-                                            <Border.RenderTransform>
+                                                   Fill="{DynamicResource OpenVision.Workbench.RaisedBrush}" />
+                                        <Grid Width="92"
+                                              Height="54"
+                                              Canvas.Left="79"
+                                              Canvas.Top="30"
+                                              RenderTransformOrigin="0.5,0.5">
+                                            <Grid.RenderTransform>
                                                 <TransformGroup>
                                                     <ScaleTransform x:Name="geometryScaleTransform" />
                                                     <RotateTransform x:Name="geometryRotateTransform" />
                                                 </TransformGroup>
-                                            </Border.RenderTransform>
-                                            <TextBlock Text="ROI"
-                                                       Foreground="White"
-                                                       FontWeight="SemiBold"
-                                                       HorizontalAlignment="Center"
-                                                       VerticalAlignment="Center" />
-                                        </Border>
+                                            </Grid.RenderTransform>
+                                            <Border x:Name="geometryTargetBox"
+                                                    Width="92" Height="54"
+                                                    Background="#2563EB"
+                                                    Opacity="0.78"
+                                                    CornerRadius="5" />
+                                            <Border Background="{DynamicResource OpenVision.Workbench.PanelBrush}"
+                                                    Padding="3,1"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center">
+                                                <TextBlock Text="ROI"
+                                                           Foreground="{DynamicResource OpenVision.Workbench.TextBrush}"
+                                                           FontWeight="SemiBold" />
+                                            </Border>
+                                        </Grid>
                                     </Canvas>
                                 </StackPanel>
                             </Border>
@@ -214,7 +222,7 @@
                                                    FontWeight="SemiBold" />
                                         <TextBlock x:Name="txtGeometryAngle"
                                                    Grid.Column="1"
-                                                   Foreground="{StaticResource VisionTool.SecondaryTextBrush}" />
+                                                   Foreground="{DynamicResource OpenVision.Workbench.SecondaryTextBrush}" />
                                     </Grid>
                                     <Slider x:Name="geometryAngleSlider"
                                             Margin="0,8,0,0"
@@ -237,7 +245,7 @@
                                                    FontWeight="SemiBold" />
                                         <TextBlock x:Name="txtGeometryScale"
                                                    Grid.Column="1"
-                                                   Foreground="{StaticResource VisionTool.SecondaryTextBrush}" />
+                                                   Foreground="{DynamicResource OpenVision.Workbench.SecondaryTextBrush}" />
                                     </Grid>
                                     <Slider x:Name="geometryScaleSlider"
                                             Margin="0,8,0,0"

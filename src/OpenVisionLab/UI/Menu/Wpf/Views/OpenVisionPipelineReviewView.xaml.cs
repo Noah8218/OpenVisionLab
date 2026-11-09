@@ -29,6 +29,8 @@ namespace OpenVisionLab
         private IReadOnlyList<VisionPipelineInstanceResult> instanceResults =
             Array.Empty<VisionPipelineInstanceResult>();
         private bool suppressInstanceSelection;
+        private EdgeBasedMatchingDiagnosticEvidence localizedMatcherEvidence;
+        private IReadOnlyDictionary<string, double> localizedMatcherMetrics;
         private IReadOnlyList<VisionPipelineGeometryFeatureResult> geometryResults = Array.Empty<VisionPipelineGeometryFeatureResult>();
         private bool suppressGeometrySelection;
         private VisionPipelineCircleEvidence circleEvidence;
@@ -41,6 +43,8 @@ namespace OpenVisionLab
         private bool suppressScaleCalibrationSelection;
         private bool suppressFixtureConsumerSelection;
         private bool hasScaleCalibrationRecord;
+        private string scaleCalibrationStatusKey = "PipelineReview.ScaleCalibration.Waiting";
+        private object[] scaleCalibrationStatusArguments = Array.Empty<object>();
         private OpenVisionRecipeRunEvidence historicalRunEvidence;
         private readonly OpenVisionPipelineReviewLayoutController layoutController;
         private readonly OpenVisionPipelineReviewImageResourceOwner imageResources =
@@ -199,6 +203,32 @@ namespace OpenVisionLab
 
         private void ApplyLocalization()
         {
+            foreach (OpenVisionLocalizationEntry entry in OpenVisionLanguageService.GetDefaultEntries("PipelineReview.")) Resources[entry.Key] = OpenVisionLanguageService.T(entry.Key);
+            localizedDetailColumn0.Header = T("PipelineReview.DetailColumn.Id", "ID");
+            localizedDetailColumn1.Header = T("PipelineReview.DetailColumn.State", "State");
+            localizedDetailColumn2.Header = T("PipelineReview.DetailColumn.Score", "Score");
+            localizedDetailColumn3.Header = T("PipelineReview.DetailColumn.CenterX", "Center X");
+            localizedDetailColumn4.Header = T("PipelineReview.DetailColumn.CenterY", "Center Y");
+            localizedDetailColumn5.Header = T("PipelineReview.DetailColumn.Angle", "Angle");
+            localizedDetailColumn6.Header = T("PipelineReview.DetailColumn.Scale", "Scale");
+            localizedDetailColumn7.Header = T("PipelineReview.DetailColumn.Mean", "Mean");
+            localizedDetailColumn8.Header = T("PipelineReview.DetailColumn.Valid", "Valid");
+            localizedDetailColumn9.Header = T("PipelineReview.DetailColumn.RejectReason", "Reject reason");
+            localizedDetailColumn10.Header = T("PipelineReview.DetailColumn.Group", "Group");
+            localizedDetailColumn11.Header = T("PipelineReview.DetailColumn.Diagnostic", "Diagnostic");
+            localizedDetailColumn12.Header = T("PipelineReview.DetailColumn.CurrentEvidence", "Current run evidence");
+            localizedDetailColumn13.Header = T("PipelineReview.DetailColumn.Feature", "Step / Feature");
+            localizedDetailColumn14.Header = T("PipelineReview.DetailColumn.Kind", "Kind");
+            localizedDetailColumn15.Header = T("PipelineReview.DetailColumn.Geometry", "Geometry");
+            localizedDetailColumn16.Header = T("PipelineReview.DetailColumn.CoordinateLayer", "Coordinate layer");
+            localizedDetailColumn17.Header = T("PipelineReview.DetailColumn.FitEvidence", "Fit evidence");
+            localizedDetailColumn18.Header = T("PipelineReview.DetailColumn.Number", "#");
+            localizedDetailColumn19.Header = T("PipelineReview.DetailColumn.Angle", "Angle");
+            localizedDetailColumn20.Header = T("PipelineReview.DetailColumn.State", "State");
+            localizedDetailColumn21.Header = T("PipelineReview.DetailColumn.EdgeGv", "Edge GV");
+            localizedDetailColumn22.Header = T("PipelineReview.DetailColumn.Residual", "Residual");
+            localizedDetailColumn23.Header = T("PipelineReview.DetailColumn.Reason", "Reason");
+            RefreshDetailLocalization();
             lblStepFlow.Text = T("PipelineReview.StepFlow", "Step Flow");
             lblStep.Text = T("PipelineReview.Step", "Step");
             lblRoute.Text = T("PipelineReview.Route", "Route");
@@ -305,6 +335,32 @@ namespace OpenVisionLab
             {
                 ViewModel.SetHistoricalRunContext(historicalRunEvidence);
                 ApplyHistoricalRunReadOnlyPresentation();
+            }
+        }
+
+        private void RefreshDetailLocalization()
+        {
+            instanceResultCountText.Text = TF("PipelineReview.InstanceInspector.CountFormat", "Instances {0} / OK {1} / NG {2}", instanceResults.Count, instanceResults.Count(item => item.Accepted), instanceResults.Count(item => !item.Accepted));
+            geometryResultCountText.Text = TF("PipelineReview.GeometryReview.CountFormat", "Typed features {0} / same-run, pixel-only", geometryResults.Count);
+            if (!hasScaleCalibrationRecord) txtScaleCalibrationResult.Text = T("PipelineReview.ScaleCalibration.NotTaught", "Not taught");
+            if (!string.IsNullOrEmpty(scaleCalibrationStatusKey)) txtScaleCalibrationStatus.Text = string.Format(CultureInfo.CurrentCulture, OpenVisionLanguageService.T(scaleCalibrationStatusKey), scaleCalibrationStatusArguments);
+            if (circleEvidence == null) circleEvidenceSummaryText.Text = T("PipelineReview.CircleEvidence.NoEvidence", "Run Review explicitly to retain radial sample evidence.");
+            else
+            {
+                circleEvidenceSummaryText.Text = OpenVisionPipelineReviewCircleEvidencePresenter.FormatSummary(circleEvidence);
+                circleResidualSignal = OpenVisionPipelineReviewCircleEvidencePresenter.CreateResidualEvidence(circleEvidence, imageResources.CircleSourceImage, imageResources.ObjectResultBaseImage);
+            }
+            geometryResultsGrid.Items.Refresh();
+            circleSamplesGrid.Items.Refresh();
+            RefreshCircleEvidencePlot();
+            if (imageResources.MatcherDiagnosticState == null) matcherDiagnosticSummaryText.Text = T("PipelineReview.MatcherDiagnostics.NoEvidence", "Run Review explicitly to retain model, pyramid, candidate, and decision diagnostics.");
+            else
+            {
+                object selectedTab = reviewDetailTabs.SelectedItem;
+                int selectedRow = matcherDiagnosticGrid.SelectedIndex;
+                SetMatcherDiagnostics(true, localizedMatcherEvidence, localizedMatcherMetrics, imageResources.ObjectMetricSourceImage);
+                matcherDiagnosticGrid.SelectedIndex = selectedRow;
+                reviewDetailTabs.SelectedItem = selectedTab;
             }
         }
 
@@ -526,8 +582,7 @@ namespace OpenVisionLab
                     imageResources.CircleSourceImage,
                     resultImage);
             showCircleProfile = false;
-            circleEvidenceSummaryText.Text = circleEvidence?.SummaryText
-                ?? T(
+            circleEvidenceSummaryText.Text = circleEvidence != null ? OpenVisionPipelineReviewCircleEvidencePresenter.FormatSummary(circleEvidence) : T(
                     "PipelineReview.CircleEvidence.NoEvidence",
                     "Run Review explicitly to retain radial sample evidence.");
             circleEvidenceSummaryText.ToolTip = circleEvidenceSummaryText.Text;
@@ -562,6 +617,8 @@ namespace OpenVisionLab
             IReadOnlyDictionary<string, double> metrics,
             Bitmap sourceImage)
         {
+            localizedMatcherEvidence = evidence;
+            localizedMatcherMetrics = metrics;
             imageResources.ReplaceMatcherDiagnosticState(OpenVisionPipelineReviewMatcherDiagnosticPresenter.Create(
                 evidence,
                 metrics,
@@ -774,11 +831,11 @@ namespace OpenVisionLab
                 !showCircleProfile && selected != null ? selected.Number : null);
             circlePlotCaptionText.Text = showCircleProfile
                 ? selected == null
-                    ? "Select one radial scan."
-                    : $"Scan {selected.Number} / {selected.AngleDeg:0.###} deg / intensity + signed response"
+                    ? T("PipelineReview.CircleEvidence.SelectScan", "Select one radial scan.")
+                    : TF("PipelineReview.CircleEvidence.ProfileCaptionFormat", "Scan {0} / {1:0.###} deg / intensity + signed response", selected.Number, selected.AngleDeg)
                 : selected == null
-                    ? "Absolute fitted-radius residual by scan. Click to select."
-                    : $"Scan {selected.Number} / {selected.StateText} / {selected.ResidualText} px"
+                    ? T("PipelineReview.CircleEvidence.ResidualGuide", "Absolute fitted-radius residual by scan. Click to select.")
+                    : TF("PipelineReview.CircleEvidence.ResidualCaptionFormat", "Scan {0} / {1} / {2} px", selected.Number, OpenVisionPipelineReviewCircleEvidencePresenter.FormatState(selected.StateText), selected.ResidualText)
                         + (string.IsNullOrWhiteSpace(selected.RejectReason)
                             ? string.Empty
                             : " / " + selected.RejectReason);
@@ -848,8 +905,17 @@ namespace OpenVisionLab
             RefreshScaleCalibrationPreview();
         }
 
+        internal void SetScaleCalibrationLocalizedStatus(string key, params object[] arguments)
+        {
+            SetScaleCalibrationStatus(string.Format(CultureInfo.CurrentCulture, OpenVisionLanguageService.T(key), arguments));
+            scaleCalibrationStatusKey = key;
+            scaleCalibrationStatusArguments = arguments;
+        }
+
         public void SetScaleCalibrationStatus(string statusText)
         {
+            scaleCalibrationStatusArguments = Array.Empty<object>();
+            scaleCalibrationStatusKey = string.IsNullOrWhiteSpace(statusText) ? "PipelineReview.ScaleCalibration.Waiting" : OpenVisionLanguageService.GetEntries().FirstOrDefault(entry => entry.Key.StartsWith("PipelineReview.ScaleCalibration.", StringComparison.Ordinal) && (entry.Korean == statusText || entry.English == statusText))?.Key;
             txtScaleCalibrationStatus.Text = string.IsNullOrWhiteSpace(statusText)
                 ? T("PipelineReview.ScaleCalibration.Waiting", "Run Review to obtain two typed points.")
                 : statusText.Trim();
@@ -1234,13 +1300,13 @@ namespace OpenVisionLab
             VisionPipelineGeometryFeatureResult pointB = cmbScalePointB.SelectedItem as VisionPipelineGeometryFeatureResult;
             if (pointA == null || pointB == null)
             {
-                SetScaleCalibrationStatus(T("PipelineReview.ScaleCalibration.InvalidPoint", "Select two valid points."));
+                SetScaleCalibrationLocalizedStatus("PipelineReview.ScaleCalibration.InvalidPoint");
                 return;
             }
 
             if (!OpenVisionPipelineReviewViewRenderService.TryParsePositiveDouble(txtScaleKnownDistance.Text, out double knownDistance))
             {
-                SetScaleCalibrationStatus(T("PipelineReview.ScaleCalibration.InvalidKnownDistance", "Known distance must be a positive number."));
+                SetScaleCalibrationLocalizedStatus("PipelineReview.ScaleCalibration.InvalidKnownDistance");
                 return;
             }
 
@@ -1263,7 +1329,7 @@ namespace OpenVisionLab
         {
             if (cmbScaleTargetStep.SelectedItem is not VisionPipelineScaleTargetOption selectedTarget)
             {
-                SetScaleCalibrationStatus(T("PipelineReview.ScaleCalibration.SelectTarget", "Select one compatible target Step."));
+                SetScaleCalibrationLocalizedStatus("PipelineReview.ScaleCalibration.SelectTarget");
                 return;
             }
 

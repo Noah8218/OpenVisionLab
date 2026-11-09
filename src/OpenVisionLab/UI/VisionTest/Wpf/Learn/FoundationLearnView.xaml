@@ -4,7 +4,11 @@
              xmlns:local="clr-namespace:OpenVisionLab"
              Focusable="False">
     <UserControl.Resources>
-        <local:SharedResourceDictionary Source="LearnResources.xaml" />
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <local:SharedResourceDictionary Source="LearnResources.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
     </UserControl.Resources>
     <Grid>
             <Border x:Name="pixelTopicPanel"
@@ -145,7 +149,7 @@
                                                 CornerRadius="3">
                                             <StackPanel VerticalAlignment="Center">
                                                 <TextBlock Text="G 채널"
-                                                           Foreground="#BDF4C7"
+                                                           Foreground="White"
                                                            FontWeight="SemiBold"
                                                            HorizontalAlignment="Center" />
                                                 <TextBlock Text="110"

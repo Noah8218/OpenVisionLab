@@ -5,22 +5,154 @@
         <local:SharedResourceDictionary Source="../Tooling/Presentation/VisionToolWpfTheme.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
+    <Style TargetType="Button" BasedOn="{StaticResource VisionTool.ButtonStyle}">
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="Height" Value="34" />
+        <Setter Property="Padding" Value="12,2" />
+        <Setter Property="Background" Value="{DynamicResource OpenVision.Workbench.PanelAltBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource OpenVision.Workbench.AccentOnSoftBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource OpenVision.Workbench.AccentBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="FontFamily" Value="{DynamicResource OpenVision.Workbench.FontFamily}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid>
+                        <Border x:Name="buttonChrome" CornerRadius="6"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}">
+                            <ContentPresenter Margin="{TemplateBinding Padding}"
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                              TextElement.Foreground="{TemplateBinding Foreground}"
+                                              RecognizesAccessKey="True" />
+                        </Border>
+                        <Border x:Name="focusCue" Margin="2" CornerRadius="4"
+                                BorderThickness="2" BorderBrush="{DynamicResource OpenVision.Workbench.AccentBrush}"
+                                IsHitTestVisible="False" Visibility="Collapsed" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="buttonChrome" Property="Background" Value="{DynamicResource OpenVision.Workbench.HoverBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="buttonChrome" Property="Background" Value="{DynamicResource OpenVision.Workbench.PressedBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="focusCue" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <Trigger Property="IsDefaulted" Value="True">
+                            <Setter TargetName="buttonChrome" Property="BorderBrush" Value="{DynamicResource OpenVision.Workbench.AccentBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="buttonChrome" Property="Background" Value="{DynamicResource OpenVision.Workbench.PanelAltBrush}" />
+                            <Setter TargetName="buttonChrome" Property="BorderBrush" Value="{DynamicResource OpenVision.Workbench.FieldBorderBrush}" />
+                            <Setter Property="Foreground" Value="{DynamicResource OpenVision.Workbench.MutedTextBrush}" />
+                            <Setter Property="Cursor" Value="Arrow" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="LearnThresholdCheckBoxStyle" TargetType="CheckBox">
+        <Setter Property="Foreground" Value="{DynamicResource OpenVision.Workbench.TextBrush}" />
+        <Setter Property="FontFamily" Value="{DynamicResource OpenVision.Workbench.FontFamily}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CheckBox">
+                    <Grid SnapsToDevicePixels="True">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="18" />
+                            <ColumnDefinition Width="6" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Border x:Name="checkChrome" Width="15" Height="15"
+                                HorizontalAlignment="Left" VerticalAlignment="Center"
+                                Background="{DynamicResource OpenVision.Workbench.PanelAltBrush}"
+                                BorderBrush="{DynamicResource OpenVision.Workbench.FieldBorderBrush}"
+                                BorderThickness="1" CornerRadius="2">
+                            <Path x:Name="checkMark" Width="9" Height="7"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center"
+                                  Data="M 1 3.5 L 3.5 6 L 8 1" Stretch="Fill"
+                                  Stroke="{DynamicResource OpenVision.Workbench.AccentTextBrush}"
+                                  StrokeEndLineCap="Round" StrokeStartLineCap="Round"
+                                  StrokeThickness="2" Opacity="0" />
+                        </Border>
+                        <ContentPresenter Grid.Column="2" VerticalAlignment="Center"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"
+                                          RecognizesAccessKey="True" />
+                        <Border x:Name="focusCue" Grid.ColumnSpan="3" Margin="-2"
+                                BorderBrush="{DynamicResource OpenVision.Workbench.AccentBrush}"
+                                BorderThickness="1" CornerRadius="3"
+                                IsHitTestVisible="False" Visibility="Collapsed" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="checkChrome" Property="Background" Value="{DynamicResource OpenVision.Workbench.HoverBrush}" />
+                            <Setter TargetName="checkChrome" Property="BorderBrush" Value="{DynamicResource OpenVision.Workbench.AccentBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="checkChrome" Property="Background" Value="{DynamicResource OpenVision.Workbench.AccentBrush}" />
+                            <Setter TargetName="checkChrome" Property="BorderBrush" Value="{DynamicResource OpenVision.Workbench.AccentBrush}" />
+                            <Setter TargetName="checkMark" Property="Opacity" Value="1" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="checkChrome" Property="Background" Value="{DynamicResource OpenVision.Workbench.PressedBrush}" />
+                            <Setter TargetName="checkChrome" Property="BorderBrush" Value="{DynamicResource OpenVision.Workbench.AccentBrush}" />
+                            <Setter TargetName="checkChrome" Property="BorderThickness" Value="2" />
+                        </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsPressed" Value="True" />
+                                <Condition Property="IsChecked" Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="checkChrome" Property="Background" Value="{DynamicResource OpenVision.Workbench.AccentHoverBrush}" />
+                        </MultiTrigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="focusCue" Property="Visibility" Value="Visible" />
+                            <Setter TargetName="checkChrome" Property="BorderBrush" Value="{DynamicResource OpenVision.Workbench.AccentBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="{DynamicResource OpenVision.Workbench.MutedTextBrush}" />
+                            <Setter Property="Cursor" Value="Arrow" />
+                            <Setter TargetName="checkChrome" Property="Background" Value="{DynamicResource OpenVision.Workbench.PanelAltBrush}" />
+                            <Setter TargetName="checkChrome" Property="BorderBrush" Value="{DynamicResource OpenVision.Workbench.FieldBorderBrush}" />
+                            <Setter TargetName="checkMark" Property="Stroke" Value="{DynamicResource OpenVision.Workbench.MutedTextBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style x:Key="LearnPanelStyle" TargetType="Border">
-        <Setter Property="Background" Value="{StaticResource VisionTool.PanelBrush}" />
-        <Setter Property="BorderBrush" Value="{StaticResource VisionTool.HeaderBorderBrush}" />
+        <Setter Property="Background" Value="{DynamicResource OpenVision.Workbench.PanelAltBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource OpenVision.Workbench.FieldBorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="6" />
         <Setter Property="Padding" Value="14" />
     </Style>
 
     <Style x:Key="LearnMutedTextStyle" TargetType="TextBlock">
-        <Setter Property="Foreground" Value="{StaticResource VisionTool.SecondaryTextBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource OpenVision.Workbench.SecondaryTextBrush}" />
         <Setter Property="FontSize" Value="12" />
         <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
 
     <Style x:Key="LearnTopicItemStyle" TargetType="ListBoxItem">
-        <Setter Property="Foreground" Value="{StaticResource VisionTool.PrimaryTextBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource OpenVision.Workbench.TextBrush}" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Padding" Value="6,4" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -34,18 +166,98 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="Background" Value="{StaticResource VisionTool.HoverBrush}" />
+                            <Setter Property="Background" Value="{DynamicResource OpenVision.Workbench.HoverBrush}" />
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter Property="Background" Value="{StaticResource VisionTool.SelectionBrush}" />
-                            <Setter Property="Foreground" Value="{StaticResource VisionTool.SelectedButtonTextBrush}" />
+                            <Setter Property="Background" Value="{DynamicResource OpenVision.Workbench.AccentSoftBrush}" />
+                            <Setter Property="Foreground" Value="{DynamicResource OpenVision.Workbench.TextBrush}" />
                             <Setter Property="FontWeight" Value="SemiBold" />
-                            <Setter TargetName="topicChrome" Property="BorderBrush" Value="{StaticResource VisionTool.AccentBrush}" />
+                            <Setter TargetName="topicChrome" Property="BorderBrush" Value="{DynamicResource OpenVision.Workbench.AccentBrush}" />
                         </Trigger>
                         <Trigger Property="IsKeyboardFocused" Value="True">
-                            <Setter TargetName="topicChrome" Property="BorderBrush" Value="{StaticResource VisionTool.PrimaryTextBrush}" />
+                            <Setter TargetName="topicChrome" Property="BorderBrush" Value="{DynamicResource OpenVision.Workbench.TextBrush}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="Separator">
+        <Setter Property="Background" Value="{DynamicResource OpenVision.Workbench.LineBrush}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Separator">
+                    <Border Height="1" Background="{TemplateBinding Background}" SnapsToDevicePixels="True" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <SolidColorBrush x:Key="ExpanderContentBackground" Color="{DynamicResource OpenVision.Workbench.PanelAltBrush.Color}" />
+    <SolidColorBrush x:Key="ExpanderHeaderBorderPointerOverBrush" Color="{DynamicResource OpenVision.Workbench.AccentBrush.Color}" />
+    <SolidColorBrush x:Key="ExpanderHeaderDisabledForeground" Color="{DynamicResource OpenVision.Workbench.MutedTextBrush.Color}" />
+    <SolidColorBrush x:Key="ExpanderHeaderDisabledBorderBrush" Color="{DynamicResource OpenVision.Workbench.FieldBorderBrush.Color}" />
+    <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}" Color="{DynamicResource OpenVision.Workbench.RaisedBrush.Color}" />
+    <SolidColorBrush x:Key="{x:Static SystemColors.ControlLightBrushKey}" Color="{DynamicResource OpenVision.Workbench.RaisedBrush.Color}" />
+    <SolidColorBrush x:Key="{x:Static SystemColors.ControlDarkBrushKey}" Color="{DynamicResource OpenVision.Workbench.FieldBorderBrush.Color}" />
+    <SolidColorBrush x:Key="{x:Static SystemColors.ControlTextBrushKey}" Color="{DynamicResource OpenVision.Workbench.TextBrush.Color}" />
+    <SolidColorBrush x:Key="{x:Static SystemColors.GrayTextBrushKey}" Color="{DynamicResource OpenVision.Workbench.MutedTextBrush.Color}" />
+
+    <Style x:Key="LearnTabItemStyle" TargetType="TabItem">
+        <Setter Property="Foreground" Value="{DynamicResource OpenVision.Workbench.SecondaryTextBrush}" />
+        <Setter Property="Background" Value="{DynamicResource OpenVision.Workbench.PanelAltBrush}" />
+        <Setter Property="Padding" Value="12,8" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Stretch" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TabItem">
+                    <Border x:Name="tabChrome" Background="{TemplateBinding Background}" BorderBrush="Transparent" BorderThickness="1,1,1,2" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter ContentSource="Header" RecognizesAccessKey="True" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="{DynamicResource OpenVision.Workbench.HoverBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter Property="Background" Value="{DynamicResource OpenVision.Workbench.PanelBrush}" />
+                            <Setter Property="Foreground" Value="{DynamicResource OpenVision.Workbench.TextBrush}" />
+                            <Setter Property="FontWeight" Value="SemiBold" />
+                            <Setter TargetName="tabChrome" Property="BorderBrush" Value="{DynamicResource OpenVision.Workbench.AccentBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="tabChrome" Property="BorderBrush" Value="{DynamicResource OpenVision.Workbench.AccentBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="{DynamicResource OpenVision.Workbench.MutedTextBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="LearnTabControlStyle" TargetType="TabControl">
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Stretch" />
+        <Setter Property="Background" Value="{DynamicResource OpenVision.Workbench.PanelBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource OpenVision.Workbench.TextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource OpenVision.Workbench.FieldBorderBrush}" />
+        <Setter Property="ItemContainerStyle" Value="{StaticResource LearnTabItemStyle}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TabControl">
+                    <Grid KeyboardNavigation.TabNavigation="Local">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <TabPanel IsItemsHost="True" KeyboardNavigation.TabIndex="1" />
+                        <Border Grid.Row="1" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
+                            <ContentPresenter x:Name="PART_SelectedContentHost" ContentSource="SelectedContent" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" KeyboardNavigation.TabIndex="2" />
+                        </Border>
+                    </Grid>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

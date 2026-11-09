@@ -161,10 +161,10 @@ namespace OpenVisionLab
                 Border cell = new()
                 {
                     Margin = new Thickness(1),
-                    BorderBrush = new SolidColorBrush(Color.FromRgb(203, 213, 225)),
-                    BorderThickness = new Thickness(1),
-                    Background = new SolidColorBrush(Color.FromRgb(248, 250, 252))
+                    BorderThickness = new Thickness(1)
                 };
+                cell.SetResourceReference(Border.BorderBrushProperty, "OpenVision.Workbench.FieldBorderBrush");
+                cell.SetResourceReference(Border.BackgroundProperty, "OpenVision.Workbench.PanelBrush");
                 foundationMatGrid.Children.Add(cell);
                 foundationMatCells.Add(cell);
             }
@@ -175,9 +175,14 @@ namespace OpenVisionLab
             for (int i = 0; i < foundationMatCells.Count; i++)
             {
                 FoundationLearnRole role = presenter.GetFoundationCellRole(i);
-                foundationMatCells[i].Background = role == FoundationLearnRole.Default
-                    ? new SolidColorBrush(Color.FromRgb(248, 250, 252))
-                    : ResolveBrush(role);
+                if (role == FoundationLearnRole.Default)
+                {
+                    foundationMatCells[i].SetResourceReference(Border.BackgroundProperty, "OpenVision.Workbench.PanelBrush");
+                }
+                else
+                {
+                    foundationMatCells[i].Background = ResolveBrush(role);
+                }
             }
 
             foundationPointMarker.Visibility = presenter.IsFoundationPointVisible ? Visibility.Visible : Visibility.Collapsed;
@@ -196,19 +201,31 @@ namespace OpenVisionLab
         internal void UpdateMatChannelGuide()
         {
             matChannelBgrCell.Opacity = 1D;
-            matChannelBgrCell.BorderBrush = ResolveBrush(presenter.MatBgrBorderRole);
+            SetBorderRole(matChannelBgrCell, presenter.MatBgrBorderRole);
             matChannelBlueCell.Opacity = presenter.AreMatSplitChannelsRevealed ? 1D : 0.28D;
             matChannelGreenCell.Opacity = presenter.AreMatSplitChannelsRevealed ? 1D : 0.28D;
             matChannelRedCell.Opacity = presenter.AreMatSplitChannelsRevealed ? 1D : 0.28D;
-            matChannelBlueCell.BorderBrush = ResolveBrush(presenter.MatSplitBorderRole);
-            matChannelGreenCell.BorderBrush = ResolveBrush(presenter.MatSplitBorderRole);
-            matChannelRedCell.BorderBrush = ResolveBrush(presenter.MatSplitBorderRole);
+            SetBorderRole(matChannelBlueCell, presenter.MatSplitBorderRole);
+            SetBorderRole(matChannelGreenCell, presenter.MatSplitBorderRole);
+            SetBorderRole(matChannelRedCell, presenter.MatSplitBorderRole);
             matChannelGrayCell.Opacity = presenter.IsMatGrayChannelRevealed ? 1D : 0.28D;
-            matChannelGrayCell.BorderBrush = ResolveBrush(presenter.MatGrayBorderRole);
+            SetBorderRole(matChannelGrayCell, presenter.MatGrayBorderRole);
             txtMatChannelBgrShape.Opacity = presenter.AreMatSplitChannelsRevealed ? 1D : 0.45D;
             txtMatChannelGrayShape.Opacity = presenter.IsMatGrayChannelRevealed ? 1D : 0.45D;
             matChannelTypeGuidePanel.Opacity = presenter.IsMatTypeGuideRevealed ? 1D : 0.28D;
             txtMatChannelAnimationStatus.Text = presenter.MatChannelAnimationStatusText;
+        }
+
+        private void SetBorderRole(Border cell, FoundationLearnRole role)
+        {
+            if (role == FoundationLearnRole.Default)
+            {
+                cell.SetResourceReference(Border.BorderBrushProperty, "OpenVision.Workbench.FieldBorderBrush");
+            }
+            else
+            {
+                cell.BorderBrush = ResolveBrush(role);
+            }
         }
 
         private Brush ResolveBrush(FoundationLearnRole role)
@@ -218,7 +235,7 @@ namespace OpenVisionLab
                 FoundationLearnRole.Candidate => animationCandidateBrush,
                 FoundationLearnRole.Pass => animationPassBrush,
                 FoundationLearnRole.Warning => animationWarningBrush,
-                _ => new SolidColorBrush(Color.FromRgb(209, 213, 219))
+                _ => (Brush)FindResource("OpenVision.Workbench.FieldBorderBrush")
             };
         }
 

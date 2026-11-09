@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.IO;
 using System.Windows;
+using System.Windows.Data;
 
 namespace OpenVisionLab
 {
@@ -23,6 +24,15 @@ namespace OpenVisionLab
         }
 
         internal bool HasSourceImageForSmoke => sourceImageViewer?.HasImage == true;
+
+        protected override void OnSourceInitialized(EventArgs e)
+        {
+            base.OnSourceInitialized(e);
+            if (Owner != null)
+            {
+                SetBinding(OpenVisionWorkbenchThemeBehavior.ThemeNameProperty, new Binding { Source = Owner, Path = new PropertyPath("(0)", OpenVisionWorkbenchThemeBehavior.ThemeNameProperty) });
+            }
+        }
 
         private void OnControllerPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
@@ -88,6 +98,7 @@ namespace OpenVisionLab
 
         private void OnClosed(object sender, EventArgs e)
         {
+            BindingOperations.ClearBinding(this, OpenVisionWorkbenchThemeBehavior.ThemeNameProperty);
             Closing -= OnClosing;
             Closed -= OnClosed;
             controller.PropertyChanged -= OnControllerPropertyChanged;

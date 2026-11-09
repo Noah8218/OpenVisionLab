@@ -134,13 +134,13 @@
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal">
-                    <Button Style="{StaticResource RoiChromeButtonStyle}" ToolTip="Minimize" Click="Minimize_Click">
+                    <Button Style="{StaticResource RoiChromeButtonStyle}" ToolTip="{DynamicResource Common.Minimize}" Click="Minimize_Click">
                         <iconPacks:PackIconMaterial Kind="WindowMinimize" Width="15" Height="15" />
                     </Button>
-                    <Button Style="{StaticResource RoiChromeButtonStyle}" ToolTip="Maximize" Click="MaximizeRestore_Click">
+                    <Button Style="{StaticResource RoiChromeButtonStyle}" ToolTip="{DynamicResource Common.Maximize}" Click="MaximizeRestore_Click">
                         <iconPacks:PackIconMaterial x:Name="maximizeIcon" Kind="WindowMaximize" Width="14" Height="14" />
                     </Button>
-                    <Button Style="{StaticResource RoiChromeButtonStyle}" ToolTip="Close" Click="Cancel_Click">
+                    <Button Style="{StaticResource RoiChromeButtonStyle}" ToolTip="{DynamicResource Common.Close}" Click="Cancel_Click">
                         <iconPacks:PackIconMaterial Kind="Close" Width="16" Height="16" />
                     </Button>
                 </StackPanel>
@@ -277,7 +277,7 @@
                                 <RowDefinition Height="10" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
-                            <TextBlock Text="Selection"
+                            <TextBlock Text="{DynamicResource RoiEditor.Selection}"
                                        FontFamily="Segoe UI"
                                        FontSize="12"
                                        FontWeight="SemiBold"
@@ -329,19 +329,19 @@
                                         Click="Fit_Click">
                                     <StackPanel Orientation="Horizontal">
                                         <iconPacks:PackIconMaterial Kind="Fullscreen" Width="14" Height="14" Margin="0,0,5,0" />
-                                        <TextBlock Text="Full" />
+                                        <TextBlock Text="{DynamicResource RoiEditor.Full}" />
                                     </StackPanel>
                                 </Button>
                                 <Button Style="{StaticResource RoiToolButtonStyle}" Margin="0,0,6,0" Click="Center_Click">
                                     <StackPanel Orientation="Horizontal">
                                         <iconPacks:PackIconMaterial Kind="ImageFilterCenterFocus" Width="14" Height="14" Margin="0,0,5,0" />
-                                        <TextBlock Text="Center" />
+                                        <TextBlock Text="{DynamicResource RoiEditor.Center}" />
                                     </StackPanel>
                                 </Button>
                                 <Button Style="{StaticResource RoiToolButtonStyle}" Click="Clear_Click">
                                     <StackPanel Orientation="Horizontal">
                                         <iconPacks:PackIconMaterial Kind="CloseBoxOutline" Width="14" Height="14" Margin="0,0,5,0" />
-                                        <TextBlock Text="Clear" />
+                                        <TextBlock Text="{DynamicResource RoiEditor.Clear}" />
                                     </StackPanel>
                                 </Button>
                             </UniformGrid>
@@ -361,7 +361,7 @@
                                 <RowDefinition Height="8" />
                                 <RowDefinition Height="120" />
                             </Grid.RowDefinitions>
-                            <TextBlock Text="Pattern Preview"
+                            <TextBlock Text="{DynamicResource RoiEditor.PatternPreview}"
                                        FontFamily="Segoe UI"
                                        FontSize="12"
                                        FontWeight="SemiBold"
@@ -390,7 +390,7 @@
                                 <RowDefinition Height="10" />
                                 <RowDefinition Height="32" />
                             </Grid.RowDefinitions>
-                            <TextBlock Text="ROI List"
+                            <TextBlock Text="{DynamicResource RoiEditor.RoiList}"
                                        FontFamily="Segoe UI"
                                        FontSize="12"
                                        FontWeight="SemiBold"
@@ -405,7 +405,7 @@
                                     Click="DeleteSelected_Click">
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                     <iconPacks:PackIconMaterial Kind="DeleteOutline" Width="14" Height="14" Margin="0,0,6,0" />
-                                    <TextBlock Text="Delete Selected" />
+                                    <TextBlock Text="{DynamicResource RoiEditor.DeleteSelected}" />
                                 </StackPanel>
                             </Button>
                         </Grid>
@@ -436,7 +436,7 @@
                         Click="Cancel_Click">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <iconPacks:PackIconMaterial Kind="Close" Width="14" Height="14" Margin="0,0,6,0" />
-                        <TextBlock Text="Cancel" />
+                        <TextBlock Text="{DynamicResource Common.Cancel}" />
                     </StackPanel>
                 </Button>
                 <Button Grid.Column="3"

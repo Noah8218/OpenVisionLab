@@ -53,6 +53,9 @@ namespace OpenVisionLab
         private bool isUpdatingRotationText;
         private double templateRotationDegrees;
         private bool disposed;
+        private readonly VisionToolLanguageChangeController languageChangeController;
+        private string statusKey;
+        private object[] statusArguments = Array.Empty<object>();
         private string inlinePatternPath;
         private bool inlineMode;
 
@@ -74,6 +77,8 @@ namespace OpenVisionLab
             canvasViewModel.RoiEditingCompleted += CanvasViewModel_RoiChanged;
 
             InitializeComponent();
+            languageChangeController = VisionToolLanguageChangeController.Attach(ApplyLocalization);
+            ApplyLocalization();
             glCanvas.DataContext = canvasViewModel;
             InitializeWpfViewer();
             UpdateSelectionText();
@@ -196,6 +201,7 @@ namespace OpenVisionLab
             Closed -= OpenGlTemplateEditorWindow_Closed;
             canvasViewModel.RoiAdded -= CanvasViewModel_RoiChanged;
             canvasViewModel.RoiEditingCompleted -= CanvasViewModel_RoiChanged;
+            languageChangeController.Dispose();
             glCanvas.Dispose();
             canvasViewModel.Dispose();
             sourceBitmap?.Dispose();
@@ -232,11 +238,11 @@ namespace OpenVisionLab
                 UpdatePatternPreview();
                 ScheduleDeferredCanvasRefresh();
                 glCanvas.Focus();
-                SetStatus("Ready");
+                SetStatus("RoiEditor.Ready");
             }
             catch (Exception ex)
             {
-                SetStatus($"Viewer initialization failed: {ex.Message}");
+                SetStatus("TemplateEditor.InitFailed", ex.Message);
             }
         }
 
@@ -401,7 +407,7 @@ namespace OpenVisionLab
         {
             if (!HasValidRegion(selectedRegion))
             {
-                SetStatus("Select a template area.");
+                SetStatus("TemplateEditor.SelectArea");
                 return;
             }
 
@@ -1016,17 +1022,28 @@ namespace OpenVisionLab
 
             string text = HasValidRegion(selectedRegion)
                 ? $"X {selectedRegion.X} / Y {selectedRegion.Y} / W {selectedRegion.Width} / H {selectedRegion.Height} / R {templateRotationDegrees:0.###}"
-                : "No template ROI";
+                : OpenVisionLanguageService.T("TemplateEditor.NoRoi");
+            statusKey = null;
             footerText.Text = text;
             statusText.Text = text;
         }
 
-        private void SetStatus(string message)
+        private void SetStatus(string key, params object[] arguments)
         {
+            statusKey = key;
+            statusArguments = arguments;
+            string message = string.Format(CultureInfo.CurrentCulture, OpenVisionLanguageService.T(key), arguments);
             statusText.Text = message;
             footerText.Text = HasValidRegion(selectedRegion)
                 ? $"X {selectedRegion.X} / Y {selectedRegion.Y} / W {selectedRegion.Width} / H {selectedRegion.Height} / R {templateRotationDegrees:0.###}"
                 : message;
+        }
+
+        private void ApplyLocalization()
+        {
+            foreach (string key in new[] { "Common.Minimize", "Common.Maximize", "Common.Close", "Common.Cancel", "RoiEditor.Selection", "RoiEditor.Full", "RoiEditor.Center", "RoiEditor.PatternPreview", "RoiEditor.Ready", "TemplateEditor.Title", "TemplateEditor.Roi", "TemplateEditor.Rotation", "TemplateEditor.RotationHint", "TemplateEditor.RotateLeft", "TemplateEditor.RotateRight", "TemplateEditor.ResetRotation", "TemplateEditor.FitHint", "TemplateEditor.CenterHint", "TemplateEditor.FullHint", "TemplateEditor.Fit", "TemplateEditor.NoPreview", "TemplateEditor.Register" }) Resources[key] = OpenVisionLanguageService.T(key);
+            if (statusKey != null) SetStatus(statusKey, statusArguments);
+            else if (!HasValidRegion(selectedRegion)) { statusText.Text = OpenVisionLanguageService.T("TemplateEditor.NoRoi"); footerText.Text = statusText.Text; }
         }
 
         private void UpdatePatternPreview()

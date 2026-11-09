@@ -569,7 +569,7 @@ namespace OpenVisionLab
             UpdateScaleCalibrationState();
         }
 
-        private void UpdateScaleCalibrationState(string statusOverride = null)
+        private void UpdateScaleCalibrationState(string statusKey = null, params object[] statusArguments)
         {
             List<VisionPipelineGeometryFeatureResult> points = executionController
                 .GetCurrentGeometryFeatures()
@@ -590,9 +590,9 @@ namespace OpenVisionLab
                 ?? points.FirstOrDefault()?.CoordinateLayer
                 ?? string.Empty;
             using Bitmap coordinateImage = layerImageOwner.AcquirePreview(coordinateLayer);
-            string status = statusOverride;
+
             string sourceError = string.Empty;
-            if (string.IsNullOrWhiteSpace(status))
+            if (string.IsNullOrWhiteSpace(statusKey))
             {
                 if (record != null
                     && VisionPipelineScaleCalibrationStorage.TryValidateCurrentSource(
@@ -601,23 +601,25 @@ namespace OpenVisionLab
                         coordinateImage,
                         out sourceError))
                 {
-                    status = "Saved evidence matches the current image. Select one compatible Step to apply; Apply never runs the pipeline.";
+                    statusKey = "PipelineReview.ScaleCalibration.SourceMatches";
                 }
                 else if (record != null)
                 {
-                    status = "Saved evidence is not applicable to the current image: " + sourceError;
+                    statusKey = "PipelineReview.ScaleCalibration.SourceMismatchFormat";
+                    statusArguments = new object[] { sourceError };
                 }
                 else if (points.Count < 2)
                 {
-                    status = "Run Review explicitly and produce at least two typed Point results in one coordinate layer.";
+                    statusKey = "PipelineReview.ScaleCalibration.NeedPoints";
                 }
                 else
                 {
-                    status = "Select two same-run points, enter the certified real distance, then calculate and save evidence.";
+                    statusKey = "PipelineReview.ScaleCalibration.ReadyToCalculate";
                 }
             }
 
-            view.SetScaleCalibrationState(points, targets, record, coordinateImage, status);
+            view.SetScaleCalibrationState(points, targets, record, coordinateImage, null);
+            view.SetScaleCalibrationLocalizedStatus(statusKey, statusArguments);
         }
 
         private void UpdateFixtureTeachState(VisionPipelineStep step, VisionPipelineStepResultSummary summary)
@@ -1411,12 +1413,11 @@ namespace OpenVisionLab
                     out string evidencePath,
                     out error))
             {
-                view.SetScaleCalibrationStatus("Scale evidence was not saved: " + error);
+                view.SetScaleCalibrationLocalizedStatus("PipelineReview.ScaleCalibration.SaveFailedFormat", error);
                 return;
             }
 
-            UpdateScaleCalibrationState(
-                "Saved exact two-point evidence: " + evidencePath + ". Apply remains explicit; no Preview/Run occurred.");
+            UpdateScaleCalibrationState("PipelineReview.ScaleCalibration.SavedFormat", evidencePath);
         }
 
         private void OnScaleCalibrationApplyRequested(object sender, VisionScaleCalibrationApplyRequestedEventArgs e)
@@ -1428,7 +1429,7 @@ namespace OpenVisionLab
 
             if (pipeline?.Steps == null || e == null || e.StepIndex < 0 || e.StepIndex >= pipeline.Steps.Count)
             {
-                view.SetScaleCalibrationStatus("Select one compatible target Step.");
+                view.SetScaleCalibrationLocalizedStatus("PipelineReview.ScaleCalibration.SelectTarget");
                 return;
             }
 
@@ -1438,7 +1439,7 @@ namespace OpenVisionLab
                     out VisionPipelineScaleCalibrationRecord record,
                     out string error))
             {
-                view.SetScaleCalibrationStatus("Scale was not applied: " + error);
+                view.SetScaleCalibrationLocalizedStatus("PipelineReview.ScaleCalibration.ApplyFailedFormat", error);
                 return;
             }
 
@@ -1446,7 +1447,7 @@ namespace OpenVisionLab
             using Bitmap coordinateImage = layerImageOwner.AcquirePreview(record.CoordinateLayer);
             if (!VisionPipelineScaleCalibrationStorage.TryApply(record, coordinateImage, target, out error))
             {
-                view.SetScaleCalibrationStatus("Scale was not applied: " + error);
+                view.SetScaleCalibrationLocalizedStatus("PipelineReview.ScaleCalibration.ApplyFailedFormat", error);
                 return;
             }
 
@@ -1455,7 +1456,7 @@ namespace OpenVisionLab
                 VisionPipelineStorage.Save(recipeContext.Name, pipeline);
                 if (!VisionPipelineStorage.TryValidateRoundTrip(recipeContext.Name, pipeline, out string roundTripMessage))
                 {
-                    view.SetScaleCalibrationStatus("Scale pipeline save did not verify: " + roundTripMessage);
+                    view.SetScaleCalibrationLocalizedStatus("PipelineReview.ScaleCalibration.RoundTripFailedFormat", roundTripMessage);
                     return;
                 }
 
@@ -1465,19 +1466,18 @@ namespace OpenVisionLab
                         out string evidencePath,
                         out error))
                 {
-                    view.SetScaleCalibrationStatus("Scale was applied, but its applied-Step audit did not save: " + error);
+                    view.SetScaleCalibrationLocalizedStatus("PipelineReview.ScaleCalibration.AuditFailedFormat", error);
                     return;
                 }
 
                 validationResult = VisionPipelineValidator.Validate(pipeline, GetLayerNames());
                 view.SetValidation(FormatValidationStatus(validationResult), FormatValidationDetails(validationResult));
                 SelectStep(selectedIndex, selectedMode);
-                view.SetScaleCalibrationStatus(
-                    $"Applied {record.MillimetersPerPixel:0.############} mm/px to '{target.Name}' only. Pipeline and {evidencePath} round-tripped; no Preview/Run occurred.");
+                view.SetScaleCalibrationLocalizedStatus("PipelineReview.ScaleCalibration.AppliedFormat", record.MillimetersPerPixel, target.Name, evidencePath);
             }
             catch (Exception ex)
             {
-                view.SetScaleCalibrationStatus("Scale apply failed: " + ex.GetBaseException().Message);
+                view.SetScaleCalibrationLocalizedStatus("PipelineReview.ScaleCalibration.ApplyExceptionFormat", ex.GetBaseException().Message);
             }
         }
 

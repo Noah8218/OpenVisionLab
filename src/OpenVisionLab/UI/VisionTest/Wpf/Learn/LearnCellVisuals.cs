@@ -24,13 +24,13 @@ namespace OpenVisionLab
                 Height = 30,
                 Margin = new Thickness(0, 0, 5, 5),
                 CornerRadius = new CornerRadius(3),
-                BorderBrush = new SolidColorBrush(Color.FromRgb(209, 213, 219)),
                 BorderThickness = new Thickness(1),
                 Background = CreateGrayBrush(grayValue),
                 Child = textBlock
             };
 
-            textBlock.Foreground = grayValue > 128 ? Brushes.Black : Brushes.White;
+            cell.SetResourceReference(Border.BorderBrushProperty, "OpenVision.Workbench.FieldBorderBrush");
+            textBlock.Foreground = GetContrastBrush(grayValue);
             return cell;
         }
 
@@ -38,6 +38,26 @@ namespace OpenVisionLab
         {
             byte channel = (byte)Math.Max(0, Math.Min(255, value));
             return new SolidColorBrush(Color.FromRgb(channel, channel, channel));
+        }
+
+        internal static Brush GetContrastBrush(int grayValue)
+        {
+            byte channel = (byte)Math.Max(0, Math.Min(255, grayValue));
+            return GetContrastBrush(Color.FromRgb(channel, channel, channel));
+        }
+
+        internal static Brush GetContrastBrush(Brush background) => GetContrastBrush(((SolidColorBrush)background).Color);
+
+        internal static Brush GetContrastBrush(Color color)
+        {
+            static double Linearize(byte value)
+            {
+                double channel = value / 255D;
+                return channel <= 0.04045D ? channel / 12.92D : Math.Pow((channel + 0.055D) / 1.055D, 2.4D);
+            }
+
+            double luminance = 0.2126D * Linearize(color.R) + 0.7152D * Linearize(color.G) + 0.0722D * Linearize(color.B);
+            return (luminance + 0.05D) / 0.05D >= 1.05D / (luminance + 0.05D) ? Brushes.Black : Brushes.White;
         }
     }
 }

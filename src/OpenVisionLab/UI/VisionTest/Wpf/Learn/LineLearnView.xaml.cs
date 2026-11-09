@@ -344,15 +344,21 @@ namespace OpenVisionLab
 
         private void SetInputHighlight(Border cell, LineLearnCellRole? role)
         {
-            cell.BorderBrush = role.HasValue ? GetBrush(role.Value) : new SolidColorBrush(Color.FromRgb(209, 213, 219));
+            if (role.HasValue)
+            {
+                cell.BorderBrush = GetBrush(role.Value);
+            }
+            else
+            {
+                cell.SetResourceReference(Border.BorderBrushProperty, "OpenVision.Workbench.FieldBorderBrush");
+            }
             cell.BorderThickness = new Thickness(role.HasValue ? 2 : 1);
         }
 
         private void PaintCell(Border cell, TextBlock text, LineLearnCell presentation)
         {
             cell.Background = presentation.Role == LineLearnCellRole.Gray ? CreateGrayBrush(presentation.Gray) : GetBrush(presentation.Role);
-            text.Foreground = presentation.Role == LineLearnCellRole.Gap
-                || presentation.Role == LineLearnCellRole.Gray && presentation.Gray > 128 ? Brushes.Black : Brushes.White;
+            text.Foreground = GetContrastBrush(cell.Background);
             text.Text = presentation.Text;
         }
 

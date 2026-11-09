@@ -24,6 +24,7 @@
             <SolidColorBrush x:Key="PipelineReview.OkBrush" Color="#0D7A55" />
             <SolidColorBrush x:Key="PipelineReview.DarkPreviewBrush" Color="#05090A" />
             <BooleanToVisibilityConverter x:Key="PipelineReview.BooleanToVisibilityConverter" />
+            <local:OpenVisionPipelineReviewDetailTextConverter x:Key="PipelineReview.DetailTextConverter" />
             <Style TargetType="Button" BasedOn="{StaticResource OpenVision.ControlButtonStyle}" />
             <Style TargetType="ComboBox" BasedOn="{StaticResource OpenVision.ControlComboBoxStyle}" />
             <Style TargetType="DataGrid" BasedOn="{StaticResource OpenVision.ResultGridStyle}" />
@@ -1553,7 +1554,7 @@
                         </ScrollViewer>
                     </TabItem>
                     <TabItem x:Name="instanceInspectorTab"
-                             Header="Instance Results"
+                             Header="{DynamicResource PipelineReview.InstanceInspector.Title}"
                              AutomationProperties.AutomationId="PipelineReviewInstanceResultsTab"
                              Visibility="Collapsed">
                         <Grid Margin="6">
@@ -1572,7 +1573,7 @@
                                        AutomationProperties.AutomationId="PipelineReviewInstanceResultCount"
                                        Foreground="{StaticResource PipelineReview.AccentBrush}"
                                        FontWeight="SemiBold"
-                                       Text="Instances 0 / OK 0 / NG 0" />
+                                       Text="" />
                             <Border Grid.Row="2"
                                     Grid.Column="0"
                                     Style="{StaticResource PreviewWellStyle}">
@@ -1586,7 +1587,7 @@
                                             Background="#CC102027"
                                             Padding="5,2">
                                         <TextBlock x:Name="lblInstanceHighlight"
-                                                   Text="Selected instance relative ROI"
+                                                   Text="{DynamicResource PipelineReview.InstanceInspector.Highlight}"
                                                    Foreground="White"
                                                    FontSize="10" />
                                     </Border>
@@ -1616,22 +1617,22 @@
                                     </Style>
                                 </DataGrid.RowStyle>
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="ID" Binding="{Binding InstanceId}" Width="52" />
-                                    <DataGridTextColumn Header="State" Binding="{Binding StateText}" Width="58" />
-                                    <DataGridTextColumn Header="Score" Binding="{Binding Score, StringFormat={}{0:0.###}}" Width="68" />
-                                    <DataGridTextColumn Header="Center X" Binding="{Binding CenterX, StringFormat={}{0:0.##}}" Width="72" />
-                                    <DataGridTextColumn Header="Center Y" Binding="{Binding CenterY, StringFormat={}{0:0.##}}" Width="72" />
-                                    <DataGridTextColumn Header="Angle" Binding="{Binding Angle, StringFormat={}{0:0.##}}" Width="62" />
-                                    <DataGridTextColumn Header="Scale" Binding="{Binding Scale, StringFormat={}{0:0.###}}" Width="62" />
-                                    <DataGridTextColumn Header="Mean" Binding="{Binding MeanValue, StringFormat={}{0:0.###}}" Width="70" />
-                                    <DataGridTextColumn Header="Valid" Binding="{Binding ValidPixelRatio, StringFormat={}{0:P1}}" Width="64" />
-                                    <DataGridTextColumn Header="Reject reason" Binding="{Binding RejectReason}" Width="*" />
+                                    <DataGridTextColumn x:Name="localizedDetailColumn0" Header="ID" Binding="{Binding InstanceId}" Width="52" />
+                                    <DataGridTextColumn x:Name="localizedDetailColumn1" Header="State" Binding="{Binding StateText}" Width="58" />
+                                    <DataGridTextColumn x:Name="localizedDetailColumn2" Header="Score" Binding="{Binding Score, StringFormat={}{0:0.###}}" Width="68" />
+                                    <DataGridTextColumn x:Name="localizedDetailColumn3" Header="Center X" Binding="{Binding CenterX, StringFormat={}{0:0.##}}" Width="72" />
+                                    <DataGridTextColumn x:Name="localizedDetailColumn4" Header="Center Y" Binding="{Binding CenterY, StringFormat={}{0:0.##}}" Width="72" />
+                                    <DataGridTextColumn x:Name="localizedDetailColumn5" Header="Angle" Binding="{Binding Angle, StringFormat={}{0:0.##}}" Width="62" />
+                                    <DataGridTextColumn x:Name="localizedDetailColumn6" Header="Scale" Binding="{Binding Scale, StringFormat={}{0:0.###}}" Width="62" />
+                                    <DataGridTextColumn x:Name="localizedDetailColumn7" Header="Mean" Binding="{Binding MeanValue, StringFormat={}{0:0.###}}" Width="70" />
+                                    <DataGridTextColumn x:Name="localizedDetailColumn8" Header="Valid" Binding="{Binding ValidPixelRatio, StringFormat={}{0:P1}}" Width="64" />
+                                    <DataGridTextColumn x:Name="localizedDetailColumn9" Header="Reject reason" Binding="{Binding RejectReason}" Width="*" />
                                 </DataGrid.Columns>
                             </DataGrid>
                         </Grid>
                     </TabItem>
                     <TabItem x:Name="matcherDiagnosticTab"
-                             Header="Matcher Diagnostics"
+                             Header="{DynamicResource PipelineReview.MatcherDiagnostics.Title}"
                              AutomationProperties.AutomationId="PipelineReviewMatcherDiagnosticTab"
                              Visibility="Collapsed">
                         <Grid Margin="6">
@@ -1653,7 +1654,7 @@
                                        AutomationProperties.AutomationId="PipelineReviewMatcherDiagnosticSummary"
                                        Foreground="{StaticResource PipelineReview.AccentBrush}"
                                        FontWeight="SemiBold"
-                                       Text="No current matcher diagnostic evidence"
+                                       Text="{DynamicResource PipelineReview.MatcherDiagnostics.NoEvidence}"
                                        TextTrimming="CharacterEllipsis"
                                        ToolTipService.ShowDuration="30000" />
 
@@ -1670,7 +1671,7 @@
                                             VerticalAlignment="Top"
                                             Background="#CC102027"
                                             Padding="5,2">
-                                        <TextBlock Text="Trained edge model"
+                                        <TextBlock Text="{DynamicResource PipelineReview.MatcherDiagnostics.ModelCaption}"
                                                    Foreground="White"
                                                    FontSize="10" />
                                     </Border>
@@ -1690,7 +1691,7 @@
                                             VerticalAlignment="Top"
                                             Background="#CC102027"
                                             Padding="5,2">
-                                        <TextBlock Text="Search / candidates"
+                                        <TextBlock Text="{DynamicResource PipelineReview.MatcherDiagnostics.SearchCaption}"
                                                    Foreground="White"
                                                    FontSize="10" />
                                     </Border>
@@ -1710,15 +1711,15 @@
                                       HeadersVisibility="Column"
                                       GridLinesVisibility="Horizontal">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Group" Binding="{Binding Section}" Width="82" />
-                                    <DataGridTextColumn Header="Diagnostic" Binding="{Binding Name}" Width="132" />
-                                    <DataGridTextColumn Header="Current run evidence" Binding="{Binding Value}" Width="*" />
+                                    <DataGridTextColumn x:Name="localizedDetailColumn10" Header="Group" Binding="{Binding Section}" Width="82" />
+                                    <DataGridTextColumn x:Name="localizedDetailColumn11" Header="Diagnostic" Binding="{Binding Name}" Width="132" />
+                                    <DataGridTextColumn x:Name="localizedDetailColumn12" Header="Current run evidence" Binding="{Binding Value}" Width="*" />
                                 </DataGrid.Columns>
                             </DataGrid>
                         </Grid>
                     </TabItem>
                     <TabItem x:Name="geometryReviewTab"
-                             Header="Geometry Review"
+                             Header="{DynamicResource PipelineReview.GeometryReview.Title}"
                              Visibility="Collapsed">
                         <Grid Margin="6">
                             <Grid.RowDefinitions>
@@ -1736,7 +1737,7 @@
                                        AutomationProperties.AutomationId="PipelineReviewGeometryResultCount"
                                        Foreground="{StaticResource PipelineReview.AccentBrush}"
                                        FontWeight="SemiBold"
-                                       Text="Typed features 0 / same-run, pixel-only" />
+                                       Text="" />
                             <Border Grid.Row="2" Grid.Column="0" Style="{StaticResource PreviewWellStyle}">
                                 <Grid>
                                     <Image x:Name="imgGeometryResultPreview"
@@ -1746,7 +1747,7 @@
                                            MouseLeftButtonDown="ImgGeometryResultPreview_MouseLeftButtonDown"
                                            Source="{Binding OutputPreviewImage}" />
                                     <Border HorizontalAlignment="Left" VerticalAlignment="Top" Background="#CC102027" Padding="5,2">
-                                        <TextBlock x:Name="lblGeometryHighlight" Text="Selected geometry highlight" Foreground="White" FontSize="10" />
+                                        <TextBlock x:Name="lblGeometryHighlight" Text="{DynamicResource PipelineReview.GeometryReview.Highlight}" Foreground="White" FontSize="10" />
                                     </Border>
                                 </Grid>
                             </Border>
@@ -1763,17 +1764,17 @@
                                       HeadersVisibility="Column"
                                       GridLinesVisibility="Horizontal">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Step / Feature" Binding="{Binding Identity}" Width="150" />
-                                    <DataGridTextColumn Header="Kind" Binding="{Binding Kind}" Width="70" />
-                                    <DataGridTextColumn Header="Geometry" Binding="{Binding GeometryText}" Width="220" />
-                                    <DataGridTextColumn Header="Coordinate layer" Binding="{Binding CoordinateLayer}" Width="110" />
-                                    <DataGridTextColumn Header="Fit evidence" Binding="{Binding QualityText}" Width="*" />
+                                    <DataGridTextColumn x:Name="localizedDetailColumn13" Header="Step / Feature" Binding="{Binding Identity}" Width="150" />
+                                    <DataGridTextColumn x:Name="localizedDetailColumn14" Header="Kind" Binding="{Binding Kind}" Width="70" />
+                                    <DataGridTextColumn x:Name="localizedDetailColumn15" Header="Geometry" Binding="{Binding GeometryText}" Width="220" />
+                                    <DataGridTextColumn x:Name="localizedDetailColumn16" Header="Coordinate layer" Binding="{Binding CoordinateLayer}" Width="110" />
+                                    <DataGridTextColumn x:Name="localizedDetailColumn17" Header="Fit evidence" Binding="{Binding QualityText, Converter={StaticResource PipelineReview.DetailTextConverter}, ConverterParameter=GeometryQuality}" Width="*" />
                                 </DataGrid.Columns>
                             </DataGrid>
                         </Grid>
                     </TabItem>
                     <TabItem x:Name="circleEvidenceTab"
-                             Header="Circle Evidence"
+                             Header="{DynamicResource PipelineReview.CircleEvidence.Title}"
                              AutomationProperties.AutomationId="PipelineReviewCircleEvidenceTab"
                              Visibility="Collapsed">
                         <Grid Margin="6">
@@ -1795,7 +1796,7 @@
                                        AutomationProperties.AutomationId="PipelineReviewCircleEvidenceSummary"
                                        Foreground="{StaticResource PipelineReview.AccentBrush}"
                                        FontWeight="SemiBold"
-                                       Text="No current Circle evidence"
+                                       Text="{DynamicResource PipelineReview.CircleEvidence.NoEvidence}"
                                        TextTrimming="CharacterEllipsis" />
                             <StackPanel Grid.Column="4"
                                         Orientation="Horizontal"
@@ -1807,14 +1808,14 @@
                                         Padding="7,0"
                                         AutomationProperties.AutomationId="PipelineReviewCircleResidualPlotButton"
                                         Click="BtnCircleResidualPlot_Click"
-                                        Content="Residuals" />
+                                        Content="{DynamicResource PipelineReview.CircleEvidence.Residuals}" />
                                 <Button x:Name="btnCircleProfilePlot"
                                         Height="24"
                                         MinWidth="108"
                                         Padding="7,0"
                                         AutomationProperties.AutomationId="PipelineReviewCircleProfilePlotButton"
                                         Click="BtnCircleProfilePlot_Click"
-                                        Content="Selected scan profile" />
+                                        Content="{DynamicResource PipelineReview.CircleEvidence.Profile}" />
                             </StackPanel>
 
                             <Border Grid.Row="2"
@@ -1831,7 +1832,7 @@
                                             VerticalAlignment="Top"
                                             Background="#CC102027"
                                             Padding="5,2">
-                                        <TextBlock Text="Selected radial scan"
+                                        <TextBlock Text="{DynamicResource PipelineReview.CircleEvidence.ScanCaption}"
                                                    Foreground="White"
                                                    FontSize="10" />
                                     </Border>
@@ -1862,12 +1863,12 @@
                                     </Style>
                                 </DataGrid.RowStyle>
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="#" Binding="{Binding Number}" Width="38" />
-                                    <DataGridTextColumn Header="Angle" Binding="{Binding AngleDeg, StringFormat={}{0:0.#}}" Width="54" />
-                                    <DataGridTextColumn Header="State" Binding="{Binding StateText}" Width="80" />
-                                    <DataGridTextColumn Header="Edge GV" Binding="{Binding EdgeStrengthGv, StringFormat={}{0:0.##}}" Width="62" />
-                                    <DataGridTextColumn Header="Residual" Binding="{Binding ResidualText}" Width="62" />
-                                    <DataGridTextColumn Header="Reason" Binding="{Binding RejectReason}" Width="*" />
+                                    <DataGridTextColumn x:Name="localizedDetailColumn18" Header="#" Binding="{Binding Number}" Width="38" />
+                                    <DataGridTextColumn x:Name="localizedDetailColumn19" Header="Angle" Binding="{Binding AngleDeg, StringFormat={}{0:0.#}}" Width="54" />
+                                    <DataGridTextColumn x:Name="localizedDetailColumn20" Header="State" Binding="{Binding StateText, Converter={StaticResource PipelineReview.DetailTextConverter}}" Width="80" />
+                                    <DataGridTextColumn x:Name="localizedDetailColumn21" Header="Edge GV" Binding="{Binding EdgeStrengthGv, StringFormat={}{0:0.##}}" Width="62" />
+                                    <DataGridTextColumn x:Name="localizedDetailColumn22" Header="Residual" Binding="{Binding ResidualText}" Width="62" />
+                                    <DataGridTextColumn x:Name="localizedDetailColumn23" Header="Reason" Binding="{Binding RejectReason}" Width="*" />
                                 </DataGrid.Columns>
                             </DataGrid>
 
@@ -1880,19 +1881,19 @@
                                            Margin="2,0,0,3"
                                            Foreground="{StaticResource PipelineReview.MutedTextBrush}"
                                            FontSize="10"
-                                           Text="Absolute fitted-radius residual by scan" />
+                                           Text="{DynamicResource PipelineReview.CircleEvidence.PlotEmpty}" />
                                 <local:VisionToolSignalPlotSurface x:Name="circleEvidencePlot"
                                                                    Grid.Row="1"
                                                                    MinWidth="220"
                                                                    MinHeight="110"
-                                                                   ToolTip="Mouse wheel: zoom. Drag: pan. Click a residual scan to select its row."
+                                                                   ToolTip="{DynamicResource PipelineReview.CircleEvidence.PlotHint}"
                                                                    AutomationProperties.AutomationId="PipelineReviewCircleEvidencePlot"
                                                                    AutomationProperties.Name="Circle radial evidence plot" />
                             </Grid>
                         </Grid>
                     </TabItem>
                     <TabItem x:Name="scaleCalibrationTab"
-                             Header="Scale Calibration"
+                             Header="{DynamicResource PipelineReview.ScaleCalibration.Title}"
                              AutomationProperties.AutomationId="PipelineReviewScaleCalibrationTab">
                         <Grid Margin="6">
                             <Grid.ColumnDefinitions>
@@ -1911,7 +1912,7 @@
                                            Stretch="Uniform" />
                                     <Border HorizontalAlignment="Left" VerticalAlignment="Top" Background="#D51A3038" Padding="5,2">
                                         <TextBlock x:Name="lblScaleCalibrationPreview"
-                                                   Text="Point A/B evidence"
+                                                   Text="{DynamicResource PipelineReview.ScaleCalibration.Preview}"
                                                    Foreground="White"
                                                    FontSize="10" />
                                     </Border>
@@ -1926,7 +1927,7 @@
                                         <RowDefinition Height="Auto" />
                                     </Grid.RowDefinitions>
                                     <TextBlock x:Name="lblScaleCalibrationInputs"
-                                               Text="Same-run point evidence"
+                                               Text="{DynamicResource PipelineReview.ScaleCalibration.Inputs}"
                                                FontSize="10"
                                                Style="{StaticResource SectionTitleStyle}" />
                                     <Grid Grid.Row="1" Margin="0,3,0,0">
@@ -1961,7 +1962,7 @@
                                             <ColumnDefinition Width="5" />
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock x:Name="lblScaleKnownDistance" Text="Real" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="10" />
+                                        <TextBlock x:Name="lblScaleKnownDistance" Text="{DynamicResource PipelineReview.ScaleCalibration.KnownDistance}" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="10" />
                                         <TextBox x:Name="txtScaleKnownDistance"
                                                  Grid.Column="1"
                                                  AutomationProperties.AutomationId="PipelineReviewScaleKnownDistance"
@@ -1977,7 +1978,7 @@
                                                 Click="BtnCalculateScaleCalibration_Click">
                                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                                 <iconPacks:PackIconMaterial Kind="ChartTimelineVariant" Width="13" Height="13" Margin="0,0,4,0" />
-                                                <TextBlock x:Name="txtCalculateScaleCalibrationButton" Text="Calculate + save" FontSize="9" />
+                                                <TextBlock x:Name="txtCalculateScaleCalibrationButton" Text="{DynamicResource PipelineReview.ScaleCalibration.Calculate}" FontSize="9" />
                                             </StackPanel>
                                         </Button>
                                     </Grid>
@@ -1993,13 +1994,13 @@
                                         <RowDefinition Height="Auto" />
                                     </Grid.RowDefinitions>
                                     <TextBlock x:Name="lblScaleCalibrationResult"
-                                               Text="Saved scale (mm/px)"
+                                               Text="{DynamicResource PipelineReview.ScaleCalibration.Result}"
                                                FontSize="10"
                                                Style="{StaticResource SectionTitleStyle}" />
                                     <TextBlock x:Name="txtScaleCalibrationResult"
                                                Grid.Row="1"
                                                AutomationProperties.AutomationId="PipelineReviewScaleResult"
-                                               Text="Not taught"
+                                               Text="{DynamicResource PipelineReview.ScaleCalibration.NotTaught}"
                                                FontWeight="SemiBold"
                                                Foreground="{StaticResource PipelineReview.AccentBrush}"
                                                Margin="0,3,0,0"
@@ -2024,17 +2025,18 @@
                                                 Click="BtnApplyScaleCalibration_Click">
                                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                                 <iconPacks:PackIconMaterial Kind="ContentSave" Width="13" Height="13" Margin="0,0,4,0" />
-                                                <TextBlock x:Name="txtApplyScaleCalibrationButton" Text="Apply to Step" FontSize="9" />
+                                                <TextBlock x:Name="txtApplyScaleCalibrationButton" Text="{DynamicResource PipelineReview.ScaleCalibration.Apply}" FontSize="9" />
                                             </StackPanel>
                                         </Button>
                                     </Grid>
                                     <TextBlock x:Name="txtScaleCalibrationStatus"
                                                Grid.Row="3"
                                                AutomationProperties.AutomationId="PipelineReviewScaleStatus"
-                                               Text="Run Review to obtain two typed points."
+                                               Text="{DynamicResource PipelineReview.ScaleCalibration.Waiting}"
                                                Foreground="{StaticResource PipelineReview.MutedTextBrush}"
                                                FontSize="9"
-                                               TextTrimming="CharacterEllipsis"
+                                               TextWrapping="Wrap"
+                                               TextTrimming="None"
                                                ToolTip="{Binding RelativeSource={RelativeSource Self}, Path=Text}"
                                                Margin="0,3,0,0" />
                                 </Grid>
